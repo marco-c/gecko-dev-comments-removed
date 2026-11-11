@@ -53,6 +53,7 @@ extern "C" {
   uint16_t uniffi_ads_client_checksum_method_mozadsclientbuilder_cache_config();
   uint16_t uniffi_ads_client_checksum_method_mozadsclientbuilder_environment();
   uint16_t uniffi_ads_client_checksum_method_mozadsclientbuilder_telemetry();
+  uint16_t uniffi_ads_client_checksum_method_mozadsclientbuilder_user_agent();
   uint16_t uniffi_ads_client_checksum_constructor_mozadsclientbuilder_new();
   void uniffi_ads_client_fn_method_mozadsclient_clear_cache(uint64_t, RustCallStatus*);
   void uniffi_ads_client_fn_method_mozadsclient_record_click(uint64_t, RustBuffer, RustBuffer, RustCallStatus*);
@@ -67,6 +68,7 @@ extern "C" {
   uint64_t uniffi_ads_client_fn_method_mozadsclientbuilder_cache_config(uint64_t, RustBuffer, RustCallStatus*);
   uint64_t uniffi_ads_client_fn_method_mozadsclientbuilder_environment(uint64_t, RustBuffer, RustCallStatus*);
   uint64_t uniffi_ads_client_fn_method_mozadsclientbuilder_telemetry(uint64_t, uint64_t, RustCallStatus*);
+  uint64_t uniffi_ads_client_fn_method_mozadsclientbuilder_user_agent(uint64_t, RustBuffer, RustCallStatus*);
   uint64_t uniffi_ads_client_fn_constructor_mozadsclientbuilder_new(RustCallStatus*);
   uint64_t uniffi_ads_client_fn_clone_mozadsclient(uint64_t, RustCallStatus*);
   void uniffi_ads_client_fn_free_mozadsclient(uint64_t, RustCallStatus*);
@@ -526,7 +528,16 @@ extern "C" {
   RustBuffer ffi_init_rust_components_rustbuffer_reserve(RustBuffer, uint64_t, RustCallStatus*);
   uint32_t ffi_init_rust_components_uniffi_contract_version();
   uint16_t uniffi_init_rust_components_checksum_func_initialize();
+  uint16_t uniffi_init_rust_components_checksum_func_initialize_glean();
   void uniffi_init_rust_components_fn_func_initialize(RustBuffer, RustCallStatus*);
+  void uniffi_init_rust_components_fn_func_initialize_glean(RustCallStatus*);
+  RustBuffer ffi_interrupt_support_rustbuffer_alloc(uint64_t, RustCallStatus*);
+  RustBuffer ffi_interrupt_support_rustbuffer_from_bytes(ForeignBytes, RustCallStatus*);
+  void ffi_interrupt_support_rustbuffer_free(RustBuffer, RustCallStatus*);
+  RustBuffer ffi_interrupt_support_rustbuffer_reserve(RustBuffer, uint64_t, RustCallStatus*);
+  uint32_t ffi_interrupt_support_uniffi_contract_version();
+  uint16_t uniffi_interrupt_support_checksum_func_shutdown();
+  void uniffi_interrupt_support_fn_func_shutdown(RustCallStatus*);
   RustBuffer ffi_logins_rustbuffer_alloc(uint64_t, RustCallStatus*);
   RustBuffer ffi_logins_rustbuffer_from_bytes(ForeignBytes, RustCallStatus*);
   void ffi_logins_rustbuffer_free(RustBuffer, RustCallStatus*);
@@ -1758,19 +1769,19 @@ const static mozilla::uniffi::UniFFIPointerType kPointerType5 {
   uniffi_breach_alerts_fn_clone_breachalertsstore,
   uniffi_breach_alerts_fn_free_breachalertsstore,
 };
-class FfiValueObjectHandle842 {
+class FfiValueObjectHandle845 {
  private:
   uint64_t mValue = 0;
 
  public:
-  FfiValueObjectHandle842() = default;
-  explicit FfiValueObjectHandle842(uint64_t aValue) : mValue(aValue) {}
+  FfiValueObjectHandle845() = default;
+  explicit FfiValueObjectHandle845(uint64_t aValue) : mValue(aValue) {}
 
   
-  FfiValueObjectHandle842(const FfiValueObjectHandle842&) = delete;
-  FfiValueObjectHandle842& operator=(const FfiValueObjectHandle842&) = delete;
+  FfiValueObjectHandle845(const FfiValueObjectHandle845&) = delete;
+  FfiValueObjectHandle845& operator=(const FfiValueObjectHandle845&) = delete;
 
-  FfiValueObjectHandle842& operator=(FfiValueObjectHandle842&& aOther) {
+  FfiValueObjectHandle845& operator=(FfiValueObjectHandle845&& aOther) {
     FreeHandle();
     mValue = aOther.mValue;
     aOther.mValue = 0;
@@ -1812,8 +1823,8 @@ class FfiValueObjectHandle842 {
     return temp;
   }
 
-  static FfiValueObjectHandle842 FromRust(uint64_t aValue) {
-    return FfiValueObjectHandle842(aValue);
+  static FfiValueObjectHandle845 FromRust(uint64_t aValue) {
+    return FfiValueObjectHandle845(aValue);
   }
 
   void FreeHandle() {
@@ -1825,7 +1836,7 @@ class FfiValueObjectHandle842 {
     }
   }
 
-  ~FfiValueObjectHandle842() {
+  ~FfiValueObjectHandle845() {
     
     
     
@@ -1838,19 +1849,19 @@ const static mozilla::uniffi::UniFFIPointerType kPointerType6 {
   uniffi_context_id_fn_clone_contextidcomponent,
   uniffi_context_id_fn_free_contextidcomponent,
 };
-class FfiValueObjectHandle1051 {
+class FfiValueObjectHandle1055 {
  private:
   uint64_t mValue = 0;
 
  public:
-  FfiValueObjectHandle1051() = default;
-  explicit FfiValueObjectHandle1051(uint64_t aValue) : mValue(aValue) {}
+  FfiValueObjectHandle1055() = default;
+  explicit FfiValueObjectHandle1055(uint64_t aValue) : mValue(aValue) {}
 
   
-  FfiValueObjectHandle1051(const FfiValueObjectHandle1051&) = delete;
-  FfiValueObjectHandle1051& operator=(const FfiValueObjectHandle1051&) = delete;
+  FfiValueObjectHandle1055(const FfiValueObjectHandle1055&) = delete;
+  FfiValueObjectHandle1055& operator=(const FfiValueObjectHandle1055&) = delete;
 
-  FfiValueObjectHandle1051& operator=(FfiValueObjectHandle1051&& aOther) {
+  FfiValueObjectHandle1055& operator=(FfiValueObjectHandle1055&& aOther) {
     FreeHandle();
     mValue = aOther.mValue;
     aOther.mValue = 0;
@@ -1892,8 +1903,8 @@ class FfiValueObjectHandle1051 {
     return temp;
   }
 
-  static FfiValueObjectHandle1051 FromRust(uint64_t aValue) {
-    return FfiValueObjectHandle1051(aValue);
+  static FfiValueObjectHandle1055 FromRust(uint64_t aValue) {
+    return FfiValueObjectHandle1055(aValue);
   }
 
   void FreeHandle() {
@@ -1905,7 +1916,7 @@ class FfiValueObjectHandle1051 {
     }
   }
 
-  ~FfiValueObjectHandle1051() {
+  ~FfiValueObjectHandle1055() {
     
     
     
@@ -2146,19 +2157,19 @@ const static mozilla::uniffi::UniFFIPointerType kPointerType9 {
   uniffi_db_crypto_fn_clone_managedencryptordecryptor,
   uniffi_db_crypto_fn_free_managedencryptordecryptor,
 };
-class FfiValueObjectHandle1259 {
+class FfiValueObjectHandle1264 {
  private:
   uint64_t mValue = 0;
 
  public:
-  FfiValueObjectHandle1259() = default;
-  explicit FfiValueObjectHandle1259(uint64_t aValue) : mValue(aValue) {}
+  FfiValueObjectHandle1264() = default;
+  explicit FfiValueObjectHandle1264(uint64_t aValue) : mValue(aValue) {}
 
   
-  FfiValueObjectHandle1259(const FfiValueObjectHandle1259&) = delete;
-  FfiValueObjectHandle1259& operator=(const FfiValueObjectHandle1259&) = delete;
+  FfiValueObjectHandle1264(const FfiValueObjectHandle1264&) = delete;
+  FfiValueObjectHandle1264& operator=(const FfiValueObjectHandle1264&) = delete;
 
-  FfiValueObjectHandle1259& operator=(FfiValueObjectHandle1259&& aOther) {
+  FfiValueObjectHandle1264& operator=(FfiValueObjectHandle1264&& aOther) {
     FreeHandle();
     mValue = aOther.mValue;
     aOther.mValue = 0;
@@ -2200,8 +2211,8 @@ class FfiValueObjectHandle1259 {
     return temp;
   }
 
-  static FfiValueObjectHandle1259 FromRust(uint64_t aValue) {
-    return FfiValueObjectHandle1259(aValue);
+  static FfiValueObjectHandle1264 FromRust(uint64_t aValue) {
+    return FfiValueObjectHandle1264(aValue);
   }
 
   void FreeHandle() {
@@ -2213,7 +2224,7 @@ class FfiValueObjectHandle1259 {
     }
   }
 
-  ~FfiValueObjectHandle1259() {
+  ~FfiValueObjectHandle1264() {
     
     
     
@@ -2226,19 +2237,19 @@ const static mozilla::uniffi::UniFFIPointerType kPointerType10 {
   uniffi_db_crypto_fn_clone_nsskeymanager,
   uniffi_db_crypto_fn_free_nsskeymanager,
 };
-class FfiValueObjectHandle1260 {
+class FfiValueObjectHandle1265 {
  private:
   uint64_t mValue = 0;
 
  public:
-  FfiValueObjectHandle1260() = default;
-  explicit FfiValueObjectHandle1260(uint64_t aValue) : mValue(aValue) {}
+  FfiValueObjectHandle1265() = default;
+  explicit FfiValueObjectHandle1265(uint64_t aValue) : mValue(aValue) {}
 
   
-  FfiValueObjectHandle1260(const FfiValueObjectHandle1260&) = delete;
-  FfiValueObjectHandle1260& operator=(const FfiValueObjectHandle1260&) = delete;
+  FfiValueObjectHandle1265(const FfiValueObjectHandle1265&) = delete;
+  FfiValueObjectHandle1265& operator=(const FfiValueObjectHandle1265&) = delete;
 
-  FfiValueObjectHandle1260& operator=(FfiValueObjectHandle1260&& aOther) {
+  FfiValueObjectHandle1265& operator=(FfiValueObjectHandle1265&& aOther) {
     FreeHandle();
     mValue = aOther.mValue;
     aOther.mValue = 0;
@@ -2280,8 +2291,8 @@ class FfiValueObjectHandle1260 {
     return temp;
   }
 
-  static FfiValueObjectHandle1260 FromRust(uint64_t aValue) {
-    return FfiValueObjectHandle1260(aValue);
+  static FfiValueObjectHandle1265 FromRust(uint64_t aValue) {
+    return FfiValueObjectHandle1265(aValue);
   }
 
   void FreeHandle() {
@@ -2293,7 +2304,7 @@ class FfiValueObjectHandle1260 {
     }
   }
 
-  ~FfiValueObjectHandle1260() {
+  ~FfiValueObjectHandle1265() {
     
     
     
@@ -2420,19 +2431,19 @@ const static mozilla::uniffi::UniFFIPointerType kPointerType12 {
   uniffi_db_crypto_fn_clone_statickeymanager,
   uniffi_db_crypto_fn_free_statickeymanager,
 };
-class FfiValueObjectHandle1261 {
+class FfiValueObjectHandle1266 {
  private:
   uint64_t mValue = 0;
 
  public:
-  FfiValueObjectHandle1261() = default;
-  explicit FfiValueObjectHandle1261(uint64_t aValue) : mValue(aValue) {}
+  FfiValueObjectHandle1266() = default;
+  explicit FfiValueObjectHandle1266(uint64_t aValue) : mValue(aValue) {}
 
   
-  FfiValueObjectHandle1261(const FfiValueObjectHandle1261&) = delete;
-  FfiValueObjectHandle1261& operator=(const FfiValueObjectHandle1261&) = delete;
+  FfiValueObjectHandle1266(const FfiValueObjectHandle1266&) = delete;
+  FfiValueObjectHandle1266& operator=(const FfiValueObjectHandle1266&) = delete;
 
-  FfiValueObjectHandle1261& operator=(FfiValueObjectHandle1261&& aOther) {
+  FfiValueObjectHandle1266& operator=(FfiValueObjectHandle1266&& aOther) {
     FreeHandle();
     mValue = aOther.mValue;
     aOther.mValue = 0;
@@ -2474,8 +2485,8 @@ class FfiValueObjectHandle1261 {
     return temp;
   }
 
-  static FfiValueObjectHandle1261 FromRust(uint64_t aValue) {
-    return FfiValueObjectHandle1261(aValue);
+  static FfiValueObjectHandle1266 FromRust(uint64_t aValue) {
+    return FfiValueObjectHandle1266(aValue);
   }
 
   void FreeHandle() {
@@ -2487,7 +2498,7 @@ class FfiValueObjectHandle1261 {
     }
   }
 
-  ~FfiValueObjectHandle1261() {
+  ~FfiValueObjectHandle1266() {
     
     
     
@@ -2500,19 +2511,19 @@ const static mozilla::uniffi::UniFFIPointerType kPointerType13 {
   uniffi_filter_adult_fn_clone_filteradultcomponent,
   uniffi_filter_adult_fn_free_filteradultcomponent,
 };
-class FfiValueObjectHandle1679 {
+class FfiValueObjectHandle1686 {
  private:
   uint64_t mValue = 0;
 
  public:
-  FfiValueObjectHandle1679() = default;
-  explicit FfiValueObjectHandle1679(uint64_t aValue) : mValue(aValue) {}
+  FfiValueObjectHandle1686() = default;
+  explicit FfiValueObjectHandle1686(uint64_t aValue) : mValue(aValue) {}
 
   
-  FfiValueObjectHandle1679(const FfiValueObjectHandle1679&) = delete;
-  FfiValueObjectHandle1679& operator=(const FfiValueObjectHandle1679&) = delete;
+  FfiValueObjectHandle1686(const FfiValueObjectHandle1686&) = delete;
+  FfiValueObjectHandle1686& operator=(const FfiValueObjectHandle1686&) = delete;
 
-  FfiValueObjectHandle1679& operator=(FfiValueObjectHandle1679&& aOther) {
+  FfiValueObjectHandle1686& operator=(FfiValueObjectHandle1686&& aOther) {
     FreeHandle();
     mValue = aOther.mValue;
     aOther.mValue = 0;
@@ -2554,8 +2565,8 @@ class FfiValueObjectHandle1679 {
     return temp;
   }
 
-  static FfiValueObjectHandle1679 FromRust(uint64_t aValue) {
-    return FfiValueObjectHandle1679(aValue);
+  static FfiValueObjectHandle1686 FromRust(uint64_t aValue) {
+    return FfiValueObjectHandle1686(aValue);
   }
 
   void FreeHandle() {
@@ -2567,7 +2578,7 @@ class FfiValueObjectHandle1679 {
     }
   }
 
-  ~FfiValueObjectHandle1679() {
+  ~FfiValueObjectHandle1686() {
     
     
     
@@ -2580,19 +2591,19 @@ const static mozilla::uniffi::UniFFIPointerType kPointerType14 {
   uniffi_fxcontainers_fn_clone_containersstore,
   uniffi_fxcontainers_fn_free_containersstore,
 };
-class FfiValueObjectHandle1881 {
+class FfiValueObjectHandle1889 {
  private:
   uint64_t mValue = 0;
 
  public:
-  FfiValueObjectHandle1881() = default;
-  explicit FfiValueObjectHandle1881(uint64_t aValue) : mValue(aValue) {}
+  FfiValueObjectHandle1889() = default;
+  explicit FfiValueObjectHandle1889(uint64_t aValue) : mValue(aValue) {}
 
   
-  FfiValueObjectHandle1881(const FfiValueObjectHandle1881&) = delete;
-  FfiValueObjectHandle1881& operator=(const FfiValueObjectHandle1881&) = delete;
+  FfiValueObjectHandle1889(const FfiValueObjectHandle1889&) = delete;
+  FfiValueObjectHandle1889& operator=(const FfiValueObjectHandle1889&) = delete;
 
-  FfiValueObjectHandle1881& operator=(FfiValueObjectHandle1881&& aOther) {
+  FfiValueObjectHandle1889& operator=(FfiValueObjectHandle1889&& aOther) {
     FreeHandle();
     mValue = aOther.mValue;
     aOther.mValue = 0;
@@ -2634,8 +2645,8 @@ class FfiValueObjectHandle1881 {
     return temp;
   }
 
-  static FfiValueObjectHandle1881 FromRust(uint64_t aValue) {
-    return FfiValueObjectHandle1881(aValue);
+  static FfiValueObjectHandle1889 FromRust(uint64_t aValue) {
+    return FfiValueObjectHandle1889(aValue);
   }
 
   void FreeHandle() {
@@ -2647,7 +2658,7 @@ class FfiValueObjectHandle1881 {
     }
   }
 
-  ~FfiValueObjectHandle1881() {
+  ~FfiValueObjectHandle1889() {
     
     
     
@@ -2820,19 +2831,19 @@ const static mozilla::uniffi::UniFFIPointerType kPointerType17 {
   uniffi_relevancy_fn_clone_relevancystore,
   uniffi_relevancy_fn_free_relevancystore,
 };
-class FfiValueObjectHandle2495 {
+class FfiValueObjectHandle2716 {
  private:
   uint64_t mValue = 0;
 
  public:
-  FfiValueObjectHandle2495() = default;
-  explicit FfiValueObjectHandle2495(uint64_t aValue) : mValue(aValue) {}
+  FfiValueObjectHandle2716() = default;
+  explicit FfiValueObjectHandle2716(uint64_t aValue) : mValue(aValue) {}
 
   
-  FfiValueObjectHandle2495(const FfiValueObjectHandle2495&) = delete;
-  FfiValueObjectHandle2495& operator=(const FfiValueObjectHandle2495&) = delete;
+  FfiValueObjectHandle2716(const FfiValueObjectHandle2716&) = delete;
+  FfiValueObjectHandle2716& operator=(const FfiValueObjectHandle2716&) = delete;
 
-  FfiValueObjectHandle2495& operator=(FfiValueObjectHandle2495&& aOther) {
+  FfiValueObjectHandle2716& operator=(FfiValueObjectHandle2716&& aOther) {
     FreeHandle();
     mValue = aOther.mValue;
     aOther.mValue = 0;
@@ -2874,8 +2885,8 @@ class FfiValueObjectHandle2495 {
     return temp;
   }
 
-  static FfiValueObjectHandle2495 FromRust(uint64_t aValue) {
-    return FfiValueObjectHandle2495(aValue);
+  static FfiValueObjectHandle2716 FromRust(uint64_t aValue) {
+    return FfiValueObjectHandle2716(aValue);
   }
 
   void FreeHandle() {
@@ -2887,7 +2898,7 @@ class FfiValueObjectHandle2495 {
     }
   }
 
-  ~FfiValueObjectHandle2495() {
+  ~FfiValueObjectHandle2716() {
     
     
     
@@ -3060,19 +3071,19 @@ const static mozilla::uniffi::UniFFIPointerType kPointerType20 {
   uniffi_search_fn_clone_searchengineselector,
   uniffi_search_fn_free_searchengineselector,
 };
-class FfiValueObjectHandle2886 {
+class FfiValueObjectHandle3109 {
  private:
   uint64_t mValue = 0;
 
  public:
-  FfiValueObjectHandle2886() = default;
-  explicit FfiValueObjectHandle2886(uint64_t aValue) : mValue(aValue) {}
+  FfiValueObjectHandle3109() = default;
+  explicit FfiValueObjectHandle3109(uint64_t aValue) : mValue(aValue) {}
 
   
-  FfiValueObjectHandle2886(const FfiValueObjectHandle2886&) = delete;
-  FfiValueObjectHandle2886& operator=(const FfiValueObjectHandle2886&) = delete;
+  FfiValueObjectHandle3109(const FfiValueObjectHandle3109&) = delete;
+  FfiValueObjectHandle3109& operator=(const FfiValueObjectHandle3109&) = delete;
 
-  FfiValueObjectHandle2886& operator=(FfiValueObjectHandle2886&& aOther) {
+  FfiValueObjectHandle3109& operator=(FfiValueObjectHandle3109&& aOther) {
     FreeHandle();
     mValue = aOther.mValue;
     aOther.mValue = 0;
@@ -3114,8 +3125,8 @@ class FfiValueObjectHandle2886 {
     return temp;
   }
 
-  static FfiValueObjectHandle2886 FromRust(uint64_t aValue) {
-    return FfiValueObjectHandle2886(aValue);
+  static FfiValueObjectHandle3109 FromRust(uint64_t aValue) {
+    return FfiValueObjectHandle3109(aValue);
   }
 
   void FreeHandle() {
@@ -3127,7 +3138,7 @@ class FfiValueObjectHandle2886 {
     }
   }
 
-  ~FfiValueObjectHandle2886() {
+  ~FfiValueObjectHandle3109() {
     
     
     
@@ -3460,19 +3471,19 @@ const static mozilla::uniffi::UniFFIPointerType kPointerType25 {
   uniffi_tabs_fn_clone_tabsstore,
   uniffi_tabs_fn_free_tabsstore,
 };
-class FfiValueObjectHandle3482 {
+class FfiValueObjectHandle3708 {
  private:
   uint64_t mValue = 0;
 
  public:
-  FfiValueObjectHandle3482() = default;
-  explicit FfiValueObjectHandle3482(uint64_t aValue) : mValue(aValue) {}
+  FfiValueObjectHandle3708() = default;
+  explicit FfiValueObjectHandle3708(uint64_t aValue) : mValue(aValue) {}
 
   
-  FfiValueObjectHandle3482(const FfiValueObjectHandle3482&) = delete;
-  FfiValueObjectHandle3482& operator=(const FfiValueObjectHandle3482&) = delete;
+  FfiValueObjectHandle3708(const FfiValueObjectHandle3708&) = delete;
+  FfiValueObjectHandle3708& operator=(const FfiValueObjectHandle3708&) = delete;
 
-  FfiValueObjectHandle3482& operator=(FfiValueObjectHandle3482&& aOther) {
+  FfiValueObjectHandle3708& operator=(FfiValueObjectHandle3708&& aOther) {
     FreeHandle();
     mValue = aOther.mValue;
     aOther.mValue = 0;
@@ -3514,8 +3525,8 @@ class FfiValueObjectHandle3482 {
     return temp;
   }
 
-  static FfiValueObjectHandle3482 FromRust(uint64_t aValue) {
-    return FfiValueObjectHandle3482(aValue);
+  static FfiValueObjectHandle3708 FromRust(uint64_t aValue) {
+    return FfiValueObjectHandle3708(aValue);
   }
 
   void FreeHandle() {
@@ -3527,7 +3538,7 @@ class FfiValueObjectHandle3482 {
     }
   }
 
-  ~FfiValueObjectHandle3482() {
+  ~FfiValueObjectHandle3708() {
     
     
     
@@ -3734,19 +3745,19 @@ const static mozilla::uniffi::UniFFIPointerType kPointerType28 {
   uniffi_webext_storage_fn_clone_webextstoragestore,
   uniffi_webext_storage_fn_free_webextstoragestore,
 };
-class FfiValueObjectHandle4089 {
+class FfiValueObjectHandle4318 {
  private:
   uint64_t mValue = 0;
 
  public:
-  FfiValueObjectHandle4089() = default;
-  explicit FfiValueObjectHandle4089(uint64_t aValue) : mValue(aValue) {}
+  FfiValueObjectHandle4318() = default;
+  explicit FfiValueObjectHandle4318(uint64_t aValue) : mValue(aValue) {}
 
   
-  FfiValueObjectHandle4089(const FfiValueObjectHandle4089&) = delete;
-  FfiValueObjectHandle4089& operator=(const FfiValueObjectHandle4089&) = delete;
+  FfiValueObjectHandle4318(const FfiValueObjectHandle4318&) = delete;
+  FfiValueObjectHandle4318& operator=(const FfiValueObjectHandle4318&) = delete;
 
-  FfiValueObjectHandle4089& operator=(FfiValueObjectHandle4089&& aOther) {
+  FfiValueObjectHandle4318& operator=(FfiValueObjectHandle4318&& aOther) {
     FreeHandle();
     mValue = aOther.mValue;
     aOther.mValue = 0;
@@ -3788,8 +3799,8 @@ class FfiValueObjectHandle4089 {
     return temp;
   }
 
-  static FfiValueObjectHandle4089 FromRust(uint64_t aValue) {
-    return FfiValueObjectHandle4089(aValue);
+  static FfiValueObjectHandle4318 FromRust(uint64_t aValue) {
+    return FfiValueObjectHandle4318(aValue);
   }
 
   void FreeHandle() {
@@ -3801,7 +3812,7 @@ class FfiValueObjectHandle4089 {
     }
   }
 
-  ~FfiValueObjectHandle4089() {
+  ~FfiValueObjectHandle4318() {
     
     
     
@@ -4090,19 +4101,19 @@ const static mozilla::uniffi::UniFFIPointerType kPointerType32 {
   uniffi_uniffi_bindings_tests_fn_clone_complexmethods,
   uniffi_uniffi_bindings_tests_fn_free_complexmethods,
 };
-class FfiValueObjectHandle4288 {
+class FfiValueObjectHandle4518 {
  private:
   uint64_t mValue = 0;
 
  public:
-  FfiValueObjectHandle4288() = default;
-  explicit FfiValueObjectHandle4288(uint64_t aValue) : mValue(aValue) {}
+  FfiValueObjectHandle4518() = default;
+  explicit FfiValueObjectHandle4518(uint64_t aValue) : mValue(aValue) {}
 
   
-  FfiValueObjectHandle4288(const FfiValueObjectHandle4288&) = delete;
-  FfiValueObjectHandle4288& operator=(const FfiValueObjectHandle4288&) = delete;
+  FfiValueObjectHandle4518(const FfiValueObjectHandle4518&) = delete;
+  FfiValueObjectHandle4518& operator=(const FfiValueObjectHandle4518&) = delete;
 
-  FfiValueObjectHandle4288& operator=(FfiValueObjectHandle4288&& aOther) {
+  FfiValueObjectHandle4518& operator=(FfiValueObjectHandle4518&& aOther) {
     FreeHandle();
     mValue = aOther.mValue;
     aOther.mValue = 0;
@@ -4144,8 +4155,8 @@ class FfiValueObjectHandle4288 {
     return temp;
   }
 
-  static FfiValueObjectHandle4288 FromRust(uint64_t aValue) {
-    return FfiValueObjectHandle4288(aValue);
+  static FfiValueObjectHandle4518 FromRust(uint64_t aValue) {
+    return FfiValueObjectHandle4518(aValue);
   }
 
   void FreeHandle() {
@@ -4157,7 +4168,7 @@ class FfiValueObjectHandle4288 {
     }
   }
 
-  ~FfiValueObjectHandle4288() {
+  ~FfiValueObjectHandle4518() {
     
     
     
@@ -5865,6 +5876,44 @@ public:
 class ScaffoldingCallHandler24 : public UniffiSyncCallHandler {
 private:
   
+
+  
+
+public:
+  void LowerRustArgs(const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs, ErrorResult& aError) override {
+  }
+
+  void MakeRustCall(RustCallStatus* aOutStatus) override {
+    uniffi_init_rust_components_fn_func_initialize_glean(
+      aOutStatus
+    );
+  }
+
+  virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
+  }
+};
+class ScaffoldingCallHandler25 : public UniffiSyncCallHandler {
+private:
+  
+
+  
+
+public:
+  void LowerRustArgs(const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs, ErrorResult& aError) override {
+  }
+
+  void MakeRustCall(RustCallStatus* aOutStatus) override {
+    uniffi_interrupt_support_fn_func_shutdown(
+      aOutStatus
+    );
+  }
+
+  virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
+  }
+};
+class ScaffoldingCallHandler26 : public UniffiSyncCallHandler {
+private:
+  
   FfiValueRustBuffer mPath{};
   FfiValueObjectHandle55 mPrimaryPasswordAuthenticator{};
 
@@ -5905,7 +5954,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler25 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler27 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mPath{};
@@ -5948,7 +5997,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler26 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler28 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mInterestVector{};
@@ -5991,7 +6040,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler27 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler29 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mRawUrl{};
@@ -6034,7 +6083,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler28 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler30 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mTargets{};
@@ -6077,7 +6126,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler29 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler31 : public UniffiSyncCallHandler {
 private:
   
   FfiValueInt<uint32_t> mId{};
@@ -6106,7 +6155,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler30 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler32 : public UniffiSyncCallHandler {
 private:
   
 
@@ -6125,7 +6174,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler31 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler33 : public UniffiSyncCallHandler {
 private:
   
 
@@ -6144,7 +6193,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler32 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler34 : public UniffiSyncCallHandler {
 private:
   
 
@@ -6163,7 +6212,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler33 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler35 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mChannel{};
@@ -6198,7 +6247,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler34 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler36 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle267 mBackend{};
@@ -6227,7 +6276,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler35 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler37 : public UniffiSyncCallHandler {
 private:
   
 
@@ -6254,9 +6303,9 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler36 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler38 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler36() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler38() : UniffiAsyncCallHandler(
         ffi_viaduct_rust_future_poll_rust_buffer,
         ffi_viaduct_rust_future_free_rust_buffer
     ) { }
@@ -6301,7 +6350,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler37 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler39 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mUserAgent{};
@@ -6330,7 +6379,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler38 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler40 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle49 mUniffiPtr{};
@@ -6359,7 +6408,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler39 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler41 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle49 mUniffiPtr{};
@@ -6400,7 +6449,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler40 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler42 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle49 mUniffiPtr{};
@@ -6441,7 +6490,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler41 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler43 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle49 mUniffiPtr{};
@@ -6488,7 +6537,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler42 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler44 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle49 mUniffiPtr{};
@@ -6537,7 +6586,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler43 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler45 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle49 mUniffiPtr{};
@@ -6586,7 +6635,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler44 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler46 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle49 mUniffiPtr{};
@@ -6635,7 +6684,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler45 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler47 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle49 mUniffiPtr{};
@@ -6684,7 +6733,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler46 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler48 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle49 mUniffiPtr{};
@@ -6713,7 +6762,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler47 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler49 : public UniffiSyncCallHandler {
 private:
   
 
@@ -6740,7 +6789,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler48 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler50 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle51 mUniffiPtr{};
@@ -6777,7 +6826,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler49 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler51 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle51 mUniffiPtr{};
@@ -6820,7 +6869,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler50 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler52 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle51 mUniffiPtr{};
@@ -6863,7 +6912,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler51 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler53 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle51 mUniffiPtr{};
@@ -6906,7 +6955,50 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler52 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler54 : public UniffiSyncCallHandler {
+private:
+  
+  FfiValueObjectHandle51 mUniffiPtr{};
+  FfiValueRustBuffer mUserAgent{};
+
+  
+  FfiValueObjectHandle51 mUniffiReturnValue{};
+
+public:
+  void LowerRustArgs(const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs, ErrorResult& aError) override {
+    if (aArgs.Length() < 2) {
+      aError.ThrowUnknownError(nsPrintfCString("LowerRustArgs: Incorrect argument length for uniffi_ads_client_fn_method_mozadsclientbuilder_user_agent (expected: 2, actual: %zu)", aArgs.Length()));
+      return;
+    }
+    mUniffiPtr.Lower(aArgs[0], aError);
+    if (aError.Failed()) {
+      return;
+    }
+    mUserAgent.Lower(aArgs[1], aError);
+    if (aError.Failed()) {
+      return;
+    }
+  }
+
+  void MakeRustCall(RustCallStatus* aOutStatus) override {
+    mUniffiReturnValue = FfiValueObjectHandle51::FromRust(
+      uniffi_ads_client_fn_method_mozadsclientbuilder_user_agent(
+        mUniffiPtr.IntoRust(),
+        mUserAgent.IntoRust(),
+        aOutStatus
+      )
+    );
+  }
+
+  virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
+    mUniffiReturnValue.Lift(
+      aCx,
+      &aDest.Construct(),
+      aError
+    );
+  }
+};
+class ScaffoldingCallHandler55 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle83 mUniffiPtr{};
@@ -6949,7 +7041,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler53 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler56 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle83 mUniffiPtr{};
@@ -6992,7 +7084,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler54 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler57 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle83 mUniffiPtr{};
@@ -7029,7 +7121,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler55 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler58 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle83 mUniffiPtr{};
@@ -7058,7 +7150,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler56 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler59 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle83 mUniffiPtr{};
@@ -7095,7 +7187,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler57 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler60 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle83 mUniffiPtr{};
@@ -7136,7 +7228,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler58 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler61 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle83 mUniffiPtr{};
@@ -7171,7 +7263,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler59 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler62 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle83 mUniffiPtr{};
@@ -7200,7 +7292,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler60 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler63 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle83 mUniffiPtr{};
@@ -7237,7 +7329,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler61 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler64 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle83 mUniffiPtr{};
@@ -7266,7 +7358,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler62 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler65 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle83 mUniffiPtr{};
@@ -7295,7 +7387,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler63 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler66 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle84 mUniffiPtr{};
@@ -7338,7 +7430,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler64 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler67 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle84 mUniffiPtr{};
@@ -7381,7 +7473,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler65 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler68 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle84 mUniffiPtr{};
@@ -7418,7 +7510,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler66 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler69 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle84 mUniffiPtr{};
@@ -7447,7 +7539,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler67 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler70 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle84 mUniffiPtr{};
@@ -7484,7 +7576,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler68 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler71 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle84 mUniffiPtr{};
@@ -7525,7 +7617,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler69 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler72 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle84 mUniffiPtr{};
@@ -7560,7 +7652,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler70 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler73 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle84 mUniffiPtr{};
@@ -7589,7 +7681,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler71 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler74 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle84 mUniffiPtr{};
@@ -7626,7 +7718,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler72 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler75 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle84 mUniffiPtr{};
@@ -7655,7 +7747,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler73 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler76 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle84 mUniffiPtr{};
@@ -7684,7 +7776,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler74 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler77 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mDbpath{};
@@ -7727,7 +7819,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler75 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler78 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -7770,7 +7862,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler76 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler79 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -7813,7 +7905,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler77 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler80 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -7856,7 +7948,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler78 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler81 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -7899,7 +7991,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler79 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler82 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -7942,7 +8034,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler80 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler83 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -7985,7 +8077,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler81 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler84 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8028,7 +8120,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler82 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler85 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8071,7 +8163,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler83 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler86 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8114,7 +8206,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler84 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler87 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8151,7 +8243,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler85 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler88 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8188,7 +8280,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler86 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler89 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8225,7 +8317,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler87 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler90 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8262,7 +8354,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler88 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler91 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8299,7 +8391,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler89 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler92 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8342,7 +8434,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler90 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler93 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8371,7 +8463,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler91 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler94 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8400,7 +8492,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler92 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler95 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8443,7 +8535,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler93 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler96 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8486,7 +8578,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler94 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler97 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8529,7 +8621,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler95 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler98 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8566,7 +8658,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler96 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler99 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8603,7 +8695,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler97 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler100 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8640,7 +8732,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler98 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler101 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8683,7 +8775,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler99 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler102 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8726,7 +8818,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler100 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler103 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8763,7 +8855,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler101 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler104 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8792,7 +8884,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler102 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler105 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8821,7 +8913,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler103 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler106 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8850,7 +8942,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler104 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler107 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8887,7 +8979,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler105 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler108 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8916,7 +9008,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler106 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler109 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8951,7 +9043,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler107 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler110 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -8986,7 +9078,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler108 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler111 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -9021,7 +9113,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler109 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler112 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -9062,7 +9154,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler110 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler113 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -9097,7 +9189,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler111 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler114 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -9138,7 +9230,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler112 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler115 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -9173,7 +9265,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler113 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler116 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle56 mUniffiPtr{};
@@ -9214,13 +9306,13 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler114 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler117 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mDbPath{};
 
   
-  FfiValueObjectHandle842 mUniffiReturnValue{};
+  FfiValueObjectHandle845 mUniffiReturnValue{};
 
 public:
   void LowerRustArgs(const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs, ErrorResult& aError) override {
@@ -9235,7 +9327,7 @@ public:
   }
 
   void MakeRustCall(RustCallStatus* aOutStatus) override {
-    mUniffiReturnValue = FfiValueObjectHandle842::FromRust(
+    mUniffiReturnValue = FfiValueObjectHandle845::FromRust(
       uniffi_breach_alerts_fn_constructor_breachalertsstore_new_store(
         mDbPath.IntoRust(),
         aOutStatus
@@ -9251,10 +9343,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler115 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler118 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle842 mUniffiPtr{};
+  FfiValueObjectHandle845 mUniffiPtr{};
 
   
 
@@ -9280,10 +9372,10 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler116 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler119 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle842 mUniffiPtr{};
+  FfiValueObjectHandle845 mUniffiPtr{};
   FfiValueRustBuffer mBreachNames{};
 
   
@@ -9315,10 +9407,10 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler117 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler120 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle842 mUniffiPtr{};
+  FfiValueObjectHandle845 mUniffiPtr{};
 
   
 
@@ -9344,10 +9436,10 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler118 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler121 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle842 mUniffiPtr{};
+  FfiValueObjectHandle845 mUniffiPtr{};
   FfiValueRustBuffer mBreachNames{};
 
   
@@ -9387,10 +9479,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler119 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler122 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle842 mUniffiPtr{};
+  FfiValueObjectHandle845 mUniffiPtr{};
   FfiValueRustBuffer mDismissals{};
 
   
@@ -9422,7 +9514,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler120 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler123 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mInitContextId{};
@@ -9431,7 +9523,7 @@ private:
   FfiValueObjectHandle94 mCallback{};
 
   
-  FfiValueObjectHandle1051 mUniffiReturnValue{};
+  FfiValueObjectHandle1055 mUniffiReturnValue{};
 
 public:
   void LowerRustArgs(const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs, ErrorResult& aError) override {
@@ -9458,7 +9550,7 @@ public:
   }
 
   void MakeRustCall(RustCallStatus* aOutStatus) override {
-    mUniffiReturnValue = FfiValueObjectHandle1051::FromRust(
+    mUniffiReturnValue = FfiValueObjectHandle1055::FromRust(
       uniffi_context_id_fn_constructor_contextidcomponent_new(
         mInitContextId.IntoRust(),
         mCreationTimestampS.IntoRust(),
@@ -9477,10 +9569,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler121 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler124 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle1051 mUniffiPtr{};
+  FfiValueObjectHandle1055 mUniffiPtr{};
 
   
 
@@ -9506,10 +9598,10 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler122 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler125 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle1051 mUniffiPtr{};
+  FfiValueObjectHandle1055 mUniffiPtr{};
   FfiValueInt<uint8_t> mRotationDaysInS{};
 
   
@@ -9549,10 +9641,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler123 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler126 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle1051 mUniffiPtr{};
+  FfiValueObjectHandle1055 mUniffiPtr{};
 
   
 
@@ -9578,7 +9670,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler124 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler127 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle64 mUniffiPtr{};
@@ -9621,7 +9713,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler125 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler128 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle64 mUniffiPtr{};
@@ -9664,7 +9756,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler126 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler129 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle97 mUniffiPtr{};
@@ -9701,13 +9793,13 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler127 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler130 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle97 mKeyManager{};
 
   
-  FfiValueObjectHandle1259 mUniffiReturnValue{};
+  FfiValueObjectHandle1264 mUniffiReturnValue{};
 
 public:
   void LowerRustArgs(const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs, ErrorResult& aError) override {
@@ -9722,7 +9814,7 @@ public:
   }
 
   void MakeRustCall(RustCallStatus* aOutStatus) override {
-    mUniffiReturnValue = FfiValueObjectHandle1259::FromRust(
+    mUniffiReturnValue = FfiValueObjectHandle1264::FromRust(
       uniffi_db_crypto_fn_constructor_managedencryptordecryptor_new(
         mKeyManager.IntoRust(),
         aOutStatus
@@ -9738,14 +9830,14 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler128 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler131 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mKeyName{};
   FfiValueObjectHandle55 mPrimaryPasswordAuthenticator{};
 
   
-  FfiValueObjectHandle1260 mUniffiReturnValue{};
+  FfiValueObjectHandle1265 mUniffiReturnValue{};
 
 public:
   void LowerRustArgs(const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs, ErrorResult& aError) override {
@@ -9764,7 +9856,7 @@ public:
   }
 
   void MakeRustCall(RustCallStatus* aOutStatus) override {
-    mUniffiReturnValue = FfiValueObjectHandle1260::FromRust(
+    mUniffiReturnValue = FfiValueObjectHandle1265::FromRust(
       uniffi_db_crypto_fn_constructor_nsskeymanager_new(
         mKeyName.IntoRust(),
         mPrimaryPasswordAuthenticator.IntoRust(),
@@ -9781,10 +9873,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler129 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler132 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle1260 mUniffiPtr{};
+  FfiValueObjectHandle1265 mUniffiPtr{};
 
   
   FfiValueObjectHandle97 mUniffiReturnValue{};
@@ -9818,9 +9910,9 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler130 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler133 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler130() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler133() : UniffiAsyncCallHandler(
         ffi_db_crypto_rust_future_poll_rust_buffer,
         ffi_db_crypto_rust_future_free_rust_buffer
     ) { }
@@ -9859,9 +9951,9 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler131 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler134 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler131() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler134() : UniffiAsyncCallHandler(
         ffi_db_crypto_rust_future_poll_void,
         ffi_db_crypto_rust_future_free_void
     ) { }
@@ -9893,9 +9985,9 @@ public:
   void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler132 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler135 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler132() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler135() : UniffiAsyncCallHandler(
         ffi_db_crypto_rust_future_poll_void,
         ffi_db_crypto_rust_future_free_void
     ) { }
@@ -9927,13 +10019,13 @@ public:
   void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler133 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler136 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mKey{};
 
   
-  FfiValueObjectHandle1261 mUniffiReturnValue{};
+  FfiValueObjectHandle1266 mUniffiReturnValue{};
 
 public:
   void LowerRustArgs(const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs, ErrorResult& aError) override {
@@ -9948,7 +10040,7 @@ public:
   }
 
   void MakeRustCall(RustCallStatus* aOutStatus) override {
-    mUniffiReturnValue = FfiValueObjectHandle1261::FromRust(
+    mUniffiReturnValue = FfiValueObjectHandle1266::FromRust(
       uniffi_db_crypto_fn_constructor_statickeymanager_new(
         mKey.IntoRust(),
         aOutStatus
@@ -9964,19 +10056,19 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler134 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler137 : public UniffiSyncCallHandler {
 private:
   
 
   
-  FfiValueObjectHandle1679 mUniffiReturnValue{};
+  FfiValueObjectHandle1686 mUniffiReturnValue{};
 
 public:
   void LowerRustArgs(const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs, ErrorResult& aError) override {
   }
 
   void MakeRustCall(RustCallStatus* aOutStatus) override {
-    mUniffiReturnValue = FfiValueObjectHandle1679::FromRust(
+    mUniffiReturnValue = FfiValueObjectHandle1686::FromRust(
       uniffi_filter_adult_fn_constructor_filteradultcomponent_new(
         aOutStatus
       )
@@ -9991,10 +10083,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler135 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler138 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle1679 mUniffiPtr{};
+  FfiValueObjectHandle1686 mUniffiPtr{};
   FfiValueRustBuffer mBaseDomainToCheck{};
 
   
@@ -10034,7 +10126,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler136 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler139 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mBytes{};
@@ -10042,7 +10134,7 @@ private:
   FfiValueObjectHandle112 mCallback{};
 
   
-  FfiValueObjectHandle1881 mUniffiReturnValue{};
+  FfiValueObjectHandle1889 mUniffiReturnValue{};
 
 public:
   void LowerRustArgs(const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs, ErrorResult& aError) override {
@@ -10065,7 +10157,7 @@ public:
   }
 
   void MakeRustCall(RustCallStatus* aOutStatus) override {
-    mUniffiReturnValue = FfiValueObjectHandle1881::FromRust(
+    mUniffiReturnValue = FfiValueObjectHandle1889::FromRust(
       uniffi_fxcontainers_fn_constructor_containersstore_new(
         mBytes.IntoRust(),
         mDefaultIdentities.IntoRust(),
@@ -10083,10 +10175,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler137 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler140 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle1881 mUniffiPtr{};
+  FfiValueObjectHandle1889 mUniffiPtr{};
   FfiValueRustBuffer mName{};
   FfiValueRustBuffer mIcon{};
   FfiValueRustBuffer mColor{};
@@ -10138,10 +10230,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler138 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler141 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle1881 mUniffiPtr{};
+  FfiValueObjectHandle1889 mUniffiPtr{};
   FfiValueRustBuffer mPolicyId{};
 
   
@@ -10181,10 +10273,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler139 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler142 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle1881 mUniffiPtr{};
+  FfiValueObjectHandle1889 mUniffiPtr{};
   FfiValueRustBuffer mSite{};
 
   
@@ -10224,10 +10316,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler140 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler143 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle1881 mUniffiPtr{};
+  FfiValueObjectHandle1889 mUniffiPtr{};
   FfiValueRustBuffer mUserContextId{};
 
   
@@ -10267,10 +10359,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler141 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler144 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle1881 mUniffiPtr{};
+  FfiValueObjectHandle1889 mUniffiPtr{};
   FfiValueRustBuffer mUserContextIds{};
   FfiValueInt<int64_t> mPosition{};
 
@@ -10316,10 +10408,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler142 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler145 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle1881 mUniffiPtr{};
+  FfiValueObjectHandle1889 mUniffiPtr{};
 
   
   FfiValueRustBuffer mUniffiReturnValue{};
@@ -10353,10 +10445,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler143 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler146 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle1881 mUniffiPtr{};
+  FfiValueObjectHandle1889 mUniffiPtr{};
   FfiValueRustBuffer mPolicyId{};
 
   
@@ -10396,10 +10488,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler144 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler147 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle1881 mUniffiPtr{};
+  FfiValueObjectHandle1889 mUniffiPtr{};
   FfiValueRustBuffer mName{};
 
   
@@ -10439,10 +10531,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler145 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler148 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle1881 mUniffiPtr{};
+  FfiValueObjectHandle1889 mUniffiPtr{};
 
   
   FfiValueRustBuffer mUniffiReturnValue{};
@@ -10476,10 +10568,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler146 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler149 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle1881 mUniffiPtr{};
+  FfiValueObjectHandle1889 mUniffiPtr{};
 
   
   FfiValueRustBuffer mUniffiReturnValue{};
@@ -10513,10 +10605,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler147 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler150 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle1881 mUniffiPtr{};
+  FfiValueObjectHandle1889 mUniffiPtr{};
   FfiValueInt<uint32_t> mUserContextId{};
 
   
@@ -10556,10 +10648,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler148 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler151 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle1881 mUniffiPtr{};
+  FfiValueObjectHandle1889 mUniffiPtr{};
 
   
   FfiValueRustBuffer mUniffiReturnValue{};
@@ -10593,10 +10685,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler149 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler152 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle1881 mUniffiPtr{};
+  FfiValueObjectHandle1889 mUniffiPtr{};
   FfiValueInt<uint32_t> mUserContextId{};
 
   
@@ -10636,10 +10728,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler150 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler153 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle1881 mUniffiPtr{};
+  FfiValueObjectHandle1889 mUniffiPtr{};
   FfiValueInt<uint32_t> mUserContextId{};
 
   
@@ -10679,10 +10771,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler151 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler154 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle1881 mUniffiPtr{};
+  FfiValueObjectHandle1889 mUniffiPtr{};
   FfiValueRustBuffer mSite{};
 
   
@@ -10714,10 +10806,10 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler152 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler155 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle1881 mUniffiPtr{};
+  FfiValueObjectHandle1889 mUniffiPtr{};
 
   
   FfiValueRustBuffer mUniffiReturnValue{};
@@ -10751,10 +10843,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler153 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler156 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle1881 mUniffiPtr{};
+  FfiValueObjectHandle1889 mUniffiPtr{};
   FfiValueRustBuffer mSite{};
   FfiValueInt<uint32_t> mUserContextId{};
 
@@ -10792,10 +10884,10 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler154 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler157 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle1881 mUniffiPtr{};
+  FfiValueObjectHandle1889 mUniffiPtr{};
 
   
 
@@ -10821,10 +10913,10 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler155 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler158 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle1881 mUniffiPtr{};
+  FfiValueObjectHandle1889 mUniffiPtr{};
   FfiValueInt<uint32_t> mUserContextId{};
   FfiValueRustBuffer mName{};
   FfiValueRustBuffer mIcon{};
@@ -10882,7 +10974,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler156 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler159 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mPath{};
@@ -10925,7 +11017,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler157 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler160 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -10968,7 +11060,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler158 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler161 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11011,7 +11103,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler159 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler162 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11054,7 +11146,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler160 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler163 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11097,7 +11189,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler161 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler164 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11140,7 +11232,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler162 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler165 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11183,7 +11275,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler163 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler166 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11220,7 +11312,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler164 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler167 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11257,7 +11349,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler165 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler168 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11300,7 +11392,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler166 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler169 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11343,7 +11435,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler167 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler170 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11386,7 +11478,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler168 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler171 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11423,7 +11515,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler169 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler172 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11460,7 +11552,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler170 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler173 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11503,7 +11595,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler171 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler174 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11540,7 +11632,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler172 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler175 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11583,7 +11675,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler173 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler176 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11626,7 +11718,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler174 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler177 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11669,7 +11761,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler175 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler178 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11712,7 +11804,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler176 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler179 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11755,7 +11847,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler177 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler180 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11792,7 +11884,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler178 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler181 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11835,7 +11927,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler179 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler182 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11872,7 +11964,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler180 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler183 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11909,7 +12001,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler181 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler184 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11958,7 +12050,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler182 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler185 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -11993,7 +12085,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler183 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler186 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -12034,7 +12126,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler184 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler187 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -12069,7 +12161,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler185 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler188 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -12098,7 +12190,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler186 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler189 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -12127,7 +12219,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler187 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler190 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -12156,7 +12248,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler188 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler191 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -12191,7 +12283,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler189 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler192 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -12220,7 +12312,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler190 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler193 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -12255,7 +12347,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler191 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler194 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -12304,7 +12396,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler192 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler195 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -12333,7 +12425,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler193 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler196 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle122 mUniffiPtr{};
@@ -12362,7 +12454,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler194 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler197 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle132 mUniffiPtr{};
@@ -12405,7 +12497,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler195 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler198 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle132 mUniffiPtr{};
@@ -12448,7 +12540,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler196 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler199 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle132 mUniffiPtr{};
@@ -12485,7 +12577,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler197 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler200 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle132 mUniffiPtr{};
@@ -12514,7 +12606,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler198 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler201 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle132 mUniffiPtr{};
@@ -12543,7 +12635,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler199 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler202 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle132 mUniffiPtr{};
@@ -12580,7 +12672,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler200 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler203 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle132 mUniffiPtr{};
@@ -12621,7 +12713,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler201 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler204 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle132 mUniffiPtr{};
@@ -12656,7 +12748,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler202 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler205 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle132 mUniffiPtr{};
@@ -12685,7 +12777,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler203 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler206 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle132 mUniffiPtr{};
@@ -12722,7 +12814,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler204 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler207 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle132 mUniffiPtr{};
@@ -12751,7 +12843,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler205 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler208 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle132 mUniffiPtr{};
@@ -12780,14 +12872,14 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler206 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler209 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mDbPath{};
   FfiValueObjectHandle144 mRemoteSettings{};
 
   
-  FfiValueObjectHandle2495 mUniffiReturnValue{};
+  FfiValueObjectHandle2716 mUniffiReturnValue{};
 
 public:
   void LowerRustArgs(const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs, ErrorResult& aError) override {
@@ -12806,7 +12898,7 @@ public:
   }
 
   void MakeRustCall(RustCallStatus* aOutStatus) override {
-    mUniffiReturnValue = FfiValueObjectHandle2495::FromRust(
+    mUniffiReturnValue = FfiValueObjectHandle2716::FromRust(
       uniffi_relevancy_fn_constructor_relevancystore_new(
         mDbPath.IntoRust(),
         mRemoteSettings.IntoRust(),
@@ -12823,10 +12915,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler207 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler210 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle2495 mUniffiPtr{};
+  FfiValueObjectHandle2716 mUniffiPtr{};
   FfiValueRustBuffer mBandit{};
   FfiValueRustBuffer mArms{};
 
@@ -12864,10 +12956,10 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler208 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler211 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle2495 mUniffiPtr{};
+  FfiValueObjectHandle2716 mUniffiPtr{};
   FfiValueRustBuffer mBandit{};
   FfiValueRustBuffer mArms{};
 
@@ -12913,10 +13005,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler209 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler212 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle2495 mUniffiPtr{};
+  FfiValueObjectHandle2716 mUniffiPtr{};
   FfiValueRustBuffer mBandit{};
   FfiValueRustBuffer mArm{};
   FfiValueInt<int8_t> mSelected{};
@@ -12960,10 +13052,10 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler210 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler213 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle2495 mUniffiPtr{};
+  FfiValueObjectHandle2716 mUniffiPtr{};
 
   
 
@@ -12989,10 +13081,10 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler211 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler214 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle2495 mUniffiPtr{};
+  FfiValueObjectHandle2716 mUniffiPtr{};
 
   
 
@@ -13018,10 +13110,10 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler212 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler215 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle2495 mUniffiPtr{};
+  FfiValueObjectHandle2716 mUniffiPtr{};
   FfiValueRustBuffer mBandit{};
   FfiValueRustBuffer mArm{};
 
@@ -13067,10 +13159,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler213 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler216 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle2495 mUniffiPtr{};
+  FfiValueObjectHandle2716 mUniffiPtr{};
   FfiValueRustBuffer mTopUrlsByFrecency{};
 
   
@@ -13110,10 +13202,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler214 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler217 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle2495 mUniffiPtr{};
+  FfiValueObjectHandle2716 mUniffiPtr{};
 
   
 
@@ -13139,10 +13231,10 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler215 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler218 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle2495 mUniffiPtr{};
+  FfiValueObjectHandle2716 mUniffiPtr{};
 
   
   FfiValueRustBuffer mUniffiReturnValue{};
@@ -13176,7 +13268,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler216 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler219 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle162 mUniffiPtr{};
@@ -13213,7 +13305,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler217 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler220 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle162 mUniffiPtr{};
@@ -13256,7 +13348,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler218 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler221 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle162 mUniffiPtr{};
@@ -13293,7 +13385,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler219 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler222 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle162 mUniffiPtr{};
@@ -13336,7 +13428,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler220 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler223 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle162 mUniffiPtr{};
@@ -13379,7 +13471,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler221 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler224 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle162 mUniffiPtr{};
@@ -13408,7 +13500,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler222 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler225 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle162 mUniffiPtr{};
@@ -13437,7 +13529,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler223 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler226 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle162 mUniffiPtr{};
@@ -13466,7 +13558,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler224 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler227 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mStorageDir{};
@@ -13509,7 +13601,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler225 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler228 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle144 mUniffiPtr{};
@@ -13546,7 +13638,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler226 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler229 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle144 mUniffiPtr{};
@@ -13589,7 +13681,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler227 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler230 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle144 mUniffiPtr{};
@@ -13626,7 +13718,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler228 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler231 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle144 mUniffiPtr{};
@@ -13661,19 +13753,19 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler229 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler232 : public UniffiSyncCallHandler {
 private:
   
 
   
-  FfiValueObjectHandle2886 mUniffiReturnValue{};
+  FfiValueObjectHandle3109 mUniffiReturnValue{};
 
 public:
   void LowerRustArgs(const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs, ErrorResult& aError) override {
   }
 
   void MakeRustCall(RustCallStatus* aOutStatus) override {
-    mUniffiReturnValue = FfiValueObjectHandle2886::FromRust(
+    mUniffiReturnValue = FfiValueObjectHandle3109::FromRust(
       uniffi_search_fn_constructor_searchengineselector_new(
         aOutStatus
       )
@@ -13688,10 +13780,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler230 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler233 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle2886 mUniffiPtr{};
+  FfiValueObjectHandle3109 mUniffiPtr{};
   FfiValueRustBuffer mUserEnvironment{};
 
   
@@ -13731,10 +13823,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler231 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler234 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle2886 mUniffiPtr{};
+  FfiValueObjectHandle3109 mUniffiPtr{};
   FfiValueRustBuffer mUserEnvironment{};
 
   
@@ -13774,10 +13866,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler232 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler235 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle2886 mUniffiPtr{};
+  FfiValueObjectHandle3109 mUniffiPtr{};
   FfiValueRustBuffer mOverrides{};
 
   
@@ -13809,10 +13901,10 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler233 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler236 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle2886 mUniffiPtr{};
+  FfiValueObjectHandle3109 mUniffiPtr{};
   FfiValueRustBuffer mConfiguration{};
 
   
@@ -13844,10 +13936,10 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler234 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler237 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle2886 mUniffiPtr{};
+  FfiValueObjectHandle3109 mUniffiPtr{};
   FfiValueRustBuffer mConfiguration{};
 
   
@@ -13879,10 +13971,10 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler235 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler238 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle2886 mUniffiPtr{};
+  FfiValueObjectHandle3109 mUniffiPtr{};
   FfiValueObjectHandle144 mService{};
   FfiValueInt<int8_t> mApplyEngineOverrides{};
 
@@ -13920,10 +14012,10 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler236 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler239 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle2886 mUniffiPtr{};
+  FfiValueObjectHandle3109 mUniffiPtr{};
   FfiValueObjectHandle144 mService{};
 
   
@@ -13955,7 +14047,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler237 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler240 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mPath{};
@@ -13998,7 +14090,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler238 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler241 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle235 mUniffiPtr{};
@@ -14035,7 +14127,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler239 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler242 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle235 mUniffiPtr{};
@@ -14064,7 +14156,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler240 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler243 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle235 mUniffiPtr{};
@@ -14093,7 +14185,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler241 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler244 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle235 mUniffiPtr{};
@@ -14128,7 +14220,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler242 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler245 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle235 mUniffiPtr{};
@@ -14163,7 +14255,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler243 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler246 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle235 mUniffiPtr{};
@@ -14198,7 +14290,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler244 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler247 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle235 mUniffiPtr{};
@@ -14241,7 +14333,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler245 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler248 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle235 mUniffiPtr{};
@@ -14296,7 +14388,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler246 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler249 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle235 mUniffiPtr{};
@@ -14333,7 +14425,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler247 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler250 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle235 mUniffiPtr{};
@@ -14376,7 +14468,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler248 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler251 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle235 mUniffiPtr{};
@@ -14419,7 +14511,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler249 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler252 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle235 mUniffiPtr{};
@@ -14454,7 +14546,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler250 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler253 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle235 mUniffiPtr{};
@@ -14497,7 +14589,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler251 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler254 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle235 mUniffiPtr{};
@@ -14540,7 +14632,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler252 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler255 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle235 mUniffiPtr{};
@@ -14583,7 +14675,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler253 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler256 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle235 mUniffiPtr{};
@@ -14626,7 +14718,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler254 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler257 : public UniffiSyncCallHandler {
 private:
   
 
@@ -14653,7 +14745,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler255 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler258 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle236 mUniffiPtr{};
@@ -14690,7 +14782,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler256 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler259 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle236 mUniffiPtr{};
@@ -14733,7 +14825,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler257 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler260 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle236 mUniffiPtr{};
@@ -14776,7 +14868,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler258 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler261 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle236 mUniffiPtr{};
@@ -14825,7 +14917,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler259 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler262 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle236 mUniffiPtr{};
@@ -14868,7 +14960,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler260 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler263 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle236 mUniffiPtr{};
@@ -14911,7 +15003,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler261 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler264 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle236 mUniffiPtr{};
@@ -14954,7 +15046,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler262 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler265 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle254 mUniffiPtr{};
@@ -15003,7 +15095,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler263 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler266 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle254 mUniffiPtr{};
@@ -15058,7 +15150,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler264 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler267 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle254 mUniffiPtr{};
@@ -15095,7 +15187,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler265 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler268 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle254 mUniffiPtr{};
@@ -15144,7 +15236,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler266 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler269 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle254 mUniffiPtr{};
@@ -15187,7 +15279,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler267 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler270 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle251 mUniffiPtr{};
@@ -15230,7 +15322,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler268 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler271 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle251 mUniffiPtr{};
@@ -15273,7 +15365,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler269 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler272 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle251 mUniffiPtr{};
@@ -15310,7 +15402,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler270 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler273 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle251 mUniffiPtr{};
@@ -15339,7 +15431,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler271 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler274 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle251 mUniffiPtr{};
@@ -15368,7 +15460,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler272 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler275 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle251 mUniffiPtr{};
@@ -15405,7 +15497,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler273 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler276 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle251 mUniffiPtr{};
@@ -15440,7 +15532,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler274 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler277 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle251 mUniffiPtr{};
@@ -15481,7 +15573,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler275 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler278 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle251 mUniffiPtr{};
@@ -15516,7 +15608,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler276 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler279 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle251 mUniffiPtr{};
@@ -15545,7 +15637,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler277 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler280 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle251 mUniffiPtr{};
@@ -15582,7 +15674,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler278 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler281 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle251 mUniffiPtr{};
@@ -15611,7 +15703,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler279 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler282 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle251 mUniffiPtr{};
@@ -15640,13 +15732,13 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler280 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler283 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mPath{};
 
   
-  FfiValueObjectHandle3482 mUniffiReturnValue{};
+  FfiValueObjectHandle3708 mUniffiReturnValue{};
 
 public:
   void LowerRustArgs(const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs, ErrorResult& aError) override {
@@ -15661,7 +15753,7 @@ public:
   }
 
   void MakeRustCall(RustCallStatus* aOutStatus) override {
-    mUniffiReturnValue = FfiValueObjectHandle3482::FromRust(
+    mUniffiReturnValue = FfiValueObjectHandle3708::FromRust(
       uniffi_tabs_fn_constructor_tabsstore_new(
         mPath.IntoRust(),
         aOutStatus
@@ -15677,10 +15769,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler281 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler284 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle3482 mUniffiPtr{};
+  FfiValueObjectHandle3708 mUniffiPtr{};
 
   
   FfiValueObjectHandle251 mUniffiReturnValue{};
@@ -15714,10 +15806,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler282 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler285 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle3482 mUniffiPtr{};
+  FfiValueObjectHandle3708 mUniffiPtr{};
 
   
 
@@ -15743,10 +15835,10 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler283 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler286 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle3482 mUniffiPtr{};
+  FfiValueObjectHandle3708 mUniffiPtr{};
 
   
   FfiValueRustBuffer mUniffiReturnValue{};
@@ -15780,10 +15872,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler284 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler287 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle3482 mUniffiPtr{};
+  FfiValueObjectHandle3708 mUniffiPtr{};
 
   
   FfiValueObjectHandle254 mUniffiReturnValue{};
@@ -15817,10 +15909,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler285 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler288 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle3482 mUniffiPtr{};
+  FfiValueObjectHandle3708 mUniffiPtr{};
 
   
 
@@ -15846,10 +15938,10 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler286 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler289 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle3482 mUniffiPtr{};
+  FfiValueObjectHandle3708 mUniffiPtr{};
   FfiValueRustBuffer mRemoteTabs{};
 
   
@@ -15881,10 +15973,10 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler287 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler290 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle3482 mUniffiPtr{};
+  FfiValueObjectHandle3708 mUniffiPtr{};
   FfiValueRustBuffer mInfo{};
 
   
@@ -15916,9 +16008,9 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler288 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler291 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler288() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler291() : UniffiAsyncCallHandler(
         ffi_viaduct_rust_future_poll_rust_buffer,
         ffi_viaduct_rust_future_free_rust_buffer
     ) { }
@@ -15969,7 +16061,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler289 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler292 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle280 mUniffiPtr{};
@@ -16012,7 +16104,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler290 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler293 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle280 mUniffiPtr{};
@@ -16055,7 +16147,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler291 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler294 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle280 mUniffiPtr{};
@@ -16092,7 +16184,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler292 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler295 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle280 mUniffiPtr{};
@@ -16121,7 +16213,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler293 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler296 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle280 mUniffiPtr{};
@@ -16150,7 +16242,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler294 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler297 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle280 mUniffiPtr{};
@@ -16187,7 +16279,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler295 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler298 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle280 mUniffiPtr{};
@@ -16228,7 +16320,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler296 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler299 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle280 mUniffiPtr{};
@@ -16263,7 +16355,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler297 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler300 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle280 mUniffiPtr{};
@@ -16292,7 +16384,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler298 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler301 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle280 mUniffiPtr{};
@@ -16329,7 +16421,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler299 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler302 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle280 mUniffiPtr{};
@@ -16358,7 +16450,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler300 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler303 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle280 mUniffiPtr{};
@@ -16387,13 +16479,13 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler301 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler304 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mPath{};
 
   
-  FfiValueObjectHandle4089 mUniffiReturnValue{};
+  FfiValueObjectHandle4318 mUniffiReturnValue{};
 
 public:
   void LowerRustArgs(const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs, ErrorResult& aError) override {
@@ -16408,7 +16500,7 @@ public:
   }
 
   void MakeRustCall(RustCallStatus* aOutStatus) override {
-    mUniffiReturnValue = FfiValueObjectHandle4089::FromRust(
+    mUniffiReturnValue = FfiValueObjectHandle4318::FromRust(
       uniffi_webext_storage_fn_constructor_webextstoragestore_new(
         mPath.IntoRust(),
         aOutStatus
@@ -16424,10 +16516,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler302 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler305 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle4089 mUniffiPtr{};
+  FfiValueObjectHandle4318 mUniffiPtr{};
 
   
   FfiValueObjectHandle280 mUniffiReturnValue{};
@@ -16461,10 +16553,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler303 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler306 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle4089 mUniffiPtr{};
+  FfiValueObjectHandle4318 mUniffiPtr{};
   FfiValueRustBuffer mExtId{};
 
   
@@ -16504,10 +16596,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler304 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler307 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle4089 mUniffiPtr{};
+  FfiValueObjectHandle4318 mUniffiPtr{};
 
   
 
@@ -16533,10 +16625,10 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler305 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler308 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle4089 mUniffiPtr{};
+  FfiValueObjectHandle4318 mUniffiPtr{};
   FfiValueRustBuffer mExtId{};
   FfiValueRustBuffer mKeys{};
 
@@ -16582,10 +16674,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler306 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler309 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle4089 mUniffiPtr{};
+  FfiValueObjectHandle4318 mUniffiPtr{};
   FfiValueRustBuffer mExtId{};
   FfiValueRustBuffer mKeys{};
 
@@ -16631,10 +16723,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler307 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler310 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle4089 mUniffiPtr{};
+  FfiValueObjectHandle4318 mUniffiPtr{};
   FfiValueRustBuffer mExtId{};
 
   
@@ -16674,10 +16766,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler308 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler311 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle4089 mUniffiPtr{};
+  FfiValueObjectHandle4318 mUniffiPtr{};
 
   
   FfiValueRustBuffer mUniffiReturnValue{};
@@ -16711,10 +16803,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler309 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler312 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle4089 mUniffiPtr{};
+  FfiValueObjectHandle4318 mUniffiPtr{};
   FfiValueRustBuffer mExtId{};
   FfiValueRustBuffer mKeys{};
 
@@ -16760,10 +16852,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler310 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler313 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle4089 mUniffiPtr{};
+  FfiValueObjectHandle4318 mUniffiPtr{};
   FfiValueRustBuffer mExtId{};
   FfiValueRustBuffer mVal{};
 
@@ -16811,9 +16903,9 @@ public:
 };
 
 #ifdef MOZ_UNIFFI_FIXTURES
-class ScaffoldingCallHandler320 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler323 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler320() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler323() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_f32,
         ffi_uniffi_bindings_tests_rust_future_free_f32
     ) { }
@@ -16852,9 +16944,9 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler321 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler324 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler321() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler324() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_f64,
         ffi_uniffi_bindings_tests_rust_future_free_f64
     ) { }
@@ -16893,9 +16985,9 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler322 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler325 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler322() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler325() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_i16,
         ffi_uniffi_bindings_tests_rust_future_free_i16
     ) { }
@@ -16934,9 +17026,9 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler323 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler326 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler323() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler326() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_i32,
         ffi_uniffi_bindings_tests_rust_future_free_i32
     ) { }
@@ -16975,9 +17067,9 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler324 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler327 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler324() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler327() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_i64,
         ffi_uniffi_bindings_tests_rust_future_free_i64
     ) { }
@@ -17016,9 +17108,9 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler325 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler328 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler325() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler328() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_i8,
         ffi_uniffi_bindings_tests_rust_future_free_i8
     ) { }
@@ -17057,9 +17149,9 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler326 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler329 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler326() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler329() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_rust_buffer,
         ffi_uniffi_bindings_tests_rust_future_free_rust_buffer
     ) { }
@@ -17098,9 +17190,9 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler327 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler330 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler327() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler330() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_u64,
         ffi_uniffi_bindings_tests_rust_future_free_u64
     ) { }
@@ -17139,9 +17231,9 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler328 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler331 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler328() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler331() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_rust_buffer,
         ffi_uniffi_bindings_tests_rust_future_free_rust_buffer
     ) { }
@@ -17180,9 +17272,9 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler329 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler332 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler329() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler332() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_u16,
         ffi_uniffi_bindings_tests_rust_future_free_u16
     ) { }
@@ -17221,9 +17313,9 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler330 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler333 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler330() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler333() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_u32,
         ffi_uniffi_bindings_tests_rust_future_free_u32
     ) { }
@@ -17262,9 +17354,9 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler331 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler334 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler331() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler334() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_u64,
         ffi_uniffi_bindings_tests_rust_future_free_u64
     ) { }
@@ -17303,9 +17395,9 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler332 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler335 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler332() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler335() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_u8,
         ffi_uniffi_bindings_tests_rust_future_free_u8
     ) { }
@@ -17344,9 +17436,9 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler333 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler336 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler333() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler336() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_rust_buffer,
         ffi_uniffi_bindings_tests_rust_future_free_rust_buffer
     ) { }
@@ -17385,9 +17477,9 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler334 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler337 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler334() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler337() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_void,
         ffi_uniffi_bindings_tests_rust_future_free_void
     ) { }
@@ -17413,7 +17505,7 @@ public:
   void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler335 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler338 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle286 mInt{};
@@ -17450,7 +17542,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler336 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler339 : public UniffiSyncCallHandler {
 private:
   
   FfiValueInt<uint32_t> mValue{};
@@ -17487,7 +17579,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler337 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler340 : public UniffiSyncCallHandler {
 private:
   
   FfiValueInt<uint32_t> mValue{};
@@ -17524,7 +17616,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler338 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler341 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mArg{};
@@ -17561,7 +17653,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler339 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler342 : public UniffiSyncCallHandler {
 private:
   
   FfiValueInt<uint32_t> mInput{};
@@ -17590,7 +17682,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler340 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler343 : public UniffiSyncCallHandler {
 private:
   
   FfiValueInt<uint32_t> mInput{};
@@ -17619,7 +17711,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler341 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler344 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mTheArgument{};
@@ -17656,7 +17748,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler342 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler345 : public UniffiSyncCallHandler {
 private:
   
 
@@ -17683,9 +17775,9 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler343 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler346 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler343() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler346() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_u32,
         ffi_uniffi_bindings_tests_rust_future_free_u32
     ) { }
@@ -17724,9 +17816,9 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler344 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler347 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler344() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler347() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_void,
         ffi_uniffi_bindings_tests_rust_future_free_void
     ) { }
@@ -17758,9 +17850,9 @@ public:
   void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler345 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler348 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler345() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler348() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_void,
         ffi_uniffi_bindings_tests_rust_future_free_void
     ) { }
@@ -17798,9 +17890,9 @@ public:
   void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler346 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler349 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler346() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler349() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_rust_buffer,
         ffi_uniffi_bindings_tests_rust_future_free_rust_buffer
     ) { }
@@ -17845,9 +17937,9 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler347 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler350 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler347() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler350() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_u32,
         ffi_uniffi_bindings_tests_rust_future_free_u32
     ) { }
@@ -17886,9 +17978,9 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler348 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler351 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler348() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler351() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_void,
         ffi_uniffi_bindings_tests_rust_future_free_void
     ) { }
@@ -17920,9 +18012,9 @@ public:
   void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler349 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler352 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler349() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler352() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_void,
         ffi_uniffi_bindings_tests_rust_future_free_void
     ) { }
@@ -17960,9 +18052,9 @@ public:
   void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler350 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler353 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler350() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler353() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_rust_buffer,
         ffi_uniffi_bindings_tests_rust_future_free_rust_buffer
     ) { }
@@ -18007,7 +18099,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler351 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler354 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle293 mCbi{};
@@ -18044,7 +18136,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler352 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler355 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle293 mCbi{};
@@ -18073,7 +18165,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler353 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler356 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle293 mCbi{};
@@ -18108,7 +18200,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler354 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler357 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle293 mCbi{};
@@ -18151,7 +18243,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler355 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler358 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle288 mInt{};
@@ -18188,7 +18280,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler356 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler359 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle288 mInt{};
@@ -18217,7 +18309,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler357 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler360 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle288 mInt{};
@@ -18252,7 +18344,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler358 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler361 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle288 mInt{};
@@ -18295,7 +18387,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler359 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler362 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle287 mInt{};
@@ -18332,7 +18424,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler360 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler363 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mIntList{};
@@ -18369,7 +18461,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler361 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler364 : public UniffiSyncCallHandler {
 private:
   
   FfiValueInt<int8_t> mA{};
@@ -18406,7 +18498,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler362 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler365 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mA{};
@@ -18443,7 +18535,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler363 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler366 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mEn{};
@@ -18480,7 +18572,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler364 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler367 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mRec{};
@@ -18517,7 +18609,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler365 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler368 : public UniffiSyncCallHandler {
 private:
   
   FfiValueInt<uint64_t> mHandle{};
@@ -18554,7 +18646,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler366 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler369 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mEn{};
@@ -18591,7 +18683,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler367 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler370 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mEn{};
@@ -18628,7 +18720,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler368 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler371 : public UniffiSyncCallHandler {
 private:
   
   FfiValueFloat<float> mA{};
@@ -18665,7 +18757,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler369 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler372 : public UniffiSyncCallHandler {
 private:
   
   FfiValueFloat<double> mA{};
@@ -18702,7 +18794,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler370 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler373 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mA{};
@@ -18739,7 +18831,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler371 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler374 : public UniffiSyncCallHandler {
 private:
   
   FfiValueInt<int16_t> mA{};
@@ -18776,7 +18868,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler372 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler375 : public UniffiSyncCallHandler {
 private:
   
   FfiValueInt<int32_t> mA{};
@@ -18813,7 +18905,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler373 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler376 : public UniffiSyncCallHandler {
 private:
   
   FfiValueInt<int64_t> mA{};
@@ -18850,7 +18942,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler374 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler377 : public UniffiSyncCallHandler {
 private:
   
   FfiValueInt<int8_t> mA{};
@@ -18887,7 +18979,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler375 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler378 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mA{};
@@ -18924,7 +19016,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler376 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler379 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mRec{};
@@ -18961,7 +19053,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler377 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler380 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mA{};
@@ -18998,7 +19090,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler378 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler381 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle288 mInt{};
@@ -19035,7 +19127,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler379 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler382 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mIntList{};
@@ -19072,7 +19164,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler380 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler383 : public UniffiSyncCallHandler {
 private:
   
   FfiValueInt<int64_t> mTime{};
@@ -19109,7 +19201,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler381 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler384 : public UniffiSyncCallHandler {
 private:
   
   FfiValueFloat<double> mTime{};
@@ -19146,7 +19238,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler382 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler385 : public UniffiSyncCallHandler {
 private:
   
   FfiValueFloat<float> mTime{};
@@ -19183,7 +19275,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler383 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler386 : public UniffiSyncCallHandler {
 private:
   
   FfiValueInt<uint16_t> mA{};
@@ -19220,7 +19312,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler384 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler387 : public UniffiSyncCallHandler {
 private:
   
   FfiValueInt<uint32_t> mA{};
@@ -19257,7 +19349,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler385 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler388 : public UniffiSyncCallHandler {
 private:
   
   FfiValueInt<uint64_t> mA{};
@@ -19294,7 +19386,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler386 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler389 : public UniffiSyncCallHandler {
 private:
   
   FfiValueInt<uint8_t> mA{};
@@ -19331,7 +19423,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler387 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler390 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mUrl{};
@@ -19368,7 +19460,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler388 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler391 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mA{};
@@ -19405,7 +19497,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler389 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler392 : public UniffiSyncCallHandler {
 private:
   
   FfiValueInt<uint8_t> mA{};
@@ -19502,7 +19594,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler390 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler393 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mInterfaces{};
@@ -19539,7 +19631,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler391 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler394 : public UniffiSyncCallHandler {
 private:
   
 
@@ -19558,7 +19650,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler392 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler395 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle309 mCb{};
@@ -19595,7 +19687,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler393 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler396 : public UniffiSyncCallHandler {
 private:
   
   FfiValueInt<uint64_t> mCustom{};
@@ -19632,7 +19724,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler394 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler397 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mEn{};
@@ -19669,7 +19761,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler395 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler398 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle286 mInt{};
@@ -19706,7 +19798,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler396 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler399 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mRec{};
@@ -19743,7 +19835,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler397 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler400 : public UniffiSyncCallHandler {
 private:
   
   FfiValueRustBuffer mName{};
@@ -19780,9 +19872,9 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler398 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler401 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler398() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler401() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_rust_buffer,
         ffi_uniffi_bindings_tests_rust_future_free_rust_buffer
     ) { }
@@ -19821,9 +19913,9 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler399 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler402 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler399() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler402() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_void,
         ffi_uniffi_bindings_tests_rust_future_free_void
     ) { }
@@ -19855,9 +19947,9 @@ public:
   void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler400 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler403 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler400() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler403() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_u32,
         ffi_uniffi_bindings_tests_rust_future_free_u32
     ) { }
@@ -19896,9 +19988,9 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler401 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler404 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler401() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler404() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_void,
         ffi_uniffi_bindings_tests_rust_future_free_void
     ) { }
@@ -19936,9 +20028,9 @@ public:
   void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler402 : public UniffiAsyncCallHandler {
+class ScaffoldingCallHandler405 : public UniffiAsyncCallHandler {
 public:
-  ScaffoldingCallHandler402() : UniffiAsyncCallHandler(
+  ScaffoldingCallHandler405() : UniffiAsyncCallHandler(
         ffi_uniffi_bindings_tests_rust_future_poll_rust_buffer,
         ffi_uniffi_bindings_tests_rust_future_free_rust_buffer
     ) { }
@@ -19983,19 +20075,19 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler403 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler406 : public UniffiSyncCallHandler {
 private:
   
 
   
-  FfiValueObjectHandle4288 mUniffiReturnValue{};
+  FfiValueObjectHandle4518 mUniffiReturnValue{};
 
 public:
   void LowerRustArgs(const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs, ErrorResult& aError) override {
   }
 
   void MakeRustCall(RustCallStatus* aOutStatus) override {
-    mUniffiReturnValue = FfiValueObjectHandle4288::FromRust(
+    mUniffiReturnValue = FfiValueObjectHandle4518::FromRust(
       uniffi_uniffi_bindings_tests_fn_constructor_complexmethods_new(
         aOutStatus
       )
@@ -20010,10 +20102,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler404 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler407 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle4288 mUniffiPtr{};
+  FfiValueObjectHandle4518 mUniffiPtr{};
   FfiValueRustBuffer mArg{};
 
   
@@ -20053,10 +20145,10 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler405 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler408 : public UniffiSyncCallHandler {
 private:
   
-  FfiValueObjectHandle4288 mUniffiPtr{};
+  FfiValueObjectHandle4518 mUniffiPtr{};
   FfiValueRustBuffer mTheArgument{};
 
   
@@ -20096,7 +20188,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler406 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler409 : public UniffiSyncCallHandler {
 private:
   
   FfiValueInt<uint32_t> mValue{};
@@ -20133,7 +20225,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler407 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler410 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle286 mUniffiPtr{};
@@ -20170,7 +20262,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler408 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler411 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle286 mUniffiPtr{};
@@ -20207,7 +20299,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler409 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler412 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle288 mUniffiPtr{};
@@ -20236,7 +20328,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler410 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler413 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle288 mUniffiPtr{};
@@ -20273,7 +20365,7 @@ public:
     );
   }
 };
-class ScaffoldingCallHandler411 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler414 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle288 mUniffiPtr{};
@@ -20308,7 +20400,7 @@ public:
   virtual void LiftSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
   }
 };
-class ScaffoldingCallHandler412 : public UniffiSyncCallHandler {
+class ScaffoldingCallHandler415 : public UniffiSyncCallHandler {
 private:
   
   FfiValueObjectHandle288 mUniffiPtr{};
@@ -20464,11 +20556,11 @@ UniquePtr<UniffiSyncCallHandler> GetSyncCallHandler(uint64_t aId) {
     case 35: {
       return std::make_unique<ScaffoldingCallHandler35>();
     }
+    case 36: {
+      return std::make_unique<ScaffoldingCallHandler36>();
+    }
     case 37: {
       return std::make_unique<ScaffoldingCallHandler37>();
-    }
-    case 38: {
-      return std::make_unique<ScaffoldingCallHandler38>();
     }
     case 39: {
       return std::make_unique<ScaffoldingCallHandler39>();
@@ -20743,14 +20835,14 @@ UniquePtr<UniffiSyncCallHandler> GetSyncCallHandler(uint64_t aId) {
     case 129: {
       return std::make_unique<ScaffoldingCallHandler129>();
     }
-    case 133: {
-      return std::make_unique<ScaffoldingCallHandler133>();
+    case 130: {
+      return std::make_unique<ScaffoldingCallHandler130>();
     }
-    case 134: {
-      return std::make_unique<ScaffoldingCallHandler134>();
+    case 131: {
+      return std::make_unique<ScaffoldingCallHandler131>();
     }
-    case 135: {
-      return std::make_unique<ScaffoldingCallHandler135>();
+    case 132: {
+      return std::make_unique<ScaffoldingCallHandler132>();
     }
     case 136: {
       return std::make_unique<ScaffoldingCallHandler136>();
@@ -21208,14 +21300,14 @@ UniquePtr<UniffiSyncCallHandler> GetSyncCallHandler(uint64_t aId) {
     case 287: {
       return std::make_unique<ScaffoldingCallHandler287>();
     }
+    case 288: {
+      return std::make_unique<ScaffoldingCallHandler288>();
+    }
     case 289: {
       return std::make_unique<ScaffoldingCallHandler289>();
     }
     case 290: {
       return std::make_unique<ScaffoldingCallHandler290>();
-    }
-    case 291: {
-      return std::make_unique<ScaffoldingCallHandler291>();
     }
     case 292: {
       return std::make_unique<ScaffoldingCallHandler292>();
@@ -21274,17 +21366,17 @@ UniquePtr<UniffiSyncCallHandler> GetSyncCallHandler(uint64_t aId) {
     case 310: {
       return std::make_unique<ScaffoldingCallHandler310>();
     }
+    case 311: {
+      return std::make_unique<ScaffoldingCallHandler311>();
+    }
+    case 312: {
+      return std::make_unique<ScaffoldingCallHandler312>();
+    }
+    case 313: {
+      return std::make_unique<ScaffoldingCallHandler313>();
+    }
 
 #ifdef MOZ_UNIFFI_FIXTURES
-    case 335: {
-      return std::make_unique<ScaffoldingCallHandler335>();
-    }
-    case 336: {
-      return std::make_unique<ScaffoldingCallHandler336>();
-    }
-    case 337: {
-      return std::make_unique<ScaffoldingCallHandler337>();
-    }
     case 338: {
       return std::make_unique<ScaffoldingCallHandler338>();
     }
@@ -21300,14 +21392,14 @@ UniquePtr<UniffiSyncCallHandler> GetSyncCallHandler(uint64_t aId) {
     case 342: {
       return std::make_unique<ScaffoldingCallHandler342>();
     }
-    case 351: {
-      return std::make_unique<ScaffoldingCallHandler351>();
+    case 343: {
+      return std::make_unique<ScaffoldingCallHandler343>();
     }
-    case 352: {
-      return std::make_unique<ScaffoldingCallHandler352>();
+    case 344: {
+      return std::make_unique<ScaffoldingCallHandler344>();
     }
-    case 353: {
-      return std::make_unique<ScaffoldingCallHandler353>();
+    case 345: {
+      return std::make_unique<ScaffoldingCallHandler345>();
     }
     case 354: {
       return std::make_unique<ScaffoldingCallHandler354>();
@@ -21441,14 +21533,14 @@ UniquePtr<UniffiSyncCallHandler> GetSyncCallHandler(uint64_t aId) {
     case 397: {
       return std::make_unique<ScaffoldingCallHandler397>();
     }
-    case 403: {
-      return std::make_unique<ScaffoldingCallHandler403>();
+    case 398: {
+      return std::make_unique<ScaffoldingCallHandler398>();
     }
-    case 404: {
-      return std::make_unique<ScaffoldingCallHandler404>();
+    case 399: {
+      return std::make_unique<ScaffoldingCallHandler399>();
     }
-    case 405: {
-      return std::make_unique<ScaffoldingCallHandler405>();
+    case 400: {
+      return std::make_unique<ScaffoldingCallHandler400>();
     }
     case 406: {
       return std::make_unique<ScaffoldingCallHandler406>();
@@ -21471,6 +21563,15 @@ UniquePtr<UniffiSyncCallHandler> GetSyncCallHandler(uint64_t aId) {
     case 412: {
       return std::make_unique<ScaffoldingCallHandler412>();
     }
+    case 413: {
+      return std::make_unique<ScaffoldingCallHandler413>();
+    }
+    case 414: {
+      return std::make_unique<ScaffoldingCallHandler414>();
+    }
+    case 415: {
+      return std::make_unique<ScaffoldingCallHandler415>();
+    }
 #endif 
 
     default:
@@ -21481,32 +21582,23 @@ UniquePtr<UniffiSyncCallHandler> GetSyncCallHandler(uint64_t aId) {
 UniquePtr<UniffiAsyncCallHandler> GetAsyncCallHandler(uint64_t aId) {
   switch (aId) {
 
-    case 36: {
-      return std::make_unique<ScaffoldingCallHandler36>();
+    case 38: {
+      return std::make_unique<ScaffoldingCallHandler38>();
     }
-    case 130: {
-      return std::make_unique<ScaffoldingCallHandler130>();
+    case 133: {
+      return std::make_unique<ScaffoldingCallHandler133>();
     }
-    case 131: {
-      return std::make_unique<ScaffoldingCallHandler131>();
+    case 134: {
+      return std::make_unique<ScaffoldingCallHandler134>();
     }
-    case 132: {
-      return std::make_unique<ScaffoldingCallHandler132>();
+    case 135: {
+      return std::make_unique<ScaffoldingCallHandler135>();
     }
-    case 288: {
-      return std::make_unique<ScaffoldingCallHandler288>();
+    case 291: {
+      return std::make_unique<ScaffoldingCallHandler291>();
     }
 
 #ifdef MOZ_UNIFFI_FIXTURES
-    case 320: {
-      return std::make_unique<ScaffoldingCallHandler320>();
-    }
-    case 321: {
-      return std::make_unique<ScaffoldingCallHandler321>();
-    }
-    case 322: {
-      return std::make_unique<ScaffoldingCallHandler322>();
-    }
     case 323: {
       return std::make_unique<ScaffoldingCallHandler323>();
     }
@@ -21543,14 +21635,14 @@ UniquePtr<UniffiAsyncCallHandler> GetAsyncCallHandler(uint64_t aId) {
     case 334: {
       return std::make_unique<ScaffoldingCallHandler334>();
     }
-    case 343: {
-      return std::make_unique<ScaffoldingCallHandler343>();
+    case 335: {
+      return std::make_unique<ScaffoldingCallHandler335>();
     }
-    case 344: {
-      return std::make_unique<ScaffoldingCallHandler344>();
+    case 336: {
+      return std::make_unique<ScaffoldingCallHandler336>();
     }
-    case 345: {
-      return std::make_unique<ScaffoldingCallHandler345>();
+    case 337: {
+      return std::make_unique<ScaffoldingCallHandler337>();
     }
     case 346: {
       return std::make_unique<ScaffoldingCallHandler346>();
@@ -21567,20 +21659,29 @@ UniquePtr<UniffiAsyncCallHandler> GetAsyncCallHandler(uint64_t aId) {
     case 350: {
       return std::make_unique<ScaffoldingCallHandler350>();
     }
-    case 398: {
-      return std::make_unique<ScaffoldingCallHandler398>();
+    case 351: {
+      return std::make_unique<ScaffoldingCallHandler351>();
     }
-    case 399: {
-      return std::make_unique<ScaffoldingCallHandler399>();
+    case 352: {
+      return std::make_unique<ScaffoldingCallHandler352>();
     }
-    case 400: {
-      return std::make_unique<ScaffoldingCallHandler400>();
+    case 353: {
+      return std::make_unique<ScaffoldingCallHandler353>();
     }
     case 401: {
       return std::make_unique<ScaffoldingCallHandler401>();
     }
     case 402: {
       return std::make_unique<ScaffoldingCallHandler402>();
+    }
+    case 403: {
+      return std::make_unique<ScaffoldingCallHandler403>();
+    }
+    case 404: {
+      return std::make_unique<ScaffoldingCallHandler404>();
+    }
+    case 405: {
+      return std::make_unique<ScaffoldingCallHandler405>();
     }
 #endif 
 

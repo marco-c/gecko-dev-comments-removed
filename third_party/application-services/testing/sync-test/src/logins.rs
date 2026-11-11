@@ -181,8 +181,7 @@ fn test_login_general(c0: &mut TestClient, c1: &mut TestClient) {
 
     assert_eq!(
         c0.logins_store.get(&l0id).unwrap().unwrap().times_used,
-        5, // initially 1, touched twice, updated twice (on two accounts!
-        // doing this right requires 3WM)
+        3, // initially 1, touched twice - updates don't count as a use.
         "Times used is wrong (final)"
     );
 }
@@ -264,8 +263,8 @@ fn test_login_deletes(c0: &mut TestClient, c1: &mut TestClient) {
     verify_login(&c1.logins_store, &login3);
 
     
-    
 
+    
     
     
     
@@ -273,13 +272,13 @@ fn test_login_deletes(c0: &mut TestClient, c1: &mut TestClient) {
 
     
     log::info!("Deleting {} from c1", l0id);
-    assert!(c1.logins_store.delete(&l0id).expect("Delete should work"));
+    c1.logins_store.delete(&l0id).expect("Delete should work");
     verify_missing_login(&c1.logins_store, &l0id);
 
     
     log::info!("Deleting {} from both", l1id);
-    assert!(c0.logins_store.delete(&l1id).expect("Delete should work"));
-    assert!(c1.logins_store.delete(&l1id).expect("Delete should work"));
+    c0.logins_store.delete(&l1id).expect("Delete should work");
+    c1.logins_store.delete(&l1id).expect("Delete should work");
 
     
     log::info!("Updating {} on c0", l2id);
@@ -289,7 +288,7 @@ fn test_login_deletes(c0: &mut TestClient, c1: &mut TestClient) {
     .unwrap();
 
     
-    assert!(c1.logins_store.delete(&l3id).expect("Delete should work"));
+    c1.logins_store.delete(&l3id).expect("Delete should work");
 
     
     log::info!("Syncing c1");
@@ -321,19 +320,20 @@ fn test_login_deletes(c0: &mut TestClient, c1: &mut TestClient) {
 
     log::info!("Delete {} on c1", l2id);
     
-    assert!(c1.logins_store.delete(&l2id).expect("Delete should work"));
+    c1.logins_store.delete(&l2id).expect("Delete should work");
 
     log::info!("Syncing c1");
     sync_logins(c1).expect("c1 sync to work");
 
-    log::info!("{} should stay dead", l2id);
     
-    verify_missing_login(&c1.logins_store, &l2id);
+    
+    log::info!("{} should be revived", l2id);
+    verify_login(&c1.logins_store, &login2_new);
 
     log::info!("Syncing c0");
     sync_logins(c0).expect("c0 sync to work");
-    log::info!("Should delete {}", l2id);
-    verify_missing_login(&c0.logins_store, &l2id);
+    log::info!("{} should still exist", l2id);
+    verify_login(&c0.logins_store, &login2_new);
 }
 
 fn test_delete_undecryptable_records_for_remote_replacement(
