@@ -1537,6 +1537,14 @@ nsresult Http2Session::RecvHeaders(Http2Session* self) {
     self->mExpectedHeaderID = self->mInputFrameID;
   }
 
+  
+  
+  if (isContinuation) {
+    self->mInputFrameFinal = self->mHeaderBlockEndStream;
+  } else {
+    self->mHeaderBlockEndStream = self->mInputFrameFinal;
+  }
+
   uint32_t priorityLen = 0;
   if (self->mInputFrameFlags & kFlag_PRIORITY) {
     priorityLen = 5;
@@ -1614,7 +1622,7 @@ nsresult Http2Session::RecvHeaders(Http2Session* self) {
 
   
   if (self->mInputFrameDataStream->AllHeadersReceived() &&
-      !(self->mInputFrameFlags & kFlag_END_STREAM)) {
+      !self->mInputFrameFinal) {
     
     
     LOG3(("Http2Session::Illegal Extra HeaderBlock %p 0x%X\n", self,
@@ -1639,6 +1647,8 @@ nsresult Http2Session::RecvHeaders(Http2Session* self) {
   }
 
   if (!endHeadersFlag) {  
+    
+    self->mInputFrameFinal = false;
     self->ResetDownstreamState();
     return NS_OK;
   }
@@ -1677,7 +1687,7 @@ nsresult Http2Session::ResponseHeadersComplete() {
   
   if (mInputFrameDataStream->AllHeadersReceived()) {
     LOG3(("Http2Session::ResponseHeadersComplete processing trailers"));
-    MOZ_ASSERT(mInputFrameFlags & kFlag_END_STREAM);
+    MOZ_ASSERT(mInputFrameFinal);
     nsresult rv = mInputFrameDataStream->ConvertResponseTrailers(
         &mDecompressor, mDecompressBuffer);
     if (NS_FAILED(rv)) {

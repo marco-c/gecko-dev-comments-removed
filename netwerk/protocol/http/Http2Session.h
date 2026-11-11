@@ -510,6 +510,10 @@ class Http2Session final : public ASpdySession,
 
   
   
+  bool mHeaderBlockEndStream = false;
+
+  
+  
   nsCString mFlatHTTPResponseHeaders;
   uint32_t mFlatHTTPResponseHeadersOut;
 
