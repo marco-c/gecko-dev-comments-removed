@@ -23,6 +23,10 @@ pub enum InlineBaseDirection {
     RightToLeft,
 }
 
+fn sideways_enabled(_: &crate::parser::ParserContext) -> bool {
+    crate::pref!("layout.writing-mode.sideways.enabled", gecko = true)
+}
+
 
 
 
@@ -50,7 +54,9 @@ pub enum WritingModeProperty {
     #[parse(aliases = "tb,tb-rl")]
     VerticalRl,
     VerticalLr,
+    #[parse(condition = "sideways_enabled")]
     SidewaysRl,
+    #[parse(condition = "sideways_enabled")]
     SidewaysLr,
 }
 
