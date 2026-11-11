@@ -186,13 +186,16 @@ class SharingUtilsCls {
       qrCodeDataURI,
     };
 
-    win.gBrowser
+    let { closedPromise, dialog } = win.gBrowser
       .getTabDialogBox(browser)
       .open(
         "chrome://browser/content/qrcode/qrcode-dialog.html",
         { features: "resizable=no", allowDuplicateDialogs: false },
         params
       );
+    if (dialog) {
+      await closedPromise;
+    }
   }
 
   #waitForTabRestored(tab) {
@@ -221,8 +224,7 @@ class SharingUtilsCls {
     if (browser) {
       let maybeToShare = BrowserUtils.getShareableURL(browser.currentURI);
       if (maybeToShare) {
-        let { gURLBar } = node.documentGlobal;
-        urlToShare = gURLBar.makeURIReadable(maybeToShare).displaySpec;
+        urlToShare = BrowserUtils.getExposableURI(maybeToShare).displaySpec;
         titleToShare = browser.contentTitle;
       }
     }
@@ -245,9 +247,8 @@ class SharingUtilsCls {
       }
       let maybeToShare = BrowserUtils.getShareableURL(browser.currentURI);
       if (maybeToShare) {
-        let { gURLBar } = node.documentGlobal;
         links.push({
-          url: gURLBar.makeURIReadable(maybeToShare).displaySpec,
+          url: BrowserUtils.getExposableURI(maybeToShare).displaySpec,
           title: browser.contentTitle,
         });
       }

@@ -2465,7 +2465,11 @@ var XULBrowserWindow = {
       }
     }
 
-    if (TranslationsParent.isFullPageTranslationsRestrictedForPage(gBrowser)) {
+    if (
+      TranslationsParent.isFullPageTranslationsRestrictedForPage(
+        gBrowser.selectedBrowser
+      )
+    ) {
       this._menuItemForTranslations.setAttribute("disabled", "true");
     } else {
       this._menuItemForTranslations.removeAttribute("disabled");
@@ -4109,7 +4113,7 @@ function warnAboutClosingWindow() {
 var MailIntegration = {
   sendLinkForBrowser(aBrowser) {
     this.sendMessage(
-      gURLBar.makeURIReadable(aBrowser.currentURI).displaySpec,
+      BrowserUtils.getExposableURI(aBrowser.currentURI).displaySpec,
       aBrowser.contentTitle
     );
   },
@@ -4996,6 +5000,8 @@ if (window.location.href != AppConstants.BROWSER_CHROME_URL) {
 
 var ConfirmationHint = {
   _timerID: null,
+  _duration: 0,
+  _pendingShow: null,
 
   
 
@@ -5018,7 +5024,19 @@ var ConfirmationHint = {
 
 
 
-  show(
+  show(anchor, messageId, options = {}) {
+    if (this._panel.state == "hiding") {
+      
+      this._pendingShow = [anchor, messageId, options];
+      return;
+    }
+    this._show(anchor, messageId, options);
+  },
+
+  
+
+
+  _show(
     anchor,
     messageId,
     {
@@ -5064,38 +5082,48 @@ var ConfirmationHint = {
     
     
     
-    const DURATION = showDescription ? 6000 : 3000;
-    let startAutoHideTimer = () => {
-      this._animationBox.setAttribute("animate", "true");
-      this._timerID = setTimeout(() => {
-        this._panel.hidePopup(true);
-      }, DURATION + 120);
-    };
+    this._duration = showDescription ? 6000 : 3000;
 
     if (this._panel.state == "open") {
       
       
-      startAutoHideTimer();
+      this._startAutoHideTimer();
       return;
     }
-
-    this._panel.addEventListener("popupshown", startAutoHideTimer, {
-      once: true,
-    });
-
-    this._panel.addEventListener(
-      "popuphidden",
-      () => {
-        
-        this._reset();
-      },
-      { once: true }
-    );
 
     this._panel.openPopup(anchor, {
       position: position ?? "bottomleft topleft",
       triggerEvent: event,
     });
+  },
+
+  handleEvent(event) {
+    switch (event.type) {
+      case "popupshown":
+        this._startAutoHideTimer();
+        break;
+      case "popuphidden": {
+        
+        this._reset();
+        let pending = this._pendingShow;
+        this._pendingShow = null;
+        if (pending) {
+          this._show(...pending);
+        }
+        break;
+      }
+    }
+  },
+
+  
+
+
+
+  _startAutoHideTimer() {
+    this._animationBox.setAttribute("animate", "true");
+    this._timerID = setTimeout(() => {
+      this._panel.hidePopup(true);
+    }, this._duration + 120);
   },
 
   _reset() {
@@ -5144,6 +5172,8 @@ var ConfirmationHint = {
       let wrapper = document.getElementById("confirmation-hint-wrapper");
       wrapper.replaceWith(wrapper.content);
       this.__panel = document.getElementById("confirmation-hint");
+      this.__panel.addEventListener("popupshown", this);
+      this.__panel.addEventListener("popuphidden", this);
     }
   },
 };
