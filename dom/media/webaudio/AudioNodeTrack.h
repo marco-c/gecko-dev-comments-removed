@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef MOZILLA_AUDIONODETRACK_H_
 #define MOZILLA_AUDIONODETRACK_H_
 
@@ -116,14 +115,6 @@ class AudioNodeTrack : public ProcessedMediaTrack {
   }
   
   uint32_t NumberOfChannels() const override;
-
-  
-
-
-
-
-
-  void AdvanceAndResume(TrackTime aAdvance);
 
   AudioNodeTrack* AsAudioNodeTrack() override { return this; }
   void AddInput(MediaInputPort* aPort) override;

@@ -2,7 +2,6 @@
 
 
 
-
 #include "AudioNodeTrack.h"
 
 #include "AlignmentUtils.h"
@@ -254,16 +253,6 @@ uint32_t AudioNodeTrack::NumberOfChannels() const {
   AssertOnGraphThread();
 
   return mNumberOfInputChannels;
-}
-
-void AudioNodeTrack::AdvanceAndResume(TrackTime aAdvance) {
-  mMainThreadCurrentTime += aAdvance;
-  QueueControlMessageWithNoShutdown([self = RefPtr{this}, this, aAdvance] {
-    TRACE("AudioNodeTrack::AdvanceAndResumeMessage");
-    mStartTime -= aAdvance;
-    mSegment->AppendNullData(aAdvance);
-    DecrementSuspendCount();
-  });
 }
 
 void AudioNodeTrack::ObtainInputBlock(AudioBlock& aTmpChunk,
