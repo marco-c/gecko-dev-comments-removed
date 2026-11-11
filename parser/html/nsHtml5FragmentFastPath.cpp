@@ -9,6 +9,7 @@
 #include <string_view>
 #include <type_traits>
 
+#include "mozAutoDocUpdate.h"
 #include "mozilla/Array.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Span.h"
@@ -20,12 +21,14 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/FromParser.h"
+#include "mozilla/dom/MutationObservers.h"
 #include "mozilla/dom/NodeInfo.h"
 #include "mozilla/htmlaccel/htmlaccelEnabled.h"
 #ifdef MOZ_MAY_HAVE_HTMLACCEL
 #  include "mozilla/htmlaccel/htmlaccelNotInline.h"
 #endif
 #include "nsContentUtils.h"
+#include "nsDocElementCreatedNotificationRunner.h"
 #include "nsGenericHTMLElement.h"
 #include "nsGkAtoms.h"
 #include "nsHtml5AttributeName.h"
@@ -2049,6 +2052,139 @@ bool nsHtml5FragmentFastPath::TryParse(const nsAString& aSource,
     return false;
   }
   aError = parser.Build(aTarget);
+  if (!aError.Failed()) {
+    ++sSuccessCount;
+  }
+  return true;
+}
+
+bool nsHtml5FragmentFastPath::TryParseDocument(const nsAString& aSource,
+                                               Document* aDocument,
+                                               ErrorResult& aError) {
+  MOZ_ASSERT(!aDocument->HasChildren());
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const char16_t* start = aSource.BeginReading();
+  const char16_t* const end = aSource.EndReading();
+  while (start != end && IsAsciiWhitespace(*start)) {
+    ++start;
+  }
+  if (start != end && (*start == '&' || (*start == '<' && end - start >= 2 &&
+                                         (start[1] == '!' || start[1] == '?' ||
+                                          start[1] == '/')))) {
+    return false;
+  }
+  
+  if (nsContentUtils::IsFragmentParsingActive()) {
+    return false;
+  }
+  nsNodeInfoManager* nodeInfoManager = aDocument->NodeInfoManager();
+  Parser parser(Substring(start, end), nodeInfoManager);
+  if (!parser.Tokenize()) {
+    return false;
+  }
+
+  aDocument->SetCompatibilityMode(eCompatibility_NavQuirks);
+  
+  
+  mozAutoDocUpdate update(aDocument, true);
+  auto create = [&](nsHtml5ElementName* aName) -> RefPtr<Element> {
+    return aName->getHtmlCreator()(
+        nodeInfoManager->GetNodeInfo(aName->getName(), nullptr,
+                                     kNameSpaceID_XHTML, nsINode::ELEMENT_NODE),
+        FROM_PARSER_FRAGMENT);
+  };
+  const RefPtr<Element> html = create(nsHtml5ElementName::ELT_HTML);
+  const RefPtr<Element> head = create(nsHtml5ElementName::ELT_HEAD);
+  const RefPtr<Element> body = create(nsHtml5ElementName::ELT_BODY);
+  aDocument->SuspendDOMNotifications();
+  aDocument->AppendChildTo(html, false, aError);
+  if (!aError.Failed()) {
+    nsContentUtils::AddScriptRunner(
+        MakeAndAddRef<nsDocElementCreatedNotificationRunner>(aDocument));
+    html->AppendChildTo(head, false, aError);
+  }
+  if (!aError.Failed()) {
+    html->AppendChildTo(body, false, aError);
+  }
+  if (!aError.Failed()) {
+    aError = parser.Build(body);
+  }
+  aDocument->ResumeDOMNotifications();
+  if (html->GetParentNode()) {
+    MutationObservers::NotifyContentInserted(
+        aDocument, html, {MutationEffectOnScript::KeepTrustWorthiness});
+  }
   if (!aError.Failed()) {
     ++sSuccessCount;
   }

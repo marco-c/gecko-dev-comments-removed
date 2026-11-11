@@ -14,6 +14,7 @@ class nsIContent;
 namespace mozilla {
 class ErrorResult;
 namespace dom {
+class Document;
 class Element;
 }  
 }  
@@ -41,6 +42,19 @@ class nsHtml5FragmentFastPath final {
                        mozilla::ErrorResult& aError);
 
   
+
+
+
+
+
+
+
+  static bool TryParseDocument(const nsAString& aSource,
+                               mozilla::dom::Document* aDocument,
+                               mozilla::ErrorResult& aError);
+
+  
+
 
 
   static uint32_t SuccessCount();
