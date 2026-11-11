@@ -3760,6 +3760,9 @@ class Document : public nsINode,
   void GetReferrer(nsACString& aReferrer) const;
   void GetLastModified(nsAString& aLastModified) const;
   void GetReadyState(nsAString& aReadyState) const;
+  Promise* GetParsed(ErrorResult& aRv);
+  Promise* GetContentLoaded(ErrorResult& aRv);
+  Promise* GetLoaded(ErrorResult& aRv);
 
   void GetTitle(nsAString& aTitle);
   void SetTitle(const nsAString& aTitle, ErrorResult& rv);
@@ -4522,12 +4525,7 @@ class Document : public nsINode,
 
 
 
-
-
-
-
-
-  void InitialTranslationCompleted(bool aL10nCached);
+  void InitialTranslationCompleted();
 
   
 
@@ -5113,6 +5111,11 @@ class Document : public nsINode,
 
   void MaybeResolveReadyForIdle();
 
+  
+  
+  Promise* GetReadinessPromise(RefPtr<Promise>& aPromise, bool aResolved,
+                               ErrorResult& aRv);
+
   using AutomaticStorageAccessPermissionGrantPromise =
       MozPromise<bool, bool, true>;
   [[nodiscard]] RefPtr<AutomaticStorageAccessPermissionGrantPromise>
@@ -5249,6 +5252,13 @@ class Document : public nsINode,
   DocumentState mState{DocumentState::LTR_LOCALE};
 
   RefPtr<Promise> mReadyForIdle;
+
+  
+  
+  
+  RefPtr<Promise> mParsedPromise;
+  RefPtr<Promise> mContentLoadedPromise;
+  RefPtr<Promise> mLoadedPromise;
 
   
   mutable RefPtr<mozilla::dom::PermissionsPolicy> mPermissionsPolicy;
@@ -6229,8 +6239,10 @@ class Document : public nsINode,
 
   bool HasPendingInitialTranslation();
 
-  nsRefPtrHashtable<nsRefPtrHashKey<Element>, nsXULPrototypeElement>
-      mL10nProtoElements;
+  using ElementToProtoMap =
+      nsRefPtrHashtable<nsRefPtrHashKey<Element>, nsXULPrototypeElement>;
+  
+  ElementToProtoMap mUntranslatedL10nProtoElements;
 
   void LoadEventFired();
 
