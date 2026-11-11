@@ -206,6 +206,10 @@ class WebExtensionPolicyCore final {
    dom::Nullable<MatchGlobSet> mSandboxPages;
 
   const bool mIsPrivileged;
+  
+  
+  
+  const bool mAboutNewTabMayAccess;
   const bool mTemporarilyInstalled;
 
   const nsString mBackgroundWorkerScript;

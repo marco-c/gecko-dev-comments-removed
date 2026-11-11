@@ -219,6 +219,7 @@ WebExtensionPolicyCore::WebExtensionPolicyCore(GlobalObject& aGlobal,
       mExtensionPageCSP(aInit.mExtensionPageCSP),
       mSandboxPageCSP(aInit.mSandboxPageCSP),
       mIsPrivileged(aInit.mIsPrivileged),
+      mAboutNewTabMayAccess(aInit.mIsPrivileged || EPS().UseRemoteExtensions()),
       mTemporarilyInstalled(aInit.mTemporarilyInstalled),
       mBackgroundWorkerScript(aInit.mBackgroundWorkerScript),
       mIgnoreQuarantine(aInit.mIsPrivileged || aInit.mIgnoreQuarantine),
@@ -319,7 +320,8 @@ bool WebExtensionPolicyCore::SourceMayAccessPath(
       
       
       
-      return IsPrivileged();
+      
+      return mAboutNewTabMayAccess;
     }
   }
 
