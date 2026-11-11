@@ -773,6 +773,7 @@ newtab-download-mobile-highlight-image =
     .aria-label = QR code to download { -brand-product-name } for mobile
 
 ## Strings for reporting issues with ads and content
+## Preceded by "Why are you reporting this?"
 
 newtab-report-content-why-reporting-this =
   .label = Why are you reporting this?
@@ -782,6 +783,12 @@ newtab-report-ads-reason-inappropriate =
   .label = It’s inappropriate
 newtab-report-ads-reason-seen-it-too-many-times =
   .label = I’ve seen it too many times
+newtab-report-ads-reason-scam =
+  .label = Scam or fraudulent
+newtab-report-ads-reason-misleading =
+  .label = Misleading or false claims
+newtab-report-ads-reason-offensive =
+  .label = Offensive or inappropriate
 newtab-report-content-wrong-category =
   .label = Wrong category
 newtab-report-content-outdated =
@@ -868,6 +875,10 @@ newtab-widget-section-show-more =
 # allowing users to collapse it back to one row.
 newtab-widget-section-show-less =
     .label = Show fewer widgets
+# Shown in place of a widget's content when the widget could not be loaded.
+# The widget's name is shown and read out separately, just before this message,
+# so this message names no widget.
+newtab-widget-error-not-available = Widget unavailable. Check back later.
 newtab-widget-lists-name-default = Checklist
 newtab-widget-lists-name-label-default =
     .label = Task list
