@@ -26,7 +26,14 @@ const await_with_timeout = async (delay, message, promise, cleanup = ()=>{}) => 
 
 
 
-function checkImage(entry, expectedUrl, expectedID, expectedSize, timeLowerBound, options = []) {
+
+
+
+
+
+
+
+function checkEntry(entry, expectedUrl, expectedID, expectedSize, timeLowerBound, options = []) {
   assert_equals(entry.name, '', "Entry name should be the empty string");
   assert_equals(entry.entryType, 'largest-contentful-paint',
     "Entry type should be largest-contentful-paint");
@@ -40,26 +47,40 @@ function checkImage(entry, expectedUrl, expectedID, expectedSize, timeLowerBound
   if (options.includes('skip')) {
     return;
   }
+
+  if (typeof expectedSize === 'function') {
+    expectedSize = expectedSize();
+  }
+  if (typeof timeLowerBound === 'function') {
+    timeLowerBound = timeLowerBound();
+  }
+
   assert_greater_than_equal(performance.now(), entry.renderTime,
     'renderTime should occur before the entry is dispatched to the observer.');
   assert_approx_equals(entry.startTime, entry.renderTime, 0.001,
     'startTime should be equal to renderTime to the precision of 1 millisecond.');
-  if (options.includes('sizeLowerBound')) {
-    assert_greater_than(entry.size, expectedSize);
+
+  if (options.includes('sizeRange')) {
+    const [sizeLowerBound, sizeUpperBound] = Array.isArray(expectedSize) ?
+        expectedSize : [expectedSize, Infinity];
+    assert_greater_than(entry.size, sizeLowerBound);
+    assert_less_than_equal(entry.size, sizeUpperBound);
   } else if (options.includes('approximateSize')) {
     assert_approx_equals(entry.size, expectedSize, 1);
-  } else{
+  } else {
     assert_equals(entry.size, expectedSize);
   }
 
-  assert_greater_than_equal(entry.paintTime, timeLowerBound, 'paintTime should represent the time when the UA started painting');
-
   
-  if ("presentationTime" in entry && entry.presentationTime !== null) {
-    assert_greater_than(entry.presentationTime, entry.paintTime);
-    assert_equals(entry.presentationTime, entry.renderTime);
-  } else {
-    assert_equals(entry.renderTime, entry.paintTime);
+  if ('paintTime' in entry && entry.paintTime !== null) {
+    assert_greater_than_equal(entry.paintTime, timeLowerBound,
+        'paintTime should represent the time when the UA started painting');
+    if ('presentationTime' in entry && entry.presentationTime !== null) {
+      assert_greater_than(entry.presentationTime, entry.paintTime);
+      assert_equals(entry.presentationTime, entry.renderTime);
+    } else {
+      assert_equals(entry.renderTime, entry.paintTime);
+    }
   }
 
   if (options.includes('animated')) {
@@ -67,11 +88,24 @@ function checkImage(entry, expectedUrl, expectedID, expectedSize, timeLowerBound
       'renderTime should be smaller than the delay applied to the second frame');
     assert_greater_than(entry.renderTime, 0,
       'renderTime should be larger than 0');
-  }
-  else {
+  } else if (options.includes('skipLoadTime')) {
+    assert_equals(entry.loadTime, 0, 'Entry loadTime should be 0');
+  } else {
     assert_between_inclusive(entry.loadTime, timeLowerBound, entry.renderTime,
       'loadTime should occur between the lower bound and the renderTime');
   }
+}
+
+
+function checkTextEntry(entry, expectedID, expectedSize,
+                        timeLowerBound, options = []) {
+  checkEntry(entry, '', expectedID, expectedSize, timeLowerBound,
+             options.concat(['skipLoadTime', 'sizeRange']));
+}
+
+
+function checkImage(entry, expectedUrl, expectedID, expectedSize, timeLowerBound, options = []) {
+  checkEntry(entry, expectedUrl, expectedID, expectedSize, timeLowerBound, options);
 }
 
 const load_and_observe = url => {
@@ -142,27 +176,6 @@ const loadImage = (url, shouldBeIgnoredForLCP = false) => {
       image.style.opacity = 0;
     document.body.appendChild(image);
   });
-}
-
-const checkLCPEntryForNonTaoImages = (times = {}) => {
-  const lcp = times['lcp'];
-  const fcp = times['fcp'];
-  const lcp_url_components = lcp.url.split('/');
-
-  if (lcp.loadTime <= fcp.startTime) {
-    assert_approx_equals(lcp.startTime, fcp.startTime, 0.001,
-      'LCP start time should be the same as FCP for ' +
-      lcp_url_components[lcp_url_components.length - 1]) +
-      ' when LCP load time is less than FCP.';
-  } else {
-    assert_approx_equals(lcp.startTime, lcp.loadTime, 0.001,
-      'LCP start time should be the same as LCP load time for ' +
-      lcp_url_components[lcp_url_components.length - 1]) +
-      ' when LCP load time is no less than FCP.';
-  }
-
-  assert_equals(lcp.renderTime, 0,
-    'The LCP render time of Non-Tao image should always be 0.');
 }
 
 const raf = () => {
