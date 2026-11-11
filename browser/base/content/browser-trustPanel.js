@@ -10,10 +10,11 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///toolkit/components/passwordmgr/BreachAlertsData.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   ContentBlockingAllowList:
-    "resource://gre/modules/ContentBlockingAllowList.sys.mjs",
+    "moz-src:///toolkit/components/antitracking/ContentBlockingAllowList.sys.mjs",
   E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
   FX_MONITOR_OAUTH_CLIENT_ID: "resource://gre/modules/FxAccountsCommon.sys.mjs",
-  identifyType: "resource://gre/modules/TrackingDBService.sys.mjs",
+  identifyType:
+    "moz-src:///toolkit/components/antitracking/TrackingDBService.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   PanelMultiView:
     "moz-src:///browser/components/customizableui/PanelMultiView.sys.mjs",
@@ -514,6 +515,26 @@ class TrustPanel {
 
 
 
+
+
+
+
+  #continuesSiteVisit(uri) {
+    if (!this.#trackerCountEnabled) {
+      return this.#isSameSite(uri, this.#uri);
+    }
+    const site = this.#siteKey(uri);
+    return (
+      !!site &&
+      TrustPanelTrackerLogs.getVisitedSite(gBrowser.selectedBrowser) === site
+    );
+  }
+
+  
+
+
+
+
   resetIconForNavigation(targetURI) {
     if (!this.#enabled) {
       return;
@@ -521,7 +542,7 @@ class TrustPanel {
     
     
     this.#recordCurrentPageLog(gBrowser.selectedBrowser);
-    const isSameSite = this.#isSameSite(targetURI, this.#uri);
+    const isSameSite = this.#continuesSiteVisit(targetURI);
     
     
     if (targetURI) {
@@ -595,7 +616,21 @@ class TrustPanel {
       
       
       
-      this.#sameTabNavigation && this.#isSameSite(uri, this.#uri);
+      this.#sameTabNavigation && this.#continuesSiteVisit(uri);
+    
+    
+    
+    const site = this.#siteKey(uri);
+    if (
+      this.#sameTabNavigation &&
+      this.#trackerCountEnabled &&
+      site &&
+      this.#siteKey(
+        browser.browsingContext?.currentWindowGlobal?.documentURI
+      ) === site
+    ) {
+      TrustPanelTrackerLogs.setVisitedSite(browser, site);
+    }
     if (!this.#sameTabNavigation) {
       
       
@@ -1506,13 +1541,13 @@ class TrustPanel {
     }
   }
 
+  get #isQWAC() {
+    return this.#isSecureConnection && !!this.#qwac;
+  }
+
   get #isEV() {
-    
-    
-    
-    
     return (
-      !this.#isURILoadedFromFile &&
+      this.#isSecureConnection &&
       this.#state & Ci.nsIWebProgressListener.STATE_IDENTITY_EV_TOPLEVEL
     );
   }
@@ -1637,7 +1672,7 @@ class TrustPanel {
 
     
     
-    if (this.#isEV || this.#qwac) {
+    if (this.#isEV || this.#isQWAC) {
       let identityData = this.#getIdentityData(
         this.#qwac || this.#secInfo.serverCert
       );
@@ -1711,7 +1746,7 @@ class TrustPanel {
       connection = "extension";
     } else if (this.#isURILoadedFromFile) {
       connection = "file";
-    } else if (this.#qwac) {
+    } else if (this.#isQWAC) {
       connection = "secure-etsi";
     } else if (this.#isEV) {
       connection = "secure-ev";
