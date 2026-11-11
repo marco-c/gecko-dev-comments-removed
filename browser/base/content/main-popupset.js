@@ -307,13 +307,6 @@ document.addEventListener(
             SessionStore.forgetSavedTabGroup(tabGroupId, "user-deleted");
           }
           break;
-        
-        case "editBookmarkPanelDoneButton":
-          StarUI.panel.hidePopup();
-          break;
-        case "editBookmarkPanelRemoveButton":
-          StarUI.removeBookmarkButtonCommand();
-          break;
 
         
         case "sidebar-switcher-bookmarks":
@@ -542,6 +535,16 @@ document.addEventListener(
       document
         .getElementById("userContext-indicator-menu")
         .openPopup(userContextIcons, "after_start", 0, 0, false, false, event);
+    });
+
+    const userContextIndicatorMenu = document.getElementById(
+      "userContext-indicator-menu"
+    );
+    userContextIndicatorMenu.addEventListener("popupshowing", () => {
+      userContextIcons.setAttribute("open", "true");
+    });
+    userContextIndicatorMenu.addEventListener("popuphidden", () => {
+      userContextIcons.removeAttribute("open");
     });
 
     const containerHistoryPopup = document.getElementById(
