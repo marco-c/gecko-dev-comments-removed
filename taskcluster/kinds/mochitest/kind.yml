@@ -72,7 +72,7 @@ task-defaults:
                     - win64-samply
                     - profiler-node-tools
                 win.*32.*:
-                    - win32-node
+                    - win64-node
                     - win32-minidump-stackwalk
                     - win32-fix-stacks
                     - win32-samply
@@ -321,7 +321,7 @@ tasks:
                         - win64-samply
                         - profiler-node-tools
                     win.*32.*:
-                        - win32-node
+                        - win64-node
                         - win32-minidump-stackwalk
                         - win32-fix-stacks
                         - win32-samply
@@ -499,6 +499,7 @@ tasks:
                         linux.*/opt: 5400
                         windows.*-ccov.*/.*: 10800
                         windows.*-asan.*/opt: 5400
+                        macosx1500-aarch64-vms.*/opt: 5400
                         .*/debug: 5400
                         default: 3600
         mozharness:
@@ -857,7 +858,7 @@ tasks:
                         - win64-samply
                         - profiler-node-tools
                     win.*32.*:
-                        - win32-node
+                        - win64-node
                         - win32-minidump-stackwalk
                         - win32-fix-stacks
                         - win32-samply
