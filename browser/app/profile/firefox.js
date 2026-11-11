@@ -783,7 +783,7 @@ pref("browser.urlbar.contextualSearch.enabled", true);
 pref("browser.urlbar.addons.featureGate", false);
 
 
-#if defined(EARLY_BETA_OR_EARLIER) || defined(MOZ_DEV_EDITION)
+#ifdef NIGHTLY_BUILD
 pref("places.semanticHistory.featureGate", true);
 #else
 pref("places.semanticHistory.featureGate", false);
@@ -1004,10 +1004,6 @@ pref("browser.search.serpEventTelemetryCategorization.enabled", true);
 pref("browser.search.serpMetricsRecordedCounter", 0);
 
 
-
-pref("browser.search.widget.removeAfterDaysUnused", 120);
-
-
 pref("browser.search.widget.new", true);
 
 
@@ -1204,6 +1200,9 @@ pref("browser.tabs.groups.hoverPreview.enabled", true);
 pref("browser.tabs.groups.alternateMenu", true);
 
 pref("browser.tabs.groups.saveHintShownCount", 0);
+
+
+pref("browser.tabs.groups.removedHintShown", false);
 
 pref("browser.tabs.groups.smart.enabled", true);
 
@@ -2138,14 +2137,14 @@ pref("browser.newtabpage.activity-stream.discoverystream.newSponsoredLabel.enabl
 pref("browser.newtabpage.activity-stream.discoverystream.spoc-positions", "2,4,8,13,17,20");
 
 
-pref("browser.newtabpage.activity-stream.discoverystream.placements.spocs", "newtab_stories_1, newtab_stories_2, newtab_stories_3, newtab_stories_4, newtab_stories_5, newtab_stories_6");
-pref("browser.newtabpage.activity-stream.discoverystream.placements.spocs.counts", "1,1,1,1,1,1");
-pref("browser.newtabpage.activity-stream.discoverystream.placements.contextualSpocs", "newtab_stories_1, newtab_stories_2, newtab_stories_3, newtab_stories_4, newtab_stories_5, newtab_stories_6");
-pref("browser.newtabpage.activity-stream.discoverystream.placements.contextualSpocs.counts", "1, 1, 1, 1, 1, 1");
+pref("browser.newtabpage.activity-stream.discoverystream.placements.spocs", "newtab_stories_1, newtab_stories_2, newtab_stories_3, newtab_stories_4, newtab_stories_5, newtab_stories_6, newtab_stories_7, newtab_stories_8, newtab_stories_9, newtab_stories_10, newtab_stories_11, newtab_stories_12, newtab_billboard");
+pref("browser.newtabpage.activity-stream.discoverystream.placements.spocs.counts", "1,1,1,1,1,1,1,1,1,1,1,1,1");
+pref("browser.newtabpage.activity-stream.discoverystream.placements.contextualSpocs", "newtab_stories_1, newtab_stories_2, newtab_stories_3, newtab_stories_4, newtab_stories_5, newtab_stories_6, newtab_stories_7, newtab_stories_8, newtab_stories_9, newtab_stories_10, newtab_stories_11, newtab_stories_12");
+pref("browser.newtabpage.activity-stream.discoverystream.placements.contextualSpocs.counts", "1,1,1,1,1,1,1,1,1,1,1,1");
 pref("browser.newtabpage.activity-stream.discoverystream.placements.tiles", "newtab_tile_1, newtab_tile_2, newtab_tile_3");
 pref("browser.newtabpage.activity-stream.discoverystream.placements.tiles.counts", "1, 1, 1");
-pref("browser.newtabpage.activity-stream.discoverystream.placements.contextualBanners", "");
-pref("browser.newtabpage.activity-stream.discoverystream.placements.contextualBanners.counts", "");
+pref("browser.newtabpage.activity-stream.discoverystream.placements.contextualBanners", "newtab_billboard");
+pref("browser.newtabpage.activity-stream.discoverystream.placements.contextualBanners.counts", "1");
 
 
 
@@ -2493,7 +2492,7 @@ pref("browser.smartwindow.manageTabs.includeChatTab", false);
 
 
 pref("browser.smartwindow.agent.enabled", true);
-pref("browser.smartwindow.agent.supportedRegions", "US,CA");
+pref("browser.smartwindow.agent.supportedRegions", '[["US",["*"]],["CA",["en-*"]],["GB",["en-*"]]]');
 
 pref("browser.smartwindow.agent.toolbar.enabled", true);
 
