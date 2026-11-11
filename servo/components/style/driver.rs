@@ -107,15 +107,6 @@ where
     };
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
     let mut scoped_tls = ScopedTLS::<ThreadLocalStyleContext<E>>::new(pool);
     
     
@@ -166,6 +157,22 @@ where
                 println!("{}", stats);
             }
         }
+    }
+
+    
+    
+    
+    
+    
+    let mut tasks = Vec::new();
+    for slot in scoped_tls.slots() {
+        if let Some(cx) = slot.get_mut() {
+            tasks.append(&mut cx.tasks);
+        }
+    }
+    drop(scoped_tls);
+    for task in tasks {
+        task.execute();
     }
 
     root

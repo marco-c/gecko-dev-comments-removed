@@ -495,6 +495,7 @@ impl<E: TElement> SequentialTask<E> {
 }
 
 
+
 pub struct SequentialTaskList<E>(Vec<SequentialTask<E>>)
 where
     E: TElement;
@@ -524,10 +525,10 @@ where
     E: TElement,
 {
     fn drop(&mut self) {
-        debug_assert!(thread_state::get().contains(ThreadState::LAYOUT));
-        for task in self.0.drain(..) {
-            task.execute()
-        }
+        debug_assert!(
+            self.0.is_empty(),
+            "Sequential tasks are run by driver::traverse_dom"
+        );
     }
 }
 
@@ -646,9 +647,6 @@ pub struct ThreadLocalStyleContext<E: TElement> {
     pub bloom_filter: StyleBloom<E>,
     
     pub current_dom_depth: usize,
-    
-    
-    
     
     
     
