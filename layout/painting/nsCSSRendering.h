@@ -213,6 +213,10 @@ struct nsCSSRendering {
       mozilla::layers::RenderRootStateManager* aManager,
       mozilla::nsDisplayListBuilder* aDisplayListBuilder);
 
+  static bool GenerateAndPushBorderAreaMask(nsIFrame* aFrame,
+                                            gfxContext* aContext,
+                                            const nsRect& aBackgroundRect);
+
   static void CreateWebRenderCommandsForNullBorder(
       mozilla::nsDisplayItem* aItem, nsIFrame* aForFrame,
       const nsRect& aBorderArea, mozilla::wr::DisplayListBuilder& aBuilder,
@@ -248,24 +252,6 @@ struct nsCSSRendering {
   static nsCSSBorderRenderer GetBorderRendererForFocus(nsIFrame*, DrawTarget*,
                                                        const nsRect& aFocusRect,
                                                        nscolor aColor);
-
-  
-
-
-
-
-
-
-
-
-
-  static void PaintGradient(nsPresContext* aPresContext, gfxContext& aContext,
-                            const mozilla::StyleGradient& aGradient,
-                            const nsRect& aDirtyRect, const nsRect& aDest,
-                            const nsRect& aFill, const nsSize& aRepeatSize,
-                            const mozilla::CSSIntRect& aSrc,
-                            const nsSize& aIntrinsiceSize,
-                            float aOpacity = 1.0);
 
   
 
