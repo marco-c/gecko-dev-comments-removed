@@ -279,16 +279,11 @@ SlicedInputStream::IsNonBlocking(bool* aNonBlocking) {
 
 NS_IMETHODIMP
 SlicedInputStream::GetCloneable(bool* aCloneable) {
-  *aCloneable = false;
-
   NS_ENSURE_STATE(mInputStream);
   NS_ENSURE_STATE(mWeakCloneableInputStream);
 
-  
-  
-  
-  
-  return mWeakCloneableInputStream->GetCloneable(aCloneable);
+  *aCloneable = true;
+  return NS_OK;
 }
 
 NS_IMETHODIMP
