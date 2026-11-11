@@ -84,12 +84,20 @@ public class GeckoScreenOrientation {
   }
 
   
+
+
+
+
   public void addListener(final OrientationChangeListener aListener) {
     ThreadUtils.assertOnUiThread();
     mListeners.add(aListener);
   }
 
   
+
+
+
+
   public void removeListener(final OrientationChangeListener aListener) {
     ThreadUtils.assertOnUiThread();
     mListeners.remove(aListener);

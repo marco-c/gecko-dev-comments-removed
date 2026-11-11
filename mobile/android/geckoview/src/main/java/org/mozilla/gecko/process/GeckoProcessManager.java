@@ -91,6 +91,9 @@ public final class GeckoProcessManager {
 
 
 
+
+
+
   public ISurfaceAllocator getSurfaceAllocator(final IBinder client) {
     final boolean gpuEnabled = GeckoAppShell.isGpuProcessEnabled();
 
@@ -689,11 +692,19 @@ public final class GeckoProcessManager {
   }
 
   
+
+
+
+
   public void setIsolatedProcessEnabled(final boolean enabled) {
     mIsolatedProcess = enabled;
   }
 
   
+
+
+
+
   public void setAppZygoteEnabled(final boolean enabled) {
     mAppZygote = enabled;
   }

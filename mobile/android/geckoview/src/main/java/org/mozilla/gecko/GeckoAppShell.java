@@ -548,6 +548,12 @@ public class GeckoAppShell {
       String name, String topic, String action, String origin);
 
   
+
+
+
+
+
+
   public static void onNotificationShow(
       final String name, final String cookie, @NotNull final String origin) {
     if (GeckoThread.isRunning()) {
@@ -559,6 +565,9 @@ public class GeckoAppShell {
 
 
 
+
+
+
   public static void onNotificationClose(@NotNull final String name, @NotNull final String origin) {
     if (GeckoThread.isRunning()) {
       notifyAlertListener(name, "alertfinished", null, origin);
@@ -566,6 +575,10 @@ public class GeckoAppShell {
   }
 
   
+
+
+
+
 
 
 

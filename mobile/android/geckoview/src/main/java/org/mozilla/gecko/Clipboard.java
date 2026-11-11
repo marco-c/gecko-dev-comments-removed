@@ -142,6 +142,7 @@ public final class Clipboard {
 
 
 
+
   @WrapForJNI(calledFrom = "gecko")
   public static boolean setText(
       final Context context, final CharSequence text, final boolean isPrivateData) {

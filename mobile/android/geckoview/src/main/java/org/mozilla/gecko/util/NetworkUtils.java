@@ -74,6 +74,11 @@ public class NetworkUtils {
   }
 
   
+
+
+
+
+
   public static ConnectionSubType getConnectionSubType(
       final ConnectivityManager connectivityManager) {
     if (connectivityManager == null) {

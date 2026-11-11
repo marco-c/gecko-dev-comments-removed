@@ -42,6 +42,8 @@ public final class XPCOMEventTarget extends JNIObject implements IXPCOMEventTarg
 
 
 
+
+
   public static void runOnLauncherThread(@NonNull final Runnable runnable) {
     final IXPCOMEventTarget launcherThread = launcherThread();
     if (launcherThread.isOnCurrentThread()) {

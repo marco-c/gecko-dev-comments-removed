@@ -38,6 +38,7 @@ public interface EventCallback {
 
 
 
+
   default <T> void resolveTo(final @Nullable GeckoResult<T> response) {
     if (response == null) {
       sendSuccess(null);

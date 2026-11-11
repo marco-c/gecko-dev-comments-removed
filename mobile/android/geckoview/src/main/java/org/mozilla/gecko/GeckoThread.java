@@ -386,6 +386,9 @@ public class GeckoThread extends Thread {
 
 
 
+
+
+
   public static ArrayList<String> getEnvFromExtras(final Bundle extras) {
     if (extras == null) {
       return new ArrayList<>();
@@ -829,24 +832,50 @@ public class GeckoThread extends Thread {
   }
 
   
+
+
+
+
+
+
   public static void queueNativeCall(
       final Class<?> cls, final String methodName, final Object... args) {
     sNativeQueue.queueUntilReady(cls, methodName, args);
   }
 
   
+
+
+
+
+
+
   public static void queueNativeCall(
       final Object obj, final String methodName, final Object... args) {
     sNativeQueue.queueUntilReady(obj, methodName, args);
   }
 
   
+
+
+
+
+
+
+
   public static void queueNativeCallUntil(
       final State state, final Object obj, final String methodName, final Object... args) {
     sNativeQueue.queueUntil(state, obj, methodName, args);
   }
 
   
+
+
+
+
+
+
+
   public static void queueNativeCallUntil(
       final State state, final Class<?> cls, final String methodName, final Object... args) {
     sNativeQueue.queueUntil(state, cls, methodName, args);
