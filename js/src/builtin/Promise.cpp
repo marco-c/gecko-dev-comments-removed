@@ -2515,6 +2515,50 @@ static bool CanUseSameRealmEnqueue(JSContext* cx, HandleObject reactionObj,
 
 
 
+static void SettlePromise(JSContext* cx, Handle<PromiseObject*> promise,
+                          HandleValue valueOrReason, JS::PromiseState state,
+                          Handle<SavedFrame*> unwrappedRejectionStack) {
+  MOZ_ASSERT(promise->state() == JS::PromiseState::Pending);
+  MOZ_ASSERT(state != JS::PromiseState::Pending);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  promise->setFixedSlot(PromiseObject::REACTIONS_OR_RESULT_SLOT, valueOrReason);
+
+  
+  
+  
+  
+  int32_t flags = promise->flags();
+  flags |= PROMISE_FLAG_RESOLVED;
+  if (state == JS::PromiseState::Fulfilled) {
+    flags |= PROMISE_FLAG_FULFILLED;
+  }
+  promise->setFixedSlotTyped(PromiseObject::FLAGS_SLOT, Int32Value(flags));
+
+  
+  promise->setFixedSlotTyped(PromiseObject::REJECT_FUNCTION_SLOT,
+                             UndefinedValue());
+
+  
+  
+  
+  
+  
+  PromiseObject::onSettled(cx, promise, unwrappedRejectionStack);
+}
+
+
+
+
 
 
 
@@ -2550,35 +2594,7 @@ static bool CanUseSameRealmEnqueue(JSContext* cx, HandleObject reactionObj,
   
   
   
-  
-  
-  
-  
-  
-  
-  promise->setFixedSlot(PromiseObject::REACTIONS_OR_RESULT_SLOT, valueOrReason);
-
-  
-  
-  
-  
-  int32_t flags = promise->flags();
-  flags |= PROMISE_FLAG_RESOLVED;
-  if (state == JS::PromiseState::Fulfilled) {
-    flags |= PROMISE_FLAG_FULFILLED;
-  }
-  promise->setFixedSlotTyped(PromiseObject::FLAGS_SLOT, Int32Value(flags));
-
-  
-  promise->setFixedSlotTyped(PromiseObject::REJECT_FUNCTION_SLOT,
-                             UndefinedValue());
-
-  
-
-  
-  
-  
-  PromiseObject::onSettled(cx, promise, unwrappedRejectionStack);
+  SettlePromise(cx, promise, valueOrReason, state, unwrappedRejectionStack);
 
   
   
