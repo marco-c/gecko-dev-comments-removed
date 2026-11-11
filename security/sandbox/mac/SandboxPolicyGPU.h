@@ -250,8 +250,7 @@ static const char SandboxPolicyGPU[] = R"SANDBOX_LITERAL(
 )SANDBOX_LITERAL";
 
 
-
-static const char SandboxPolicyGPUx86_64Addend[] = R"SANDBOX_LITERAL(
+static const char SandboxPolicyGPUWindowServerAddend[] = R"SANDBOX_LITERAL(
 
   (allow mach-lookup
     (global-name "com.apple.windowserver.active"))
