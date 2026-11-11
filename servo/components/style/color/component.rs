@@ -121,7 +121,10 @@ impl<ValueType: ColorComponentType> ColorComponent<ValueType> {
                 let channel_value = origin_color
                     .and_then(|c| c.get_component_by_channel_keyword(*channel_keyword).ok());
                 match channel_value {
-                    Some(value) => Self::Value(ValueType::from_value(value.unwrap_or(0.0))),
+                    Some(Some(value)) => Self::Value(ValueType::from_value(value)),
+                    
+                    
+                    Some(None) => Self::None,
                     
                     
                     None => Self::ChannelKeyword(*channel_keyword),
