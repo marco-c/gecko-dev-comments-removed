@@ -144,6 +144,10 @@ class TCPSocket final : public DOMEventTargetHelper,
 
   
   
+  void HandshakeDoneOnMainThread();
+
+  
+  
   nsresult InitWithUnconnectedTransport(nsISocketTransport* aTransport);
 
  private:
@@ -170,6 +174,11 @@ class TCPSocket final : public DOMEventTargetHelper,
   void ActivateTLS();
   
   void DiscardPendingInput();
+  
+  
+  
+  void RegisterHandshakeCallbackListener();
+  void ClearHandshakeCallbackListener();
   
   nsresult MaybeReportErrorAndCloseIfOpen(nsresult status);
 
