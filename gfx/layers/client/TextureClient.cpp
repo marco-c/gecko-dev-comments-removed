@@ -74,7 +74,7 @@ using namespace mozilla::gl;
 using namespace mozilla::gfx;
 
 struct TextureDeallocParams {
-  TextureData* data = nullptr;
+  UniquePtr<TextureData> data;
   RefPtr<TextureChild> actor;
   RefPtr<TextureReadLock> readLock;
   RefPtr<LayersIPCChannel> allocator;
@@ -85,25 +85,12 @@ struct TextureDeallocParams {
   TextureDeallocParams(const TextureDeallocParams&) = delete;
   TextureDeallocParams& operator=(const TextureDeallocParams&) = delete;
 
-  TextureDeallocParams(TextureDeallocParams&& aOther)
-      : data(aOther.data),
-        actor(std::move(aOther.actor)),
-        readLock(std::move(aOther.readLock)),
-        allocator(std::move(aOther.allocator)),
-        clientDeallocation(aOther.clientDeallocation),
-        syncDeallocation(aOther.syncDeallocation) {
-    aOther.data = nullptr;
-  }
+  TextureDeallocParams(TextureDeallocParams&&) = default;
+  TextureDeallocParams& operator=(TextureDeallocParams&&) = delete;
 
-  TextureDeallocParams& operator=(TextureDeallocParams&& aOther) {
-    data = aOther.data;
-    aOther.data = nullptr;
-    actor = std::move(aOther.actor);
-    readLock = std::move(aOther.readLock);
-    allocator = std::move(aOther.allocator);
-    clientDeallocation = aOther.clientDeallocation;
-    syncDeallocation = aOther.syncDeallocation;
-    return *this;
+  ~TextureDeallocParams() {
+    MOZ_RELEASE_ASSERT(
+        !data, "TextureData ownership must be transferred before destruction");
   }
 };
 
@@ -123,7 +110,7 @@ void DeallocateTextureClient(TextureDeallocParams& params);
 class TextureChild final : public PTextureChild {
   ~TextureChild() {
     
-    MOZ_ASSERT(!mTextureData);
+    MOZ_RELEASE_ASSERT(!mTextureData);
     MOZ_ASSERT_IF(!mOwnerCalledDestroy, !mTextureClient);
   }
 
@@ -155,7 +142,7 @@ class TextureChild final : public PTextureChild {
   
   
   
-  void Destroy(const TextureDeallocParams& aParams);
+  void Destroy(TextureDeallocParams& aParams);
 
   
   
@@ -227,7 +214,7 @@ class TextureChild final : public PTextureChild {
   RefPtr<TextureForwarder> mTextureForwarder;
 
   TextureClient* mTextureClient;
-  TextureData* mTextureData;
+  UniquePtr<TextureData> mTextureData;
   Atomic<bool> mDestroyed;
   bool mOwnsTextureData;
   bool mOwnerCalledDestroy;
@@ -354,7 +341,7 @@ bool TextureData::IsRemote(KnowsCompositor* aKnowsCompositor,
   }
 }
 
-static void DestroyTextureData(TextureData* aTextureData,
+static void DestroyTextureData(UniquePtr<TextureData> aTextureData,
                                LayersIPCChannel* aAllocator, bool aDeallocate) {
   if (!aTextureData) {
     return;
@@ -365,19 +352,19 @@ static void DestroyTextureData(TextureData* aTextureData,
   } else {
     aTextureData->Forget(aAllocator);
   }
-  delete aTextureData;
+  
 }
 
 void TextureChild::ActorDestroy(ActorDestroyReason why) {
   AUTO_PROFILER_LABEL("TextureChild::ActorDestroy", GRAPHICS);
 
   if (mTextureData) {
-    DestroyTextureData(mTextureData, GetAllocator(), mOwnsTextureData);
-    mTextureData = nullptr;
+    DestroyTextureData(std::move(mTextureData), GetAllocator(),
+                       mOwnsTextureData);
   }
 }
 
-void TextureChild::Destroy(const TextureDeallocParams& aParams) {
+void TextureChild::Destroy(TextureDeallocParams& aParams) {
   MOZ_ASSERT(!mOwnerCalledDestroy);
   if (mOwnerCalledDestroy) {
     return;
@@ -386,13 +373,13 @@ void TextureChild::Destroy(const TextureDeallocParams& aParams) {
   mOwnerCalledDestroy = true;
 
   if (!CanSend()) {
-    DestroyTextureData(aParams.data, aParams.allocator,
+    DestroyTextureData(std::move(aParams.data), aParams.allocator,
                        aParams.clientDeallocation);
     return;
   }
 
   
-  mTextureData = aParams.data;
+  mTextureData = std::move(aParams.data);
   mOwnsTextureData = aParams.clientDeallocation;
 
   if (!mCompositableForwarder ||
@@ -423,6 +410,9 @@ void DeallocateTextureClient(TextureDeallocParams& params) {
       
       
       gfxCriticalError() << "Texture deallocated too late during shutdown";
+      
+      
+      (void)params.data.release();
       return;
     }
   }
@@ -475,7 +465,8 @@ void DeallocateTextureClient(TextureDeallocParams& params) {
     
     
     
-    DestroyTextureData(params.data, params.allocator,  true);
+    DestroyTextureData(std::move(params.data), params.allocator,
+                        true);
     return;
   }
 
@@ -517,11 +508,10 @@ void TextureClient::Destroy() {
     actor = nullptr;
   }
 
-  TextureData* data;
+  UniquePtr<TextureData> data;
   {
     MutexAutoLock lock(mMutex);
-    data = mData;
-    mData = nullptr;
+    data = std::move(mData);
   }
 
   if (data || actor || readLock) {
@@ -530,7 +520,7 @@ void TextureClient::Destroy() {
     params.readLock = std::move(readLock);
     params.allocator = mAllocator;
     params.clientDeallocation = !!(mFlags & TextureFlags::DEALLOCATE_CLIENT);
-    params.data = data;
+    params.data = std::move(data);
     
     
     
@@ -1119,6 +1109,8 @@ void TextureClient::RecycleTexture(TextureFlags aFlags) {
 }
 
 void TextureClient::SetAddedToCompositableClient() {
+  MOZ_ASSERT(mAllocator && mAllocator->GetThread() &&
+             mAllocator->GetThread()->IsOnCurrentThread());
   if (!mAddedToCompositableClient) {
     mAddedToCompositableClient = true;
     if (!(GetFlags() & TextureFlags::RECYCLE)) {
@@ -1152,6 +1144,8 @@ static void CancelTextureClientNotifyNotUsed(uint64_t aTextureId,
 }
 
 void TextureClient::CancelWaitForNotifyNotUsed() {
+  MOZ_ASSERT(mAllocator && mAllocator->GetThread() &&
+             mAllocator->GetThread()->IsOnCurrentThread());
   if (GetFlags() & TextureFlags::RECYCLE) {
     CancelTextureClientNotifyNotUsed(mSerial, GetAllocator());
     return;
@@ -1178,6 +1172,7 @@ void TextureClient::SetRecycleAllocator(
 bool TextureClient::InitIPDLActor(CompositableForwarder* aForwarder) {
   RefPtr<TextureForwarder> textureFwd = aForwarder->GetTextureForwarder();
   MOZ_ASSERT(aForwarder && textureFwd->GetThread() == mAllocator->GetThread());
+  MOZ_ASSERT(mAllocator->GetThread()->IsOnCurrentThread());
 
   if (mActor && !mActor->CanSend()) {
     return false;
@@ -1266,6 +1261,7 @@ bool TextureClient::InitIPDLActor(KnowsCompositor* aKnowsCompositor,
   RefPtr<TextureForwarder> textureFwd = aKnowsCompositor->GetTextureForwarder();
   MOZ_ASSERT(aKnowsCompositor &&
              textureFwd->GetThread() == mAllocator->GetThread());
+  MOZ_ASSERT(mAllocator->GetThread()->IsOnCurrentThread());
   if (mActor && !mActor->mDestroyed) {
     CompositableForwarder* currentFwd = mActor->mCompositableForwarder;
 
@@ -1330,7 +1326,11 @@ bool TextureClient::InitIPDLActor(KnowsCompositor* aKnowsCompositor,
   return mActor->CanSend();
 }
 
-PTextureChild* TextureClient::GetIPDLActor() { return mActor; }
+PTextureChild* TextureClient::GetIPDLActor() {
+  MOZ_ASSERT(mAllocator && mAllocator->GetThread() &&
+             mAllocator->GetThread()->IsOnCurrentThread());
+  return mActor;
+}
 
 
 already_AddRefed<TextureClient> TextureClient::CreateForDrawing(
