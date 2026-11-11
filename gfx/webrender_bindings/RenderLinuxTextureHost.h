@@ -2,13 +2,13 @@
 
 
 
-#ifndef MOZILLA_GFX_RENDERDMABUFTEXTUREHOST_H
-#define MOZILLA_GFX_RENDERDMABUFTEXTUREHOST_H
+#ifndef MOZILLA_GFX_RENDERLINUXTEXTUREHOST_H
+#define MOZILLA_GFX_RENDERLINUXTEXTUREHOST_H
 
 #include "RenderTextureHost.h"
 #include "RenderTextureHostSWGL.h"
 #include "mozilla/layers/TextureHostOGL.h"
-#include "mozilla/widget/DMABufSurface.h"
+#include "mozilla/widget/BufferSurface.h"
 
 namespace mozilla {
 
@@ -18,11 +18,14 @@ class SurfaceDescriptorDMABuf;
 
 namespace wr {
 
-class RenderDMABUFTextureHost final : public RenderTextureHostSWGL {
+class RenderLinuxTextureHost final : public RenderTextureHostSWGL {
  public:
-  explicit RenderDMABUFTextureHost(DMABufSurface* aSurface);
+  explicit RenderLinuxTextureHost(BufferSurface* aSurface);
+  RenderLinuxTextureHost(uint8_t* aBuffer,
+                         const layers::BufferDescriptor& aDescriptor);
 
-  RenderDMABUFTextureHost* AsRenderDMABUFTextureHost() override { return this; }
+  RenderLinuxTextureHost* AsRenderLinuxTextureHost() override { return this; }
+
   gfx::IntSize GetSize(uint8_t aChannelIndex) const;
   wr::WrExternalImage Lock(uint8_t aChannelIndex, gl::GLContext* aGL) override;
   void Unlock() override;
@@ -32,25 +35,31 @@ class RenderDMABUFTextureHost final : public RenderTextureHostSWGL {
     return mSurface->GetWidth() * mSurface->GetHeight() *
            BytesPerPixel(mSurface->GetFormat());
   }
-  RefPtr<DMABufSurface> GetSurface() { return mSurface; }
+  RefPtr<BufferSurface> GetSurface() { return mSurface; }
 
   
   gfx::SurfaceFormat GetFormat() const override {
     return mSurface->GetFormat();
   }
   gfx::ColorDepth GetColorDepth() const override {
-    return gfx::ColorDepth::COLOR_8;
+    return mSurface->GetColorDepth();
   }
   size_t GetPlaneCount() const override { return mSurface->GetTextureCount(); };
   bool MapPlane(RenderCompositor* aCompositor, uint8_t aChannelIndex,
                 PlaneInfo& aPlaneInfo) override;
   void UnmapPlanes() override;
 
+  void PrepareForUse() override;
+
+  bool SupportsDirectComposition() {
+    return mSurface->SupportsDirectComposition();
+  }
+
  private:
-  virtual ~RenderDMABUFTextureHost();
+  virtual ~RenderLinuxTextureHost();
   void DeleteTextureHandle();
 
-  RefPtr<DMABufSurface> mSurface;
+  RefPtr<BufferSurface> mSurface;
   RefPtr<gl::GLContext> mGL;
   RefPtr<gfx::DataSourceSurface> mReadback;
 };

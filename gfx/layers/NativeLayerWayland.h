@@ -8,7 +8,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/layers/NativeLayer.h"
-#include "mozilla/layers/SurfacePoolWayland.h"
+#include "mozilla/layers/NativeLayerWaylandSurfaceHandler.h"
 #include "mozilla/widget/DMABufFormats.h"
 #include "nsRegion.h"
 #include "nsTArray.h"
@@ -16,7 +16,7 @@
 class DMABufSurfaceRGBA;
 
 namespace mozilla::wr {
-class RenderDMABUFTextureHost;
+class RenderLinuxTextureHost;
 }  
 
 namespace mozilla::widget {
@@ -281,6 +281,7 @@ class NativeLayerWayland : public NativeLayer {
   virtual bool CommitFrontBufferToScreenLocked(
       const widget::WaylandSurfaceLock& aProofOfLock) = 0;
   virtual bool IsFrontBufferChanged() = 0;
+  virtual bool HasFrontBuffer() { return !!mFrontBuffer; }
 
  protected:
   ~NativeLayerWayland();
@@ -374,13 +375,11 @@ class NativeLayerWaylandRender final : public NativeLayerWayland {
 
   void DiscardBackbuffersLocked(const widget::WaylandSurfaceLock& aProofOfLock,
                                 bool aForce) override;
-  void ReadBackFrontBuffer(const widget::WaylandSurfaceLock& aProofOfLock);
   bool CommitFrontBufferToScreenLocked(
       const widget::WaylandSurfaceLock& aProofOfLock) override;
+  bool HasFrontBuffer() override { return !!mSurfaceHandler.FrontBuffer(); }
 
-  const RefPtr<SurfacePoolHandleWayland> mSurfacePoolHandle;
-  RefPtr<widget::WaylandBuffer> mInProgressBuffer;
-  gfx::IntRegion mDirtyRegion;
+  NativeLayerWaylandSurfaceHandler mSurfaceHandler;
 };
 
 class NativeLayerWaylandExternal final : public NativeLayerWayland {
@@ -415,6 +414,9 @@ class NativeLayerWaylandExternal final : public NativeLayerWayland {
       const widget::WaylandSurfaceLock& aProofOfLock) override;
 
   uintptr_t mLastSurface = 0;
+
+  
+  
   RefPtr<wr::RenderTextureHost> mTextureHost;
 };
 

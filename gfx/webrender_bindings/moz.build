@@ -93,10 +93,10 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
     EXPORTS.mozilla.webrender += [
-        "RenderDMABUFTextureHost.h",
+        "RenderLinuxTextureHost.h",
     ]
     SOURCES += [
-        "RenderDMABUFTextureHost.cpp",
+        "RenderLinuxTextureHost.cpp",
     ]
 
 if CONFIG["MOZ_WAYLAND"]:
