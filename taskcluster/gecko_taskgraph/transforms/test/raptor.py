@@ -422,13 +422,11 @@ def add_extra_options(config, tests):
                 )
 
         if (
-            ("android-hw-p6" in test_platform or "android-hw-s24" in test_platform)
-            and "speedometer2-" not in test["test-name"]
+            "android-hw-p6" in test_platform or "android-hw-s24" in test_platform
+        ) and not test["test-name"].startswith("browsertime-power-"):
             
-        ):
-            
-            if "--power-test" not in extra_options:
-                extra_options.append("--power-test")
+            if "--power-test" in extra_options:
+                extra_options.remove("--power-test")
         elif "windows" in test_platform and (
             uses_speedometer_3_harness(test) or "tp6" in test["test-name"]
         ):
