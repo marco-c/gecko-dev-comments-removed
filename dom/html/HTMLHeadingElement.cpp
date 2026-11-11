@@ -103,7 +103,7 @@ uint32_t HTMLHeadingElement::GetComputedHeadingOffset(uint32_t aMax) const {
   uint32_t offset = 0;
 
   
-  const Element* inclusiveAncestor = this;
+  const nsINode* inclusiveAncestor = this;
 
   
   while (inclusiveAncestor) {
@@ -136,7 +136,7 @@ uint32_t HTMLHeadingElement::GetComputedHeadingOffset(uint32_t aMax) const {
 
     
     
-    inclusiveAncestor = inclusiveAncestor->GetParentElementCrossingShadowRoot();
+    inclusiveAncestor = inclusiveAncestor->GetParentOrShadowHostNode();
   }
 
   
