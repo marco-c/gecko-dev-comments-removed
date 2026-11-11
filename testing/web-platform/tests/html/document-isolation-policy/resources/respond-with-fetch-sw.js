@@ -1,5 +1,7 @@
 
 
+
+
 self.addEventListener("install", () => self.skipWaiting());
 
 self.addEventListener("fetch", event => {
@@ -8,4 +10,11 @@ self.addEventListener("fetch", event => {
     event.respondWith(fetch(event.request));
   else if (params.has("respond-with-fetch-of"))
     event.respondWith(fetch(params.get("respond-with-fetch-of"), { mode: "no-cors" }));
+  else if (params.has("respond-with-cache-of")) {
+    event.respondWith((async () => {
+      const cache = await caches.open("respond-with-cache-of");
+      await cache.put(event.request, await fetch(params.get("respond-with-cache-of"), { mode: "no-cors" }));
+      return cache.match(event.request);
+    })());
+  }
 });
