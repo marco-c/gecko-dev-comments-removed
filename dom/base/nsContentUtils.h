@@ -780,12 +780,18 @@ class nsContentUtils {
 
 
 
+
+
+
+
+
   template <TreeKind aKind, typename PT1, typename RT1, typename PT2,
             typename RT2>
   static mozilla::Maybe<int32_t> ComparePoints(
       const mozilla::RangeBoundaryBase<PT1, RT1>& aBoundary1,
       const mozilla::RangeBoundaryBase<PT2, RT2>& aBoundary2,
-      NodeIndexCache* aIndexCache = nullptr);
+      NodeIndexCache* aIndexCache = nullptr,
+      const nsINode* aAncestorLimiter = nullptr);
 
   
 
@@ -1996,6 +2002,18 @@ class nsContentUtils {
   
   
   static const int32_t kParseFragmentNoSanitization = -2;
+
+  
+
+
+
+  static bool ShouldSanitizeFragment(nsIPrincipal* aPrincipal, int32_t aFlags);
+
+  
+
+
+
+  static bool IsFragmentParsingActive() { return sFragmentParsingActive; }
 
   enum class SanitizerMode { Safe, Unsafe };
 
@@ -3866,7 +3884,8 @@ class nsContentUtils {
   template <TreeKind aKind>
   static mozilla::Maybe<int32_t> ComparePointsWithIndices(
       const nsINode* aParent1, uint32_t aOffset1, const nsINode* aParent2,
-      uint32_t aOffset2, NodeIndexCache* aIndexCache = nullptr);
+      uint32_t aOffset2, NodeIndexCache* aIndexCache = nullptr,
+      const nsINode* aAncestorLimiter = nullptr);
 
   
 

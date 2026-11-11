@@ -24,6 +24,26 @@ MOZ_NEVER_INLINE bool ContainsMarkup(const char16_t* aPtr,
 
 
 
+MOZ_NEVER_INLINE const char16_t* CollectLessThanAndAmpersand(
+    const char16_t* aStart, const char16_t* aPtr, const char16_t* aEnd,
+    uint32_t*& aOut, const uint32_t* aOutEnd);
+
+
+
+
+MOZ_NEVER_INLINE size_t SkipAttributeValueDoubleQuoted(const char16_t* aPtr,
+                                                       const char16_t* aEnd);
+
+
+
+
+MOZ_NEVER_INLINE size_t SkipAttributeValueSingleQuoted(const char16_t* aPtr,
+                                                       const char16_t* aEnd);
+
+
+
+
+
 
 
 
