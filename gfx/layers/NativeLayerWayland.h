@@ -16,7 +16,7 @@
 class DMABufSurfaceRGBA;
 
 namespace mozilla::wr {
-class RenderDMABUFTextureHost;
+class RenderLinuxTextureHost;
 }  
 
 namespace mozilla::widget {
@@ -414,6 +414,9 @@ class NativeLayerWaylandExternal final : public NativeLayerWayland {
       const widget::WaylandSurfaceLock& aProofOfLock) override;
 
   uintptr_t mLastSurface = 0;
+
+  
+  
   RefPtr<wr::RenderTextureHost> mTextureHost;
 };
 
