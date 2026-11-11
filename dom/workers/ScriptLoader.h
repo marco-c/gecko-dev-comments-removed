@@ -159,6 +159,10 @@ class WorkerScriptLoader : public JS::loader::ScriptLoaderInterface,
 
   
   
+  uint32_t mEvaluatingScriptCount = 0;
+
+  
+  
   
   uint32_t mLoadingModuleRequestCount;
 
@@ -228,7 +232,8 @@ class WorkerScriptLoader : public JS::loader::ScriptLoaderInterface,
   bool ProcessPendingRequests(JSContext* aCx);
 
   bool AllScriptsExecuted() {
-    return mLoadingRequests.isEmpty() && mLoadedRequests.isEmpty();
+    return mEvaluatingScriptCount == 0 && mLoadingRequests.isEmpty() &&
+           mLoadedRequests.isEmpty();
   }
 
   bool IsDebuggerScript() const { return mWorkerScriptType == DebuggerScript; }
