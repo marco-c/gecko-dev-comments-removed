@@ -219,6 +219,10 @@ pub trait DomTraversal<E: TElement>: Sync {
 
     
     fn shared_context(&self) -> &SharedStyleContext<'_>;
+
+    
+    
+    fn after_sequential_tasks(&self, _root: E) {}
 }
 
 

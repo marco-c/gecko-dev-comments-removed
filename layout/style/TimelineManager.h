@@ -121,9 +121,8 @@ class TimelineManager {
       TimelineNameMap<TimelineType>& aTimelineNameMap);
 
   template <typename TimelineType>
-  static void DoUnregisterTimelines(
-      TimelineCollection<TimelineType>& aCollection,
-      TimelineNameMap<TimelineType>& aTimelineNameMap);
+  void DoUnregisterTimelines(TimelineCollection<TimelineType>& aCollection,
+                             TimelineNameMap<TimelineType>& aTimelineNameMap);
 
   
   template <typename TimelineType>

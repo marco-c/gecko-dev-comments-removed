@@ -546,27 +546,28 @@ void Gecko_UpdateAnimations(const Element* aElement,
   
   
   if (aTasks & UpdateAnimationsTasks::TimelineScopes) {
-    presContext->TimelineManager()->UpdateTimelineScopes(element,
-                                                         aComputedData);
-    
-    
-    presContext->AnimationManager()->UpdateAllNamedTimelineAnimations();
+    presContext->TimelineManager()->UpdateTimelineScopes(
+        const_cast<Element*>(element), pseudoRequest, aComputedData);
   }
 
+  
+  
   
   
   if (aTasks & UpdateAnimationsTasks::ScrollTimelines) {
     const auto affected = presContext->TimelineManager()->UpdateTimelines(
         const_cast<Element*>(element), pseudoRequest, aComputedData,
         TimelineManager::ProgressTimelineType::Scroll);
-    presContext->AnimationManager()->UpdateNamedTimelineAnimations(affected);
+    presContext->AnimationManager()->MarkNamedTimelineAnimationsForUpdate(
+        affected);
   }
 
   if (aTasks & UpdateAnimationsTasks::ViewTimelines) {
     const auto affected = presContext->TimelineManager()->UpdateTimelines(
         const_cast<Element*>(element), pseudoRequest, aComputedData,
         TimelineManager::ProgressTimelineType::View);
-    presContext->AnimationManager()->UpdateNamedTimelineAnimations(affected);
+    presContext->AnimationManager()->MarkNamedTimelineAnimationsForUpdate(
+        affected);
   }
 
   if (aTasks & UpdateAnimationsTasks::CSSAnimations) {
@@ -617,6 +618,14 @@ void Gecko_UpdateAnimations(const Element* aElement,
         const_cast<Element*>(element), pseudoRequest,
         EffectCompositor::RestyleType::Standard,
         EffectCompositor::CascadeLevel::Animations);
+  }
+}
+
+void Gecko_FlushPendingNamedTimelineUpdates(const Element* aRoot) {
+  MOZ_ASSERT(aRoot);
+  if (nsPresContext* presContext =
+          nsContentUtils::GetContextForContent(aRoot)) {
+    presContext->AnimationManager()->FlushPendingNamedTimelineUpdates();
   }
 }
 
@@ -2053,4 +2062,10 @@ bool Gecko_GetAnchorPosSize(const AnchorPosResolutionParams* aParams,
   }();
   *aOut = Length::FromPixels(CSSPixel::FromAppUnits(l));
   return true;
+}
+
+bool Gecko_ScheduleIdle(void (*aFunction)(), uint32_t aTimeout) {
+  return NS_SUCCEEDED(NS_DispatchToCurrentThreadQueue(
+      NS_NewRunnableFunction("Gecko_ScheduleIdle", aFunction), aTimeout,
+      EventQueuePriority::Idle));
 }

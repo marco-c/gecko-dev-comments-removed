@@ -29,9 +29,6 @@ TimelineCollection<TimelineType>::~TimelineCollection() {
     }
   }
 
-  
-  
-
   LinkedListElement<SelfType>::remove();
 }
 

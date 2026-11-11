@@ -6,6 +6,7 @@
 
 #include "AnimationCommon.h"
 #include "mozilla/Keyframe.h"
+#include "mozilla/Span.h"
 #include "mozilla/dom/CSSAnimation.h"
 #include "nsISupportsImpl.h"
 #include "nsTHashSet.h"
@@ -57,9 +58,19 @@ class nsAnimationManager final
 
 
 
-  void UpdateNamedTimelineAnimations(
-      const nsTArray<RefPtr<const nsAtom>>& aChanged);
-  void UpdateAllNamedTimelineAnimations();
+
+
+  void MarkNamedTimelineAnimationForUpdate(const nsAtom* aName);
+  void MarkNamedTimelineAnimationsForUpdate(
+      mozilla::Span<const RefPtr<const nsAtom>> aNames);
+  void MarkAllNamedTimelineAnimationsForUpdate() {
+    mAllNamedTimelineAnimationsPending = true;
+  }
+  bool HasPendingNamedTimelineUpdates() const {
+    return mAllNamedTimelineAnimationsPending ||
+           !mTimelineNamesPendingUpdate.IsEmpty();
+  }
+  void FlushPendingNamedTimelineUpdates();
 
   
   
@@ -144,6 +155,14 @@ class nsAnimationManager final
   
   
   nsTHashSet<RefPtr<mozilla::dom::CSSAnimation>> mAnimationsWithDeferredUpdate;
+  
+  
+  nsTHashSet<RefPtr<const nsAtom>> mTimelineNamesPendingUpdate;
+  bool mAllNamedTimelineAnimationsPending = false;
+
+  void UpdateNamedTimelineAnimations(
+      const nsTHashSet<RefPtr<const nsAtom>>& aChanged);
+  void UpdateAllNamedTimelineAnimations();
 
   void DoUpdateAnimations(const mozilla::NonOwningAnimationTarget& aTarget,
                           const nsStyleUIReset& aStyle,
