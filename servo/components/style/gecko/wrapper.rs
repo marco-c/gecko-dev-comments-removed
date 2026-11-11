@@ -42,7 +42,6 @@ use crate::gecko_bindings::bindings::Gecko_MatchLang;
 use crate::gecko_bindings::bindings::Gecko_UpdateAnimations;
 use crate::gecko_bindings::structs;
 use crate::gecko_bindings::structs::ELEMENT_HANDLED_SNAPSHOT;
-use crate::gecko_bindings::structs::ELEMENT_HAS_ANIMATION_ONLY_DIRTY_DESCENDANTS_FOR_SERVO;
 use crate::gecko_bindings::structs::ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO;
 use crate::gecko_bindings::structs::ELEMENT_HAS_SNAPSHOT;
 use crate::gecko_bindings::structs::EffectCompositor_CascadeLevel as CascadeLevel;
@@ -659,6 +658,37 @@ impl<'le> GeckoElement<'le> {
     }
 
     
+    
+    
+    
+    
+    pub unsafe fn take_data(&self) -> Option<Box<ElementDataWrapper>> {
+        #[cfg(debug_assertions)]
+        {
+            
+            
+            let _ = self.mutate_data();
+        }
+        let ptr = self.0.mServoData.get();
+        unsafe {
+            
+            
+            self.unset_flags(
+                ELEMENT_HAS_SNAPSHOT
+                    | ELEMENT_HANDLED_SNAPSHOT
+                    | structs::Element_kAllServoDescendantBits
+                    | NODE_NEEDS_FRAME,
+            );
+            if ptr.is_null() {
+                return None;
+            }
+            debug!("Detaching ElementData for {self:?}");
+            self.0.mServoData.set(ptr::null_mut());
+            Some(Box::from_raw(ptr))
+        }
+    }
+
+    
     #[inline]
     pub fn has_any_animation(&self) -> bool {
         self.may_have_animations() && unsafe { Gecko_ElementHasAnimations(self.0) }
@@ -828,10 +858,6 @@ impl<'le> GeckoElement<'le> {
             self, restyle_hint, change_hint
         );
         debug_assert!(unsafe { bindings::Gecko_IsMainThread() });
-        debug_assert!(
-            !(restyle_hint.has_animation_hint() && restyle_hint.has_non_animation_hint()),
-            "Animation restyle hints should not appear with non-animation restyle hints"
-        );
 
         let Some(mut data) = self.mutate_data() else {
             debug!("(Element not styled, discarding hints)");
@@ -840,11 +866,7 @@ impl<'le> GeckoElement<'le> {
 
         
         unsafe {
-            if restyle_hint.has_animation_hint() {
-                bindings::Gecko_NoteAnimationOnlyDirtyElement(self.0);
-            } else {
-                bindings::Gecko_NoteDirtyElement(self.0);
-            }
+            bindings::Gecko_NoteDirtyElement(self.0);
         }
 
         data.hint.insert(restyle_hint);
@@ -1353,26 +1375,9 @@ impl<'le> TElement for GeckoElement<'le> {
         unsafe { self.unset_flags(ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO) }
     }
 
-    #[inline]
-    fn has_animation_only_dirty_descendants(&self) -> bool {
-        self.flags() & ELEMENT_HAS_ANIMATION_ONLY_DIRTY_DESCENDANTS_FOR_SERVO != 0
-    }
-
-    unsafe fn set_animation_only_dirty_descendants(&self) {
-        self.set_flags(ELEMENT_HAS_ANIMATION_ONLY_DIRTY_DESCENDANTS_FOR_SERVO)
-    }
-
-    unsafe fn unset_animation_only_dirty_descendants(&self) {
-        unsafe { self.unset_flags(ELEMENT_HAS_ANIMATION_ONLY_DIRTY_DESCENDANTS_FOR_SERVO) }
-    }
-
     unsafe fn clear_descendant_bits(&self) {
         unsafe {
-            self.unset_flags(
-                ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO
-                    | ELEMENT_HAS_ANIMATION_ONLY_DIRTY_DESCENDANTS_FOR_SERVO
-                    | NODE_DESCENDANTS_NEED_FRAMES,
-            )
+            self.unset_flags(ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO | NODE_DESCENDANTS_NEED_FRAMES)
         }
     }
 
@@ -1428,28 +1433,7 @@ impl<'le> TElement for GeckoElement<'le> {
     }
 
     unsafe fn clear_data(&self) {
-        #[cfg(debug_assertions)]
-        {
-            
-            
-            let _ = self.mutate_data();
-        }
-        let ptr = self.0.mServoData.get();
-        unsafe {
-            
-            
-            self.unset_flags(
-                ELEMENT_HAS_SNAPSHOT
-                    | ELEMENT_HANDLED_SNAPSHOT
-                    | structs::Element_kAllServoDescendantBits
-                    | NODE_NEEDS_FRAME,
-            );
-            if !ptr.is_null() {
-                debug!("Dropping ElementData for {:?}", self);
-                let _data = Box::from_raw(self.0.mServoData.get());
-                self.0.mServoData.set(ptr::null_mut());
-            }
-        }
+        drop(unsafe { self.take_data() });
     }
 
     #[inline]
@@ -1644,6 +1628,12 @@ impl<'le> TElement for GeckoElement<'le> {
                 LayerOrder::root(),
             ));
         }
+    }
+
+    #[inline]
+    fn has_unique_presentational_hints(&self) -> bool {
+        
+        self.has_attr_impl() && unsafe { (*self.0.mAttrs.mImpl.mPtr).mMappedAttributeBits != 0 }
     }
 
     fn synthesize_presentational_hints_for_legacy_attributes<'a, V>(

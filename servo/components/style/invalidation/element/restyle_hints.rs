@@ -4,8 +4,6 @@
 
 
 
-use crate::traversal_flags::TraversalFlags;
-
 bitflags! {
     /// The kind of restyle we need to do for a given element.
     #[repr(C)]
@@ -34,13 +32,11 @@ bitflags! {
         const RECASCADE_DESCENDANTS = 1 << 6;
 
         /// Replace the style data coming from CSS transitions without updating
-        /// any other style data. This hint is only processed in animation-only
-        /// traversal which is prior to normal traversal.
+        /// any other style data.
         const RESTYLE_CSS_TRANSITIONS = 1 << 7;
 
         /// Replace the style data coming from CSS animations without updating
-        /// any other style data. This hint is only processed in animation-only
-        /// traversal which is prior to normal traversal.
+        /// any other style data.
         const RESTYLE_CSS_ANIMATIONS = 1 << 8;
 
         /// Don't re-run selector-matching on the element, only the style
@@ -49,8 +45,7 @@ bitflags! {
         const RESTYLE_STYLE_ATTRIBUTE = 1 << 9;
 
         /// Replace the style data coming from SMIL animations without updating
-        /// any other style data. This hint is only processed in animation-only
-        /// traversal which is prior to normal traversal.
+        /// any other style data.
         const RESTYLE_SMIL = 1 << 10;
 
         /// Match self if this element is dependent on a style query.
@@ -106,26 +101,12 @@ impl RestyleHint {
     }
 
     
-    pub fn propagate(&mut self, traversal_flags: &TraversalFlags) -> Self {
-        
-        
-        if traversal_flags.for_animation_only() {
-            self.remove_animation_hints();
-            return Self::empty();
-        }
-
-        debug_assert!(
-            !self.has_animation_hint(),
-            "There should not be any animation restyle hints \
-             during normal traversal"
-        );
-
-        
-        std::mem::take(self).propagate_for_non_animation_restyle()
+    pub fn propagate(&mut self) -> Self {
+        std::mem::take(self).propagate_to_children()
     }
 
     
-    fn propagate_for_non_animation_restyle(&self) -> Self {
+    fn propagate_to_children(&self) -> Self {
         if self.contains(RestyleHint::RESTYLE_DESCENDANTS) {
             return Self::restyle_subtree();
         }
@@ -176,21 +157,9 @@ impl RestyleHint {
     }
 
     
-    
     #[inline]
-    pub fn has_animation_hint_or_recascade(&self) -> bool {
-        self.intersects(
-            Self::for_animations()
-                | Self::RECASCADE_SELF
-                | Self::RECASCADE_SELF_IF_INHERIT_RESET_STYLE,
-        )
-    }
-
-    
-    
-    #[inline]
-    pub fn has_non_animation_hint(&self) -> bool {
-        !(*self & !Self::for_animations()).is_empty()
+    pub fn recascade_self() -> Self {
+        Self::RECASCADE_SELF | Self::RECASCADE_SELF_IF_INHERIT_RESET_STYLE
     }
 
     
@@ -198,21 +167,6 @@ impl RestyleHint {
     #[inline]
     pub fn has_replacements(&self) -> bool {
         self.intersects(Self::replacements())
-    }
-
-    
-    #[inline]
-    pub fn remove_animation_hints(&mut self) {
-        self.remove(Self::for_animations());
-
-        
-        
-        
-        
-        
-        
-        
-        self.remove(Self::RECASCADE_SELF | Self::RECASCADE_SELF_IF_INHERIT_RESET_STYLE);
     }
 }
 

@@ -316,7 +316,6 @@ void Gecko_SetFontPaletteOverride(
 
 void Gecko_NoteDirtyElement(const mozilla::dom::Element*);
 void Gecko_NoteDirtySubtreeForInvalidation(const mozilla::dom::Element*);
-void Gecko_NoteAnimationOnlyDirtyElement(const mozilla::dom::Element*);
 void Gecko_InvalidatePositionTry(const mozilla::dom::Element*);
 
 

@@ -39,12 +39,11 @@ enum class LazyComputeBehavior {
 enum class ServoTraversalFlags : uint32_t {
   Empty = 0,
   
-  AnimationOnly = 1 << 0,
-  
   ForCSSRuleChanges = 1 << 1,
   
   
-  FinalAnimationTraversal = 1 << 2,
+  
+  Forgetful = 1 << 2,
   
   
   ParallelTraversal = 1 << 7,

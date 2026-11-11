@@ -390,8 +390,6 @@ class RestyleManager {
 
 
 
-
-
   void UpdateOnlyAnimationStyles();
 
   

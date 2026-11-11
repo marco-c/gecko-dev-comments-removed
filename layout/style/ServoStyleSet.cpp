@@ -64,6 +64,7 @@
 #include "nsIAnonymousContentCreator.h"
 #include "nsLayoutUtils.h"
 #include "nsPrintfCString.h"
+#include "nsThreadUtils.h"
 #include "nsWindowSizes.h"
 
 namespace mozilla {
@@ -917,10 +918,8 @@ void ServoStyleSet::StyleNewSubtree(Element* aRoot) {
   
   if (GetPresContext()->EffectCompositor()->PreTraverseInSubtree(flags,
                                                                  aRoot)) {
-    postTraversalRequired =
-        Servo_TraverseSubtree(aRoot, mRawData.get(), &snapshots,
-                              ServoTraversalFlags::AnimationOnly |
-                                  ServoTraversalFlags::FinalAnimationTraversal);
+    postTraversalRequired = Servo_TraverseSubtree(
+        aRoot, mRawData.get(), &snapshots, ServoTraversalFlags::Forgetful);
     MOZ_ASSERT(!postTraversalRequired);
   }
 }

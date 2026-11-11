@@ -314,10 +314,9 @@ fn fmt_with_data<N: TNode>(f: &mut fmt::Formatter, n: N) -> fmt::Result {
     if let Some(el) = n.as_element() {
         write!(
             f,
-            "{:?} dd={} aodd={} data={:?}",
+            "{:?} dd={} data={:?}",
             el,
             el.has_dirty_descendants(),
-            el.has_animation_only_dirty_descendants(),
             el.borrow_data(),
         )
     } else {
@@ -329,14 +328,9 @@ fn fmt_with_data<N: TNode>(f: &mut fmt::Formatter, n: N) -> fmt::Result {
 fn fmt_with_data_and_primary_values<N: TNode>(f: &mut fmt::Formatter, n: N) -> fmt::Result {
     if let Some(el) = n.as_element() {
         let dd = el.has_dirty_descendants();
-        let aodd = el.has_animation_only_dirty_descendants();
         let data = el.borrow_data();
         let values = data.as_ref().and_then(|d| d.styles.get_primary());
-        write!(
-            f,
-            "{:?} dd={} aodd={} data={:?} values={:?}",
-            el, dd, aodd, &data, values
-        )
+        write!(f, "{:?} dd={} data={:?} values={:?}", el, dd, &data, values)
     } else {
         write!(f, "{:?}", n)
     }
@@ -653,24 +647,6 @@ pub trait TElement:
 
     
     
-    fn has_animation_only_dirty_descendants(&self) -> bool {
-        false
-    }
-
-    
-    
-    
-    
-    unsafe fn set_animation_only_dirty_descendants(&self) {}
-
-    
-    
-    
-    unsafe fn unset_animation_only_dirty_descendants(&self) {}
-
-    
-    
-    
     
     
     unsafe fn clear_descendant_bits(&self) {
@@ -766,15 +742,6 @@ pub trait TElement:
         context: &SharedStyleContext,
         pseudo_element: Option<PseudoElement>,
     ) -> bool;
-
-    
-    fn has_animation_restyle_hints(&self) -> bool {
-        let data = match self.borrow_data() {
-            Some(d) => d,
-            None => return false,
-        };
-        data.hint.has_animation_hint()
-    }
 
     
     
@@ -906,6 +873,11 @@ pub trait TElement:
     
     
     fn is_html_document_body_element(&self) -> bool;
+
+    
+    fn has_unique_presentational_hints(&self) -> bool {
+        false
+    }
 
     
     

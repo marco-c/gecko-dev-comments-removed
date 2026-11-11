@@ -169,9 +169,6 @@ already_AddRefed<mozilla::dom::ContentList> NS_GetContentList(
 enum : uint32_t {
   
   ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO = ELEMENT_FLAG_BIT(0),
-  
-  
-  ELEMENT_HAS_ANIMATION_ONLY_DIRTY_DESCENDANTS_FOR_SERVO = ELEMENT_FLAG_BIT(1),
 
   
   
@@ -608,9 +605,7 @@ class Element : public FragmentOrElement {
   Directionality GetComputedDirectionality() const;
 
   static const uint32_t kAllServoDescendantBits =
-      ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO |
-      ELEMENT_HAS_ANIMATION_ONLY_DIRTY_DESCENDANTS_FOR_SERVO |
-      NODE_DESCENDANTS_NEED_FRAMES;
+      ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO | NODE_DESCENDANTS_NEED_FRAMES;
 
   
 
@@ -623,7 +618,6 @@ class Element : public FragmentOrElement {
   void NoteDirtySubtreeForServo();
 
   void NoteDirtyForServo();
-  void NoteAnimationOnlyDirtyForServo();
   void NoteDescendantsNeedFramesForServo();
 
   bool HasDirtyDescendantsForServo() const {
@@ -636,18 +630,6 @@ class Element : public FragmentOrElement {
 
   void UnsetHasDirtyDescendantsForServo() {
     UnsetFlags(ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO);
-  }
-
-  bool HasAnimationOnlyDirtyDescendantsForServo() const {
-    return HasFlag(ELEMENT_HAS_ANIMATION_ONLY_DIRTY_DESCENDANTS_FOR_SERVO);
-  }
-
-  void SetHasAnimationOnlyDirtyDescendantsForServo() {
-    SetFlags(ELEMENT_HAS_ANIMATION_ONLY_DIRTY_DESCENDANTS_FOR_SERVO);
-  }
-
-  void UnsetHasAnimationOnlyDirtyDescendantsForServo() {
-    UnsetFlags(ELEMENT_HAS_ANIMATION_ONLY_DIRTY_DESCENDANTS_FOR_SERVO);
   }
 
   bool HasServoData() const { return !!mServoData.Get(); }
@@ -2486,13 +2468,12 @@ class Element : public FragmentOrElement {
 
 
 
-
   nsresult SetAttrAndNotify(int32_t aNamespaceID, nsAtom* aName,
                             nsAtom* aPrefix, const nsAttrValue* aOldValue,
                             nsAttrValue& aParsedValue,
                             nsIPrincipal* aSubjectPrincipal,
                             AttrModType aModType, bool aNotify,
-                            bool aCallAfterSetAttr, Document* aComposedDocument,
+                            bool aCallAfterSetAttr,
                             const mozAutoDocUpdate& aGuard,
                             IsKnownNewAttr aIsKnownNew);
 
