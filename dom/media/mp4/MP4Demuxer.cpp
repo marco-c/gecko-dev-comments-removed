@@ -380,18 +380,12 @@ RefPtr<MP4TrackDemuxer::SeekPromise> MP4TrackDemuxer::Seek(
 
   mIterator->Seek(seekTime);
 
-#ifdef MOZ_APPLEMEDIA
   bool hasSeenValidSamples = false, seekingFromFirstSyncSample = false;
-#endif
   
   do {
     auto next = GetNextSample();
     if (next.isErr()) {
       auto error = next.unwrapErr();
-#ifdef MOZ_APPLEMEDIA
-      
-      
-      
       
       
       if ((mType == kH264 || mType == kHEVC) &&
@@ -403,7 +397,6 @@ RefPtr<MP4TrackDemuxer::SeekPromise> MP4TrackDemuxer::Seek(
         mIterator->Seek(seekTime, SampleIterator::SyncSampleMode::First);
         continue;
       }
-#endif
       return SeekPromise::CreateAndReject(error, __func__);
     }
     RefPtr<MediaRawData> sample = next.unwrap();
@@ -416,9 +409,7 @@ RefPtr<MP4TrackDemuxer::SeekPromise> MP4TrackDemuxer::Seek(
       mQueuedSample = sample;
       seekTime = mQueuedSample->mTime;
     }
-#ifdef MOZ_APPLEMEDIA
     hasSeenValidSamples = true;
-#endif
   } while (!mQueuedSample);
 
   SetNextKeyFrameTime();
