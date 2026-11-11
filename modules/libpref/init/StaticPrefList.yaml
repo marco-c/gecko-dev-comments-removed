@@ -3427,8 +3427,20 @@
   value: true
   mirror: always
 
-# Is Gamepad Extension API enabled?
-- name: dom.gamepad.extensions.enabled
+# Is Gamepad.hand enabled?
+- name: dom.gamepad.hand.enabled
+  type: bool
+  value: true
+  mirror: always
+
+# Is Gamepad.pose enabled?
+- name: dom.gamepad.pose.enabled
+  type: bool
+  value: true
+  mirror: always
+
+# Is Gamepad.hapticActuators enabled?
+- name: dom.gamepad.haptic_actuators.enabled
   type: bool
   value: true
   mirror: always
@@ -5056,10 +5068,11 @@
   value: false
   mirror: always
 
-# When true, cross-origin prefetch URLs are rejected at StartPrefetch.
-# Keeps M1 same-origin only; set false in tests to exercise cross-origin
+# When true, cross-site prefetch URLs are rejected at StartPrefetch.
+# Same-site (including same-site cross-origin) prefetches share the document's
+# network partition and are allowed; set false in tests to exercise cross-site
 # code paths without requiring Private Prefetch Proxy (PPP) support.
-- name: dom.speculation_rules.same_origin_only
+- name: dom.speculation_rules.same_site_only
   type: RelaxedAtomicBool
   value: true
   mirror: always
@@ -8568,7 +8581,7 @@
 # instead of a rasterized mask image.
 - name: gfx.webrender.svg-simple-clips
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
 
 # Inside an <svg>, a clip-path that WebRender expresses natively lets its
@@ -12271,7 +12284,7 @@
 # Color interfaces are additionally gated by layout.css.typed-om-color.enabled.
 - name: layout.css.typed-om.enabled
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
   rust: true
 
@@ -13350,11 +13363,9 @@
     value: false
     mirror: once
 
-# Change to true when shipping HDR video on Windows
-# https://bugzilla.mozilla.org/show_bug.cgi?id=2012848
 -   name: media.wmf.force.allow-p010-format
     type: RelaxedAtomicBool
-    value: @IS_EARLY_BETA_OR_EARLIER@
+    value: false
     mirror: always
 
 -   name: media.wmf.use-sync-texture
@@ -15445,6 +15456,16 @@
   value: true
   mirror: never
 
+# Only send the device credential from Windows SSO or Microsoft Entra SSO,
+# not the signed-in user's credentials. One pref covers both platforms.
+# To override this for a container, add a pref like
+# `network.http.microsoft-entra-sso.device-only.${containerId}`. It only has an
+# effect if SSO is already enabled for that container.
+- name: network.http.microsoft-entra-sso.device-only
+  type: bool
+  value: false
+  mirror: always
+
 # To specify the list of trusted Microsoft Single Sign-On (SSO) authority URLs
 # This is needed for macOS unlike Windows where we send every URL to SSO
 - name: network.microsoft-sso-authority-list
@@ -17512,8 +17533,8 @@
   value: 10
   mirror: always
 
-# Validate that the principal used to bind child-written alt-data could have
-# been loaded by the content process that wrote it.
+# Validate that the origin of the principal used to bind child-written
+# alt-data has been loaded by the content process that wrote it.
 - name: network.cache.alt_data.validate_binding_principal
   type: RelaxedAtomicBool
   value: true
@@ -19281,13 +19302,6 @@
     type: RelaxedAtomicBool
     value: @IS_NIGHTLY_BUILD@
     mirror: always
-
-  # Whether \Device\KsecDD is closed in content process. We are closing this
-  # using a pref to give users a work-around if they have issues.
--   name: security.sandbox.content.close-ksecdd-handle
-    type: RelaxedAtomicBool
-    value: true
-    mirror: always
 #endif
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
@@ -20837,11 +20851,7 @@
 
 - name: webgl.disable-DOM-blit-uploads
   type: RelaxedAtomicBool
-#if defined(MOZ_AARCH64) && defined(XP_MACOSX)
-  value: true
-#else
   value: false
-#endif
   mirror: always
 
 - name: webgl.disabled
