@@ -754,6 +754,19 @@ nsresult nsHttpChannel::PrepareToConnect() {
     return enabled;
   };
 
+  auto deviceOnlyForCurrentContainer = [&]() {
+    uint32_t containerId = mLoadInfo->GetOriginAttributes().mUserContextId;
+    bool deviceOnly = Preferences::GetBool(
+        nsPrintfCString("network.http.microsoft-entra-sso.device-only.%u",
+                        containerId)
+            .get(),
+        StaticPrefs::network_http_microsoft_entra_sso_device_only());
+
+    LOG(("Device-only for container %u is %d\n", containerId, deviceOnly));
+
+    return deviceOnly;
+  };
+
 #endif  
 
 #ifdef XP_WIN
@@ -767,7 +780,7 @@ nsresult nsHttpChannel::PrepareToConnect() {
     if ((type == ExtContentPolicy::TYPE_DOCUMENT ||
          type == ExtContentPolicy::TYPE_SUBDOCUMENT) &&
         prefEnabledForCurrentContainer()) {
-      AddWindowsSSO(this);
+      AddWindowsSSO(this, deviceOnlyForCurrentContainer());
     }
   }
 #endif
@@ -806,7 +819,8 @@ nsresult nsHttpChannel::PrepareToConnect() {
         }
       };
 
-      nsresult rv = AddMicrosoftEntraSSO(this, std::move(resultCallback));
+      nsresult rv = AddMicrosoftEntraSSO(this, deviceOnlyForCurrentContainer(),
+                                         std::move(resultCallback));
 
       
       
@@ -4969,6 +4983,15 @@ nsresult nsHttpChannel::OpenCacheEntryInternal(bool isHttps) {
   nsCOMPtr<nsICacheStorage> cacheStorage;
   mCacheEntryURI = mURI;
 
+  
+  
+  bool readPrefetchEntry =
+      mNavigationalPrefetchCacheURI &&
+      !BYPASS_LOCAL_CACHE(mLoadFlags, LoadPreferCacheLoadOverBypass());
+  if (readPrefetchEntry) {
+    mCacheEntryURI = mNavigationalPrefetchCacheURI;
+  }
+
   uint32_t cacheEntryOpenFlags;
   bool offline = gIOService->IsOffline();
 
@@ -4990,6 +5013,10 @@ nsresult nsHttpChannel::OpenCacheEntryInternal(bool isHttps) {
     StoreCacheEntryIsReadOnly(true);
   } else if (BYPASS_LOCAL_CACHE(mLoadFlags, LoadPreferCacheLoadOverBypass())) {
     cacheEntryOpenFlags = nsICacheStorage::OPEN_TRUNCATE;
+  } else if (readPrefetchEntry) {
+    
+    cacheEntryOpenFlags = nsICacheStorage::OPEN_READONLY;
+    StoreCacheEntryIsReadOnly(true);
   } else {
     cacheEntryOpenFlags =
         nsICacheStorage::OPEN_NORMALLY | nsICacheStorage::CHECK_MULTITHREADED;
@@ -5211,6 +5238,12 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
 
   if (mCacheWaitTimedOut) {
     LOG(("  cache entry check arrived after backstop timeout, declining"));
+    *aResult = ENTRY_NOT_WANTED;
+    return NS_OK;
+  }
+
+  if (mCanceled) {
+    LOG(("  cache entry check arrived after cancel, declining"));
     *aResult = ENTRY_NOT_WANTED;
     return NS_OK;
   }
@@ -7432,7 +7465,12 @@ nsresult nsHttpChannel::CancelInternal(nsresult status) {
 
   mEarlyHintObserver = nullptr;
   mWebTransportSessionEventListener = nullptr;
-  mCanceled = true;
+  {
+    
+    
+    MutexAutoLock lock(mCacheWaitLock);
+    mCanceled = true;
+  }
   mStatus = NS_FAILED(status) ? status : NS_ERROR_ABORT;
 
   
@@ -9471,7 +9509,9 @@ nsHttpChannel::OnStartRequest(nsIRequest* request) {
   
   
   
-  if (NS_FAILED(mStatus) && !mCanceled && IsInternalSystemLoad(mLoadInfo)) {
+  
+  if (NS_FAILED(mStatus) && !mCanceled && IsInternalSystemLoad(mLoadInfo) &&
+      gHttpHandler->Active()) {
     if (StaticPrefs::network_essential_domains_fallback() &&
         hasConnectivity()) {
       auto passDomainCategory = [&](nsIChannel* aRedirectedChannel) {
@@ -9485,6 +9525,8 @@ nsHttpChannel::OnStartRequest(nsIRequest* request) {
       };
 
       if (nsCOMPtr<nsIURI> fallbackURI = GetFallbackURI(mURI)) {
+        PushRedirectAsyncFunc(
+            &nsHttpChannel::ContinueOnStartRequestAfterFallback);
         rv = StartRedirectChannelToURI(fallbackURI,
                                        nsIChannelEventSink::REDIRECT_INTERNAL,
                                        passDomainCategory);
@@ -9496,9 +9538,29 @@ nsHttpChannel::OnStartRequest(nsIRequest* request) {
                                         "httpchannel-fallback", nullptr);
           return NS_OK;
         }
+        PopRedirectAsyncFunc(
+            &nsHttpChannel::ContinueOnStartRequestAfterFallback);
       }
     }
   }
+
+  return ContinueOnStartRequestWithoutFallback();
+}
+
+nsresult nsHttpChannel::ContinueOnStartRequestAfterFallback(nsresult aResult) {
+  if (NS_SUCCEEDED(aResult)) {
+    
+    
+    return NS_OK;
+  }
+
+  
+  
+  return ContinueOnStartRequestWithoutFallback();
+}
+
+nsresult nsHttpChannel::ContinueOnStartRequestWithoutFallback() {
+  nsresult rv = NS_OK;
 
   
   if (!mListener) {
@@ -11121,6 +11183,12 @@ NS_IMETHODIMP
 nsHttpChannel::GetPreferCacheLoadOverBypass(bool* aPreferCacheLoadOverBypass) {
   NS_ENSURE_ARG(aPreferCacheLoadOverBypass);
   *aPreferCacheLoadOverBypass = LoadPreferCacheLoadOverBypass();
+  return NS_OK;
+}
+
+nsresult nsHttpChannel::SetNavigationalPrefetchCacheURI(nsIURI* aURI) {
+  ENSURE_CALLED_BEFORE_ASYNC_OPEN();
+  mNavigationalPrefetchCacheURI = aURI;
   return NS_OK;
 }
 

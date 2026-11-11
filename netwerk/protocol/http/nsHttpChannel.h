@@ -225,6 +225,13 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   void AsyncOpenFinal(TimeStamp aTimeStamp);
 
+  
+  
+  
+  
+  
+  nsresult SetNavigationalPrefetchCacheURI(nsIURI* aURI);
+
   [[nodiscard]] nsresult OpenCacheEntry(bool isHttps);
   [[nodiscard]] nsresult OpenCacheEntryInternal(bool isHttps);
   
@@ -402,6 +409,8 @@ class nsHttpChannel final : public HttpBaseChannel,
   void ProcessSSLInformation();
   bool IsHTTPS();
 
+  [[nodiscard]] nsresult ContinueOnStartRequestAfterFallback(nsresult);
+  [[nodiscard]] nsresult ContinueOnStartRequestWithoutFallback();
   [[nodiscard]] nsresult ContinueOnStartRequest1(nsresult);
   [[nodiscard]] nsresult ContinueOnStartRequest2(nsresult);
   [[nodiscard]] nsresult ContinueOnStartRequest3(nsresult);
@@ -645,6 +654,7 @@ class nsHttpChannel final : public HttpBaseChannel,
   nsCOMPtr<nsICacheEntry> mORBValidationCacheEntry;
 
   nsCOMPtr<nsIURI> mCacheEntryURI;
+  nsCOMPtr<nsIURI> mNavigationalPrefetchCacheURI;
   nsCString mCacheIdExtension;
 
   
@@ -876,6 +886,8 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   
   nsCOMPtr<nsITimer> mCacheWaitTimer;
+  
+  
   
   
   
