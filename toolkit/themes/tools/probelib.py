@@ -3,9 +3,9 @@
 
 """Launch a Firefox build under Marionette for the probe scripts.
 
-Not a command. `firefox-probe.py` and `marker-probe.py` import it from their
-own directory, and `desktop-theme-colors`' `contrast.py` and `pair-walk.py`
-from here: `add_launch_arguments()` gives a parser the launch flags, and
+Not a command. `contrast.py` and `pair_walk.py` beside it import it, and so do
+`desktop-theme-probing`'s `firefox-probe.py` and `marker-probe.py`:
+`add_launch_arguments()` gives a parser the launch flags, and
 `run(args, prog, body)` launches the binary, verifies the prefs, calls
 `body(client)` and tears the browser down, returning the process exit code.
 `add_page_arguments()` adds the flags that bring the window to the state under
