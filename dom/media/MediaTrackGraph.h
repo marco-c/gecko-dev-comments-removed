@@ -1165,7 +1165,8 @@ class MediaTrackGraph {
 
 
 
-  SourceMediaTrack* CreateSourceTrack(MediaSegment::Type aType);
+  SourceMediaTrack* CreateSourceTrack(MediaSegment::Type aType,
+                                      MediaTrack::Flags aFlags = {});
   
 
 
