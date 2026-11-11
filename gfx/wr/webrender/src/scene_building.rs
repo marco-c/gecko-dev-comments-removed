@@ -36,29 +36,27 @@
 
 
 use api::{BorderKind, BuiltDisplayList, BuiltDisplayListIter, PrimitiveFlags, SnapshotInfo};
-use api::{ClipId, ColorF, CommonItemProperties, ComplexClipRegion, ComponentTransferFuncType, RasterSpace};
+use api::{ClipId, CommonItemProperties, ComponentTransferFuncType, RasterSpace};
 use api::{DebugFlags, DisplayItem, DisplayItemRef, DlParseContext, ExternalScrollId, FilterData};
-use api::{FilterOp, FontInstanceKey, FontSize, GlyphInstance, GlyphOptions, GlyphShadowMode};
+use api::{FilterOp, FontInstanceKey};
 use api::{IdNamespace, IframeDisplayItem, ImageKey, ItemRange, QualitySettings};
 use api::{PipelineId, MixBlendMode, StackingContextFlags};
 use api::{PropertyBinding, ReferenceFrameKind, ScrollFrameDescriptor};
-use api::{APZScrollGeneration, HasScrollLinkedEffect, SpatialId, StickyFrameDescriptor, ImageMask, ItemTag};
-use api::{ClipMode, TransformStyle, TempFilterData};
-use api::{ReferenceTransformBinding, Rotation, FillRule, SpatialTreeItem, ReferenceFrameDescriptor};
+use api::{APZScrollGeneration, HasScrollLinkedEffect, SpatialId, StickyFrameDescriptor, ItemTag};
+use api::{TransformStyle, TempFilterData};
+use api::{ReferenceTransformBinding, Rotation, SpatialTreeItem, ReferenceFrameDescriptor};
 use api::{FilterOpGraphPictureBufferId, SVGFE_GRAPH_MAX};
-use api::Path;
 use api::channel::{unbounded_channel, Receiver, Sender};
 use api::units::*;
 use crate::box_shadow::BLUR_SAMPLE_SCALE;
-use crate::clip::{ClipIntern, ClipItemKey, ClipItemKeyKind, ClipStore};
-use crate::clip::{ClipInternData, ClipNodeId};
-use crate::clip::{PolygonDataHandle, ClipTreeBuilder};
+use crate::clip::{ClipItemKey, ClipItemKeyKind, ClipStore, SceneClipStore};
+use crate::clip::{ClipDataHandle, ClipNodeId};
+use crate::clip::ClipTreeBuilder;
 use crate::dl_interner::{DlDocumentBuilders, DlHandle, DlNamespace, DlStore};
 use crate::gpu_types::BlurEdgeMode;
 use crate::segment::EdgeMask;
 use crate::spatial_tree::{SceneSpatialTree, SpatialNodeContainer, SpatialNodeIndex};
 use crate::frame_builder::FrameBuilderConfig;
-use glyph_rasterizer::{FontInstance, SharedFontResources};
 use crate::hit_test::HitTestingScene;
 use crate::intern::Interner;
 use crate::internal_types::{FastHashMap, LayoutPrimitiveInfo, Filter, PlaneSplitterIndex};
@@ -70,11 +68,9 @@ use crate::picture_graph::PictureGraph;
 use crate::prim_store::{PrimitiveInstance, PrimitiveInstanceIndex, PrimitiveStoreStats};
 use crate::prim_store::{PrimitiveKind, PrimitiveStore};
 use crate::prim_store::{InternablePrimitive, PictureIndex, PrimPlacement};
-use crate::prim_store::PolygonKey;
 use crate::prim_store::backdrop::{BackdropCapture, BackdropRender};
 use crate::prim_store::picture::{Picture, PictureKey};
 use crate::picture_composite_mode::{PictureCompositeKey, PictureCompositeMode};
-use crate::prim_store::text_run::TextRun;
 use crate::render_backend::SceneView;
 use crate::scene::{BackdropChain, BuiltScene, Scene, ScenePipeline, SceneStats, StackingContextHelpers};
 use crate::scene_builder_thread::{Interners, SceneDlStores};
@@ -399,15 +395,14 @@ pub struct SceneBuilder<'a> {
 
     
     
+    
+    
     scene_stores: &'a SceneDlStores,
 
     
     
     
     dl_namespace: (DlNamespace, u32),
-
-    
-    fonts: SharedFontResources,
 
     
     
@@ -517,7 +512,6 @@ impl<'a> SceneBuilder<'a> {
         root_pipeline: Option<PipelineId>,
         dl_builders: DlDocumentBuilders,
         scene_stores: &SceneDlStores,
-        fonts: SharedFontResources,
         view: &SceneView,
         frame_builder_config: &FrameBuilderConfig,
         interners: &mut Interners,
@@ -543,7 +537,6 @@ impl<'a> SceneBuilder<'a> {
             dl_builders,
             scene_stores,
             dl_namespace: dl_builders.expect(root_pipeline_id),
-            fonts,
             config: *frame_builder_config,
             id_to_index_mapper_stack: mem::take(&mut recycler.id_to_index_mapper_stack),
             hit_testing_scene: recycler.hit_testing_scene.take().unwrap_or_else(|| HitTestingScene::new(&stats.hit_test_stats)),
@@ -603,7 +596,7 @@ impl<'a> SceneBuilder<'a> {
             &builder.spatial_tree,
             &builder.prim_instances,
             &mut builder.clip_tree_builder,
-            &builder.interners.clip,
+            &builder.scene_stores.clips,
         );
 
         for params in tile_cache_config.tile_caches.values() {
@@ -624,7 +617,7 @@ impl<'a> SceneBuilder<'a> {
                 None,
                 &builder.clip_tree_builder,
                 &builder.prim_instances,
-                &builder.interners.clip,
+                &builder.scene_stores.clips,
             );
         }
 
@@ -674,7 +667,7 @@ impl<'a> SceneBuilder<'a> {
         parent_spatial_node_index: Option<SpatialNodeIndex>,
         clip_tree_builder: &ClipTreeBuilder,
         prim_instances: &[PrimitiveInstance],
-        clip_interner: &Interner<ClipIntern>,
+        clips: &SceneClipStore,
     ) {
         
         
@@ -760,7 +753,7 @@ impl<'a> SceneBuilder<'a> {
             .and_then(|node_id| (node_id != ClipNodeId::NONE).then_some(node_id))
             .map(|node_id| clip_tree_builder.get_node(node_id));
         let lca_node = lca_tree_node
-            .map(|tree_node| &clip_interner[tree_node.handle]);
+            .map(|tree_node| &clips[tree_node.handle]);
         let lca_clip_rect = lca_tree_node
             .map(|tree_node| tree_node.unsnapped_clip_rect);
         let pic_node_id = prim_index
@@ -769,7 +762,7 @@ impl<'a> SceneBuilder<'a> {
         let pic_tree_node = pic_node_id
             .map(|node_id| clip_tree_builder.get_node(node_id));
         let pic_node = pic_tree_node
-            .map(|tree_node| &clip_interner[tree_node.handle]);
+            .map(|tree_node| &clips[tree_node.handle]);
         let pic_clip_rect = pic_tree_node
             .map(|tree_node| tree_node.unsnapped_clip_rect);
 
@@ -804,7 +797,7 @@ impl<'a> SceneBuilder<'a> {
             
             
             
-            lca_node.key == pic_node.key &&
+            lca_node == pic_node &&
             lca_clip_rect == pic_clip_rect &&
             !has_blur && direct_parent
         });
@@ -831,7 +824,7 @@ impl<'a> SceneBuilder<'a> {
                         Some(spatial_node_index),
                         clip_tree_builder,
                         prim_instances,
-                        clip_interner,
+                        clips,
                     );
                 }
             }
@@ -1213,7 +1206,8 @@ impl<'a> SceneBuilder<'a> {
         self.add_rect_clip_node(
             ClipId::root(iframe_pipeline_id),
             info.space_and_clip.spatial_id,
-            &info.clip_rect,
+            info.clip_rect,
+            info.clip,
             false,
         );
 
@@ -1338,17 +1332,6 @@ impl<'a> SceneBuilder<'a> {
         (layout, spatial_node_index, clip_node_id)
     }
 
-    fn process_common_properties_with_bounds(
-        &mut self,
-        common: &CommonItemProperties,
-        bounds: LayoutRect,
-    ) -> (LayoutPrimitiveInfo, SpatialNodeIndex, ClipNodeId) {
-        self.process_common_properties(
-            common,
-            Some(bounds),
-        )
-    }
-
     
     
     
@@ -1387,30 +1370,16 @@ impl<'a> SceneBuilder<'a> {
             DisplayItem::Text(ref info) => {
                 tracy_rs::profile_scope!("text");
 
-                if !validate_font_instance_key(info.font_key, namespace) {
-                    return;
-                }
-
                 
                 
                 
-                
-                
-                
-                let (layout, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
-                    &info.common,
-                    info.bounds,
-                );
-
-                self.add_text(
-                    spatial_node_index,
-                    clip_node_id,
-                    &layout,
-                    &info.font_key,
-                    &info.color,
-                    item.glyphs(),
-                    info.glyph_options,
-                    info.shadow,
+                let stores = self.scene_stores;
+                self.add_dl_prim(
+                    info.spatial_id,
+                    info.clip_chain_id,
+                    &stores.text_runs,
+                    info.text_run,
+                    |handle| PrimitiveKind::TextRun { handle },
                 );
             }
             DisplayItem::Rectangle(ref info) => {
@@ -1600,58 +1569,31 @@ impl<'a> SceneBuilder<'a> {
             DisplayItem::ImageMaskClip(ref info) => {
                 tracy_rs::profile_scope!("image_clip");
 
-                
-                
-                
-                
-                let image_mask = if validate_image_key(info.image_mask.image, namespace) {
-                    info.image_mask
-                } else {
-                    ImageMask {
-                        image: ImageKey::DUMMY,
-                        rect: LayoutRect::zero(),
-                    }
-                };
-
                 self.add_image_mask_clip_node(
                     info.id,
                     info.spatial_id,
-                    &image_mask,
-                    info.fill_rule,
-                    item.points(),
+                    info.rect,
+                    info.clip,
+                    namespace,
                 );
             }
             DisplayItem::PathClip(ref info) => {
                 tracy_rs::profile_scope!("path_clip");
 
-                let (dl_namespace, generation) = self.dl_namespace;
-                let path = DlHandle::new(dl_namespace, generation, info.path.slot());
-
-                if self.scene_stores.path.get(path).is_some() {
-                    self.add_path_clip_node(
-                        info.id,
-                        info.spatial_id,
-                        path,
-                        info.rect,
-                        info.fill_rule,
-                    );
-                } else {
-                    
-                    
-                    
-                    
-                    warn!("path clip refers to an unknown path {:?}", path);
-                    self.add_rect_clip_node(info.id, info.spatial_id, &LayoutRect::zero(), false);
-                }
+                self.add_path_clip_node(
+                    info.id,
+                    info.spatial_id,
+                    info.rect,
+                    info.clip,
+                );
             }
             DisplayItem::BorderClip(ref info) => {
-                let spatial_node_index = self.get_space(info.spatial_id);
-                let item = ClipItemKey {
-                    kind: ClipItemKeyKind::Border(crate::clip::BorderClipKey::new(&info.border, info.widths)),
-                };
-                let handle = self.interners.clip.intern(&item, || ClipInternData { key: item });
-                self.clip_tree_builder.define_rect_clip(
-                    info.id, handle, spatial_node_index, info.clip_rect, false
+                self.add_rect_clip_node(
+                    info.id,
+                    info.spatial_id,
+                    info.clip_rect,
+                    info.clip,
+                    false,
                 );
             }
             DisplayItem::RoundedRectClip(ref info) => {
@@ -1660,7 +1602,8 @@ impl<'a> SceneBuilder<'a> {
                 self.add_rounded_rect_clip_node(
                     info.id,
                     info.spatial_id,
-                    &info.clip,
+                    info.rect,
+                    info.clip,
                     info.snap_outset,
                     info.anti_aliased,
                 );
@@ -1671,7 +1614,8 @@ impl<'a> SceneBuilder<'a> {
                 self.add_rect_clip_node(
                     info.id,
                     info.spatial_id,
-                    &info.clip_rect,
+                    info.clip_rect,
+                    info.clip,
                     info.anti_aliased,
                 );
             }
@@ -1707,8 +1651,7 @@ impl<'a> SceneBuilder<'a> {
             
             DisplayItem::SetGradientStops |
             DisplayItem::SetFilterOps |
-            DisplayItem::SetFilterData |
-            DisplayItem::SetPoints => {}
+            DisplayItem::SetFilterData => {}
 
             
             DisplayItem::PushStackingContext(..) |
@@ -1770,7 +1713,6 @@ impl<'a> SceneBuilder<'a> {
             spatial_node_index,
             clip_node_id,
             &self.clip_tree_builder,
-            self.interners,
             self.scene_stores,
         );
     }
@@ -1815,55 +1757,6 @@ impl<'a> SceneBuilder<'a> {
                 );
             }
         }
-    }
-
-    
-    
-    pub fn add_primitive<P>(
-        &mut self,
-        spatial_node_index: SpatialNodeIndex,
-        clip_node_id: ClipNodeId,
-        info: &LayoutPrimitiveInfo,
-        prim: P,
-    )
-    where
-        P: InternablePrimitive,
-        Interners: AsMut<Interner<P>>,
-    {
-        self.clip_tree_builder.debug_check_clip_stack(clip_node_id);
-
-        self.add_prim_to_draw_list(
-            info,
-            spatial_node_index,
-            clip_node_id,
-            prim,
-        );
-    }
-
-
-    fn add_prim_to_draw_list<P>(
-        &mut self,
-        info: &LayoutPrimitiveInfo,
-        spatial_node_index: SpatialNodeIndex,
-        clip_node_id: ClipNodeId,
-        prim: P,
-    )
-    where
-        P: InternablePrimitive,
-        Interners: AsMut<Interner<P>>,
-    {
-        let prim_instance = self.create_primitive(
-            info,
-            clip_node_id,
-            prim,
-        );
-        self.add_primitive_to_draw_list(
-            prim_instance,
-            info.rect,
-            info.clip_rect,
-            spatial_node_index,
-            info.flags,
-        );
     }
 
     
@@ -2077,7 +1970,7 @@ impl<'a> SceneBuilder<'a> {
         
         
         if let Some(clip_chain_id) = clip_chain_id {
-            if self.clip_tree_builder.clip_chain_has_complex_clips(clip_chain_id, &self.interners.clip) {
+            if self.clip_tree_builder.clip_chain_has_complex_clips(clip_chain_id, &self.scene_stores.clips) {
                 
                 
                 
@@ -2093,7 +1986,7 @@ impl<'a> SceneBuilder<'a> {
                    !self.sc_stack.is_empty() ||
                    !self.clip_tree_builder.clip_chain_complex_clips_are_promotable(
                        clip_chain_id,
-                       &self.interners.clip,
+                       &self.scene_stores.clips,
                        &self.spatial_tree,
                    )
                 {
@@ -2137,7 +2030,7 @@ impl<'a> SceneBuilder<'a> {
                 
                 if self.tile_cache_builder.is_current_slice_empty() &&
                    self.spatial_tree.is_root_coord_system(spatial_node_index) &&
-                   !self.clip_tree_builder.clip_node_has_complex_clips(clip_node_id, &self.interners.clip)
+                   !self.clip_tree_builder.clip_node_has_complex_clips(clip_node_id, &self.scene_stores.clips)
                 {
                     self.add_tile_cache_barrier_if_needed(SliceFlags::IS_ATOMIC);
                     self.tile_cache_builder.make_current_slice_atomic();
@@ -2584,44 +2477,37 @@ impl<'a> SceneBuilder<'a> {
         );
     }
 
+    
+    
+    fn clip_handle(&self, clip: api::interning::Handle<ClipItemKey>) -> ClipDataHandle {
+        let (namespace, generation) = self.dl_namespace;
+        DlHandle::new(namespace, generation, clip.slot())
+    }
+
     fn add_image_mask_clip_node(
         &mut self,
         new_node_id: ClipId,
         spatial_id: SpatialId,
-        image_mask: &ImageMask,
-        fill_rule: FillRule,
-        points_range: ItemRange<LayoutPoint>,
+        mask_rect: LayoutRect,
+        clip: api::interning::Handle<ClipItemKey>,
+        namespace: IdNamespace,
     ) {
         let spatial_node_index = self.get_space(spatial_id);
-
-        let mask_rect = image_mask.rect;
-
-        let points: Vec<LayoutPoint> = points_range.iter().collect();
+        let handle = self.clip_handle(clip);
 
         
-        let mut polygon_handle: Option<PolygonDataHandle> = None;
-        if points.len() > 0 {
-            let item = PolygonKey::new(&points, fill_rule);
-
-            let handle = self
-                .interners
-                .polygon
-                .intern(&item, || item);
-            polygon_handle = Some(handle);
-        }
-
-        let item = ClipItemKey {
-            kind: ClipItemKeyKind::image_mask(image_mask, polygon_handle),
+        
+        
+        
+        
+        
+        
+        let mask_rect = match self.scene_stores.clips[handle].kind {
+            ClipItemKeyKind::ImageMask(image, _) if !validate_image_key(image, namespace) => {
+                LayoutRect::zero()
+            }
+            _ => mask_rect,
         };
-
-        let handle = self
-            .interners
-            .clip
-            .intern(&item, || {
-                ClipInternData {
-                    key: item,
-                }
-            });
 
         self.clip_tree_builder.define_image_mask_clip(
             new_node_id,
@@ -2635,24 +2521,22 @@ impl<'a> SceneBuilder<'a> {
         &mut self,
         new_node_id: ClipId,
         spatial_id: SpatialId,
-        path: DlHandle<Path>,
         rect: LayoutRect,
-        fill_rule: FillRule,
+        clip: api::interning::Handle<ClipItemKey>,
     ) {
         let spatial_node_index = self.get_space(spatial_id);
+        let handle = self.clip_handle(clip);
 
-        let item = ClipItemKey {
-            kind: ClipItemKeyKind::Path(path, self.scene_stores.path.uid(path), fill_rule, rect.min.to_au()),
+        
+        
+        
+        let rect = match self.scene_stores.clips[handle].kind {
+            ClipItemKeyKind::Path(path, ..) if self.scene_stores.path.get(handle.sibling(path.slot())).is_none() => {
+                warn!("path clip refers to an unknown path {:?}", path);
+                LayoutRect::zero()
+            }
+            _ => rect,
         };
-
-        let handle = self
-            .interners
-            .clip
-            .intern(&item, || {
-                ClipInternData {
-                    key: item,
-                }
-            });
 
         self.clip_tree_builder.define_path_clip(
             new_node_id,
@@ -2667,24 +2551,12 @@ impl<'a> SceneBuilder<'a> {
         &mut self,
         new_node_id: ClipId,
         spatial_id: SpatialId,
-        clip_rect: &LayoutRect,
+        clip_rect: LayoutRect,
+        clip: api::interning::Handle<ClipItemKey>,
         anti_aliased: bool,
     ) {
         let spatial_node_index = self.get_space(spatial_id);
-
-        let clip_rect = *clip_rect;
-
-        let item = ClipItemKey {
-            kind: ClipItemKeyKind::rectangle(ClipMode::Clip),
-        };
-        let handle = self
-            .interners
-            .clip
-            .intern(&item, || {
-                ClipInternData {
-                    key: item,
-                }
-            });
+        let handle = self.clip_handle(clip);
 
         self.clip_tree_builder.define_rect_clip(
             new_node_id,
@@ -2699,30 +2571,13 @@ impl<'a> SceneBuilder<'a> {
         &mut self,
         new_node_id: ClipId,
         spatial_id: SpatialId,
-        clip: &ComplexClipRegion,
+        region_rect: LayoutRect,
+        clip: api::interning::Handle<ClipItemKey>,
         snap_outset: f32,
         anti_aliased: bool,
     ) {
         let spatial_node_index = self.get_space(spatial_id);
-
-        let region_rect = clip.rect;
-
-        let item = ClipItemKey {
-            kind: ClipItemKeyKind::rounded_rect(
-                clip.radii,
-                clip.inset,
-                clip.mode,
-            ),
-        };
-
-        let handle = self
-            .interners
-            .clip
-            .intern(&item, || {
-                ClipInternData {
-                    key: item,
-                }
-            });
+        let handle = self.clip_handle(clip);
 
         self.clip_tree_builder.define_rounded_rect_clip(
             new_node_id,
@@ -2761,92 +2616,6 @@ impl<'a> SceneBuilder<'a> {
         self.id_to_index_mapper_stack.last_mut().unwrap().add_spatial_node(new_node_id, node_index);
         node_index
     }
-
-    pub fn add_text(
-        &mut self,
-        spatial_node_index: SpatialNodeIndex,
-        clip_node_id: ClipNodeId,
-        prim_info: &LayoutPrimitiveInfo,
-        font_instance_key: &FontInstanceKey,
-        text_color: &ColorF,
-        glyph_range: ItemRange<GlyphInstance>,
-        glyph_options: Option<GlyphOptions>,
-        shadow_mode: GlyphShadowMode,
-    ) {
-        let text_run = {
-            let shared_key = self.fonts.instance_keys.map_key(font_instance_key);
-            let font_instance = match self.fonts.instances.get_font_instance(shared_key) {
-                Some(instance) => instance,
-                None => {
-                    warn!("Unknown font instance key");
-                    debug!("key={:?} shared={:?}", font_instance_key, shared_key);
-                    return;
-                }
-            };
-
-            
-            if font_instance.size <= FontSize::zero() {
-                return;
-            }
-
-            
-            
-            
-            let mut render_mode = self.config
-                .default_font_render_mode
-                .limit_by(font_instance.render_mode);
-            let mut flags = font_instance.flags;
-            if let Some(options) = glyph_options {
-                render_mode = render_mode.limit_by(options.render_mode);
-                flags |= options.flags;
-            }
-
-            let font = FontInstance::new(
-                font_instance,
-                (*text_color).into(),
-                render_mode,
-                flags,
-            );
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            let glyphs = glyph_range.iter().collect();
-
-            
-            
-            
-            
-            
-            let requested_raster_space = match shadow_mode {
-                GlyphShadowMode::Blurred => RasterSpace::Local(1.0),
-                GlyphShadowMode::None | GlyphShadowMode::Unblurred => {
-                    self.raster_space_stack.last().cloned().unwrap()
-                }
-            };
-
-            TextRun {
-                glyphs,
-                font,
-                shadow: shadow_mode != GlyphShadowMode::None,
-                requested_raster_space,
-            }
-        };
-
-        self.add_primitive(
-            spatial_node_index,
-            clip_node_id,
-            prim_info,
-            text_run,
-        );
-    }
-
 
     fn add_primitive_instance_to_3d_root(
         &mut self,
@@ -3853,7 +3622,7 @@ pub(crate) fn validate_image_key(key: ImageKey, namespace: IdNamespace) -> bool 
 }
 
 
-fn validate_font_instance_key(key: FontInstanceKey, namespace: IdNamespace) -> bool {
+pub(crate) fn validate_font_instance_key(key: FontInstanceKey, namespace: IdNamespace) -> bool {
     validate_resource_namespace(key.0, namespace, "font instance key")
 }
 

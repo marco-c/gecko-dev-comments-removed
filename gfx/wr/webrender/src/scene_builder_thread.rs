@@ -7,14 +7,13 @@ use api::{DocumentId, PipelineId, ExternalEvent, BlobImageRequest};
 use api::{NotificationRequest, Checkpoint, IdNamespace, QualitySettings, RenderBackendId};
 use api::{GlyphDimensionRequest, GlyphIndexRequest};
 use api::interning::DlDelta;
-use api::channel::{unbounded_channel, single_msg_channel, Receiver, Sender};
+use api::channel::{unbounded_channel, single_msg_channel, Receiver, Sender, SyncSender};
 use api::units::*;
 use crate::render_api::{ApiMsg, FrameMsg, SceneMsg, ResourceUpdate, TransactionMsg, MemoryReport};
 #[cfg(feature = "capture")]
 use crate::capture::CaptureConfig;
 use crate::frame_builder::FrameBuilderConfig;
 use crate::scene_building::{SceneBuilder, SceneRecycler};
-use crate::clip::{ClipIntern, PolygonIntern};
 use crate::dl_interner::{DeltaAction, DlBuilderMap, DlNamespace, DlResolveContext};
 use crate::filterdata::FilterDataIntern;
 use glyph_rasterizer::SharedFontResources;
@@ -23,7 +22,6 @@ use crate::internal_types::{FastHashMap, FastHashSet};
 use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use crate::prim_store::backdrop::{BackdropCapture, BackdropRender};
 use crate::prim_store::picture::Picture;
-use crate::prim_store::text_run::TextRun;
 use crate::profiler::{self, TransactionProfile};
 use crate::render_backend::SceneView;
 use crate::renderer::{FullFrameStats, PipelineInfo};
@@ -83,7 +81,6 @@ pub struct OffscreenBuiltScene {
 pub struct LoadScene {
     pub document_id: DocumentId,
     pub scene: Scene,
-    pub fonts: SharedFontResources,
     pub view: SceneView,
     pub config: FrameBuilderConfig,
     pub build_frame: bool,
@@ -111,12 +108,12 @@ pub enum SceneBuilderRequest {
     
     
     
-    StopWindow(RenderBackendId, Sender<()>),
-    Flush(Sender<()>),
+    StopWindow(RenderBackendId, SyncSender<()>),
+    Flush(SyncSender<()>),
     SetFlags(DebugFlags),
     SetFrameBuilderConfig(RenderBackendId, FrameBuilderConfig),
     SetParameter(RenderBackendId, Parameter),
-    ReportMemory(Box<MemoryReport>, Sender<Box<MemoryReport>>),
+    ReportMemory(Box<MemoryReport>, SyncSender<Box<MemoryReport>>),
     
     
     
@@ -143,9 +140,9 @@ pub enum SceneBuilderRequest {
 
 
 pub enum SceneBuilderResult {
-    Transactions(Vec<Box<BuiltTransaction>>, Option<Sender<SceneSwapResult>>),
+    Transactions(Vec<Box<BuiltTransaction>>, Option<SyncSender<SceneSwapResult>>),
     ExternalEvent(RenderBackendId, ExternalEvent),
-    FlushComplete(Sender<()>),
+    FlushComplete(SyncSender<()>),
     DeleteDocument(DocumentId),
     ClearNamespace(RenderBackendId, IdNamespace),
     GetGlyphDimensions(RenderBackendId, GlyphDimensionRequest),
@@ -153,14 +150,14 @@ pub enum SceneBuilderResult {
     SetParameter(RenderBackendId, Parameter),
     
     
-    StopWindow(RenderBackendId, Sender<()>),
+    StopWindow(RenderBackendId, SyncSender<()>),
     ShutDown(Option<Sender<()>>),
 
     #[cfg(feature = "capture")]
     
     
     
-    CapturedTransactions(Vec<Box<BuiltTransaction>>, CaptureConfig, Option<Sender<SceneSwapResult>>),
+    CapturedTransactions(Vec<Box<BuiltTransaction>>, CaptureConfig, Option<SyncSender<SceneSwapResult>>),
 
     #[cfg(feature = "capture")]
     
@@ -172,7 +169,7 @@ pub enum SceneBuilderResult {
 
 
 pub enum SceneSwapResult {
-    Complete(Sender<()>),
+    Complete(SyncSender<()>),
     Aborted,
 }
 
@@ -716,7 +713,6 @@ impl SceneBuilderThread {
                     None,
                     self.dl_builders.document(item.document_id),
                     &self.scene_stores,
-                    item.fonts,
                     &item.view,
                     &self.config,
                     &mut item.interners,
@@ -952,7 +948,6 @@ impl SceneBuilderThread {
                         Some(pipeline_id),
                         self.dl_builders.document(txn.document_id),
                         &self.scene_stores,
-                        self.fonts.clone(),
                         &doc.view,
                         &config,
                         &mut doc.interners,
@@ -1020,7 +1015,6 @@ impl SceneBuilderThread {
                 None,
                 self.dl_builders.document(txn.document_id),
                 &self.scene_stores,
-                self.fonts.clone(),
                 &doc.view,
                 &config,
                 &mut doc.interners,

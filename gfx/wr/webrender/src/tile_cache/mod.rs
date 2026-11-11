@@ -34,7 +34,7 @@ use crate::picture::{get_relative_scale_offset, PictureInstance};
 use crate::picture::MAX_COMPOSITOR_SURFACES_SIZE;
 use crate::prim_store::{ClipSnap, PrimitiveInstance, PrimitiveKind, PrimitiveScratchBuffer, PictureIndex};
 use crate::print_tree::{PrintTreePrinter, PrintTree};
-use crate::{profiler, render_backend::{DataStores, DlStores}};
+use crate::{profiler, render_backend::DlStores};
 use crate::profiler::TransactionProfile;
 use crate::renderer::GpuBufferBuilderF;
 use crate::resource_cache::{ResourceCache, ImageRequest};
@@ -1423,7 +1423,7 @@ impl TileCacheInstance {
                 
                 LayoutRect::max_rect(),
                 frame_context.spatial_tree,
-                &frame_state.data_stores.clip,
+                &frame_state.dl_stores.clips,
                 &frame_state.clip_tree,
             );
 
@@ -1434,7 +1434,7 @@ impl TileCacheInstance {
                 &mut frame_state.frame_gpu_data.f32,
                 frame_state.resource_cache,
                 &surface.culling_rect,
-                &frame_state.data_stores.clip,
+                &frame_state.dl_stores.clips,
                 frame_state.rg_builder,
                 true,
             );
@@ -1457,7 +1457,7 @@ impl TileCacheInstance {
                         let clip_instance = frame_state
                             .clip_store
                             .get_instance_from_range(&clip_chain.clips_range, i);
-                        let clip_node = &frame_state.data_stores.clip[clip_instance.handle];
+                        let clip_node = &frame_state.dl_stores.clips[clip_instance.handle];
 
                         if let ClipItemKind::RoundedRectangle { radius, inset: _, mode } = clip_node.item.kind {
                             assert_eq!(mode, ClipMode::Clip);
@@ -1511,7 +1511,7 @@ impl TileCacheInstance {
                                     rect: clip_instance.clip_rect,
                                     radius,
                                     spatial_node_index: clip_instance.spatial_node_index,
-                                    uid: clip_instance.handle.uid().get_uid(),
+                                    uid: frame_state.dl_stores.clips.uid(clip_instance.handle).get_uid(),
                                 });
                             }
                         }
@@ -1759,10 +1759,10 @@ impl TileCacheInstance {
         surface_kind: CompositorSurfaceKind,
         pic_coverage_rect: PictureRect,
         frame_context: &FrameVisibilityContext,
-        data_stores: &DataStores,
+        dl_stores: &DlStores,
         clip_store: &ClipStore,
         composite_state: &CompositeState,
-        color_depth: Option<ColorDepth>,
+        force_external_composition: bool,
     ) -> Result<CompositorSurfaceKind, SurfacePromotionFailure> {
         use SurfacePromotionFailure::*;
 
@@ -1783,7 +1783,7 @@ impl TileCacheInstance {
                     if composite_state.compositor_kind.supports_rounded_clip_promotion() {
                         if prim_clip_chain.clips_range.count == 1 && self.compositor_clip.is_none() {
                             let clip_instance = clip_store.get_instance_from_range(&prim_clip_chain.clips_range, 0);
-                            let clip_node = &data_stores.clip[clip_instance.handle];
+                            let clip_node = &dl_stores.clips[clip_instance.handle];
 
                             if let ClipItemKind::RoundedRectangle { ref radius, mode: ClipMode::Clip, .. } = clip_node.item.kind {
                                 
@@ -1831,10 +1831,7 @@ impl TileCacheInstance {
             }
             CompositorSurfaceKind::Underlay => {
                 
-                
-                let force_for_hdr = matches!(color_depth, Some(color_depth) if color_depth.bit_depth() > 8);
-
-                if !force_for_hdr && self.is_sampled_by_backdrop(&pic_coverage_rect) {
+                if !force_external_composition && self.is_sampled_by_backdrop(&pic_coverage_rect) {
                     return Err(UnderBackdropFilter);
                 }
 
@@ -1846,7 +1843,7 @@ impl TileCacheInstance {
                     if !self.backdrop.opaque_rect.contains_box(&pic_coverage_rect) {
                         let result = Err(UnderlayAlphaBackdrop);
                         
-                        if !force_for_hdr {
+                        if !force_external_composition {
                             return result;
                         }
 
@@ -1857,9 +1854,7 @@ impl TileCacheInstance {
                     if !self.underlays.is_empty() {
                         
                         
-                        
-                        
-                        if !force_for_hdr || self.underlays.len() > MAX_COMPOSITOR_UNDERLAY_SURFACES {
+                        if !force_external_composition || self.underlays.len() > MAX_COMPOSITOR_UNDERLAY_SURFACES {
                             return Err(UnderlaySurfaceLimit);
                         }
                     }
@@ -1870,7 +1865,7 @@ impl TileCacheInstance {
                 if self.overlay_region.intersects(&pic_coverage_rect) {
                     let result = Err(UnderlayIntersectsOverlay);
                     
-                    if !force_for_hdr {
+                    if !force_external_composition {
                         return result;
                     }
 
@@ -1933,7 +1928,7 @@ impl TileCacheInstance {
         prim_spatial_node_index: SpatialNodeIndex,
         pic_coverage_rect: PictureRect,
         frame_context: &FrameVisibilityContext,
-        data_stores: &DataStores,
+        dl_stores: &DlStores,
         clip_store: &ClipStore,
         image_dependencies: &[ImageDependency;3],
         api_keys: &[ImageKey; 3],
@@ -1969,7 +1964,7 @@ impl TileCacheInstance {
             prim_spatial_node_index,
             pic_coverage_rect,
             frame_context,
-            data_stores,
+            dl_stores,
             clip_store,
             ExternalSurfaceDependency::Yuv {
                 image_dependencies: *image_dependencies,
@@ -1997,7 +1992,7 @@ impl TileCacheInstance {
         prim_spatial_node_index: SpatialNodeIndex,
         pic_coverage_rect: PictureRect,
         frame_context: &FrameVisibilityContext,
-        data_stores: &DataStores,
+        dl_stores: &DlStores,
         clip_store: &ClipStore,
         image_dependency: ImageDependency,
         api_key: ImageKey,
@@ -2035,7 +2030,7 @@ impl TileCacheInstance {
             prim_spatial_node_index,
             pic_coverage_rect,
             frame_context,
-            data_stores,
+            dl_stores,
             clip_store,
             ExternalSurfaceDependency::Rgb {
                 image_dependency,
@@ -2062,7 +2057,7 @@ impl TileCacheInstance {
         prim_spatial_node_index: SpatialNodeIndex,
         pic_coverage_rect: PictureRect,
         frame_context: &FrameVisibilityContext,
-        data_stores: &DataStores,
+        dl_stores: &DlStores,
         clip_store: &ClipStore,
         dependency: ExternalSurfaceDependency,
         api_keys: &[ImageKey; 3],
@@ -2154,7 +2149,7 @@ impl TileCacheInstance {
             assert!(self.compositor_clip.is_none());
 
             let clip_instance = clip_store.get_instance_from_range(&prim_clip_chain.clips_range, 0);
-            let clip_node = &data_stores.clip[clip_instance.handle];
+            let clip_node = &dl_stores.clips[clip_instance.handle];
             if let ClipItemKind::RoundedRectangle { radius, mode: ClipMode::Clip, .. } = clip_node.item.kind {
                 let radius = clamped_radius(&radius, clip_instance.clip_rect.size());
 
@@ -2416,7 +2411,6 @@ impl TileCacheInstance {
         prim_spatial_node_index: SpatialNodeIndex,
         local_prim_rect: LayoutRect,
         frame_context: &FrameVisibilityContext,
-        data_stores: &DataStores,
         dl_stores: &DlStores,
         clip_store: &ClipStore,
         pictures: &[PictureInstance],
@@ -2588,10 +2582,8 @@ impl TileCacheInstance {
                 let image_data = &image_key.kind;
 
                 
-                
-                
-                
                 let mut is_opaque = false;
+                let mut is_drm_source = false;
 
                 if let Some(image_properties) = resource_cache.get_image_properties(image_data.key) {
                     
@@ -2612,26 +2604,31 @@ impl TileCacheInstance {
                     }
 
                     is_opaque = image_properties.descriptor.is_opaque();
+                    is_drm_source = image_properties.descriptor.is_drm_source();
                 }
 
                 let mut promotion_result: Result<CompositorSurfaceKind, SurfacePromotionFailure> = Ok(CompositorSurfaceKind::Blit);
                 if image_key.common.flags.contains(PrimitiveFlags::PREFER_COMPOSITOR_SURFACE) {
                     
-                    
-                    if self.yuv_images_remaining > 0 {
+                    if self.yuv_images_remaining > 0 && !is_drm_source {
                         promotion_result = Err(ImageWaitingOnYuvImage);
                     } else {
-                        promotion_result = self.can_promote_to_surface(prim_clip_chain,
-                                                          prim_spatial_node_index,
-                                                          is_root_tile_cache,
-                                                          sub_slice_index,
-                                                          CompositorSurfaceKind::Overlay,
-                                                          pic_coverage_rect,
-                                                          frame_context,
-                                                          data_stores,
-                                                          clip_store,
-                                                          composite_state,
-                                                          None);
+                        promotion_result = self.can_promote_to_surface(
+                            prim_clip_chain,
+                            prim_spatial_node_index,
+                            is_root_tile_cache,
+                            sub_slice_index,
+                            CompositorSurfaceKind::Overlay,
+                            pic_coverage_rect,
+                            frame_context,
+                            dl_stores,
+                            clip_store,
+                            composite_state,
+                            is_drm_source,
+                        );
+                        if is_drm_source && matches!(promotion_result, Err(SliceAtomic)) {
+                            promotion_result = Ok(CompositorSurfaceKind::Overlay);
+                        }
                     }
 
                     
@@ -2651,7 +2648,7 @@ impl TileCacheInstance {
                             prim_spatial_node_index,
                             pic_coverage_rect,
                             frame_context,
-                            data_stores,
+                            dl_stores,
                             clip_store,
                             ImageDependency {
                                 key: image_data.key,
@@ -2707,12 +2704,18 @@ impl TileCacheInstance {
                         self.yuv_images_remaining -= 1;
                     }
 
-                    
+                    let is_drm_source = prim_data.kind.yuv_key.iter().any(|&key| {
+                        key != ImageKey::DUMMY && resource_cache.get_image_properties(key)
+                            .map_or(false, |properties| properties.descriptor.is_drm_source())
+                    });
+                    let force_external_composition =
+                        prim_data.kind.color_depth != ColorDepth::Color8 || is_drm_source;
+
                     
                     
                     let apply_stability_delay =
                         frame_context.config.enable_yuv_overlay_stability &&
-                        prim_data.kind.color_depth == ColorDepth::Color8;
+                        !force_external_composition;
                     let allow_promotion = !apply_stability_delay || {
                         let stability = self.yuv_surface_stability
                             .entry(prim_uid)
@@ -2736,10 +2739,17 @@ impl TileCacheInstance {
                     if !allow_promotion {
                         promotion_result = Err(YuvImageNotStable);
                     } else {
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
                         let promotion_attempts =
                             [CompositorSurfaceKind::Overlay, CompositorSurfaceKind::Underlay];
                         for kind in promotion_attempts {
-                            
                             
                             promotion_result = self.can_promote_to_surface(
                                                         prim_clip_chain,
@@ -2749,19 +2759,17 @@ impl TileCacheInstance {
                                                         kind,
                                                         pic_coverage_rect,
                                                         frame_context,
-                                                        data_stores,
+                                                        dl_stores,
                                                         clip_store,
                                                         composite_state,
-                                                        Some(prim_data.kind.color_depth));
+                                                        force_external_composition);
                             if promotion_result.is_ok() {
                                 break;
                             }
                             
                             
-                            
-                            
                             if let Err(SliceAtomic) = promotion_result {
-                                if prim_data.kind. color_depth != ColorDepth::Color8 {
+                                if force_external_composition {
                                     
                                     promotion_result = Ok(kind);
                                     break;
@@ -2770,7 +2778,6 @@ impl TileCacheInstance {
                         }
                     }
 
-                    
                     
 
                     
@@ -2799,7 +2806,7 @@ impl TileCacheInstance {
                             prim_spatial_node_index,
                             pic_coverage_rect,
                             frame_context,
-                            data_stores,
+                            dl_stores,
                             clip_store,
                             &image_dependencies,
                             &prim_data.kind.yuv_key,
@@ -3026,7 +3033,7 @@ impl TileCacheInstance {
                     backdrop_candidate.opaque_rect = clip_store
                         .get_inner_rect_for_clip_chain(
                             prim_clip_chain,
-                            &data_stores.clip,
+                            &dl_stores.clips,
                             frame_context.spatial_tree,
                         )
                         .unwrap_or(PictureRect::zero());
@@ -3089,7 +3096,7 @@ impl TileCacheInstance {
         
         
         for clip_instance in clip_instances {
-            let clip = &data_stores.clip[clip_instance.handle];
+            let clip = &dl_stores.clips[clip_instance.handle];
             let clip_local_rect = match clip.item.kind {
                 ClipItemKind::Rectangle { .. }
                 | ClipItemKind::RoundedRectangle { .. }
@@ -3107,7 +3114,7 @@ impl TileCacheInstance {
                 ),
                 None => VertRange::INVALID,
             };
-            prim_info.clips.push((clip_instance.handle.uid(), clip_scratch));
+            prim_info.clips.push((dl_stores.clips.uid(clip_instance.handle), clip_scratch));
         }
 
         
@@ -3290,14 +3297,22 @@ impl TileCacheInstance {
         });
 
         if !self.underlays.is_empty() && (!self.deferred_dirty_tests.is_empty() || !self.mix_blend_pic_rects.is_empty()) {
-            let is_yuv_8bit = |desc: &ExternalSurfaceDescriptor| {
-                matches!(
-                    desc.dependency,
+            
+            
+            
+            let is_non_drm_yuv_8bit = |desc: &ExternalSurfaceDescriptor| {
+                match desc.dependency {
                     ExternalSurfaceDependency::Yuv {
                         channel_bit_depth: 8,
+                        image_dependencies,
                         ..
-                    }
-                )
+                    } => !image_dependencies.iter().any(|dep| {
+                        dep.key != ImageKey::DUMMY && resource_cache
+                            .get_image_properties(dep.key)
+                            .map_or(false, |properties| properties.descriptor.is_drm_source())
+                    }),
+                    _ => false,
+                }
             };
 
             let intersects_with_dirty_tests = |desc: &ExternalSurfaceDescriptor| {
@@ -3314,11 +3329,17 @@ impl TileCacheInstance {
 
             
             
+            
+            
+            
+            
+            
+            
             let (underlays, cancel_underlays): (Vec<_>, Vec<_>) =
                 self.underlays
                     .iter()
                     .partition(|desc| {
-                        !is_yuv_8bit(desc) ||
+                        !is_non_drm_yuv_8bit(desc) ||
                         (!intersects_with_dirty_tests(desc) && !intersects_with_mix_blend(desc))
                     });
 

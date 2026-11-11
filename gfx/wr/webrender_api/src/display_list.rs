@@ -15,6 +15,7 @@ use std::marker::PhantomData;
 use std::ops::Range;
 use std::mem;
 use std::collections::HashMap;
+use crate::FastHashMap;
 use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 
 use crate::display_item as di;
@@ -24,15 +25,16 @@ use crate::color::{ColorF, ColorU};
 use crate::font::{FontInstanceKey, GlyphInstance, GlyphOptions};
 use crate::image::{ColorDepth, ImageKey};
 use crate::interned_prims::{
-    BoxShadow, BoxShadowKey, ConicGradientKey, Image, ImageBorder, ImageBorderKey, ImagePrimKey,
-    LineDecoration, LineDecorationKey, LinearGradientKey, NormalBorderKey, NormalBorderPrim,
-    RadialGradientKey, RectangleKey, RectanglePrim, YuvImage, YuvImagePrimKey,
+    BorderClipKey, BoxShadow, BoxShadowKey, ClipItemKey, ClipItemKeyKind, ConicGradientKey, Image,
+    ImageBorder, ImageBorderKey, ImagePrimKey, LineDecoration, LineDecorationKey, LinearGradientKey,
+    NormalBorderKey, NormalBorderPrim, RadialGradientKey, RectangleKey, RectanglePrim, TextRunKey,
+    YuvImage, YuvImagePrimKey,
 };
 use crate::interning::{self, DlDelta};
 use crate::path::Path;
 use crate::key_types::{
-    EdgeMask, GradientStopKey, NinePatchDescriptor, PointKey, PrimKeyCommonData, StretchSizeKey,
-    SubRectKey,
+    EdgeMask, GlyphInstanceAu, GradientStopKey, NinePatchDescriptor, PointKey, PolygonKey,
+    PrimKeyCommonData, StretchSizeKey, SubRectKey,
 };
 use crate::prim_geometry::{
     apply_gradient_local_clip, conic_gradient_prim, image_stretch_size, linear_gradient_prim,
@@ -330,10 +332,7 @@ impl<'de> Deserialize<'de> for BuiltDisplayList {
                     DisplayListBuilder::push_iter_impl(&mut temp, clip_chain_ids);
                     Real::ClipChain(v)
                 }
-                Debug::Text(v, glyphs) => {
-                    DisplayListBuilder::push_iter_impl(&mut temp, glyphs);
-                    Real::Text(v)
-                },
+                Debug::Text(v) => Real::Text(v),
                 Debug::Iframe(v) => {
                     Real::Iframe(v)
                 }
@@ -357,10 +356,6 @@ impl<'de> Deserialize<'de> for BuiltDisplayList {
                 Debug::SetGradientStops(stops) => {
                     DisplayListBuilder::push_iter_impl(&mut temp, stops);
                     Real::SetGradientStops
-                },
-                Debug::SetPoints(points) => {
-                    DisplayListBuilder::push_iter_impl(&mut temp, points);
-                    Real::SetPoints
                 },
                 Debug::RectClip(v) => Real::RectClip(v),
                 Debug::RoundedRectClip(v) => Real::RoundedRectClip(v),
@@ -427,11 +422,9 @@ pub struct BuiltDisplayListIter<'a> {
     parse_context: DlParseContext,
     cur_item: di::DisplayItem,
     cur_stops: ItemRange<'a, di::GradientStop>,
-    cur_glyphs: ItemRange<'a, GlyphInstance>,
     cur_filters: ItemRange<'a, di::FilterOp>,
     cur_filter_data: Vec<TempFilterData<'a>>,
     cur_clip_chain_items: ItemRange<'a, di::ClipId>,
-    cur_points: ItemRange<'a, LayoutPoint>,
     peeking: Peek,
     
     debug_stats: DebugStats,
@@ -519,14 +512,6 @@ impl<'a, 'b> DisplayItemRef<'a, 'b> {
 
     pub fn clip_chain_items(&self) -> ItemRange<di::ClipId> {
         self.iter.cur_clip_chain_items
-    }
-
-    pub fn points(&self) -> ItemRange<LayoutPoint> {
-        self.iter.cur_points
-    }
-
-    pub fn glyphs(&self) -> ItemRange<GlyphInstance> {
-        self.iter.glyphs()
     }
 
     pub fn gradient_stops(&self) -> ItemRange<di::GradientStop> {
@@ -673,10 +658,7 @@ impl BuiltDisplayList {
                     v,
                     item.iter.cur_clip_chain_items.iter().collect()
                 ),
-                Real::Text(v) => Debug::Text(
-                    v,
-                    item.iter.cur_glyphs.iter().collect()
-                ),
+                Real::Text(v) => Debug::Text(v),
                 Real::SetFilterOps => Debug::SetFilterOps(
                     item.iter.cur_filters.iter().collect()
                 ),
@@ -702,9 +684,6 @@ impl BuiltDisplayList {
                 },
                 Real::SetGradientStops => Debug::SetGradientStops(
                     item.iter.cur_stops.iter().collect()
-                ),
-                Real::SetPoints => Debug::SetPoints(
-                    item.iter.cur_points.iter().collect()
                 ),
                 Real::RectClip(v) => Debug::RectClip(v),
                 Real::RoundedRectClip(v) => Debug::RoundedRectClip(v),
@@ -746,11 +725,9 @@ impl<'a> BuiltDisplayListIter<'a> {
             parse_context: DlParseContext::default(),
             cur_item: di::DisplayItem::PopStackingContext,
             cur_stops: ItemRange::default(),
-            cur_glyphs: ItemRange::default(),
             cur_filters: ItemRange::default(),
             cur_filter_data: Vec::new(),
             cur_clip_chain_items: ItemRange::default(),
-            cur_points: ItemRange::default(),
             peeking: Peek::NotPeeking,
             debug_stats: DebugStats {
                 last_addr: data.as_ptr() as usize,
@@ -769,10 +746,6 @@ impl<'a> BuiltDisplayListIter<'a> {
 
     pub fn current_item(&self) -> &di::DisplayItem {
         &self.cur_item
-    }
-
-    pub fn glyphs(&self) -> ItemRange<GlyphInstance> {
-        self.cur_glyphs
     }
 
     pub fn gradient_stops(&self) -> ItemRange<di::GradientStop> {
@@ -796,7 +769,6 @@ impl<'a> BuiltDisplayListIter<'a> {
         
         self.cur_stops = ItemRange::default();
         self.cur_clip_chain_items = ItemRange::default();
-        self.cur_points = ItemRange::default();
         self.cur_filters = ItemRange::default();
         self.cur_filter_data.clear();
 
@@ -805,8 +777,7 @@ impl<'a> BuiltDisplayListIter<'a> {
             match self.cur_item {
                 SetGradientStops |
                 SetFilterOps |
-                SetFilterData |
-                SetPoints => {
+                SetFilterData => {
                     
                     continue;
                 }
@@ -860,17 +831,9 @@ impl<'a> BuiltDisplayListIter<'a> {
                 self.debug_stats.log_slice("set_filter_data.b_values", &data.b_values);
                 self.debug_stats.log_slice("set_filter_data.a_values", &data.a_values);
             }
-            SetPoints => {
-                self.cur_points = self.skip_slice("set_points.points");
-                self.debug_stats.log_slice("set_points.points", &self.cur_points);
-            }
             ClipChain(_) => {
                 self.cur_clip_chain_items = self.skip_slice("clip_chain.clip_ids");
                 self.debug_stats.log_slice("clip_chain.clip_ids", &self.cur_clip_chain_items);
-            }
-            Text(_) => {
-                self.cur_glyphs = self.skip_slice("text.glyphs");
-                self.debug_stats.log_slice("text.glyphs", &self.cur_glyphs);
             }
             _ => {  }
         }
@@ -1008,6 +971,14 @@ impl<'a, T: Copy + peek_poke::Peek> Iterator for AuxIter<'a, T> {
 }
 
 impl<'a, T: Copy + peek_poke::Peek> ::std::iter::ExactSizeIterator for AuxIter<'a, T> {}
+
+
+
+struct CapturedTextRun {
+    font_key: FontInstanceKey,
+    glyph_options: Option<GlyphOptions>,
+    glyphs: Vec<GlyphInstance>,
+}
 
 #[derive(Clone, Debug)]
 pub struct SaveState {
@@ -1179,7 +1150,7 @@ pub struct DisplayListBuilder {
     
     
     
-    spatial_offsets: HashMap<di::SpatialId, AuOffset>,
+    spatial_offsets: FastHashMap<di::SpatialId, AuOffset>,
     
     
     
@@ -1248,6 +1219,7 @@ enum CapturedKey {
     Image(Image),
     
     NormalBorder { border: di::NormalBorder, widths: LayoutSideOffsets },
+    Text(CapturedTextRun),
 }
 
 #[repr(C)]
@@ -1303,7 +1275,7 @@ impl DisplayListBuilder {
             save_state: None,
             serialized_content_buffer: None,
             state: BuildState::Idle,
-            spatial_offsets: HashMap::new(),
+            spatial_offsets: FastHashMap::default(),
             last_scroll_offset: None,
             
             au_grid: AuGrid::new(60.0),
@@ -1904,21 +1876,14 @@ impl DisplayListBuilder {
         
         
         
-        if !color_is_visible(color) && self.pending_shadows.is_empty() {
+        let visible = color_is_visible(color);
+        if !visible && self.pending_shadows.is_empty() {
             return;
         }
 
         let (common, offset) = self.normalize_common(common);
-        let item = di::DisplayItem::Text(di::TextDisplayItem {
-            common,
-            bounds: self.shift_rect(bounds, offset),
-            color,
-            font_key,
-            glyph_options,
-            shadow: di::GlyphShadowMode::None,
-        });
+        let run_bounds = self.shift_rect(bounds, offset);
 
-        
         
         
         
@@ -1933,15 +1898,81 @@ impl DisplayListBuilder {
         
         let mut scratch = mem::take(&mut self.glyph_scratch);
         for split_glyphs in glyphs.chunks(MAX_TEXT_RUN_LENGTH) {
-            self.push_item(&item);
             scratch.clear();
             scratch.extend(split_glyphs.iter().map(|g| GlyphInstance {
                 index: g.index,
                 point: g.point - bounds_origin,
             }));
-            self.push_iter(&scratch);
+
+            
+            
+            let text_run = if visible {
+                self.intern_text_run(
+                    &scratch,
+                    run_bounds,
+                    &common,
+                    font_key,
+                    color,
+                    glyph_options,
+                    di::GlyphShadowMode::None,
+                )
+            } else {
+                interning::Handle::INVALID
+            };
+
+            if !self.pending_shadows.is_empty() {
+                let text = CapturedTextRun { font_key, glyph_options, glyphs: scratch.clone() };
+                self.capture_prim(&common, run_bounds, CapturedKey::Text(text));
+            }
+
+            self.push_item(&di::DisplayItem::Text(di::TextDisplayItem {
+                spatial_id: common.spatial_id,
+                clip_chain_id: common.clip_chain_id,
+                text_run,
+            }));
         }
         self.glyph_scratch = scratch;
+    }
+
+    
+    
+    fn intern_text_run(
+        &mut self,
+        glyphs: &[GlyphInstance],
+        bounds: LayoutRect,
+        common: &di::CommonItemProperties,
+        font_key: FontInstanceKey,
+        color: ColorF,
+        glyph_options: Option<GlyphOptions>,
+        shadow: di::GlyphShadowMode,
+    ) -> interning::Handle<TextRunKey> {
+        
+        
+        
+        let requested_raster_space = match shadow {
+            di::GlyphShadowMode::Blurred => di::RasterSpace::Local(1.0),
+            di::GlyphShadowMode::None | di::GlyphShadowMode::Unblurred => {
+                *self.raster_space_stack.last().unwrap()
+            }
+        };
+
+        let key = TextRunKey {
+            common: prim_key_common(common, bounds, EdgeMask::all()),
+            font_key,
+            color: color.into(),
+            glyph_options,
+            glyphs: glyphs
+                .iter()
+                .map(|glyph| GlyphInstanceAu {
+                    index: glyph.index,
+                    point: glyph.point.to_au(),
+                })
+                .collect(),
+            shadow,
+            requested_raster_space,
+        };
+
+        self.interners.intern(&key)
     }
 
     
@@ -3096,31 +3127,27 @@ impl DisplayListBuilder {
         fill_rule: di::FillRule,
     ) -> di::ClipId {
         let id = self.generate_clip_index();
-        let offset = self.accumulated_scroll_offset(spatial_id);
+        let rect = self.normalize_rect(image_mask.rect, spatial_id);
 
-        let mut image_mask = image_mask;
-        image_mask.rect = self.shift_rect(image_mask.rect, offset);
-
-        let item = di::DisplayItem::ImageMaskClip(di::ImageMaskClipDisplayItem {
-            id,
-            spatial_id,
-            image_mask,
-            fill_rule,
+        
+        
+        
+        
+        let polygon = if points.len() >= 3 {
+            Some(self.interners.intern(&PolygonKey::new(points, fill_rule)))
+        } else {
+            None
+        };
+        let clip = self.interners.intern(&ClipItemKey {
+            kind: ClipItemKeyKind::image_mask(&image_mask, polygon),
         });
 
-        
-        
-        
-        
-        
-        
-        
-        
-        if points.len() >= 3 {
-            self.push_item(&di::DisplayItem::SetPoints);
-            self.push_iter(points);
-        }
-        self.push_item(&item);
+        self.push_item(&di::DisplayItem::ImageMaskClip(di::ImageMaskClipDisplayItem {
+            id,
+            spatial_id,
+            rect,
+            clip,
+        }));
         id
     }
 
@@ -3132,17 +3159,18 @@ impl DisplayListBuilder {
         fill_rule: di::FillRule,
     ) -> di::ClipId {
         let id = self.generate_clip_index();
+        let rect = self.normalize_rect(rect, spatial_id);
         let path = self.interners.intern(path);
-
-        let item = di::DisplayItem::PathClip(di::PathClipDisplayItem {
-            id,
-            spatial_id,
-            path,
-            rect: self.normalize_rect(rect, spatial_id),
-            fill_rule,
+        let clip = self.interners.intern(&ClipItemKey {
+            kind: ClipItemKeyKind::Path(path, fill_rule, rect.min.to_au()),
         });
 
-        self.push_item(&item);
+        self.push_item(&di::DisplayItem::PathClip(di::PathClipDisplayItem {
+            id,
+            spatial_id,
+            rect,
+            clip,
+        }));
         id
     }
 
@@ -3171,16 +3199,25 @@ impl DisplayListBuilder {
         anti_aliased: bool,
     ) -> di::ClipId {
         let id = self.generate_clip_index();
+        let clip_rect = self.normalize_rect(clip_rect, spatial_id);
+        let clip = self.intern_rect_clip();
 
-        let item = di::DisplayItem::RectClip(di::RectClipDisplayItem {
+        self.push_item(&di::DisplayItem::RectClip(di::RectClipDisplayItem {
             id,
             spatial_id,
-            clip_rect: self.normalize_rect(clip_rect, spatial_id),
+            clip_rect,
+            clip,
             anti_aliased,
-        });
-
-        self.push_item(&item);
+        }));
         id
+    }
+
+    
+    
+    fn intern_rect_clip(&mut self) -> interning::Handle<ClipItemKey> {
+        self.interners.intern(&ClipItemKey {
+            kind: ClipItemKeyKind::rectangle(di::ClipMode::Clip),
+        })
     }
 
     pub fn define_clip_rounded_rect(
@@ -3206,23 +3243,24 @@ impl DisplayListBuilder {
     fn define_clip_rounded_rect_impl(
         &mut self,
         spatial_id: di::SpatialId,
-        mut clip: di::ComplexClipRegion,
+        clip: di::ComplexClipRegion,
         snap_outset: f32,
         anti_aliased: bool,
     ) -> di::ClipId {
         let id = self.generate_clip_index();
+        let rect = self.normalize_rect(clip.rect, spatial_id);
+        let clip = self.interners.intern(&ClipItemKey {
+            kind: ClipItemKeyKind::rounded_rect(clip.radii, clip.inset, clip.mode),
+        });
 
-        clip.rect = self.normalize_rect(clip.rect, spatial_id);
-
-        let item = di::DisplayItem::RoundedRectClip(di::RoundedRectClipDisplayItem {
+        self.push_item(&di::DisplayItem::RoundedRectClip(di::RoundedRectClipDisplayItem {
             id,
             spatial_id,
+            rect,
             clip,
             snap_outset,
             anti_aliased,
-        });
-
-        self.push_item(&item);
+        }));
         id
     }
 
@@ -3234,14 +3272,16 @@ impl DisplayListBuilder {
         widths: LayoutSideOffsets,
     ) -> di::ClipId {
         let id = self.generate_clip_index();
-        let item = di::DisplayItem::BorderClip(di::BorderClipDisplayItem {
+        let clip_rect = self.normalize_rect(clip_rect, spatial_id);
+        let clip = self.interners.intern(&ClipItemKey {
+            kind: ClipItemKeyKind::Border(BorderClipKey::new(&border, widths)),
+        });
+        self.push_item(&di::DisplayItem::BorderClip(di::BorderClipDisplayItem {
             id,
             spatial_id,
-            clip_rect: self.normalize_rect(clip_rect, spatial_id),
-            border,
-            widths,
-        });
-        self.push_item(&item);
+            clip_rect,
+            clip,
+        }));
         id
     }
 
@@ -3294,9 +3334,11 @@ impl DisplayListBuilder {
         ignore_missing_pipeline: bool
     ) {
         let offset = self.accumulated_scroll_offset(space_and_clip.spatial_id);
+        let clip = self.intern_rect_clip();
         let item = di::DisplayItem::Iframe(di::IframeDisplayItem {
             bounds: self.shift_rect(bounds, offset),
             clip_rect: self.shift_rect(clip_rect, offset),
+            clip,
             space_and_clip: *space_and_clip,
             pipeline_id,
             ignore_missing_pipeline,
@@ -3339,9 +3381,6 @@ impl DisplayListBuilder {
         
         struct DrawEntry {
             item: di::DisplayItem,
-            glyphs: Vec<GlyphInstance>,
-            
-            
             key: Option<CapturedPrim>,
         }
         enum Parsed {
@@ -3352,7 +3391,6 @@ impl DisplayListBuilder {
             Definition {
                 item: di::DisplayItem,
                 clip_ids: Vec<di::ClipId>,
-                points: Vec<LayoutPoint>,
             },
             Draw(DrawEntry),
         }
@@ -3379,20 +3417,16 @@ impl DisplayListBuilder {
                     | di::DisplayItem::ClipChain(..)) => Parsed::Definition {
                         item: *def,
                         clip_ids: item.clip_chain_items().iter().collect(),
-                        points: item.points().iter().collect(),
                     },
                     draw => Parsed::Draw(DrawEntry {
                         item: *draw,
-                        glyphs: match draw {
-                            di::DisplayItem::Text(..) => item.glyphs().iter().collect(),
-                            _ => Vec::new(),
-                        },
                         
                         
                         key: match draw {
                             di::DisplayItem::Rectangle(..)
                             | di::DisplayItem::Line(..)
-                            | di::DisplayItem::Image(..) => Some(
+                            | di::DisplayItem::Image(..)
+                            | di::DisplayItem::Text(..) => Some(
                                 captured_keys.next().expect("primitive item without its captured key"),
                             ),
                             di::DisplayItem::Border(info)
@@ -3410,11 +3444,7 @@ impl DisplayListBuilder {
         
         
         for p in &parsed {
-            if let Parsed::Definition { item, clip_ids, points } = p {
-                if !points.is_empty() {
-                    self.push_item(&di::DisplayItem::SetPoints);
-                    self.push_iter(points);
-                }
+            if let Parsed::Definition { item, clip_ids } = p {
                 self.push_item(item);
                 if matches!(item, di::DisplayItem::ClipChain(..)) {
                     self.push_iter(clip_ids);
@@ -3480,21 +3510,11 @@ impl DisplayListBuilder {
                     {
                         continue;
                     }
+                    
+                    
                     if let Some(ref captured) = entry.key {
-                        let copy = self.intern_shadow_copy(captured, s.offset, s.color);
+                        let copy = self.intern_shadow_copy(captured, s.offset, s.color, shadow_mode);
                         self.push_item(&copy);
-                        continue;
-                    }
-                    if let Some(copy) = Self::shadow_copy_of_item(
-                        &entry.item,
-                        s.offset,
-                        s.color,
-                        shadow_mode,
-                    ) {
-                        self.push_item(&copy);
-                        if matches!(copy, di::DisplayItem::Text(..)) {
-                            self.push_iter(&entry.glyphs);
-                        }
                     }
                 }
             }
@@ -3508,7 +3528,7 @@ impl DisplayListBuilder {
         for p in &parsed {
             if let Parsed::Draw(entry) = p {
                 let visible = match entry.item {
-                    di::DisplayItem::Text(ref info) => color_is_visible(info.color),
+                    di::DisplayItem::Text(ref info) => info.text_run != interning::Handle::INVALID,
                     di::DisplayItem::Rectangle(ref info) => info.rect != interning::Handle::INVALID,
                     di::DisplayItem::Line(ref info) => info.line != interning::Handle::INVALID,
                     _ => true,
@@ -3518,9 +3538,6 @@ impl DisplayListBuilder {
                 }
 
                 self.push_item(&entry.item);
-                if matches!(entry.item, di::DisplayItem::Text(..)) {
-                    self.push_iter(&entry.glyphs);
-                }
             }
         }
 
@@ -3534,11 +3551,16 @@ impl DisplayListBuilder {
     
     
     
+    
+    
+    
+    
     fn intern_shadow_copy(
         &mut self,
         captured: &CapturedPrim,
         offset: LayoutVector2D,
         color: ColorF,
+        shadow_mode: di::GlyphShadowMode,
     ) -> di::DisplayItem {
         let common = shadow_copy_common(captured.common, offset);
         let bounds = captured.bounds.translate(offset);
@@ -3581,6 +3603,22 @@ impl DisplayListBuilder {
                     details: di::BorderKind::Normal(handle),
                 })
             }
+            CapturedKey::Text(ref text) => {
+                let text_run = self.intern_text_run(
+                    &text.glyphs,
+                    bounds,
+                    &common,
+                    text.font_key,
+                    color,
+                    text.glyph_options,
+                    shadow_mode,
+                );
+                di::DisplayItem::Text(di::TextDisplayItem {
+                    spatial_id: common.spatial_id,
+                    clip_chain_id: common.clip_chain_id,
+                    text_run,
+                })
+            }
             CapturedKey::Line(ref decoration) => {
                 let line = self.intern_line(
                     &LineDecoration { color: color.into(), ..decoration.clone() },
@@ -3594,48 +3632,6 @@ impl DisplayListBuilder {
                 })
             }
         }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    fn shadow_copy_of_item(
-        item: &di::DisplayItem,
-        offset: LayoutVector2D,
-        color: ColorF,
-        shadow_mode: di::GlyphShadowMode,
-    ) -> Option<di::DisplayItem> {
-        use di::DisplayItem::*;
-
-        
-        
-        
-        
-        
-        let shift = |common| shadow_copy_common(common, offset);
-
-        Some(match item {
-            
-            Rectangle(..) | Line(..) | Image(..) => unreachable!("shadow copy of a primitive with a captured key"),
-            Text(info) => Text(di::TextDisplayItem {
-                common: shift(info.common),
-                bounds: info.bounds.translate(offset),
-                color,
-                shadow: shadow_mode,
-                ..*info
-            }),
-            
-            
-            Border(info) if matches!(info.details, di::BorderKind::Normal(..)) => {
-                unreachable!("shadow copy of a primitive with a captured key")
-            }
-            _ => return None,
-        })
     }
 
     
@@ -4915,6 +4911,339 @@ mod border_interning_tests {
         let kinds = border_kinds(&dl);
         assert_eq!(kinds.len(), 3);
         assert!(matches!(kinds[0], di::BorderKind::NinePatchImage(handle) if handle.slot() == adds[0].slot));
+    }
+}
+
+#[cfg(test)]
+mod text_interning_tests {
+    use super::*;
+    use crate::IdNamespace;
+
+    fn glyph(index: u32, x: f32) -> GlyphInstance {
+        GlyphInstance { index, point: LayoutPoint::new(x, 10.0) }
+    }
+
+    fn push_run(builder: &mut DisplayListBuilder, glyphs: &[GlyphInstance], color: ColorF) {
+        push_run_with_flags(builder, glyphs, color, di::PrimitiveFlags::default());
+    }
+
+    fn push_run_with_flags(
+        builder: &mut DisplayListBuilder,
+        glyphs: &[GlyphInstance],
+        color: ColorF,
+        flags: di::PrimitiveFlags,
+    ) {
+        let pipeline_id = PipelineId::dummy();
+        let rect = LayoutRect::from_size(LayoutSize::new(100.0, 100.0));
+        let common = di::CommonItemProperties {
+            clip_rect: rect,
+            clip_chain_id: di::ClipChainId::INVALID,
+            spatial_id: di::SpatialId::root_scroll_node(pipeline_id),
+            flags,
+        };
+
+        builder.push_text(
+            &common,
+            rect,
+            glyphs,
+            FontInstanceKey::new(IdNamespace(1), 1),
+            color,
+            None,
+        );
+    }
+
+    fn text_items(dl: &BuiltDisplayList) -> Vec<di::TextDisplayItem> {
+        let mut items = Vec::new();
+        let mut iter = dl.iter();
+        while let Some(item) = iter.next() {
+            if let di::DisplayItem::Text(info) = item.item() {
+                items.push(*info);
+            }
+        }
+        items
+    }
+
+    fn push_shadow(builder: &mut DisplayListBuilder, color: ColorF, blur_radius: f32) {
+        let pipeline_id = PipelineId::dummy();
+        builder.push_shadow(
+            &di::SpaceAndClipInfo {
+                spatial_id: di::SpatialId::root_scroll_node(pipeline_id),
+                clip_chain_id: di::ClipChainId::INVALID,
+            },
+            di::Shadow {
+                offset: LayoutVector2D::new(2.0, 2.0),
+                color,
+                blur_radius,
+            },
+            true,
+        );
+    }
+
+    #[test]
+    fn identical_runs_in_one_list_intern_once() {
+        let mut builder = DisplayListBuilder::new(PipelineId::dummy());
+        builder.begin(60.0);
+
+        let glyphs = [glyph(1, 0.0), glyph(2, 8.0)];
+        push_run(&mut builder, &glyphs, ColorF::BLACK);
+        push_run(&mut builder, &glyphs, ColorF::BLACK);
+        push_run(&mut builder, &glyphs, ColorF::WHITE);
+
+        let (_, dl) = builder.end();
+        assert_eq!(dl.delta().text_runs.adds.len(), 2, "colour is part of the key, repetition is not");
+        assert!(dl.delta().text_runs.removes.is_empty());
+        assert_eq!(dl.delta().text_runs.adds[0].key.glyphs.len(), 2);
+        let items = text_items(&dl);
+        assert_eq!(items.len(), 3);
+        assert_eq!(items[0].text_run, items[1].text_run);
+    }
+
+    #[test]
+    fn an_unchanged_run_is_not_re_sent_next_build() {
+        let mut builder = DisplayListBuilder::new(PipelineId::dummy());
+        let glyphs = [glyph(1, 0.0)];
+
+        builder.begin(60.0);
+        push_run(&mut builder, &glyphs, ColorF::BLACK);
+        let (_, first) = builder.end();
+        assert_eq!(first.delta().text_runs.adds.len(), 1);
+
+        
+        
+        builder.begin(60.0);
+        push_run(&mut builder, &glyphs, ColorF::BLACK);
+        let (_, second) = builder.end();
+        assert!(second.delta().text_runs.is_empty());
+    }
+
+    #[test]
+    fn primitive_flags_are_part_of_the_key() {
+        let mut builder = DisplayListBuilder::new(PipelineId::dummy());
+        builder.begin(60.0);
+
+        let glyphs = [glyph(1, 0.0)];
+        push_run_with_flags(&mut builder, &glyphs, ColorF::BLACK, di::PrimitiveFlags::default());
+        push_run_with_flags(&mut builder, &glyphs, ColorF::BLACK, di::PrimitiveFlags::empty());
+
+        let (_, dl) = builder.end();
+        assert_eq!(dl.delta().text_runs.adds.len(), 2);
+    }
+
+    #[test]
+    fn raster_space_is_part_of_the_key() {
+        let mut builder = DisplayListBuilder::new(PipelineId::dummy());
+        builder.begin(60.0);
+
+        let glyphs = [glyph(1, 0.0)];
+        push_run(&mut builder, &glyphs, ColorF::BLACK);
+
+        
+        
+        builder.push_stacking_context(
+            di::SpatialId::root_scroll_node(PipelineId::dummy()),
+            di::PrimitiveFlags::default(),
+            None,
+            di::TransformStyle::Flat,
+            di::MixBlendMode::Normal,
+            &[],
+            &[],
+            di::RasterSpace::Local(2.0),
+            di::StackingContextFlags::empty(),
+            None,
+        );
+        push_run(&mut builder, &glyphs, ColorF::BLACK);
+        builder.pop_stacking_context();
+
+        let (_, dl) = builder.end();
+        assert_eq!(dl.delta().text_runs.adds.len(), 2);
+    }
+
+    #[test]
+    fn a_run_dropped_from_the_list_is_collected() {
+        let mut builder = DisplayListBuilder::new(PipelineId::dummy());
+        let glyphs = [glyph(1, 0.0)];
+
+        builder.begin(60.0);
+        push_run(&mut builder, &glyphs, ColorF::BLACK);
+        let (_, dl) = builder.end();
+        let slot = dl.delta().text_runs.adds[0].slot;
+
+        
+        for _ in 0..interning::RETAIN_BUILDS - 1 {
+            builder.begin(60.0);
+            let (_, dl) = builder.end();
+            assert!(dl.delta().text_runs.is_empty());
+        }
+
+        builder.begin(60.0);
+        let (_, dl) = builder.end();
+        assert_eq!(dl.delta().text_runs.removes, vec![slot]);
+    }
+
+    #[test]
+    fn transparent_text_is_not_emitted() {
+        let mut builder = DisplayListBuilder::new(PipelineId::dummy());
+        builder.begin(60.0);
+
+        push_run(&mut builder, &[glyph(1, 0.0)], ColorF::TRANSPARENT);
+
+        let (_, dl) = builder.end();
+        assert!(text_items(&dl).is_empty(), "invisible text reaches the scene builder");
+        assert!(dl.delta().text_runs.is_empty(), "invisible text was interned");
+    }
+
+    #[test]
+    fn transparent_text_still_casts_a_shadow() {
+        let mut builder = DisplayListBuilder::new(PipelineId::dummy());
+        builder.begin(60.0);
+
+        
+        
+        push_shadow(&mut builder, ColorF::BLACK, 3.0);
+        push_run(&mut builder, &[glyph(1, 0.0)], ColorF::TRANSPARENT);
+        builder.pop_all_shadows();
+
+        let (_, dl) = builder.end();
+        let items = text_items(&dl);
+        assert_eq!(items.len(), 1, "expected only the shadow copy");
+        assert_ne!(items[0].text_run, interning::Handle::INVALID);
+
+        
+        
+        let adds = &dl.delta().text_runs.adds;
+        assert_eq!(adds.len(), 1);
+        assert_eq!(adds[0].key.color, ColorF::BLACK.into());
+        assert_eq!(adds[0].key.shadow, di::GlyphShadowMode::Blurred);
+        assert_eq!(adds[0].key.requested_raster_space, di::RasterSpace::Local(1.0));
+    }
+
+    #[test]
+    fn a_transparent_shadow_casts_nothing() {
+        let mut builder = DisplayListBuilder::new(PipelineId::dummy());
+        builder.begin(60.0);
+
+        push_shadow(&mut builder, ColorF::TRANSPARENT, 3.0);
+        push_run(&mut builder, &[glyph(1, 0.0)], ColorF::BLACK);
+        builder.pop_all_shadows();
+
+        let (_, dl) = builder.end();
+        let items = text_items(&dl);
+        assert_eq!(items.len(), 1, "expected only the original");
+
+        let adds = &dl.delta().text_runs.adds;
+        assert_eq!(adds.len(), 1);
+        assert_eq!(adds[0].key.color, ColorF::BLACK.into());
+        assert_eq!(adds[0].key.shadow, di::GlyphShadowMode::None);
+    }
+
+    #[test]
+    fn a_long_run_is_split_and_interned_per_chunk() {
+        let mut builder = DisplayListBuilder::new(PipelineId::dummy());
+        builder.begin(60.0);
+
+        
+        let glyphs: Vec<GlyphInstance> = (0..MAX_TEXT_RUN_LENGTH as u32 + 1)
+            .map(|i| glyph(i, i as f32))
+            .collect();
+        push_run(&mut builder, &glyphs, ColorF::BLACK);
+
+        let (_, dl) = builder.end();
+        assert_eq!(dl.delta().text_runs.adds.len(), 2);
+        assert_eq!(text_items(&dl).len(), 2);
+    }
+}
+
+#[cfg(test)]
+mod clip_interning_tests {
+    use super::*;
+    use crate::IdNamespace;
+
+    const RECT: LayoutRect = LayoutRect {
+        min: LayoutPoint::new(10.0, 10.0),
+        max: LayoutPoint::new(110.0, 60.0),
+    };
+
+    fn spatial() -> di::SpatialId {
+        di::SpatialId::root_scroll_node(PipelineId::dummy())
+    }
+
+    fn rounded(radius: f32) -> di::ComplexClipRegion {
+        di::ComplexClipRegion {
+            rect: RECT,
+            radii: di::BorderRadius::uniform(radius),
+            inset: LayoutSideOffsets::zero(),
+            mode: di::ClipMode::Clip,
+        }
+    }
+
+    fn mask() -> di::ImageMask {
+        di::ImageMask { image: ImageKey::new(IdNamespace(1), 9), rect: RECT }
+    }
+
+    #[test]
+    fn every_rect_clip_is_one_entry() {
+        let mut builder = DisplayListBuilder::new(PipelineId::dummy());
+        builder.begin(60.0);
+
+        
+        
+        builder.define_clip_rect(spatial(), RECT);
+        builder.define_clip_rect(spatial(), RECT.translate(LayoutVector2D::new(500.0, 0.0)));
+        builder.define_clip_rounded_rect(spatial(), rounded(0.0));
+        builder.push_iframe(
+            RECT,
+            RECT,
+            &di::SpaceAndClipInfo::root_scroll(PipelineId::dummy()),
+            PipelineId(1, 1),
+            false,
+        );
+
+        let (_, dl) = builder.end();
+        assert_eq!(dl.delta().clips.adds.len(), 1);
+        assert_eq!(
+            dl.delta().clips.adds[0].key.kind,
+            ClipItemKeyKind::Rectangle(di::ClipMode::Clip),
+        );
+        assert!(dl.delta().polygons.is_empty());
+    }
+
+    #[test]
+    fn rounded_clips_key_on_their_radii() {
+        let mut builder = DisplayListBuilder::new(PipelineId::dummy());
+        builder.begin(60.0);
+
+        builder.define_clip_rounded_rect(spatial(), rounded(4.0));
+        builder.define_clip_rounded_rect(spatial(), rounded(4.0));
+        builder.define_clip_rounded_rect(spatial(), rounded(8.0));
+
+        let (_, dl) = builder.end();
+        assert_eq!(dl.delta().clips.adds.len(), 2);
+    }
+
+    #[test]
+    fn an_image_mask_with_points_interns_a_polygon() {
+        let mut builder = DisplayListBuilder::new(PipelineId::dummy());
+        builder.begin(60.0);
+
+        let points = [
+            LayoutPoint::new(0.0, 0.0),
+            LayoutPoint::new(100.0, 0.0),
+            LayoutPoint::new(50.0, 50.0),
+        ];
+        builder.define_clip_image_mask(spatial(), mask(), &points, di::FillRule::Nonzero);
+        
+        builder.define_clip_image_mask(spatial(), mask(), &points[..2], di::FillRule::Nonzero);
+
+        let (_, dl) = builder.end();
+        let polygons = &dl.delta().polygons.adds;
+        assert_eq!(polygons.len(), 1);
+        assert_eq!(polygons[0].key.point_count, 3);
+        let clips = &dl.delta().clips.adds;
+        assert_eq!(clips.len(), 2, "with and without a polygon are different clips");
+        let with_polygon = clips.iter().filter(|add| {
+            matches!(add.key.kind, ClipItemKeyKind::ImageMask(_, Some(polygon)) if polygon.slot() == polygons[0].slot)
+        }).count();
+        assert_eq!(with_polygon, 1, "the clip names the polygon it was interned with");
     }
 }
 

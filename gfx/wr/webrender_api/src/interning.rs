@@ -53,7 +53,7 @@
 
 use crate::serde::{Deserialize, Serialize};
 use malloc_size_of::MallocSizeOf;
-use std::collections::HashMap;
+use crate::FastHashMap;
 use std::hash::Hash;
 use std::marker::PhantomData;
 
@@ -264,7 +264,7 @@ struct Entry {
 #[derive(Debug, MallocSizeOf)]
 pub struct Interner<K: Eq + Hash + MallocSizeOf> {
     
-    entries: HashMap<K, Entry>,
+    entries: FastHashMap<K, Entry>,
     
     
     free_slots: Vec<u32>,
@@ -291,7 +291,7 @@ impl<K: Eq + Hash + MallocSizeOf> Interner<K> {
         assert!(retain_builds > 0, "an entry must survive the build that used it");
 
         Interner {
-            entries: HashMap::new(),
+            entries: FastHashMap::default(),
             free_slots: Vec::new(),
             slot_count: 0,
             pending_adds: Vec::new(),
@@ -457,6 +457,9 @@ macro_rules! enumerate_dl_interned_types {
             conic_gradients: $crate::interned_prims::ConicGradientKey,
             normal_borders: $crate::interned_prims::NormalBorderKey,
             image_borders: $crate::interned_prims::ImageBorderKey,
+            text_runs: $crate::interned_prims::TextRunKey,
+            clips: $crate::interned_prims::ClipItemKey,
+            polygons: $crate::key_types::PolygonKey,
         }
     }
 }

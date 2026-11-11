@@ -364,10 +364,11 @@ impl YamlWriter {
                     DisplayItem::Text(info) => {
                         self.write_line("- type: rect");
                         self.push_level();
-                        self.write_spatial_id(info.common.spatial_id);
-                        self.write_clip_chain_id(info.common.clip_chain_id);
-                        self.write_bounds(info.bounds);
-                        self.maybe_write_clip_rect(info.bounds, info.common.clip_rect);
+                        self.write_spatial_id(info.spatial_id);
+                        self.write_clip_chain_id(info.clip_chain_id);
+                        
+                        
+                        self.write_bounds(LayoutRect::zero());
                         self.write_color(ColorF::new(1.0, 0.0, 0.0, 0.5));
                         self.pop_level();
                     }
@@ -411,7 +412,7 @@ impl YamlWriter {
                         self.push_level();
                         self.write_line(&format!("id: {}", clip_id));
                         self.write_spatial_id(info.spatial_id);
-                        self.write_rect("bounds", info.image_mask.rect);
+                        self.write_rect("bounds", info.rect);
                         self.pop_level();
                     }
                     DisplayItem::PathClip(info) => {
@@ -423,42 +424,17 @@ impl YamlWriter {
                         self.write_rect("bounds", info.rect);
                         self.pop_level();
                     }
+                    
+                    
+                    
+                    
                     DisplayItem::RoundedRectClip(info) => {
                         let clip_id = self.add_clip_id(info.id);
                         self.write_line("- type: clip");
                         self.push_level();
                         self.write_line(&format!("id: {}", clip_id));
                         self.write_spatial_id(info.spatial_id);
-                        self.write_line("complex:");
-                        self.push_level();
-                        self.write_rect("- rect", info.clip.rect);
-                        self.push_level();
-                        self.write_line("radius: {");
-                        self.push_level();
-                        self.write_line(
-                            &format!("top-left: [{}, {}],",
-                            info.clip.radii.top_left.width,
-                            info.clip.radii.top_left.height,
-                        ));
-                        self.write_line(
-                            &format!("top-right: [{}, {}],",
-                            info.clip.radii.top_right.width,
-                            info.clip.radii.top_right.height,
-                        ));
-                        self.write_line(
-                            &format!("bottom-right: [{}, {}],",
-                            info.clip.radii.bottom_right.width,
-                            info.clip.radii.bottom_right.height,
-                        ));
-                        self.write_line(
-                            &format!("bottom-left: [{}, {}],",
-                            info.clip.radii.bottom_left.width,
-                            info.clip.radii.bottom_left.height,
-                        ));
-                        self.pop_level();
-                        self.write_line("}");
-                        self.pop_level();
-                        self.pop_level();
+                        self.write_rect("bounds", info.rect);
                         self.pop_level();
                     }
                     DisplayItem::ClipChain(info) => {
@@ -481,7 +457,6 @@ impl YamlWriter {
                     DisplayItem::SetGradientStops => {}
                     DisplayItem::SetFilterOps => {}
                     DisplayItem::SetFilterData => {}
-                    DisplayItem::SetPoints => {}
                     DisplayItem::YuvImage(..) => {}
                     DisplayItem::BackdropFilter(..) => {}
                     DisplayItem::Gradient(..) => {}

@@ -95,7 +95,7 @@ static PROFILER_PRESETS: &'static[(&'static str, &'static str)] = &[
     (&"GPU Memory", &"External image mem, Atlas textures mem, Standalone textures mem, Picture tiles mem, Render targets mem, Depth targets mem, Atlas items mem, GPU cache mem, GPU buffer mem, GPU total mem"),
     (&"CPU Memory", &"Image templates, Image templates mem, Font templates,Font templates mem, DisplayList mem"),
     (&"Memory", &"$CPU,CPU Memory, ,$GPU,GPU Memory"),
-    (&"Interners", "Intern insertions,Intern removals,Off-grid coords, ,Interned primitives,Interned clips,Interned pictures,Interned text runs,Interned normal borders,Interned image borders,Interned images,Interned YUV images,Interned line decorations,Interned linear gradients,Interned radial gradients,Interned conic gradients,Interned filter data,Interned backdrop renders, Interned backdrop captures,Interned polygons,Interned box-shadows,Interned paths"),
+    (&"Interners", "Intern insertions,Intern removals,Off-grid coords, ,Interned primitives,Interned clips,Interned pictures,Interned text runs,Interned normal borders,Interned image borders,Interned images,Interned YUV images,Interned line decorations,Interned linear gradients,Interned radial gradients,Interned conic gradients,Interned filter data,Interned backdrop renders, Interned backdrop captures,Interned box-shadows,Interned paths"),
     
     (&"GPU samplers", &"Alpha targets samplers,Transparent pass samplers,Opaque pass samplers,Total samplers"),
 
@@ -231,85 +231,83 @@ pub const INTERNED_PICTURES: usize = 90;
 pub const INTERNED_FILTER_DATA: usize = 91;
 pub const INTERNED_BACKDROP_CAPTURES: usize = 92;
 pub const INTERNED_BACKDROP_RENDERS: usize = 93;
-pub const INTERNED_POLYGONS: usize = 94;
-pub const INTERNED_BOX_SHADOWS: usize = 95;
-pub const DEPTH_TARGETS_MEM: usize = 96;
+pub const INTERNED_BOX_SHADOWS: usize = 94;
+pub const DEPTH_TARGETS_MEM: usize = 95;
 
-pub const SHADER_BUILD_TIME: usize = 97;
+pub const SHADER_BUILD_TIME: usize = 96;
 
-pub const RENDER_REASON_FIRST: usize = 98;
-pub const RENDER_REASON_SCENE: usize = 99;
-pub const RENDER_REASON_ANIMATED_PROPERTY: usize = 100;
-pub const RENDER_REASON_RESOURCE_UPDATE: usize = 101;
-pub const RENDER_REASON_ASYNC_IMAGE: usize = 102;
-pub const RENDER_REASON_CLEAR_RESOURCES: usize = 103;
-pub const RENDER_REASON_APZ: usize = 104;
-pub const RENDER_REASON_RESIZE: usize = 105;
-pub const RENDER_REASON_WIDGET: usize = 106;
-pub const RENDER_REASON_TEXTURE_CACHE_FLUSH: usize = 107;
-pub const RENDER_REASON_SNAPSHOT: usize = 108;
-pub const RENDER_REASON_POST_RESOURCE_UPDATE_HOOKS: usize = 109;
-pub const RENDER_REASON_CONFIG_CHANGE: usize = 110;
-pub const RENDER_REASON_CONTENT_SYNC: usize = 111;
-pub const RENDER_REASON_FLUSH: usize = 112;
-pub const RENDER_REASON_TESTING: usize = 113;
-pub const RENDER_REASON_OTHER: usize = 114;
-pub const RENDER_REASON_VSYNC: usize = 115;
+pub const RENDER_REASON_FIRST: usize = 97;
+pub const RENDER_REASON_SCENE: usize = 98;
+pub const RENDER_REASON_ANIMATED_PROPERTY: usize = 99;
+pub const RENDER_REASON_RESOURCE_UPDATE: usize = 100;
+pub const RENDER_REASON_ASYNC_IMAGE: usize = 101;
+pub const RENDER_REASON_CLEAR_RESOURCES: usize = 102;
+pub const RENDER_REASON_APZ: usize = 103;
+pub const RENDER_REASON_RESIZE: usize = 104;
+pub const RENDER_REASON_WIDGET: usize = 105;
+pub const RENDER_REASON_TEXTURE_CACHE_FLUSH: usize = 106;
+pub const RENDER_REASON_SNAPSHOT: usize = 107;
+pub const RENDER_REASON_POST_RESOURCE_UPDATE_HOOKS: usize = 108;
+pub const RENDER_REASON_CONFIG_CHANGE: usize = 109;
+pub const RENDER_REASON_CONTENT_SYNC: usize = 110;
+pub const RENDER_REASON_FLUSH: usize = 111;
+pub const RENDER_REASON_TESTING: usize = 112;
+pub const RENDER_REASON_OTHER: usize = 113;
+pub const RENDER_REASON_VSYNC: usize = 114;
 
-pub const TEXTURES_CREATED: usize = 116;
-pub const TEXTURES_DELETED: usize = 117;
+pub const TEXTURES_CREATED: usize = 115;
+pub const TEXTURES_DELETED: usize = 116;
 
-pub const SLOW_FRAME_CPU_COUNT: usize = 118;
-pub const SLOW_FRAME_GPU_COUNT: usize = 119;
-pub const SLOW_FRAME_BUILD_COUNT: usize = 120;
-pub const SLOW_UPLOAD_COUNT: usize = 121;
-pub const SLOW_RENDER_COUNT: usize = 122;
-pub const SLOW_DRAW_CALLS_COUNT: usize = 123;
-pub const SLOW_TARGETS_COUNT: usize = 124;
-pub const SLOW_BLOB_COUNT: usize = 125;
-pub const SLOW_SCROLL_AFTER_SCENE_COUNT: usize = 126;
+pub const SLOW_FRAME_CPU_COUNT: usize = 117;
+pub const SLOW_FRAME_GPU_COUNT: usize = 118;
+pub const SLOW_FRAME_BUILD_COUNT: usize = 119;
+pub const SLOW_UPLOAD_COUNT: usize = 120;
+pub const SLOW_RENDER_COUNT: usize = 121;
+pub const SLOW_DRAW_CALLS_COUNT: usize = 122;
+pub const SLOW_TARGETS_COUNT: usize = 123;
+pub const SLOW_BLOB_COUNT: usize = 124;
+pub const SLOW_SCROLL_AFTER_SCENE_COUNT: usize = 125;
 
-pub const GPU_BUFFER_MEM: usize = 127;
-pub const GPU_TOTAL_MEM: usize = 128;
+pub const GPU_BUFFER_MEM: usize = 126;
+pub const GPU_TOTAL_MEM: usize = 127;
 
-pub const FRAME_SEND_TIME: usize = 129;
-pub const UPDATE_DOCUMENT_TIME: usize = 130;
+pub const FRAME_SEND_TIME: usize = 128;
+pub const UPDATE_DOCUMENT_TIME: usize = 129;
 
-pub const COMPOSITOR_SURFACE_UNDERLAYS: usize = 131;
-pub const COMPOSITOR_SURFACE_OVERLAYS: usize = 132;
-pub const COMPOSITOR_SURFACE_BLITS: usize = 133;
-
+pub const COMPOSITOR_SURFACE_UNDERLAYS: usize = 130;
+pub const COMPOSITOR_SURFACE_OVERLAYS: usize = 131;
+pub const COMPOSITOR_SURFACE_BLITS: usize = 132;
 
 
 
-pub const VISIBILITY_VISITED_PRIMS: usize = 134;
+
+pub const VISIBILITY_VISITED_PRIMS: usize = 133;
 
 
 
-pub const PREPARE_VISITED_PRIMS: usize = 135;
+pub const PREPARE_VISITED_PRIMS: usize = 134;
 
 
 
-pub const PREPARE_CMD_TARGETS: usize = 136;
+pub const PREPARE_CMD_TARGETS: usize = 135;
 
-pub const PREPARE_PICTURES: usize = 137;
-
+pub const PREPARE_PICTURES: usize = 136;
 
 
 
 
 
-pub const INTERN_INSERTIONS: usize = 138;
+
+pub const INTERN_INSERTIONS: usize = 137;
 
 
-pub const INTERN_REMOVALS: usize = 139;
+pub const INTERN_REMOVALS: usize = 138;
 
 
 
 
 
-pub const OFF_GRID_COORDS: usize = 140;
-
+pub const OFF_GRID_COORDS: usize = 139;
 
 
 
@@ -318,29 +316,30 @@ pub const OFF_GRID_COORDS: usize = 140;
 
 
 
-pub const VIS_CLIP_PROJECTIONS: usize = 141;
+
+pub const VIS_CLIP_PROJECTIONS: usize = 140;
 
 
-pub const VIS_CLIP_PROJECTION_FAILS: usize = 142;
-
-
-
-pub const VIS_CLIP_REJECTS: usize = 143;
+pub const VIS_CLIP_PROJECTION_FAILS: usize = 141;
 
 
 
-pub const VIS_CULLING_RECT_FALLBACKS: usize = 144;
+pub const VIS_CLIP_REJECTS: usize = 142;
 
 
 
-pub const VIS_CLIP_INDETERMINATE: usize = 145;
-pub const INTERNED_PATHS: usize = 146;
+pub const VIS_CULLING_RECT_FALLBACKS: usize = 143;
 
-pub const PATH_FILLS: usize = 147;
 
-pub const PATH_CLIPS: usize = 148;
 
-pub const NUM_PROFILER_EVENTS: usize = 149;
+pub const VIS_CLIP_INDETERMINATE: usize = 144;
+pub const INTERNED_PATHS: usize = 145;
+
+pub const PATH_FILLS: usize = 146;
+
+pub const PATH_CLIPS: usize = 147;
+
+pub const NUM_PROFILER_EVENTS: usize = 148;
 
 pub struct Profiler {
     counters: Vec<Counter>,
@@ -506,7 +505,6 @@ impl Profiler {
             int("Interned filter data", "", INTERNED_FILTER_DATA, Expected::none()),
             int("Interned backdrop captures", "", INTERNED_BACKDROP_CAPTURES, Expected::none()),
             int("Interned backdrop renders", "", INTERNED_BACKDROP_RENDERS, Expected::none()),
-            int("Interned polygons", "", INTERNED_POLYGONS, Expected::none()),
             int("Interned box-shadows", "", INTERNED_BOX_SHADOWS, Expected::none()),
 
             float("Depth targets mem", "MB", DEPTH_TARGETS_MEM, Expected::none()),

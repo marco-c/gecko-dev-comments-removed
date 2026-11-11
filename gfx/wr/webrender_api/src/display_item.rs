@@ -6,13 +6,11 @@ use euclid::{SideOffsets2D, Angle};
 use peek_poke::PeekPoke;
 use std::ops::Not;
 
-use crate::{font, SnapshotImageKey};
+use crate::SnapshotImageKey;
 use crate::{APZScrollGeneration, HasScrollLinkedEffect, PipelineId, PropertyBinding};
 use crate::serde::{Serialize, Deserialize};
 use crate::color::ColorF;
 use crate::image::ImageKey;
-use crate::interning;
-use crate::path::Path;
 use crate::units::*;
 use std::hash::{Hash, Hasher};
 
@@ -176,7 +174,6 @@ pub enum DisplayItem {
     SetGradientStops,
     SetFilterOps,
     SetFilterData,
-    SetPoints,
 
     
     PopStackingContext,
@@ -193,7 +190,7 @@ pub enum DisplayItem {
 pub enum DebugDisplayItem {
     Rectangle(RectangleDisplayItem),
     HitTest(HitTestDisplayItem),
-    Text(TextDisplayItem, Vec<font::GlyphInstance>),
+    Text(TextDisplayItem),
     Line(LineDisplayItem),
     Border(BorderDisplayItem),
     BoxShadow(BoxShadowDisplayItem),
@@ -217,7 +214,6 @@ pub enum DebugDisplayItem {
     SetGradientStops(Vec<GradientStop>),
     SetFilterOps(Vec<FilterOp>),
     SetFilterData(FilterData),
-    SetPoints(Vec<LayoutPoint>),
 
     PopStackingContext,
 
@@ -228,9 +224,11 @@ pub enum DebugDisplayItem {
 pub struct ImageMaskClipDisplayItem {
     pub id: ClipId,
     pub spatial_id: SpatialId,
-    pub image_mask: ImageMask,
-    pub fill_rule: FillRule,
-} 
+    
+    
+    pub rect: LayoutRect,
+    pub clip: crate::interning::Handle<crate::interned_prims::ClipItemKey>,
+}
 
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
@@ -238,12 +236,11 @@ pub struct PathClipDisplayItem {
     pub id: ClipId,
     pub spatial_id: SpatialId,
     
-    pub path: interning::Handle<Path>,
-    
     
     
     pub rect: LayoutRect,
-    pub fill_rule: FillRule,
+    
+    pub clip: crate::interning::Handle<crate::interned_prims::ClipItemKey>,
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
@@ -256,13 +253,18 @@ pub struct RectClipDisplayItem {
     
     
     pub anti_aliased: bool,
+    
+    
+    pub clip: crate::interning::Handle<crate::interned_prims::ClipItemKey>,
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct RoundedRectClipDisplayItem {
     pub id: ClipId,
     pub spatial_id: SpatialId,
-    pub clip: ComplexClipRegion,
+    pub rect: LayoutRect,
+    
+    pub clip: crate::interning::Handle<crate::interned_prims::ClipItemKey>,
     
     
     
@@ -277,8 +279,8 @@ pub struct BorderClipDisplayItem {
     pub id: ClipId,
     pub spatial_id: SpatialId,
     pub clip_rect: LayoutRect,
-    pub border: NormalBorder,
-    pub widths: LayoutSideOffsets,
+    
+    pub clip: crate::interning::Handle<crate::interned_prims::ClipItemKey>,
 }
 
 
@@ -430,7 +432,8 @@ pub enum GlyphShadowMode {
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct TextDisplayItem {
-    pub common: CommonItemProperties,
+    pub spatial_id: SpatialId,
+    pub clip_chain_id: ClipChainId,
     
     
     
@@ -438,14 +441,8 @@ pub struct TextDisplayItem {
     
     
     
-    pub bounds: LayoutRect,
-    pub font_key: font::FontInstanceKey,
-    pub color: ColorF,
-    pub glyph_options: Option<font::GlyphOptions>,
-    
-    
-    pub shadow: GlyphShadowMode,
-} 
+    pub text_run: crate::interning::Handle<crate::interned_prims::TextRunKey>,
+}
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, MallocSizeOf, PartialEq, Serialize, PeekPoke)]
 pub struct NormalBorder {
@@ -1990,6 +1987,10 @@ impl FilterData {
 pub struct IframeDisplayItem {
     pub bounds: LayoutRect,
     pub clip_rect: LayoutRect,
+    
+    
+    
+    pub clip: crate::interning::Handle<crate::interned_prims::ClipItemKey>,
     pub space_and_clip: SpaceAndClipInfo,
     pub pipeline_id: PipelineId,
     pub ignore_missing_pipeline: bool,
@@ -2459,7 +2460,6 @@ impl DisplayItem {
             DisplayItem::PushStackingContext(..) => "push_stacking_context",
             DisplayItem::SetFilterOps => "set_filter_ops",
             DisplayItem::SetFilterData => "set_filter_data",
-            DisplayItem::SetPoints => "set_points",
             DisplayItem::RadialGradient(..) => "radial_gradient",
             DisplayItem::Rectangle(..) => "rectangle",
             DisplayItem::SetGradientStops => "set_gradient_stops",

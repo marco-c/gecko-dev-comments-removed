@@ -14,17 +14,21 @@
 
 use crate::serde::{Serialize, Deserialize};
 use crate::{
-    AlphaMode, AlphaType, BoxShadowClipMode, ColorDepth, ColorRange, ColorU, ExtendMode, ImageKey,
-    ImageRendering, LineOrientation, LineStyle, PropertyBinding, YuvColorSpace, YuvFormat,
+    AlphaMode, AlphaType, BorderRadius, BorderSide, BorderStyle, BoxShadowClipMode, ClipMode,
+    ColorDepth, ColorF, ColorRange, ColorU, ExtendMode, FillRule, FontInstanceKey, GlyphOptions, GlyphShadowMode, ImageKey, ImageMask,
+    ImageRendering, LineOrientation, LineStyle, NormalBorder, PropertyBinding, RasterSpace, YuvColorSpace,
+    YuvFormat,
 };
+use crate::interning::Handle;
+use crate::path::Path;
 use crate::key_types::{
-    BorderRadiusAu, ConicGradientParams, GradientStopKey, NinePatchDescriptor,
-    NormalBorderAu, PrimKeyCommonData, RadialGradientParams, SizeKey, StretchSizeKey,
-    SubRectKey, VectorKey,
+    BorderRadiusAu, ConicGradientParams, GlyphInstanceAu, GradientStopKey, NinePatchDescriptor,
+    NormalBorderAu, PolygonKey, PrimKeyCommonData, RadialGradientParams, SizeKey,
+    StretchSizeKey, SubRectKey, VectorKey,
 };
-use crate::units::{LayoutSideOffsetsAu, TileOffset};
+use crate::units::{AuHelpers, LayoutPointAu, LayoutSideOffsets, LayoutSideOffsetsAu, TileOffset};
 use app_units::Au;
-use malloc_size_of::MallocSizeOf;
+use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 
 
 
@@ -49,6 +53,45 @@ pub struct RectanglePrim {
 }
 
 pub type RectangleKey = PrimKey<RectanglePrim>;
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct TextRunKey {
+    
+    pub common: PrimKeyCommonData,
+    pub font_key: FontInstanceKey,
+    pub color: ColorU,
+    pub glyph_options: Option<GlyphOptions>,
+    
+    
+    
+    pub glyphs: Vec<GlyphInstanceAu>,
+    
+    
+    
+    pub shadow: GlyphShadowMode,
+    
+    
+    
+    pub requested_raster_space: RasterSpace,
+}
+
+impl MallocSizeOf for TextRunKey {
+    fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
+        
+        self.glyphs.size_of(ops)
+    }
+}
 
 #[derive(Debug, Clone, MallocSizeOf, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub struct BoxShadow {
@@ -279,4 +322,83 @@ impl ConicGradientKey {
             nine_patch: conic_grad.nine_patch,
         }
     }
+}
+
+
+
+
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, MallocSizeOf, Serialize, Deserialize)]
+pub enum ClipItemKeyKind {
+    Rectangle(ClipMode),
+    RoundedRectangle(BorderRadiusAu, LayoutSideOffsetsAu, ClipMode),
+    
+    
+    ImageMask(ImageKey, Option<Handle<PolygonKey>>),
+    
+    
+    
+    
+    
+    
+    
+    Path(Handle<Path>, FillRule, LayoutPointAu),
+    Border(BorderClipKey),
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, MallocSizeOf, Serialize, Deserialize)]
+pub struct BorderClipKey {
+    pub styles: [BorderStyle; 4],
+    pub radius: BorderRadiusAu,
+    pub widths: LayoutSideOffsetsAu,
+    pub inset: LayoutSideOffsetsAu,
+}
+
+impl BorderClipKey {
+    pub fn new(border: &NormalBorder, widths: LayoutSideOffsets) -> Self {
+        Self {
+            styles: [border.top.style, border.right.style, border.bottom.style, border.left.style],
+            radius: border.radius.into(),
+            widths: widths.to_au(),
+            inset: border.inset.to_au(),
+        }
+    }
+
+    pub fn border(self) -> NormalBorder {
+        let side = |style| BorderSide { color: ColorF::WHITE, style };
+        let mut border = NormalBorder {
+            top: side(self.styles[0]), right: side(self.styles[1]),
+            bottom: side(self.styles[2]), left: side(self.styles[3]),
+            radius: self.radius.into(),
+            inset: LayoutSideOffsets::from_au(self.inset),
+            do_aa: true,
+        };
+        border.normalize(&LayoutSideOffsets::from_au(self.widths));
+        border
+    }
+}
+
+impl ClipItemKeyKind {
+    pub fn rectangle(mode: ClipMode) -> Self {
+        ClipItemKeyKind::Rectangle(mode)
+    }
+
+    
+    
+    pub fn rounded_rect(radii: BorderRadius, inset: LayoutSideOffsets, mode: ClipMode) -> Self {
+        if radii.is_zero() {
+            ClipItemKeyKind::rectangle(mode)
+        } else {
+            ClipItemKeyKind::RoundedRectangle(radii.into(), inset.to_au(), mode)
+        }
+    }
+
+    pub fn image_mask(image_mask: &ImageMask, polygon: Option<Handle<PolygonKey>>) -> Self {
+        ClipItemKeyKind::ImageMask(image_mask.image, polygon)
+    }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, MallocSizeOf, Serialize, Deserialize)]
+pub struct ClipItemKey {
+    pub kind: ClipItemKeyKind,
 }

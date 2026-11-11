@@ -843,7 +843,7 @@ pub fn update_prim_visibility(
                 clip_root,
                 snapped_local_clip_rect,
                 &frame_context.spatial_tree,
-                &frame_state.data_stores.clip,
+                &frame_state.dl_stores.clips,
                 frame_state.clip_tree,
             );
 
@@ -856,7 +856,7 @@ pub fn update_prim_visibility(
                     &mut frame_state.frame_gpu_data.f32,
                     frame_state.resource_cache,
                     &surface_culling_rect,
-                    &frame_state.data_stores.clip,
+                    &frame_state.dl_stores.clips,
                     frame_state.rg_builder,
                     true,
                 );
@@ -914,7 +914,6 @@ pub fn update_prim_visibility(
                         
                         local_coverage_rect,
                         frame_context,
-                        frame_state.data_stores,
                         frame_state.dl_stores,
                         frame_state.clip_store,
                         &store.pictures,
@@ -929,6 +928,13 @@ pub fn update_prim_visibility(
                     )
                 }
                 None => {
+                    
+                    
+                    if let PrimitiveKind::BackdropRender { pic_index, .. } = prim_instance.kind {
+                        if !clip_chain.pic_coverage_rect.is_empty() {
+                            frame_state.scratch.primitive.frame.required_backdrop_chains.insert(pic_index);
+                        }
+                    }
                     DrawState::Visible {
                         vis_flags: PrimitiveVisibilityFlags::empty(),
                         sub_slice_index: SubSliceIndex::DEFAULT,
