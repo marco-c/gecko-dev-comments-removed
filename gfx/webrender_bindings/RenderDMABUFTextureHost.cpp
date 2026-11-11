@@ -2,49 +2,29 @@
 
 
 
-#include "RenderLinuxTextureHost.h"
+#include "RenderDMABUFTextureHost.h"
 
 #include "GLContextEGL.h"
 #include "ScopedGLHelpers.h"
 #include "mozilla/gfx/Logging.h"
-#include "mozilla/widget/DMABufSurface.h"
-#include "mozilla/widget/SHMBufSurface.h"
 
 namespace mozilla::wr {
 
-
-RenderLinuxTextureHost::RenderLinuxTextureHost(BufferSurface* aSurface)
+RenderDMABUFTextureHost::RenderDMABUFTextureHost(DMABufSurface* aSurface)
     : mSurface(aSurface) {
-  if (!aSurface->GetAsDMABufSurface()) {
-    NS_WARNING("Direct import is used for DMABufSurfaces only!");
-    mSurface = nullptr;
-  }
-  MOZ_COUNT_CTOR_INHERITED(RenderLinuxTextureHost, RenderTextureHost);
+  MOZ_COUNT_CTOR_INHERITED(RenderDMABUFTextureHost, RenderTextureHost);
 }
 
-RenderLinuxTextureHost::RenderLinuxTextureHost(
-    uint8_t* aBuffer, const layers::BufferDescriptor& aDescriptor) {
-  MOZ_COUNT_CTOR_INHERITED(RenderLinuxTextureHost, RenderTextureHost);
-  mSurface = SHMBufSurface::Create(aBuffer, aDescriptor);
-}
-
-RenderLinuxTextureHost::~RenderLinuxTextureHost() {
-  MOZ_COUNT_DTOR_INHERITED(RenderLinuxTextureHost, RenderTextureHost);
+RenderDMABUFTextureHost::~RenderDMABUFTextureHost() {
+  MOZ_COUNT_DTOR_INHERITED(RenderDMABUFTextureHost, RenderTextureHost);
   DeleteTextureHandle();
 }
 
-void RenderLinuxTextureHost::PrepareForUse() {
-  
-  
-  if (mSurface->GetAsSHMBufSurface()) {
-    mSurface->MarkTextureDirty();
-  }
-}
-
-wr::WrExternalImage RenderLinuxTextureHost::Lock(uint8_t aChannelIndex,
-                                                 gl::GLContext* aGL) {
+wr::WrExternalImage RenderDMABUFTextureHost::Lock(uint8_t aChannelIndex,
+                                                  gl::GLContext* aGL) {
   const gfx::IntSize size(mSurface->GetWidth(aChannelIndex),
                           mSurface->GetHeight(aChannelIndex));
+
   
   
   if (!aGL) {
@@ -71,19 +51,20 @@ wr::WrExternalImage RenderLinuxTextureHost::Lock(uint8_t aChannelIndex,
     if (!mSurface->CreateTextures(mGL)) {
       return InvalidToWrExternalImage();
     }
+    ActivateBindAndTexParameteri(mGL, LOCAL_GL_TEXTURE0, LOCAL_GL_TEXTURE_2D,
+                                 mSurface->GetTexture(aChannelIndex));
   }
 
-  auto texture = mSurface->GetTexture(aChannelIndex);
-  if (auto* dmabuf = mSurface->GetAsDMABufSurface()) {
-    dmabuf->MaybeSemaphoreWait(texture);
+  if (auto texture = mSurface->GetTexture(aChannelIndex)) {
+    mSurface->MaybeSemaphoreWait(texture);
   }
 
-  return NativeTextureToWrExternalImage(texture, 0.0, 0.0,
-                                        static_cast<float>(size.width),
-                                        static_cast<float>(size.height));
+  return NativeTextureToWrExternalImage(
+      mSurface->GetTexture(aChannelIndex), 0.0, 0.0,
+      static_cast<float>(size.width), static_cast<float>(size.height));
 }
 
-gfx::IntSize RenderLinuxTextureHost::GetSize(uint8_t aChannelIndex) const {
+gfx::IntSize RenderDMABUFTextureHost::GetSize(uint8_t aChannelIndex) const {
   MOZ_ASSERT(mSurface);
   MOZ_ASSERT((mSurface->GetTextureCount() == 0)
                  ? (aChannelIndex == mSurface->GetTextureCount())
@@ -96,27 +77,20 @@ gfx::IntSize RenderLinuxTextureHost::GetSize(uint8_t aChannelIndex) const {
                       mSurface->GetHeight(aChannelIndex));
 }
 
-void RenderLinuxTextureHost::Unlock() {}
+void RenderDMABUFTextureHost::Unlock() {}
 
-void RenderLinuxTextureHost::DeleteTextureHandle() {
+void RenderDMABUFTextureHost::DeleteTextureHandle() {
   mSurface->ReleaseTextures();
 }
 
-void RenderLinuxTextureHost::ClearCachedResources() {
+void RenderDMABUFTextureHost::ClearCachedResources() {
   DeleteTextureHandle();
   mGL = nullptr;
 }
 
-bool RenderLinuxTextureHost::MapPlane(RenderCompositor* aCompositor,
-                                      uint8_t aChannelIndex,
-                                      PlaneInfo& aPlaneInfo) {
-  
-  if (auto* shm = mSurface->GetAsSHMBufSurface()) {
-    aPlaneInfo.mData =
-        shm->MapPlane(aChannelIndex, aPlaneInfo.mStride, aPlaneInfo.mSize);
-    return !!aPlaneInfo.mData;
-  }
-
+bool RenderDMABUFTextureHost::MapPlane(RenderCompositor* aCompositor,
+                                       uint8_t aChannelIndex,
+                                       PlaneInfo& aPlaneInfo) {
   if (mSurface->GetAsDMABufSurfaceYUV()) {
     
     return false;
@@ -145,7 +119,7 @@ bool RenderLinuxTextureHost::MapPlane(RenderCompositor* aCompositor,
   return true;
 }
 
-void RenderLinuxTextureHost::UnmapPlanes() {
+void RenderDMABUFTextureHost::UnmapPlanes() {
   if (mReadback) {
     mReadback->Unmap();
     mReadback = nullptr;
