@@ -305,6 +305,7 @@ if not CONFIG["JS_STANDALONE"] or not CONFIG["MOZ_BUILD_APP"]:
     ]
 
     GENERATED_FILES["buildid.h"].script = "build/variables.py:buildid_header"
+    GENERATED_FILES["buildid.h"].inputs = ["!/buildid.txt"]
     GENERATED_FILES["source-repo.h"].script = "build/variables.py:source_repo_header"
 
 if CONFIG["MOZ_BUILD_APP"]:
@@ -351,6 +352,8 @@ SPHINX_TREES["mots"] = "docs/mots"
 
 SPHINX_TREES["update-infrastructure"] = "docs/update-infrastructure"
 
+SPHINX_TREES["release-mgmt"] = "docs/release-mgmt"
+
 SPHINX_TREES["content-security"] = "docs/content-security"
 
 # Wired up here rather than in security/rlbox/moz.build, which is only
@@ -360,6 +363,8 @@ SPHINX_TREES["rlbox"] = "security/rlbox/docs"
 SPHINX_TREES["jsloader"] = "docs/jsloader"
 
 SPHINX_TREES["ai-agent-tools"] = "docs/ai-agent-tools"
+
+SPHINX_TREES["ai-agent-tools/skills"] = ".agents/skills"
 
 include("build/templates.mozbuild")
 

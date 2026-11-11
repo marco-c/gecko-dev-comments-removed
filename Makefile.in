@@ -16,14 +16,13 @@ endif
 include $(topsrcdir)/config/config.mk
 
 ifneq (mobile/android,$(MOZ_BUILD_APP))
-# We only want to generate buildid.h once, during the (recurse) export phase.
+# We only want to generate source-repo.h once, during the (recurse) export phase.
 # faster make build the files explicitly so also match thoses
-ifneq ($(filter $(MAKECMDGOALS),recurse_export buildid.h source-repo.h),)
-$(MDDEPDIR)/buildid.h.stub $(MDDEPDIR)/source-repo.h.stub: FORCE
+ifneq ($(filter $(MAKECMDGOALS),recurse_export source-repo.h),)
+$(MDDEPDIR)/source-repo.h.stub: FORCE
 endif
 endif
 source-repo.h: $(MDDEPDIR)/source-repo.h.stub
-buildid.h: $(MDDEPDIR)/buildid.h.stub
 
 BUILD_BACKEND_FILES := $(addprefix backend.,$(addsuffix Backend,$(BUILD_BACKENDS)))
 
@@ -112,11 +111,6 @@ default::
 	@echo "==================="
 endif
 
-ifdef MOZ_CRASHREPORTER
-include $(topsrcdir)/toolkit/mozapps/installer/package-name.mk
-
-endif
-
 .PHONY: prepsymbolsarchive
 prepsymbolsarchive:
 	echo packing symbols
@@ -170,9 +164,6 @@ package-generated-sources:
 
 ifdef JS_STANDALONE
 # Delegate js-specific rules to js
-check-%:
-	$(MAKE) -C js/src $@
-
 install:
 	$(MAKE) -C js/src $@
 
