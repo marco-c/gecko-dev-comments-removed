@@ -1127,8 +1127,7 @@ bool nsDocShell::MaybeHandleSubframeHistory(
   
 
   if (mCurrentURI &&
-      (!NS_IsAboutBlank(mCurrentURI) || mLoadingEntry || mActiveEntry) &&
-      !aLoadState->HistoryBehavior()) {
+      (!NS_IsAboutBlank(mCurrentURI) || mLoadingEntry || mActiveEntry)) {
     
     
     
@@ -1139,12 +1138,14 @@ bool nsDocShell::MaybeHandleSubframeHistory(
     
     
     
-    BusyFlags parentBusy = parentDS->GetBusyFlags();
-    BusyFlags selfBusy = GetBusyFlags();
+    if (!aLoadState->HistoryBehavior()) {
+      BusyFlags parentBusy = parentDS->GetBusyFlags();
+      BusyFlags selfBusy = GetBusyFlags();
 
-    if (parentBusy & BUSY_FLAGS_BUSY || selfBusy & BUSY_FLAGS_BUSY) {
-      aLoadState->SetLoadType(LOAD_NORMAL_REPLACE);
-      aLoadState->ClearLoadIsFromSessionHistory();
+      if (parentBusy & BUSY_FLAGS_BUSY || selfBusy & BUSY_FLAGS_BUSY) {
+        aLoadState->SetLoadType(LOAD_NORMAL_REPLACE);
+        aLoadState->ClearLoadIsFromSessionHistory();
+      }
     }
     return false;
   }
@@ -4818,12 +4819,6 @@ nsDocShell::SetDimensions(DimensionRequest&& ) {
 }
 
 NS_IMETHODIMP
-nsDocShell::GetDimensions(DimensionKind , int32_t* ,
-                          int32_t* , int32_t* , int32_t* ) {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
 nsDocShell::GetParentWidget(nsIWidget** aParentWidget) {
   NS_ENSURE_ARG_POINTER(aParentWidget);
 
@@ -4993,32 +4988,16 @@ nsDocShell::GetMainWidget(nsIWidget** aMainWidget) {
   return GetParentWidget(aMainWidget);
 }
 
-NS_IMETHODIMP
-nsDocShell::GetTitle(nsAString& aTitle) {
-  aTitle = mTitle;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocShell::SetTitle(const nsAString& aTitle) {
+void nsDocShell::SetTitle(const nsAString& aTitle) {
   
   
   if (mTitleValidForCurrentURI && mTitle == aTitle) {
-    return NS_OK;
+    return;
   }
 
   
   mTitle = aTitle;
   mTitleValidForCurrentURI = true;
-
-  
-  
-  if (mBrowsingContext->IsTop()) {
-    nsCOMPtr<nsIBaseWindow> treeOwnerAsWin(do_QueryInterface(mTreeOwner));
-    if (treeOwnerAsWin) {
-      treeOwnerAsWin->SetTitle(aTitle);
-    }
-  }
 
   if (mCurrentURI && mLoadType != LOAD_ERROR_PAGE) {
     UpdateGlobalHistoryTitle(mCurrentURI);
@@ -5028,8 +5007,6 @@ nsDocShell::SetTitle(const nsAString& aTitle) {
   if (mLoadType != LOAD_BYPASS_HISTORY && mLoadType != LOAD_ERROR_PAGE) {
     SetTitleOnHistoryEntry(true);
   }
-
-  return NS_OK;
 }
 
 void nsDocShell::SetTitleOnHistoryEntry(bool aUpdateEntryInSessionHistory) {
@@ -7234,8 +7211,13 @@ nsresult nsDocShell::CreateDocumentViewer(const nsACString& aContentType,
   
   
   
+  
+  
+  
+  
   bool isReplace =
       mActiveEntry && mLoadingEntry &&
+      mBrowsingContext->Top()->GetHasSessionHistory() &&
       mLoadingEntry->mTriggeringNavigationType
           .map([](auto type) { return type == NavigationType::Replace; })
           .valueOr(false);
@@ -9026,7 +9008,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   
   
   if (RefPtr<Document> document = GetDocument();
-      !aLoadState->LoadIsFromSessionHistory() && document &&
+      !isDownload && !aLoadState->LoadIsFromSessionHistory() && document &&
       aLoadState->UserNavigationInvolvement() !=
           UserNavigationInvolvement::BrowserUI &&
       !document->IsInitialDocument() &&
@@ -10101,27 +10083,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
                "DoURILoad thinks this is a document and InternalLoad does not");
   }
 
-  
-  
-  
-  
-  bool inheritPrincipal = false;
-
   nsCOMPtr<nsIURI> uri = aLoadState->URI();
-  if (aLoadState->PrincipalToInherit()) {
-    bool isSrcdoc =
-        aLoadState->HasInternalLoadFlags(INTERNAL_LOAD_FLAGS_IS_SRCDOC);
-    bool inheritAttrs = nsContentUtils::ChannelShouldInheritPrincipal(
-        aLoadState->PrincipalToInherit(), uri,
-        true,  
-        isSrcdoc);
-
-    inheritPrincipal = inheritAttrs && !uri->SchemeIs("data");
-  }
-
-  MOZ_ASSERT_IF(NS_IsAboutBlankAllowQueryAndFragment(uri) &&
-                    aLoadState->PrincipalToInherit(),
-                inheritPrincipal);
   
   const bool doInitialSyncLoad = ShouldDoInitialAboutBlankSyncLoad(
       uri, aLoadState, aLoadState->PrincipalToInherit());
@@ -10246,17 +10208,10 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
     return NS_ERROR_FAILURE;
   }
 
-  uint32_t sandboxFlags = mBrowsingContext->GetSandboxFlags();
-  nsSecurityFlags securityFlags =
-      nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL;
-
-  if (mLoadType == LOAD_ERROR_PAGE) {
-    securityFlags |= nsILoadInfo::SEC_LOAD_ERROR_PAGE;
-  }
-
-  if (inheritPrincipal) {
-    securityFlags |= nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
-  }
+  const nsSecurityFlags securityFlags =
+      DocumentLoadListener::SecurityFlagsForLoadInfo(aLoadState);
+  const uint32_t sandboxFlags = DocumentLoadListener::EffectiveSandboxFlags(
+      mBrowsingContext->GetSandboxFlags(), securityFlags);
 
   
   MOZ_ASSERT_IF(contentPolicyType == nsIContentPolicy::TYPE_DOCUMENT,
