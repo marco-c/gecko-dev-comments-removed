@@ -208,7 +208,11 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
     }
 
     private fun setupToolbarSwipeBehavior(settings: Settings, components: Components) {
-        if (!settings.isTabStripEnabled && settings.isSwipeToolbarToSwitchTabsEnabled) {
+        if (
+            !settings.isTabStripEnabled &&
+                !settings.shouldShowTabGroupsStrip &&
+                settings.isSwipeToolbarToSwitchTabsEnabled
+        ) {
             binding.gestureLayout.addGestureListener(
                 ToolbarHorizontalGesturesHandler(
                     activity = requireActivity(),
@@ -395,8 +399,12 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
                             ),
                     )
             },
-            navigateToIpProtection = {
-                IPProtectionBottomSheetFragment.showPrompt(fragment = this, surface = IPProtectionSurface.BROWSER)
+            navigateToIpProtection = { promptDetails ->
+                IPProtectionBottomSheetFragment.showPrompt(
+                    fragment = this,
+                    surface = IPProtectionSurface.BROWSER,
+                    promptDetails = promptDetails,
+                )
             },
         )
     }
