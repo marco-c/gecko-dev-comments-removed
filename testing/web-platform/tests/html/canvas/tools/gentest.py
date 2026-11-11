@@ -174,6 +174,9 @@ _TEST_DEFINITION_PARAMS = {
 
     
     
+    'html_lang': None,
+    
+    
     'canvas': None,
     
     
