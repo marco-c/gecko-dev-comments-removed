@@ -64,31 +64,10 @@ class CSSAnimation final : public Animation {
 
   void PlayFromStyle();
   void PauseFromStyle();
-  void CancelFromStyle(PostRestyleMode aPostRestyle) {
-    Animation::Cancel(aPostRestyle);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    mAnimationIndex = sNextAnimationIndex++;
-    mNeedsNewAnimationIndexWhenRun = true;
-
-    
-    
-    
-    mOwningElement = OwningElementRef();
-  }
+  void CancelFromStyle(PostRestyleMode aPostRestyle);
+  
+  
+  void RemovedNamedTimelineReference(const nsAtom* aName);
 
   void Tick(TickState&) override;
   void QueueEvents(

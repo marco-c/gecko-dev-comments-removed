@@ -4,6 +4,7 @@
 
 #include "TimelineManager.h"
 
+#include "mozilla/AnimationUtils.h"
 #include "mozilla/ElementAnimationData.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInlines.h"
@@ -84,9 +85,28 @@ void TimelineManager::RemoveTimelineTargetByName(
 }
 
 template <typename TimelineType>
-nsTArray<RefPtr<const nsAtom>> TimelineManager::TryDestroyTimeline(
-    Element* aElement, const PseudoStyleRequest& aPseudoRequest,
+void TimelineManager::DoUnregisterTimelines(
+    TimelineCollection<TimelineType>& aCollection,
     TimelineNameMap<TimelineType>& aTimelineNameMap) {
+  for (const auto& name : aCollection.Timelines().Keys()) {
+    RemoveTimelineTargetByName(name, &aCollection.OwningElement(),
+                               aCollection.PseudoRequest(), aTimelineNameMap);
+  }
+}
+
+void TimelineManager::UnregisterTimelines(
+    TimelineCollection<ScrollTimeline>& aCollection) {
+  DoUnregisterTimelines(aCollection, mScrollTimelineNameMap);
+}
+
+void TimelineManager::UnregisterTimelines(
+    TimelineCollection<ViewTimeline>& aCollection) {
+  DoUnregisterTimelines(aCollection, mViewTimelineNameMap);
+}
+
+template <typename TimelineType>
+nsTArray<RefPtr<const nsAtom>> TimelineManager::TryDestroyTimeline(
+    Element* aElement, const PseudoStyleRequest& aPseudoRequest) {
   auto* collection =
       TimelineCollection<TimelineType>::Get(aElement, aPseudoRequest);
   if (!collection) {
@@ -95,8 +115,6 @@ nsTArray<RefPtr<const nsAtom>> TimelineManager::TryDestroyTimeline(
   nsTArray<RefPtr<const nsAtom>> result{collection->Timelines().Count()};
   for (const auto& name : collection->Timelines().Keys()) {
     result.AppendElement(name);
-    RemoveTimelineTargetByName(name, aElement, aPseudoRequest,
-                               aTimelineNameMap);
   }
   collection->Destroy();
   return result;
@@ -120,8 +138,7 @@ nsTArray<RefPtr<const nsAtom>> TimelineManager::UpdateTimelines(
   switch (aType) {
     case ProgressTimelineType::Scroll:
       if (shouldDestroyTimelines) {
-        return TryDestroyTimeline<ScrollTimeline>(aElement, aPseudoRequest,
-                                                  mScrollTimelineNameMap);
+        return TryDestroyTimeline<ScrollTimeline>(aElement, aPseudoRequest);
       }
       return DoUpdateTimelines<ScrollTimeline>(
           mPresContext, aElement, aPseudoRequest,
@@ -129,8 +146,7 @@ nsTArray<RefPtr<const nsAtom>> TimelineManager::UpdateTimelines(
 
     case ProgressTimelineType::View:
       if (shouldDestroyTimelines) {
-        return TryDestroyTimeline<ViewTimeline>(aElement, aPseudoRequest,
-                                                mViewTimelineNameMap);
+        return TryDestroyTimeline<ViewTimeline>(aElement, aPseudoRequest);
       }
       return DoUpdateTimelines<ViewTimeline>(
           mPresContext, aElement, aPseudoRequest,
@@ -141,145 +157,173 @@ nsTArray<RefPtr<const nsAtom>> TimelineManager::UpdateTimelines(
 }
 
 void TimelineManager::UpdateTimelineScopes(
-    const dom::Element* aElement, const ComputedStyle* aComputedStyle) {
+    Element* aElement, const PseudoStyleRequest& aPseudoRequest,
+    const ComputedStyle* aComputedStyle) {
+  auto* scope = TimelineScope::Get(aElement, aPseudoRequest);
   const auto timelineScope =
       aComputedStyle->StyleUIReset()->mTimelineScope.value.AsSpan();
-  auto it = std::find_if(
-      mTimelineScopes.begin(), mTimelineScopes.end(),
-      [&](const auto& aEntry) { return aEntry.mElement == aElement; });
   if (timelineScope.IsEmpty()) {
     
-    MOZ_ASSERT(it != mTimelineScopes.end(), "Timeline scopes out of sync");
-    mTimelineScopes.RemoveElementAt(it);
+    MOZ_ASSERT(scope, "Timeline scopes out of sync");
+    if (scope) {
+      scope->Destroy();
+    }
     return;
   }
 
-  TimelineScopeEntry* entry = nullptr;
-  if (it == mTimelineScopes.end()) {
-    
-    
-    entry = mTimelineScopes.AppendElement(TimelineScopeEntry{
-        aElement,
-        {},
-    });
-  } else {
-    entry = &(*it);
-    
-    entry->mNames.Clear();
+  if (!scope) {
+    scope = &aElement->EnsureAnimationData().EnsureTimelineScope(
+        *aElement, aPseudoRequest);
+    mTimelineScopes.insertBack(scope);
   }
 
+  nsTArray<RefPtr<const nsAtom>> names;
   if (timelineScope[0].AsAtom() == nsGkAtoms::all) {
     MOZ_ASSERT(timelineScope.Length() == 1);
-    
-    return;
+  } else {
+    names.SetCapacity(timelineScope.Length());
+    for (const auto& name : timelineScope) {
+      names.AppendElement(name.AsAtom());
+    }
   }
-
-  for (const auto& name : timelineScope) {
-    entry->mNames.AppendElement(name.AsAtom());
-  }
+  scope->SetNames(std::move(names));
 }
 
-auto TimelineManager::GetTimelineScope(const dom::Element* aScopeElement,
-                                       const nsAtom* aName) const
-    -> const TimelineScopeEntry* {
-  auto it = std::find_if(mTimelineScopes.cbegin(), mTimelineScopes.cend(),
-                         [&](const auto& aEntry) {
-                           if (aEntry.mElement != aScopeElement) {
-                             return false;
-                           }
-                           return aEntry.mNames.IsEmpty() ||
-                                  std::find_if(aEntry.mNames.cbegin(),
-                                               aEntry.mNames.cend(),
-                                               [&](const auto& aScopeName) {
-                                                 return aScopeName == aName;
-                                               }) != aEntry.mNames.cend();
-                         });
-  if (it == mTimelineScopes.cend()) {
+static bool ScopedNameLooselyMatches(const dom::ShadowRoot* aTargetShadowRoot,
+                                     const dom::Element* aTimelineElement,
+                                     StyleCascadeLevel aTimelineCascadeLevel) {
+  const auto* timelineShadowRoot =
+      Servo_GetShadowRootForScoped(aTimelineElement, aTimelineCascadeLevel);
+  for (auto* root = aTargetShadowRoot; root;
+       root = root->Host()->GetContainingShadow()) {
+    
+    if (root == timelineShadowRoot) {
+      return true;
+    }
+  }
+  
+  return !timelineShadowRoot;
+}
+
+
+bool TimelineManager::TimelineNameScopedByElement(
+    const dom::Element* aElement, const PseudoStyleRequest& aPseudoRequest,
+    const nsAtom* aName) {
+  const auto* scope = TimelineScope::Get(aElement, aPseudoRequest);
+  return scope && scope->Scopes(aName);
+}
+
+RefPtr<dom::AnimationTimeline> TimelineManager::GetNamedTimelineForThisElement(
+    const dom::Element* aElement, const PseudoStyleRequest& aPseudoRequest,
+    const nsAtom* aName, const dom::ShadowRoot* aTargetShadowRoot) {
+  if (auto* collection =
+          TimelineCollection<ScrollTimeline>::Get(aElement, aPseudoRequest)) {
+    auto result = collection->Lookup(aName);
+    if (result.mTimeline &&
+        ScopedNameLooselyMatches(aTargetShadowRoot, aElement,
+                                 result.mCascadeLevel)) {
+      return result.mTimeline;
+    }
+  }
+
+  if (auto* collection =
+          TimelineCollection<ViewTimeline>::Get(aElement, aPseudoRequest)) {
+    auto result = collection->Lookup(aName);
+    if (result.mTimeline &&
+        ScopedNameLooselyMatches(aTargetShadowRoot, aElement,
+                                 result.mCascadeLevel)) {
+      return result.mTimeline;
+    }
+  }
+  return nullptr;
+}
+
+already_AddRefed<dom::AnimationTimeline>
+TimelineManager::GetNamedTimelineInSubtree(
+    const dom::Element* aRoot, const nsAtom* aName,
+    const dom::ShadowRoot* aTargetShadowRoot, dom::Document* aDocument) const {
+  auto* scrollCandidate = DoGetNamedTimelineInSubtree(
+      aRoot, aName, mScrollTimelineNameMap, aTargetShadowRoot);
+  auto* viewCandidate = DoGetNamedTimelineInSubtree(
+      aRoot, aName, mViewTimelineNameMap, aTargetShadowRoot);
+  if (!scrollCandidate && !viewCandidate) {
+    
+    
+    return MakeAndAddRef<dom::UnresolvedTimeline>(aDocument);
+  }
+
+  auto* picked = [&]() -> dom::AnimationTimeline* {
+    if (!viewCandidate) {
+      return scrollCandidate;
+    } else if (!scrollCandidate) {
+      return viewCandidate;
+    }
+
+    auto GetElement = [](const ScrollTimeline* aTarget) {
+      const auto target = aTarget->TimelineTarget();
+      return target.mElement->GetPseudoElement(target.mPseudoRequest);
+    };
+    
+    const auto* scrollElement = GetElement(scrollCandidate);
+    const auto* viewElement = GetElement(viewCandidate);
+    const auto compare =
+        nsContentUtils::CompareTreePosition<TreeKind::ShadowIncludingDOM>(
+            scrollElement, viewElement, aRoot);
+    if (compare >= 0) {
+      return scrollCandidate;
+    }
+    return viewCandidate;
+  }();
+
+  if (!picked) {
+    MOZ_ASSERT_UNREACHABLE("Should have picked a non-null result");
     return nullptr;
   }
-  return &(*it);
+
+  picked->AddRef();
+  return already_AddRefed{picked};
 }
 
 template <typename TimelineType>
-TimelineType* TimelineManager::DoGetScopedTimeline(
-    const Element* aScopeElement, const nsAtom* aName,
+TimelineType* TimelineManager::DoGetNamedTimelineInSubtree(
+    const dom::Element* aRoot, const nsAtom* aName,
     const TimelineNameMap<TimelineType>& aTimelineNameMap,
-    bool& aDuplicateFound) const {
+    const dom::ShadowRoot* aTargetShadowRoot) const {
   const auto candidates = aTimelineNameMap.Lookup(aName);
   if (!candidates) {
     return nullptr;
   }
-  aDuplicateFound = false;
 
-  auto ScopeIsValid = [&](const Element* aTimelineCandidate,
-                          const Element* aExpectedScope) {
-    const auto* e = aTimelineCandidate->GetParentElementCrossingShadowRoot();
-    for (; e && e != aExpectedScope;
-         e = e->GetParentElementCrossingShadowRoot()) {
-      if (GetTimelineScope(e, aName)) {
-        
+  auto IsValid = [&](const Element* aTimelineCandidate, const Element* aRoot) {
+    const auto* e = aTimelineCandidate;
+    for (; e && e != aRoot; e = e->GetParentElementCrossingShadowRoot()) {
+      const auto [element, pseudo] = AnimationUtils::GetElementPseudoPair(e);
+      if (TimelineNameScopedByElement(element, pseudo, aName)) {
         
         
         return false;
       }
     }
-    return e == aExpectedScope;
+    
+    return e == aRoot;
   };
 
-  TimelineType* result = nullptr;
-  bool found = false;
-  for (const auto& candidate : candidates.Data()) {
-    if (!ScopeIsValid(candidate.mTimeline->TimelineTarget().mElement,
-                      aScopeElement)) {
+  
+  
+  for (auto itr = candidates.Data().crbegin(); itr != candidates.Data().crend();
+       ++itr) {
+    auto* timeline = itr->mTimeline.get();
+    const auto target = timeline->TimelineTarget();
+    const auto* e = target.mElement;
+    if (!IsValid(e->GetPseudoElement(target.mPseudoRequest), aRoot)) {
       continue;
     }
-    if (found) {
-      
-      aDuplicateFound = true;
-      return nullptr;
+    if (!ScopedNameLooselyMatches(aTargetShadowRoot, e, itr->mCascadeLevel)) {
+      continue;
     }
-    found = true;
-    result = candidate.mTimeline;
+    return itr->mTimeline;
   }
-  return result;
-}
-
-Maybe<already_AddRefed<dom::AnimationTimeline>>
-TimelineManager::GetScopedTimeline(const dom::Element* aScopeElement,
-                                   const nsAtom* aName) const {
-  if (!GetTimelineScope(aScopeElement, aName)) {
-    return Nothing{};
-  }
-
-  bool duplicateFound = false;
-  
-  auto* scrollTimeline = DoGetScopedTimeline(
-      aScopeElement, aName, mScrollTimelineNameMap, duplicateFound);
-  if (duplicateFound) {
-    return Some(nullptr);
-  }
-
-  
-  auto* viewTimeline = DoGetScopedTimeline(
-      aScopeElement, aName, mViewTimelineNameMap, duplicateFound);
-  if (duplicateFound) {
-    return Some(nullptr);
-  }
-
-  if (viewTimeline && scrollTimeline) {
-    
-    
-    
-    
-    return Some(nullptr);
-  }
-
-  dom::AnimationTimeline* result =
-      scrollTimeline ? scrollTimeline : viewTimeline;
-  if (result) {
-    result->AddRef();
-  }
-  return Some(result);
+  return nullptr;
 }
 
 template <typename TimelineType>
@@ -430,8 +474,6 @@ nsTArray<RefPtr<const nsAtom>> TimelineManager::DoUpdateTimelines(
     if (collection) {
       for (const auto& name : collection->Timelines().Keys()) {
         result.AppendElement(name);
-        RemoveTimelineTargetByName(name, aElement, aPseudoRequest,
-                                   aTimelineNameMap);
       }
       collection->Destroy();
     }
@@ -470,7 +512,33 @@ nsTArray<RefPtr<const nsAtom>> TimelineManager::DoUpdateTimelines(
       continue;
     }
     result.AppendElement(addedOrExisting.Key());
-    targets.AppendElement(addedOrExisting.Data());
+    const auto& entry = addedOrExisting.Data();
+    const auto target = entry.mTimeline->TimelineTarget();
+    const auto* element =
+        target.mElement->GetPseudoElement(target.mPseudoRequest);
+    struct ElementComparator {
+      const Element* mElement;
+      int32_t operator()(const TimelineEntry<TimelineType>& aOther) const {
+        const auto target = aOther.mTimeline->TimelineTarget();
+        const auto* element =
+            target.mElement->GetPseudoElement(target.mPseudoRequest);
+        return nsContentUtils::CompareTreePosition<
+            TreeKind::ShadowIncludingDOM>(mElement, element, nullptr);
+      }
+    };
+
+    ElementComparator cmp{element};
+    auto matchOrInsertionIdx = targets.Length();
+    if (BinarySearchIf(targets, 0, targets.Length(), cmp,
+                       &matchOrInsertionIdx)) {
+      if (MOZ_UNLIKELY(targets.ElementAt(matchOrInsertionIdx).mTimeline ==
+                       entry.mTimeline)) {
+        MOZ_ASSERT_UNREACHABLE("Duplicate entry");
+        continue;
+      }
+    }
+
+    targets.InsertElementAt(matchOrInsertionIdx, entry);
   }
 
   

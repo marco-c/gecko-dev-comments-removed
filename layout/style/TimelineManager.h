@@ -8,6 +8,7 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimelineCollection.h"
+#include "mozilla/TimelineScope.h"
 #include "mozilla/dom/Element.h"
 #include "nsStyleAutoArray.h"
 #include "nsStyleStruct.h"
@@ -33,12 +34,17 @@ class TimelineManager {
   }
 
   void Disconnect() {
-    mScrollTimelineNameMap.Clear();
+    
+    
     while (auto* head = mScrollTimelineCollections.getFirst()) {
       head->Destroy();
     }
-    mViewTimelineNameMap.Clear();
+    mScrollTimelineNameMap.Clear();
     while (auto* head = mViewTimelineCollections.getFirst()) {
+      head->Destroy();
+    }
+    mViewTimelineNameMap.Clear();
+    while (auto* head = mTimelineScopes.getFirst()) {
       head->Destroy();
     }
 
@@ -52,11 +58,18 @@ class TimelineManager {
   nsTArray<RefPtr<const nsAtom>> UpdateTimelines(
       dom::Element* aElement, const PseudoStyleRequest& aPseudoRequest,
       const ComputedStyle* aComputedStyle, ProgressTimelineType aType);
+  
+  
+  void UnregisterTimelines(
+      TimelineCollection<dom::ScrollTimeline>& aCollection);
+  void UnregisterTimelines(TimelineCollection<dom::ViewTimeline>& aCollection);
 
-  void UpdateTimelineScopes(const dom::Element* aElement,
+  void UpdateTimelineScopes(dom::Element* aElement,
+                            const PseudoStyleRequest& aPseudoRequest,
                             const ComputedStyle* aComputedStyle);
-  bool TimelineNameScopedByElement(const dom::Element* aElement,
-                                   const nsAtom* aName) const;
+  static bool TimelineNameScopedByElement(
+      const dom::Element* aElement, const PseudoStyleRequest& aPseudoRequest,
+      const nsAtom* aName);
   static RefPtr<dom::AnimationTimeline> GetNamedTimelineForThisElement(
       const dom::Element* aElement, const PseudoStyleRequest& aPseudoRequest,
       const nsAtom* aName, const dom::ShadowRoot* aTargetShadowRoot);
@@ -78,20 +91,11 @@ class TimelineManager {
   using TimelineTargetsIter =
       TimelineManager::Timelines<TimelineType>::const_iterator;
 
-  struct TimelineScopeEntry {
-    RefPtr<const dom::Element> mElement;
-    nsTArray<RefPtr<nsAtom>> mNames;
-  };
-
   template <typename TimelineType>
   TimelineType* DoGetNamedTimelineInSubtree(
       const dom::Element* aRoot, const nsAtom* aName,
       const TimelineNameMap<TimelineType>& aTimelineNameMap,
       const dom::ShadowRoot* aTargetShadowRoot) const;
-
-  
-  
-  using TimelineScopes = nsTArray<TimelineScopeEntry>;
 
   template <typename TimelineType>
   nsTArray<RefPtr<const nsAtom>> DoUpdateTimelines(
@@ -116,11 +120,15 @@ class TimelineManager {
       const PseudoStyleRequest& aPseudoRequest,
       TimelineNameMap<TimelineType>& aTimelineNameMap);
 
+  template <typename TimelineType>
+  static void DoUnregisterTimelines(
+      TimelineCollection<TimelineType>& aCollection,
+      TimelineNameMap<TimelineType>& aTimelineNameMap);
+
   
   template <typename TimelineType>
   nsTArray<RefPtr<const nsAtom>> TryDestroyTimeline(
-      dom::Element* aElement, const PseudoStyleRequest& aPseudoRequest,
-      TimelineNameMap<TimelineType>& aTimelineNameMap);
+      dom::Element* aElement, const PseudoStyleRequest& aPseudoRequest);
 
 #ifdef DEBUG
   
@@ -132,6 +140,10 @@ class TimelineManager {
       const dom::Element* aElement, const PseudoStyleRequest& aPseudoRequest);
 #endif
 
+  
+  
+  
+  
   LinkedList<TimelineCollection<dom::ScrollTimeline>>
       mScrollTimelineCollections;
   
@@ -139,7 +151,7 @@ class TimelineManager {
   LinkedList<TimelineCollection<dom::ViewTimeline>> mViewTimelineCollections;
   
   TimelineNameMap<dom::ViewTimeline> mViewTimelineNameMap;
-  TimelineScopes mTimelineScopes;
+  LinkedList<TimelineScope> mTimelineScopes;
   nsPresContext* mPresContext;
 };
 

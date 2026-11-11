@@ -9,6 +9,8 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/CSSAnimationBinding.h"
 #include "mozilla/dom/KeyframeEffectBinding.h"
+#include "nsAnimationManager.h"
+#include "nsContentUtils.h"
 #include "nsPresContext.h"
 
 namespace mozilla::dom {
@@ -79,6 +81,55 @@ bool CSSAnimation::PendingFromJS() const {
   
   FlushUnanimatedStyle();
   return Animation::PendingFromJS();
+}
+
+void CSSAnimation::RemovedNamedTimelineReference(const nsAtom* aName) {
+  
+  
+  
+  if (!mOwningElement.IsSet()) {
+    return;
+  }
+  nsPresContext* presContext =
+      nsContentUtils::GetContextForContent(mOwningElement.Target().mElement);
+  if (!presContext) {
+    return;
+  }
+  if (auto* manager = presContext->AnimationManager()) {
+    manager->RemoveNamedTimelineAnimation(aName, this);
+  }
+}
+
+void CSSAnimation::CancelFromStyle(PostRestyleMode aPostRestyle) {
+  
+  
+  if (const nsAtom* name = GetTimelineName().mName) {
+    RemovedNamedTimelineReference(name);
+  }
+
+  Animation::Cancel(aPostRestyle);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mAnimationIndex = sNextAnimationIndex++;
+  mNeedsNewAnimationIndexWhenRun = true;
+
+  
+  
+  
+  mOwningElement = OwningElementRef();
 }
 
 void CSSAnimation::PlayFromJS(ErrorResult& aRv) {

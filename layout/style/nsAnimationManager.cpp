@@ -191,11 +191,11 @@ static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
       return result.forget();
     }
     
-    if (timelineManager &&
-        (timelineManager->TimelineNameScopedByElement(element, aName.mName) ||
-         e->IsRootElement())) {
+    if (timelineManager && (TimelineManager::TimelineNameScopedByElement(
+                                element, pseudo, aName.mName) ||
+                            e->IsRootElement())) {
       return timelineManager->GetNamedTimelineInSubtree(
-          element, aName.mName, targetShadowRoot, aDocument);
+          e, aName.mName, targetShadowRoot, aDocument);
     }
     
   }
@@ -457,6 +457,7 @@ void nsAnimationManager::UpdateAnimations(
 void nsAnimationManager::RemoveNamedTimelineAnimation(
     const nsAtom* aName, mozilla::dom::CSSAnimation* aAnimation) {
   RemoveCorrespondingAnimation(aName, aAnimation, mAnimationsWithNamedTimeline);
+  mAnimationsWithDeferredUpdate.Remove(aAnimation);
 }
 
 
@@ -594,19 +595,13 @@ void nsAnimationManager::DoUpdateAnimations(
   
   
   
+  
   OwningCSSAnimationPtrArray newAnimations =
       BuildAnimations(mPresContext, aTarget, aStyle, aBuilder, collection,
                       mMaybeReferencedAnimations, mAnimationsWithNamedTimeline);
 
   if (newAnimations.IsEmpty()) {
     if (collection) {
-      for (const auto& animation : collection->mAnimations) {
-        if (!RefersToNamedTimeline(animation)) {
-          continue;
-        }
-        RemoveCorrespondingAnimation(animation->GetTimelineName().mName,
-                                     animation, mAnimationsWithNamedTimeline);
-      }
       collection->Destroy();
     }
     return;
@@ -627,9 +622,5 @@ void nsAnimationManager::DoUpdateAnimations(
     const auto& anim = newAnimations[newAnimIdx];
     aBuilder.NotifyNewOrRemovedAnimation(*anim);
     newAnimations[newAnimIdx]->CancelFromStyle(PostRestyleMode::IfNeeded);
-    if (RefersToNamedTimeline(anim)) {
-      RemoveCorrespondingAnimation(anim->GetTimelineName().mName, anim,
-                                   mAnimationsWithNamedTimeline);
-    }
   }
 }
