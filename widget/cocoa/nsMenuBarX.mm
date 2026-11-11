@@ -715,6 +715,21 @@ void nsMenuBarX::CopyAppMenuUserKeyEquivalentsToKeyElements() {
 }
 
 
+
+static nsMenuItemX* MenuItemForNativeMenuItem(NSMenuItem* aItem) {
+  MOZMenuItemRepresentedObject* representedObject = aItem.representedObject;
+  if (![representedObject isKindOfClass:[MOZMenuItemRepresentedObject class]]) {
+    return nullptr;
+  }
+  nsMenuGroupOwnerX* menuGroupOwner = representedObject.menuGroupOwner;
+  if (!menuGroupOwner) {
+    return nullptr;
+  }
+  return menuGroupOwner->GetMenuItemForCommandID(
+      static_cast<uint32_t>(aItem.tag));
+}
+
+
 void nsMenuBarX::CopyUserKeyEquivalentOfItemToKeyElements(NSMenuItem* aItem) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
@@ -735,16 +750,7 @@ void nsMenuBarX::CopyUserKeyEquivalentOfItemToKeyElements(NSMenuItem* aItem) {
     return;
   }
 
-  MOZMenuItemRepresentedObject* representedObject = aItem.representedObject;
-  if (![representedObject isKindOfClass:[MOZMenuItemRepresentedObject class]]) {
-    return;
-  }
-  nsMenuGroupOwnerX* menuGroupOwner = representedObject.menuGroupOwner;
-  if (!menuGroupOwner) {
-    return;
-  }
-  if (RefPtr<nsMenuItemX> menuItem = menuGroupOwner->GetMenuItemForCommandID(
-          static_cast<uint32_t>(aItem.tag))) {
+  if (RefPtr<nsMenuItemX> menuItem = MenuItemForNativeMenuItem(aItem)) {
     menuItem->CopyUserKeyEquivalentToKeyElement();
   }
 
@@ -1266,20 +1272,19 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
 
 
 
-static bool EventMatchesKeyEquivalent(NSEvent* aEvent, NSMenuItem* aItem) {
-  NSString* keyEquivalent = aItem.keyEquivalent;
-  if (keyEquivalent.length != 1) {
+static bool EventMatchesKeyEquivalent(NSEvent* aEvent, NSString* aKeyEquivalent,
+                                      NSEventModifierFlags aModifierMask) {
+  if (aKeyEquivalent.length != 1) {
     return false;
   }
-  uint32_t key = [keyEquivalent characterAtIndex:0];
+  uint32_t key = [aKeyEquivalent characterAtIndex:0];
   uint32_t lowercaseKey = ToLowerCase(key);
 
   const NSEventModifierFlags relevantFlags =
       NSEventModifierFlagCommand | NSEventModifierFlagOption |
       NSEventModifierFlagControl | NSEventModifierFlagShift;
   NSEventModifierFlags eventFlags = aEvent.modifierFlags & relevantFlags;
-  NSEventModifierFlags requiredFlags =
-      aItem.keyEquivalentModifierMask & relevantFlags;
+  NSEventModifierFlags requiredFlags = aModifierMask & relevantFlags;
   if (lowercaseKey != key) {
     
     requiredFlags |= NSEventModifierFlagShift;
@@ -1306,20 +1311,43 @@ static bool EventMatchesKeyEquivalent(NSEvent* aEvent, NSMenuItem* aItem) {
 }
 
 
+static bool IsUserAssignedShortcut(NSEvent* aEvent, NSMenuItem* aItem) {
+  return aItem.userKeyEquivalent.length > 0 &&
+         EventMatchesKeyEquivalent(aEvent, aItem.keyEquivalent,
+                                   aItem.keyEquivalentModifierMask);
+}
 
-static NSMenuItem* UserAssignedItemMatchingEvent(NSMenu* aMenu,
-                                                 NSEvent* aEvent) {
+
+
+
+
+
+static bool IsReplacedInternalShortcut(NSEvent* aEvent, NSMenuItem* aItem) {
+  if (aItem.userKeyEquivalent.length == 0) {
+    return false;
+  }
+  nsMenuItemX* menuItem = MenuItemForNativeMenuItem(aItem);
+  return menuItem && menuItem->HasInternalShortcut() &&
+         EventMatchesKeyEquivalent(
+             aEvent, menuItem->BuiltInKeyEquivalent(),
+             menuItem->BuiltInKeyEquivalentModifierMask());
+}
+
+
+
+static NSMenuItem* VisibleItemMatchingEvent(
+    NSMenu* aMenu, NSEvent* aEvent,
+    bool (*aMatches)(NSEvent* aEvent, NSMenuItem* aItem)) {
   for (NSMenuItem* item in aMenu.itemArray) {
     if (item.hidden) {
       continue;
     }
     if (item.submenu) {
       if (NSMenuItem* match =
-              UserAssignedItemMatchingEvent(item.submenu, aEvent)) {
+              VisibleItemMatchingEvent(item.submenu, aEvent, aMatches)) {
         return match;
       }
-    } else if (item.userKeyEquivalent.length > 0 &&
-               EventMatchesKeyEquivalent(aEvent, item)) {
+    } else if (aMatches(aEvent, item)) {
       return item;
     }
   }
@@ -1369,13 +1397,20 @@ static NSMenuItem* UserAssignedItemMatchingEvent(NSMenu* aMenu,
     return [super performKeyEquivalent:aEvent];
   }
 
-  if (NSMenuItem* item = UserAssignedItemMatchingEvent(self, aEvent)) {
+  if (NSMenuItem* item =
+          VisibleItemMatchingEvent(self, aEvent, IsUserAssignedShortcut)) {
     
     
     if (item.enabled) {
       nsAutoRetainCocoaObject kungFuDeathGrip(self);
       [item.menu performActionForItemAtIndex:[item.menu indexOfItem:item]];
     }
+    return YES;
+  }
+
+  
+  
+  if (VisibleItemMatchingEvent(self, aEvent, IsReplacedInternalShortcut)) {
     return YES;
   }
 

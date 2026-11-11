@@ -84,6 +84,19 @@ class nsMenuItemX final : public nsChangeObserver,
   
   void CopyUserKeyEquivalentToKeyElement();
 
+  
+  
+  NSString* BuiltInKeyEquivalent() { return mBuiltInKeyEquivalent; }
+  NSEventModifierFlags BuiltInKeyEquivalentModifierMask() {
+    return mBuiltInKeyEquivalentModifierMask;
+  }
+
+  
+  
+  
+  
+  bool HasInternalShortcut();
+
   void Dump(uint32_t aIndent) const;
 
  protected:
@@ -112,6 +125,8 @@ class nsMenuItemX final : public nsChangeObserver,
   
   
   RefPtr<mozilla::dom::Element> mKeyElement;
+  NSString* mBuiltInKeyEquivalent = @"";  
+  NSEventModifierFlags mBuiltInKeyEquivalentModifierMask = 0;
   RefPtr<mozilla::dom::Element> mImageElement;
   mozilla::UniquePtr<nsMenuItemIconX> mIcon;  
   bool mIsChecked = false;
