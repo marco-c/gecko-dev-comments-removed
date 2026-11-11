@@ -332,6 +332,10 @@ struct LoadingSessionHistoryInfo {
   
   
   Maybe<bool> mForceMaybeResetName;
+
+  
+  
+  bool mReplacesActiveEntry = false;
 };
 
 
@@ -470,6 +474,7 @@ class SessionHistoryEntry : public nsISHEntry, public nsSupportsWeakReference {
   already_AddRefed<SessionHistoryEntry> GetParent();
 
   void SetInfo(SessionHistoryInfo* aInfo);
+  void ReplaceInfo(SessionHistoryInfo* aInfo);
 
   bool ForInitialLoad() { return mForInitialLoad; }
   void SetForInitialLoad(bool aForInitialLoad) {

@@ -41,7 +41,6 @@
 #include "nsIMultiPartChannel.h"
 #include "nsIPrincipal.h"
 #include "nsISHistory.h"
-#include "nsIScriptChannel.h"
 #include "nsIStructuredCloneContainer.h"
 #include "nsIXULRuntime.h"
 #include "nsNetUtil.h"
@@ -337,9 +336,7 @@ bool Navigation::HasEntriesAndEventsDisabled() const {
          doc->GetPrincipal()->GetIsNullPrincipal() ||
          
          
-         
          SupportsInterface<nsIMultiPartChannel>(doc->GetChannel()) ||
-         SupportsInterface<nsIScriptChannel>(doc->GetChannel()) ||
          
          
          !doc->GetBrowsingContext() ||

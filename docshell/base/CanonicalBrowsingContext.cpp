@@ -1723,7 +1723,7 @@ void CanonicalBrowsingContext::ReplaceActiveSessionHistoryEntry(
   
   
   const bool hasUserInteraction = mActiveEntry->GetHasUserInteraction();
-  mActiveEntry->SetInfo(aInfo);
+  mActiveEntry->ReplaceInfo(aInfo);
   mActiveEntry->SetHasUserInteraction(hasUserInteraction);
   
   nsSHistory* shistory = static_cast<nsSHistory*>(GetSessionHistory());
