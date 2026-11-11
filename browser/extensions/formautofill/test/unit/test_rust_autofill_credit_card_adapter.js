@@ -870,6 +870,39 @@ add_task(async function test_a_number_another_key_wrote_fails_the_read() {
   );
 });
 
+add_task(async function test_a_card_another_key_wrote_is_no_duplicate() {
+  const path = FileTestUtils.getTempFile(
+    "autofill-cc-adapter-dupebadkey.sqlite"
+  ).path;
+  await initRustComponents(PathUtils.profileDir);
+  const writer = new RustAutofillCreditCardsAdapter(
+    await createAutofillStoreWithStaticKeyManager(path, createAutofillKey())
+  );
+  await writer.add(TEST_RECORD);
+  const reader = new RustAutofillCreditCardsAdapter(
+    await createAutofillStoreWithStaticKeyManager(path, createAutofillKey())
+  );
+  reader._primaryPasswordLocked = () => false;
+  const readable = { ...TEST_RECORD, "cc-number": TEST_NUMBER_AMEX };
+  const guid = await reader.add(readable);
+
+  Assert.deepEqual(
+    await collect(reader.getDuplicateRecords(TEST_RECORD)),
+    [],
+    "the card the reader cannot decrypt is passed over"
+  );
+  Assert.deepEqual(
+    (await collect(reader.getDuplicateRecords(readable))).map(r => r.guid),
+    [guid],
+    "and the search still finds the card it can"
+  );
+  Assert.deepEqual(
+    (await collect(reader.getMatchRecords(readable))).map(r => r.guid),
+    [guid],
+    "as does the search for a match"
+  );
+});
+
 add_task(async function test_migration_export_refuses_a_scrubbed_record() {
   const { store, adapter } = await newAdapter(
     "autofill-cc-adapter-exportscrub.sqlite"
@@ -1439,5 +1472,28 @@ add_task(async function test_store_error_for_a_card_another_key_wrote() {
     storeErrors(),
     [{ operation: "read", error_type: "CryptoError", has_cvv: "true" }],
     "a card the store cannot decrypt is recorded"
+  );
+});
+
+add_task(async function test_lone_surrogates_are_refused() {
+  const { adapter } = await newAdapter("autofill-cc-adapter-surrogates.sqlite");
+
+  await Assert.rejects(
+    adapter.add({ ...TEST_RECORD, "cc-name": "Jane Doe\uD83D" }),
+    /"cc-name" contains lone surrogates/,
+    "a record with a lone surrogate is not added"
+  );
+  Assert.equal((await adapter.getAll()).length, 0, "nothing is stored");
+
+  const guid = await adapter.add(TEST_RECORD);
+  await Assert.rejects(
+    adapter.update(guid, { "cc-name": "\uDE00Jane Doe" }, true),
+    /"cc-name" contains lone surrogates/,
+    "an update with a lone surrogate is refused"
+  );
+  Assert.equal(
+    (await adapter.get(guid))["cc-name"],
+    TEST_RECORD["cc-name"],
+    "the stored record is unchanged"
   );
 });

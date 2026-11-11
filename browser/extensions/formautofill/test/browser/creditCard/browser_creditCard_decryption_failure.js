@@ -7,6 +7,14 @@ add_setup(async function () {
 });
 
 add_task(async function test_fill_creditCard_with_failed_decryption() {
+  if (RUST_CREDIT_CARD_STORE) {
+    
+    
+    
+    
+    info("The Rust store's key is not the one this test resets");
+    return;
+  }
   if (!OSKeyStoreTestUtils.canTestOSKeyStoreLogin()) {
     todo(
       OSKeyStoreTestUtils.canTestOSKeyStoreLogin(),
@@ -49,7 +57,7 @@ add_task(async function test_fill_creditCard_with_failed_decryption() {
       );
 
       info("Synthesizing click on credit card");
-      await EventUtils.synthesizeMouseAtCenter(ccItem, {});
+      EventUtils.synthesizeMouseAtCenter(ccItem, {});
       info("Awaiting three events");
       await Promise.all([
         osKeyStoreLoginShown.then(() =>
@@ -86,4 +94,50 @@ add_task(async function test_fill_creditCard_with_failed_decryption() {
     Cr.NS_ERROR_FAILURE.toString(),
     "Result was abort"
   );
+});
+
+add_task(async function test_save_prompt_with_an_undecryptable_card() {
+  if (RUST_CREDIT_CARD_STORE) {
+    
+    
+    info("The Rust store's key is not the one this test resets");
+    return;
+  }
+  if (!OSKeyStoreTestUtils.canTestOSKeyStoreLogin()) {
+    todo(
+      OSKeyStoreTestUtils.canTestOSKeyStoreLogin(),
+      "Cannot test OS key store login on official builds."
+    );
+    return;
+  }
+
+  await removeAllRecords();
+  await setStorage(TEST_CREDIT_CARD_2);
+
+  info("Resetting the OSKeyStore");
+  await OSKeyStoreTestUtils.cleanup();
+  OSKeyStoreTestUtils.setup();
+
+  let onChanged = waitForStorageChangedEvents("add");
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: CREDITCARD_FORM_URL },
+    async function (browser) {
+      let onPopupShown = waitForPopupShown();
+      await focusUpdateSubmitForm(browser, {
+        focusSelector: "#cc-name",
+        newValues: {
+          "#cc-name": TEST_CREDIT_CARD_2["cc-name"],
+          "#cc-number": TEST_CREDIT_CARD_2["cc-number"],
+        },
+      });
+
+      await onPopupShown;
+      await clickDoorhangerButton(MAIN_BUTTON);
+    }
+  );
+  await onChanged;
+
+  let creditCards = await getCreditCards();
+  is(creditCards.length, 2, "The submitted card is saved as a new one");
+  await removeAllRecords();
 });

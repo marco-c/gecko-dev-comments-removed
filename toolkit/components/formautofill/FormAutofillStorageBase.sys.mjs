@@ -1516,6 +1516,11 @@ class AutofillRecords {
           `"${key}" contains invalid data type: ${typeof record[key]}`
         );
       }
+      // The Rust store would replace a lone surrogate with U+FFFD, so refuse
+      // it in both stores rather than store something the page didn't submit.
+      if (typeof record[key] == "string" && !record[key].isWellFormed()) {
+        throw new Error(`"${key}" contains lone surrogates`);
+      }
       if (!preserveEmptyFields && record[key] === "") {
         delete record[key];
       }
@@ -2016,11 +2021,21 @@ export class CreditCardsBase extends AutofillRecords {
         continue;
       }
 
-      const decrypted = await lazy.OSKeyStore.decrypt(
-        recordInStorage["cc-number-encrypted"],
-        "formautofill_cc",
-        false
-      );
+      let decrypted;
+      try {
+        decrypted = await lazy.OSKeyStore.decrypt(
+          recordInStorage["cc-number-encrypted"],
+          "formautofill_cc",
+          false
+        );
+      } catch (ex) {
+        if (ex.result == Cr.NS_ERROR_ABORT) {
+          throw ex;
+        }
+        // A card whose number cannot be decrypted is no duplicate of anything,
+        // and must not stop the search for the others.
+        continue;
+      }
 
       if (decrypted == record["cc-number"]) {
         const clonedRecord = this._cloneAndCleanUp(recordInStorage);
