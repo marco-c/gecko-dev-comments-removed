@@ -14,6 +14,18 @@ Services.scriptloader.loadSubScript(
 );
 
 add_task(async function () {
+  
+  await testContextMenuOnClickLinkedAttr(true);
+  
+  await testContextMenuOnClickLinkedAttr(false);
+});
+
+async function testContextMenuOnClickLinkedAttr(styleSheetInDebuggerEnabled) {
+  await pushPref(
+    "devtools.debugger.features.stylesheets-in-debugger",
+    styleSheetInDebuggerEnabled
+  );
+
   const { toolbox, inspector } = await openInspectorForURL(TEST_URL);
 
   info("Select a node with a cssresource attribute");
@@ -27,9 +39,15 @@ add_task(async function () {
   );
 
   info("Follow the link and wait for the style-editor to open");
-  const onStyleEditorReady = toolbox.once("styleeditor-ready");
-  contextMenuItem.click();
-  await onStyleEditorReady;
+  if (!styleSheetInDebuggerEnabled) {
+    const onStyleEditorReady = toolbox.once("styleeditor-ready");
+    contextMenuItem.click();
+    await onStyleEditorReady;
+  } else {
+    const onDebuggerReady = toolbox.once("jsdebugger-ready");
+    contextMenuItem.click();
+    await onDebuggerReady;
+  }
 
   
   
@@ -59,7 +77,7 @@ add_task(async function () {
   
   
   ok(true, "The debugger was open");
-});
+}
 
 function openContextMenuAndGetLinkFollowItem(inspector, target) {
   const items = openContextMenuAndGetAllItems(inspector, {

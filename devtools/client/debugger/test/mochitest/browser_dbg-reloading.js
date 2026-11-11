@@ -37,11 +37,12 @@ add_task(async function () {
   const reloads = [reload(dbg)];
 
   info("2. Wait for sources to appear and then reload");
-  await waitForDispatch(dbg.store, "ADD_SOURCES");
+  
+  await waitForDispatch(dbg.store, "ADD_SOURCES", 2);
   reloads.push(reload(dbg));
 
   info("3. Wait for sources to appear and then reload mid source-maps");
-  await waitForDispatch(dbg.store, "ADD_SOURCES");
+  await waitForDispatch(dbg.store, "ADD_SOURCES", 2);
   reloads.push(reload(dbg));
 
   info(
