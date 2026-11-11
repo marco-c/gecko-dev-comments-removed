@@ -645,6 +645,7 @@ TEST(MP4Demuxer, SeekHEVC)
   
   
   
+  
   const TimeUnit seekTime = TimeUnit::FromSeconds(2.0);
 
   binding->RunTestAndWait([binding, seekTime]() {
@@ -662,11 +663,18 @@ TEST(MP4Demuxer, SeekHEVC)
                 RefPtr<MediaRawData> first = aSamples->GetSamples()[0];
                 EXPECT_TRUE(first->mKeyframe);
                 EXPECT_EQ(first->mTime, aActualTime);
+
+                auto isIDR = H265::IsKeyFrame(first);
+                EXPECT_TRUE(isIDR.isOk());
 #ifdef MOZ_APPLEMEDIA
                 
                 
-                auto isIDR = H265::IsKeyFrame(first);
-                EXPECT_TRUE(isIDR.isOk() && isIDR.unwrap());
+                EXPECT_TRUE(isIDR.unwrap());
+#else
+                
+                EXPECT_FALSE(isIDR.unwrap());
+                auto isRAP = H265::IsRandomAccessPoint(first);
+                EXPECT_TRUE(isRAP.isOk() && isRAP.unwrap());
 #endif
                 binding->mTaskQueue->BeginShutdown();
               },

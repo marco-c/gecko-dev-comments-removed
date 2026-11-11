@@ -443,13 +443,6 @@ MP4TrackDemuxer::GetNextSample() {
         case H264::FrameType::I_FRAME_OTHER:
         case H264::FrameType::OTHER: {
           bool keyframe = type == H264::FrameType::I_FRAME_IDR;
-#ifndef MOZ_APPLEMEDIA
-          
-          
-          
-          
-          keyframe = keyframe || type == H264::FrameType::I_FRAME_OTHER;
-#endif
           if (sample->mKeyframe != keyframe) {
             NS_WARNING(nsPrintfCString("Frame incorrectly marked as %skeyframe "
                                        "@ pts:%" PRId64 " dur:%" PRId64
@@ -480,8 +473,12 @@ MP4TrackDemuxer::GetNextSample() {
 #ifdef MOZ_APPLEMEDIA
       
       
-      auto isIDR = H265::IsKeyFrame(sample);
-      bool keyframe = isIDR.isOk() && isIDR.unwrap();
+      auto isKeyframe = H265::IsKeyFrame(sample);
+#else
+      
+      auto isKeyframe = H265::IsRandomAccessPoint(sample);
+#endif
+      bool keyframe = isKeyframe.isOk() && isKeyframe.unwrap();
       if (sample->mKeyframe != keyframe) {
         NS_WARNING(nsPrintfCString(
                        "HEVC frame incorrectly marked as %skeyframe "
@@ -492,7 +489,6 @@ MP4TrackDemuxer::GetNextSample() {
                        .get());
         sample->mKeyframe = keyframe;
       }
-#endif
     } else if (mType == kVP9 && !sample->mCrypto.IsEncrypted()) {
       bool keyframe = VPXDecoder::IsKeyframe(
           Span<const uint8_t>(sample->Data(), sample->Size()),
