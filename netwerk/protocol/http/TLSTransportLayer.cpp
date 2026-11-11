@@ -143,6 +143,7 @@ TLSTransportLayer::InputStreamWrapper::AsyncWait(
       ("TLSTransportLayer::InputStreamWrapper::AsyncWait [this=%p, "
        "callback=%p]\n",
        this, callback));
+  MOZ_RELEASE_ASSERT(OnSocketThread());
   mTransport->mInputCallback = callback;
   
   
@@ -154,23 +155,13 @@ TLSTransportLayer::InputStreamWrapper::AsyncWait(
   pd.fd = mTransport->mFD;
   pd.in_flags = PR_POLL_READ | PR_POLL_EXCEPT;
   pd.out_flags = 0;
-  
-  
-  auto DoPoll = [self = RefPtr{this}, pd(pd)]() mutable {
-    self->mTransport->mPollCalled = false;
-    int32_t rv = PR_Poll(&pd, 1, PR_INTERVAL_NO_TIMEOUT);
-    LOG(
-        ("TLSTransportLayer::InputStreamWrapper::AsyncWait rv=%d out_flags=%d "
-         "pollCalled=%d",
-         rv, (int)pd.out_flags, (int)self->mTransport->mPollCalled));
-    self->mTransport->MaybeWakeWaiter(rv, pd.out_flags,  true);
-  };
-  if (OnSocketThread()) {
-    DoPoll();
-  } else {
-    gSocketTransportService->Dispatch(NS_NewRunnableFunction(
-        "TLSTransportLayer::InputStreamWrapper::AsyncWait", DoPoll));
-  }
+  mTransport->mPollCalled = false;
+  int32_t rv = PR_Poll(&pd, 1, PR_INTERVAL_NO_TIMEOUT);
+  LOG(
+      ("TLSTransportLayer::InputStreamWrapper::AsyncWait rv=%d out_flags=%d "
+       "pollCalled=%d",
+       rv, (int)pd.out_flags, (int)mTransport->mPollCalled));
+  mTransport->MaybeWakeWaiter(rv, pd.out_flags,  true);
   return NS_OK;
 }
 
@@ -312,6 +303,7 @@ TLSTransportLayer::OutputStreamWrapper::AsyncWait(
        "mOutputCallback=%p "
        "callback=%p]\n",
        this, mTransport->mOutputCallback.get(), callback));
+  MOZ_ASSERT(OnSocketThread());
   mTransport->mOutputCallback = callback;
   
   
