@@ -709,8 +709,13 @@ pub trait TElement:
 
     
     
-    
     fn may_have_animations(&self) -> bool;
+
+    
+    
+    
+    #[cfg(feature = "servo")]
+    fn set_may_have_animations(&self);
 
     
     #[cfg(feature = "gecko")]
