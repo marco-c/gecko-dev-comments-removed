@@ -130,7 +130,7 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   
   void AccumulateHash(const char* aBuf, int32_t aCount);
   void FinishHash();
-  void FinishHashOnMainThread();
+  void FinishHashOnMainThread(const nsACString& aHash);
 
   
   uint8_t* DictionaryData(size_t* aLength) const;
@@ -205,6 +205,7 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   
   Vector<uint8_t> mPendingDictionaryData;
 
+  
   
   
   nsCOMPtr<nsICryptoHash> mCrypto;

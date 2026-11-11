@@ -458,24 +458,27 @@ void DictionaryCacheEntry::AccumulateHash(const char* aBuf, int32_t aCount) {
 void DictionaryCacheEntry::FinishHash() {
   
   
+  
   if (mCrypto) {
-    mCrypto->Finish(true, mHash);
+    nsCString hash;
+    mCrypto->Finish(true, hash);
     mCrypto = nullptr;
-    DICTIONARY_LOG(("Hash for %p (%s) is %s", this, mURI.get(), mHash.get()));
-    if (mOrigin) {
-      if (NS_IsMainThread()) {
-        FinishHashOnMainThread();
-      } else {
-        NS_DispatchToMainThread(NewRunnableMethod(
-            "DictionaryCacheEntry::FinishHashOnMainThread", this,
-            &DictionaryCacheEntry::FinishHashOnMainThread));
-      }
+    DICTIONARY_LOG(("Hash for %p (%s) is %s", this, mURI.get(), hash.get()));
+    if (NS_IsMainThread()) {
+      FinishHashOnMainThread(hash);
+    } else {
+      NS_DispatchToMainThread(NS_NewRunnableFunction(
+          "DictionaryCacheEntry::FinishHashOnMainThread",
+          [self = RefPtr{this}, hash = std::move(hash)]() {
+            self->FinishHashOnMainThread(hash);
+          }));
     }
   }
 }
 
-void DictionaryCacheEntry::FinishHashOnMainThread() {
+void DictionaryCacheEntry::FinishHashOnMainThread(const nsACString& aHash) {
   MOZ_ASSERT(NS_IsMainThread());
+  mHash = aHash;
   RefPtr<DictionaryOrigin> origin = std::move(mOrigin);
   if (!origin) {
     return;
@@ -1145,11 +1148,11 @@ DictionaryOriginReader::OnStopRequest(nsIRequest* request, nsresult result) {
 
 
 already_AddRefed<DictionaryCache> DictionaryCache::GetInstance() {
+  MOZ_ASSERT(NS_IsMainThread());
   
   if (sShutdown) {
     return nullptr;
   }
-  
   if (!gDictionaryCache) {
     gDictionaryCache = new DictionaryCache();
   }
@@ -1417,18 +1420,22 @@ void DictionaryCache::RemoveDictionary(const nsACString& aKey,
 
 void DictionaryCache::RemoveOriginFor(const nsACString& aKey,
                                       nsILoadContextInfo* aLoadContextInfo) {
-  RefPtr<DictionaryCache> cache = GetInstance();
-  if (!cache) {
-    
+  
+  
+  if (sShutdown) {
     return;
   }
   DICTIONARY_LOG(
       ("Removing dictionary origin %s", PromiseFlatCString(aKey).get()));
   NS_DispatchToMainThread(NS_NewRunnableFunction(
       "DictionaryCache::RemoveOriginFor",
-      [cache, key = nsCString(aKey),
+      [key = nsCString(aKey),
        lci = nsCOMPtr<nsILoadContextInfo>(aLoadContextInfo)]() {
-        cache->RemoveOriginForInternal(key, lci);
+        
+        RefPtr<DictionaryCache> cache = gDictionaryCache.get();
+        if (cache && !sShutdown) {
+          cache->RemoveOriginForInternal(key, lci);
+        }
       }));
 }
 
