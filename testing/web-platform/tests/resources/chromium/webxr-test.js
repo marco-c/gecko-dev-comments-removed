@@ -1303,7 +1303,10 @@ class MockRuntime {
               views: this._getDefaultViews(),
               
               
-              maxRenderLayers: (16 - 1) / 2,
+              maxRenderLayers: enabled_features.includes(
+                                   xrSessionMojom.XRSessionFeature.LAYERS) ?
+                  (16 - 1) / 2 :
+                  1,
             },
             enviromentBlendMode: this.enviromentBlendMode_,
             interactionMode: this.interactionMode_
