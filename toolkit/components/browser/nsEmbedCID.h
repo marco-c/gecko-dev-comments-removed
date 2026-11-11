@@ -23,22 +23,6 @@
 
 
 
-
-#define NS_WEBBROWSER_CONTRACTID "@mozilla.org/embedding/browser/nsWebBrowser;1"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #define NS_PROMPTSERVICE_CONTRACTID "@mozilla.org/prompter;1"
 
 #endif  

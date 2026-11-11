@@ -21683,16 +21683,6 @@ interface nsIUtilityProcessTest extends nsISupports {
 
 
 
-interface nsIWebBrowser extends nsISupports {
-  
-  containerWindow: nsIWebBrowserChrome;
-  
-  readonly contentDOMWindow: mozIDOMWindowProxy;
-}
-
-
-
-
 interface nsIWebBrowserChrome extends nsISupports {
   
   readonly CHROME_DEFAULT?: 1;
@@ -22914,8 +22904,6 @@ interface nsIPrintSettings extends nsISupports, Enums<typeof nsIPrintSettings_Ou
   
   readonly kInitSaveEdges?: 32768;
   
-  readonly kInitSaveReversed?: 65536;
-  
   readonly kInitSaveInColor?: 131072;
   
   readonly kInitSaveOrientation?: 262144;
@@ -23040,8 +23028,6 @@ interface nsIPrintSettings extends nsISupports, Enums<typeof nsIPrintSettings_Ou
   paperHeight: double;
   
   paperSizeUnit: i16;
-  
-  printReversed: boolean;
   
   printInColor: boolean;
   
@@ -25224,8 +25210,6 @@ interface nsICrashReporter extends nsISupports {
   isAnnotationAllowedForReport(value: string): boolean;
   
   appendAppNotesToCrashReport(data: string): void;
-  
-  registerAppMemory(ptr: u64, size: u64): void;
   
   submitReports: boolean;
   
@@ -27465,7 +27449,6 @@ interface nsIXPCComponents_Interfaces {
   nsIUrlListManager: nsJSIID<nsIUrlListManager>;
   nsIURLFormatter: nsJSIID<nsIURLFormatter>;
   nsIUtilityProcessTest: nsJSIID<nsIUtilityProcessTest>;
-  nsIWebBrowser: nsJSIID<nsIWebBrowser>;
   nsIWebBrowserChrome: nsJSIID<nsIWebBrowserChrome>;
   nsIWebBrowserPrint: nsJSIID<nsIWebBrowserPrint>;
   nsIWebBrowserPersist: nsJSIID<nsIWebBrowserPersist>;

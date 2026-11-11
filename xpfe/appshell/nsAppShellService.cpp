@@ -38,7 +38,6 @@
 #include "mozilla/dom/Document.h"
 
 #include "nsEmbedCID.h"
-#include "nsIWebBrowser.h"
 #include "nsIDocShell.h"
 
 #include "nsWebBrowser.h"

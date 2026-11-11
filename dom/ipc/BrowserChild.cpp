@@ -105,7 +105,6 @@
 #include "nsIURI.h"
 #include "nsIURIMutator.h"
 #include "nsIWeakReferenceUtils.h"
-#include "nsIWebBrowser.h"
 #include "nsIWebProgress.h"
 #include "nsIXULRuntime.h"
 #include "nsLayoutUtils.h"
@@ -478,10 +477,7 @@ nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
     
     return NS_ERROR_FAILURE;
   }
-  nsIWebBrowser* webBrowser = mWebBrowser;
-
-  mWebNav = do_QueryInterface(webBrowser);
-  NS_ASSERTION(mWebNav, "nsWebBrowser doesn't implement nsIWebNavigation?");
+  mWebNav = mWebBrowser;
 
   
   
@@ -704,14 +700,13 @@ BrowserChild::ProvideWindow(nsIOpenWindowInfo* aOpenWindowInfo,
   
   
   if (openLocation == nsIBrowserDOMWindow::OPEN_CURRENTWINDOW) {
-    nsCOMPtr<nsIWebBrowser> browser = do_GetInterface(WebNavigation());
     *aWindowIsNew = false;
 
-    nsCOMPtr<mozIDOMWindowProxy> win;
-    MOZ_TRY(browser->GetContentDOMWindow(getter_AddRefs(win)));
+    nsCOMPtr<nsPIDOMWindowOuter> win =
+        mWebBrowser ? mWebBrowser->GetWindow() : nullptr;
+    NS_ENSURE_STATE(win);
 
-    RefPtr<BrowsingContext> bc(
-        nsPIDOMWindowOuter::From(win)->GetBrowsingContext());
+    RefPtr<BrowsingContext> bc(win->GetBrowsingContext());
     bc.forget(aReturn);
     return NS_OK;
   }
@@ -807,9 +802,8 @@ BrowserChild::~BrowserChild() {
 
   DestroyWindow();
 
-  nsCOMPtr<nsIWebBrowser> webBrowser = do_QueryInterface(WebNavigation());
-  if (webBrowser) {
-    webBrowser->SetContainerWindow(nullptr);
+  if (mWebBrowser) {
+    mWebBrowser->SetWebBrowserChrome(nullptr);
   }
 
   mozilla::DropJSObjects(this);
