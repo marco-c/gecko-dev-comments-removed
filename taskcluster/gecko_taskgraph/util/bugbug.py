@@ -90,6 +90,12 @@ def get_session():
     return _new_session()
 
 
+
+
+if hasattr(os, "register_at_fork"):
+    os.register_at_fork(after_in_child=get_session.cache_clear)
+
+
 def _perfherder_artifact_path(base_path, perfherder_data):
     base_dir = base_path.parent
     stem = base_path.stem
