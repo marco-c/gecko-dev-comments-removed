@@ -14,6 +14,7 @@
 #include "mozilla/TextUtils.h"
 #include "mozilla/Try.h"
 #include "mozilla/Vector.h"
+#include "mozilla/dom/Comment.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/FromParser.h"
@@ -376,7 +377,7 @@ char16_t ToLower(char16_t aChar) {
 }
 
 struct Token {
-  enum class Kind : uint8_t { StartTag, EndTag, Text };
+  enum class Kind : uint8_t { StartTag, EndTag, Text, Comment };
   Kind mKind;
   
   uint8_t mTagIndex;
@@ -459,6 +460,10 @@ class Parser {
         case Token::Kind::Text:
           MOZ_TRY(AppendText(parents[depth], mStart + token.mOffset,
                              token.mLength));
+          break;
+        case Token::Kind::Comment:
+          MOZ_TRY(AppendComment(parents[depth], mStart + token.mOffset,
+                                token.mLength));
           break;
         case Token::Kind::EndTag:
           MOZ_ASSERT(depth);
@@ -619,14 +624,300 @@ class Parser {
       
       
       
+      
       if (mEnd - mPos >= 2 && mPos[1] == '/') {
         return true;
+      }
+      if (mEnd - mPos >= 2 && (mPos[1] == '!' || mPos[1] == '?')) {
+        if (!ParseComment()) {
+          return false;
+        }
+        continue;
       }
       ++mPos;
       if (!ParseElement(aModel)) {
         return false;
       }
     }
+  }
+
+  
+  bool ParseComment() {
+    const char16_t* pos = mPos + 1;
+    const char16_t* data;
+    const char16_t* dataEnd;
+    if (*pos == '?') {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      const char16_t* target = pos + 1;
+      if (target != mEnd && (IsAsciiAlpha(*target) || *target == '_')) {
+        do {
+          ++target;
+        } while (target != mEnd && (IsAsciiAlphanumeric(*target) ||
+                                    *target == '-' || *target == '_'));
+        
+        
+        if (target == mEnd || IsAsciiWhitespace(*target) || *target == '?' ||
+            *target == '>') {
+          return false;
+        }
+      }
+      data = pos;
+      while (pos != mEnd && *pos != '>') {
+        ++pos;
+      }
+      if (pos == mEnd) {
+        return false;
+      }
+      dataEnd = pos;
+      mPos = pos + 1;
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (mEnd - pos < 3 || pos[1] != '-' || pos[2] != '-') {
+        return false;
+      }
+      pos += 3;
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (pos != mEnd &&
+          (*pos == '>' || (*pos == '-' && pos + 1 != mEnd && pos[1] == '>'))) {
+        return false;
+      }
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      data = pos;
+      while (true) {
+        if (mEnd - pos < 3) {
+          return false;
+        }
+        if (pos[0] == '-' && pos[1] == '-') {
+          if (pos[2] == '>') {
+            break;
+          }
+          
+          if (pos[2] == '!') {
+            return false;
+          }
+        }
+        ++pos;
+      }
+      dataEnd = pos;
+      mPos = pos + 3;
+    }
+    
+    for (const char16_t* c = data; c != dataEnd; ++c) {
+      if (*c == '\r' || !*c) {
+        return false;
+      }
+    }
+    return mTokens.append(Token{Token::Kind::Comment, 0, 0, Offset(data),
+                                uint32_t(dataEnd - data)});
   }
 
   
@@ -1222,6 +1513,29 @@ class Parser {
         new (mNodeInfoManager) nsTextNode(mNodeInfoManager);
     MOZ_TRY(text->SetText(aText, aLength, false));
     return Append(aParent, text);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsresult AppendComment(nsIContent* aParent, const char16_t* aData,
+                         uint32_t aLength) {
+    RefPtr<Comment> comment = new (mNodeInfoManager) Comment(mNodeInfoManager);
+    MOZ_TRY(comment->SetText(aData, aLength, false));
+    return Append(aParent, comment);
   }
 
   already_AddRefed<Element> CreateElement(const Token& aToken) {
