@@ -262,6 +262,8 @@ class BrowserParent final : public PBrowserParent,
 
   void CacheFrameLoader(nsFrameLoader* aFrameLoader);
 
+  void SetOwnerFrameLoader(nsFrameLoader* aFrameLoader);
+
   void Destroy();
 
   void RemoveWindowListeners();
@@ -885,7 +887,8 @@ class BrowserParent final : public PBrowserParent,
   
   
   
-  RefPtr<nsFrameLoader> mFrameLoader;
+  RefPtr<nsFrameLoader> mDestroyingFrameLoader;
+  WeakPtr<nsFrameLoader> mOwnerFrameLoader;
   uint32_t mChromeFlags;
 
   
