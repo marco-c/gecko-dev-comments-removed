@@ -1250,6 +1250,30 @@ static uint64_t avg_source_sad(VP9_COMP *cpi, MACROBLOCK *x, int shift,
 
 
 
+
+
+
+static INLINE int is_key_frame_for_partition(const VP9_COMP *const cpi) {
+  const VP9_COMMON *const cm = &cpi->common;
+  const YV12_BUFFER_CONFIG *ref;
+  if (frame_is_intra_only(cm) ||
+      (is_one_pass_svc(cpi) &&
+       cpi->svc.layer_context[cpi->svc.temporal_layer_id].is_key_frame)) {
+    return 1;
+  }
+  ref = get_ref_frame_buffer(cpi, LAST_FRAME);
+  if (ref == NULL ||
+      cm->frame_refs[LAST_FRAME - 1].sf.x_scale_fp == REF_INVALID_SCALE ||
+      cm->frame_refs[LAST_FRAME - 1].sf.y_scale_fp == REF_INVALID_SCALE ||
+      (cpi->use_svc &&
+       (ref->y_crop_height != cm->height || ref->y_crop_width != cm->width))) {
+    return 1;
+  }
+  return 0;
+}
+
+
+
 static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
                                MACROBLOCK *x, int mi_row, int mi_col) {
   VP9_COMMON *const cm = &cpi->common;
@@ -1287,19 +1311,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
                        (cpi->oxcf.content == VP9E_CONTENT_SCREEN &&
                         cpi->compute_source_sad_onepass &&
                         cpi->sf.use_source_sad && !x->zero_temp_sad_source);
-
-  
-  
-  int is_key_frame =
-      (frame_is_intra_only(cm) ||
-       (is_one_pass_svc(cpi) &&
-        cpi->svc.layer_context[cpi->svc.temporal_layer_id].is_key_frame));
-
-  if (!is_key_frame) {
-    if (cm->frame_refs[LAST_FRAME - 1].sf.x_scale_fp == REF_INVALID_SCALE ||
-        cm->frame_refs[LAST_FRAME - 1].sf.y_scale_fp == REF_INVALID_SCALE)
-      is_key_frame = 1;
-  }
+  const int is_key_frame = is_key_frame_for_partition(cpi);
 
   
   
@@ -1312,19 +1324,6 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
   int variance4x4downsample[16];
   int segment_id;
   int sb_offset = (cm->mi_stride >> 3) * (mi_row >> 3) + (mi_col >> 3);
-
-  
-  
-  
-  
-  
-  
-  if (cpi->use_svc) {
-    const YV12_BUFFER_CONFIG *const ref = get_ref_frame_buffer(cpi, LAST_FRAME);
-    if (ref == NULL || ref->y_crop_height != cm->height ||
-        ref->y_crop_width != cm->width)
-      is_key_frame = 1;
-  }
 
   set_offsets(cpi, tile, x, mi_row, mi_col, BLOCK_64X64);
   set_segment_index(cpi, x, mi_row, mi_col, BLOCK_64X64, 0);
@@ -5112,7 +5111,8 @@ static void nonrd_use_partition(VP9_COMP *cpi, ThreadData *td,
 static void get_estimated_pred(VP9_COMP *cpi, const TileInfo *const tile,
                                MACROBLOCK *x, int mi_row, int mi_col) {
   VP9_COMMON *const cm = &cpi->common;
-  const int is_key_frame = frame_is_intra_only(cm);
+  const int is_key_frame = is_key_frame_for_partition(cpi) ||
+                           !(cpi->ref_frame_flags & VP9_LAST_FLAG);
   MACROBLOCKD *xd = &x->e_mbd;
 
   set_offsets(cpi, tile, x, mi_row, mi_col, BLOCK_64X64);

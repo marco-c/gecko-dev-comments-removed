@@ -422,6 +422,15 @@ static vpx_codec_err_t validate_img(vpx_codec_alg_priv_t *ctx,
         "format");
   }
 
+  if (img->fmt & VPX_IMG_FMT_HIGHBITDEPTH) {
+    
+    for (int plane = 0; plane < 3; ++plane) {
+      if ((((uintptr_t)img->planes[plane]) & 1) || (img->stride[plane] & 1)) {
+        ERROR("High bit-depth image planes and strides must be 2-byte aligned");
+      }
+    }
+  }
+
   if (ctx->extra_cfg.validate_hbd_input &&
       (img->fmt & VPX_IMG_FMT_HIGHBITDEPTH)) {
     const unsigned int h = img->d_h;
@@ -1523,22 +1532,13 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
         timebase_units_to_ticks(timebase_in_ts, pts_end);
     res = image2yuvconfig(img, &sd);
 
-    if (sd.y_width != ctx->cfg.g_w || sd.y_height != ctx->cfg.g_h) {
-      
-
-
-
-      ctx->base.err_detail = "Invalid input frame resolution";
-      res = VPX_CODEC_INVALID_PARAM;
-    } else {
-      
-      
-      if (vp9_receive_raw_frame(cpi, flags | ctx->next_frame_flags, &sd,
-                                dst_time_stamp, dst_end_time_stamp)) {
-        res = update_error_state(ctx, &cpi->common.error);
-      }
-      ctx->next_frame_flags = 0;
+    
+    
+    if (vp9_receive_raw_frame(cpi, flags | ctx->next_frame_flags, &sd,
+                              dst_time_stamp, dst_end_time_stamp)) {
+      res = update_error_state(ctx, &cpi->common.error);
     }
+    ctx->next_frame_flags = 0;
   }
 
   cx_data = ctx->cx_data;
