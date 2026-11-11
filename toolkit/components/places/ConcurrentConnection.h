@@ -9,6 +9,7 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/storage/StatementCache.h"
 #include "mozIStorageCompletionCallback.h"
+#include "mozIStoragePendingStatement.h"
 #include "mozIStorageStatementCallback.h"
 #include "Helpers.h"
 #include "mozilla/RefPtr.h"
@@ -18,6 +19,7 @@
 #include "nsIObserver.h"
 #include "nsISupportsImpl.h"
 #include "nsITimer.h"
+#include "nsTArray.h"
 #include "nsWeakReference.h"
 
 namespace mozilla::places {
@@ -126,6 +128,11 @@ class ConcurrentConnection final : public nsIObserver,
   
 
 
+  void StatementCompleted(mozIStoragePendingStatement* aStatement);
+
+  
+
+
 
 
 
@@ -201,6 +208,12 @@ class ConcurrentConnection final : public nsIObserver,
 
   nsRefPtrDeque<PendingQuery> mPendingQueries;
   nsRefPtrDeque<Runnable> mPendingRunnables;
+
+  
+
+
+
+  nsTArray<nsCOMPtr<mozIStoragePendingStatement>> mDispatchedStatements;
 
   nsCOMPtr<nsITimer> mPlacesInitFallbackTimer;
 

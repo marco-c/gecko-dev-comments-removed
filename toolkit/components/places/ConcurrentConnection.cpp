@@ -103,6 +103,44 @@ class CallbackOnComplete final : public mozIStorageCompletionCallback {
 
 NS_IMPL_ISUPPORTS(CallbackOnComplete, mozIStorageCompletionCallback)
 
+
+
+
+
+class DispatchedStatementCallback final : public AsyncStatementCallback {
+  using Method = void (ConcurrentConnection::*)(mozIStoragePendingStatement*);
+
+ public:
+  DispatchedStatementCallback(ConcurrentConnection* aTarget, Method aMethod,
+                              PendingStatementCallback* aCallback)
+      : mMethod(aMethod), mTarget(aTarget), mCallback(aCallback) {}
+
+  void SetPendingStatement(mozIStoragePendingStatement* aStatement) {
+    mPendingStatement = aStatement;
+  }
+
+  NS_IMETHOD HandleResult(mozIStorageResultSet* aResultSet) override {
+    return mCallback->HandleResult(aResultSet);
+  }
+
+  NS_IMETHOD HandleError(mozIStorageError* aError) override {
+    return mCallback->HandleError(aError);
+  }
+
+  NS_IMETHOD HandleCompletion(uint16_t aReason) override {
+    nsCOMPtr<mozIStoragePendingStatement> statement =
+        mPendingStatement.forget();
+    (mTarget->*mMethod)(statement);
+    return mCallback->HandleCompletion(aReason);
+  }
+
+ private:
+  Method mMethod;
+  RefPtr<ConcurrentConnection> mTarget;
+  RefPtr<PendingStatementCallback> mCallback;
+  nsCOMPtr<mozIStoragePendingStatement> mPendingStatement;
+};
+
 }  
 
 NS_IMPL_ISUPPORTS(ConcurrentConnection, nsIObserver, nsISupportsWeakReference,
@@ -160,6 +198,7 @@ void ConcurrentConnection::InitializeOnMainThread() {
   }
 
   mState = AWAITING_DATABASE_READY;
+  
   
   
   
@@ -246,6 +285,11 @@ ConcurrentConnection::BlockShutdown(nsIAsyncShutdownClient* aBarrierClient) {
   
   
   if (mConn) {
+    
+    
+    for (const auto& statement : mDispatchedStatements) {
+      (void)statement->Cancel();
+    }
     (void)mConn->Interrupt();
     CloseConnection();
   } else if (!mIsOpening && !mIsClosing) {
@@ -297,14 +341,6 @@ ConcurrentConnection::Complete(nsresult aRv, nsISupports* aData) {
   
   mConn = do_QueryInterface(aData);
   mIsOpening = false;
-
-  
-  
-  nsAutoCString busyTimeoutPragma("PRAGMA busy_timeout = ");
-  busyTimeoutPragma.AppendInt(DATABASE_BUSY_TIMEOUT_MS);
-  nsCOMPtr<mozIStoragePendingStatement> busyPs;
-  (void)mConn->ExecuteSimpleSQLAsync(busyTimeoutPragma, nullptr,
-                                     getter_AddRefs(busyPs));
 
   
   
@@ -602,10 +638,21 @@ void ConcurrentConnection::TryToConsumeQueues() {
     if (NS_WARN_IF(NS_FAILED(rv))) continue;
     rv = stmt->BindParameters(paramsArray);
     if (NS_WARN_IF(NS_FAILED(rv))) continue;
+    RefPtr<DispatchedStatementCallback> cb =
+        MakeAndAddRef<DispatchedStatementCallback>(
+            this, &ConcurrentConnection::StatementCompleted, query->mCallback);
     nsCOMPtr<mozIStoragePendingStatement> ps;
-    rv = stmt->ExecuteAsync(query->mCallback, getter_AddRefs(ps));
+    rv = stmt->ExecuteAsync(cb, getter_AddRefs(ps));
     if (NS_WARN_IF(NS_FAILED(rv))) continue;
+    cb->SetPendingStatement(ps);
+    mDispatchedStatements.AppendElement(ps);
   }
+}
+
+void ConcurrentConnection::StatementCompleted(
+    mozIStoragePendingStatement* aStatement) {
+  AssertIsOnMainThread();
+  mDispatchedStatements.RemoveElement(aStatement);
 }
 
 void ConcurrentConnection::TryToOpenConnection() {
@@ -694,6 +741,7 @@ void ConcurrentConnection::Shutdown() {
   
   mPendingQueries.Erase();
   mPendingRunnables.Erase();
+  mDispatchedStatements.Clear();
 
   
   if (mShutdownBarrierClient) {
