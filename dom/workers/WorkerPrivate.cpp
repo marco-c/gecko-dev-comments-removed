@@ -1425,17 +1425,10 @@ void WorkerPrivate::EvictFromBFCache() {
   runnable->Dispatch(this);
 }
 
-nsresult WorkerPrivate::SetCSPFromHeaderValues(
-    const nsACString& aCSPHeaderValue,
-    const nsACString& aCSPReportOnlyHeaderValue) {
+nsresult WorkerPrivate::SetPolicyContainerFromHeaders(
+    const PolicyContainer::Headers& aHeaders) {
   AssertIsOnMainThread();
   MOZ_DIAGNOSTIC_ASSERT(!mLoadInfo.mPolicyContainer);
-
-  NS_ConvertASCIItoUTF16 cspHeaderValue(aCSPHeaderValue);
-  NS_ConvertASCIItoUTF16 cspROHeaderValue(aCSPReportOnlyHeaderValue);
-
-  nsresult rv;
-  nsCOMPtr<nsIContentSecurityPolicy> csp = new nsCSPContext();
 
   
   
@@ -1453,36 +1446,10 @@ nsresult WorkerPrivate::SetCSPFromHeaderValues(
   }
   MOZ_ASSERT(selfURI, "need a self URI for CSP");
 
-  rv = csp->SetRequestContextWithPrincipal(mLoadInfo.mPrincipal, selfURI, ""_ns,
-                                           0);
-  NS_ENSURE_SUCCESS(rv, rv);
+  RefPtr<PolicyContainer> policyContainer =
+      MOZ_TRY(PolicyContainer::CreateForNonDocument(mLoadInfo.mPrincipal,
+                                                    selfURI, aHeaders));
 
-  
-  if (!cspHeaderValue.IsEmpty()) {
-    rv = CSP_AppendCSPFromHeader(csp, cspHeaderValue, false);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-  
-  if (!cspROHeaderValue.IsEmpty()) {
-    rv = CSP_AppendCSPFromHeader(csp, cspROHeaderValue, true);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  RefPtr<extensions::WebExtensionPolicy> addonPolicy;
-
-  if (basePrin) {
-    addonPolicy = basePrin->AddonPolicy();
-  }
-
-  
-  
-  if (addonPolicy) {
-    csp->AppendPolicy(addonPolicy->BaseCSP(), false, false);
-    csp->AppendPolicy(addonPolicy->ExtensionPageCSP(), false, false);
-  }
-
-  RefPtr policyContainer = MakeRefPtr<PolicyContainer>();
-  policyContainer->SetCSP(csp);
   return SetPolicyContainerOnMainThread(policyContainer);
 }
 
@@ -5121,7 +5088,6 @@ bool WorkerPrivate::ChangePeerConnectionsInternal(bool aHasPeerConnections) {
 void WorkerPrivate::PropagateStorageAccessPermissionGrantedInternal() {
   auto data = mWorkerThreadAccessible.Access();
 
-  mLoadInfo.mUseRegularPrincipal = true;
   mLoadInfo.mUsingStorageAccess = true;
 
   WorkerGlobalScope* globalScope = GlobalScope();
