@@ -1511,11 +1511,23 @@ void WebTransport::Cleanup(WebTransportError* aError,
   
   
   
+  
+  
+  
+  
+  
   LOG(("Cleanup started"));
   nsTHashMap<uint64_t, RefPtr<WebTransportSendStream>> sendStreams;
   sendStreams.SwapElements(mSendStreams);
   nsTHashMap<uint64_t, RefPtr<WebTransportReceiveStream>> receiveStreams;
   receiveStreams.SwapElements(mReceiveStreams);
+  RefPtr<Promise> ready = mReady;
+  RefPtr<Promise> closed = mClosed;
+  RefPtr<ReadableStream> incomingBidirectionalStreams =
+      mIncomingBidirectionalStreams;
+  RefPtr<ReadableStream> incomingUnidirectionalStreams =
+      mIncomingUnidirectionalStreams;
+  RefPtr<WebTransportDatagramDuplexStream> datagrams = mDatagrams;
 
   
   
@@ -1544,9 +1556,9 @@ void WebTransport::Cleanup(WebTransportError* aError,
 
   for (const auto& stream : sendStreams.Values()) {
     
+    
     MOZ_KnownLive(stream)->ErrorNative(cx, errorValue, IgnoreErrors());
   }
-  
   
   for (const auto& stream : receiveStreams.Values()) {
     stream->ErrorNative(cx, errorValue, IgnoreErrors());
@@ -1554,32 +1566,33 @@ void WebTransport::Cleanup(WebTransportError* aError,
   
   if (aCloseInfo) {
     
-    LOG(("Resolving mClosed with closeinfo"));
-    mClosed->MaybeResolve(*aCloseInfo);
+    LOG(("Resolving closed with closeinfo"));
+    closed->MaybeResolve(*aCloseInfo);
     
     
     
-    if (mReady->State() == Promise::PromiseState::Pending) {
-      mReady->MaybeResolveWithUndefined();
+    if (ready->State() == Promise::PromiseState::Pending) {
+      ready->MaybeResolveWithUndefined();
     }
     
+    incomingBidirectionalStreams->CloseNative(cx, IgnoreErrors());
     
-    RefPtr<ReadableStream> stream = mIncomingBidirectionalStreams;
-    stream->CloseNative(cx, IgnoreErrors());
-    
-    stream = mIncomingUnidirectionalStreams;
-    stream->CloseNative(cx, IgnoreErrors());
+    incomingUnidirectionalStreams->CloseNative(cx, IgnoreErrors());
   } else {
     
     
-    LOG(("Rejecting mClosed"));
-    mClosed->MaybeReject(errorValue);
+    LOG(("Rejecting closed"));
+    closed->MaybeReject(errorValue);
     
-    mReady->MaybeReject(errorValue);
+    closed->SetSettledPromiseIsHandled();
     
-    mIncomingBidirectionalStreams->ErrorNative(cx, errorValue, IgnoreErrors());
+    ready->MaybeReject(errorValue);
     
-    mIncomingUnidirectionalStreams->ErrorNative(cx, errorValue, IgnoreErrors());
+    ready->SetSettledPromiseIsHandled();
+    
+    incomingBidirectionalStreams->ErrorNative(cx, errorValue, IgnoreErrors());
+    
+    incomingUnidirectionalStreams->ErrorNative(cx, errorValue, IgnoreErrors());
   }
   
   mIncomingBidirectionalAlgorithm = nullptr;
@@ -1591,7 +1604,7 @@ void WebTransport::Cleanup(WebTransportError* aError,
   
   
   
-  if (RefPtr<WebTransportDatagramDuplexStream> datagrams = mDatagrams) {
+  if (datagrams) {
     datagrams->Cleanup();
     datagrams->CloseOrErrorWritables(cx, !!aCloseInfo, errorValue);
   }
