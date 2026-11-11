@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+
+
 
 #include "DeviceInputTrack.h"
 
@@ -10,25 +10,25 @@ namespace mozilla {
 
 #ifdef LOG_INTERNAL
 #  undef LOG_INTERNAL
-#endif  // LOG_INTERNAL
+#endif  
 #define LOG_INTERNAL(level, msg, ...) \
   MOZ_LOG_FMT(gMediaTrackGraphLog, LogLevel::level, msg, ##__VA_ARGS__)
 
 #ifdef LOG
 #  undef LOG
-#endif  // LOG
+#endif  
 #define LOG(msg, ...) LOG_INTERNAL(Debug, msg, ##__VA_ARGS__)
 
 #ifdef LOGE
 #  undef LOGE
-#endif  // LOGE
+#endif  
 #define LOGE(msg, ...) LOG_INTERNAL(Error, msg, ##__VA_ARGS__)
 
-// This can only be called in graph thread since mGraph->CurrentDriver() is
-// graph thread only
+
+
 #ifdef TRACK_GRAPH_LOG_INTERNAL
 #  undef TRACK_GRAPH_LOG_INTERNAL
-#endif  // TRACK_GRAPH_LOG_INTERNAL
+#endif  
 #define TRACK_GRAPH_LOG_INTERNAL(level, msg, ...)                        \
   LOG_INTERNAL(level, "(Graph {}, Driver {}) DeviceInputTrack {}, " msg, \
                fmt::ptr(this->mGraph),                                   \
@@ -37,25 +37,25 @@ namespace mozilla {
 
 #ifdef TRACK_GRAPH_LOG
 #  undef TRACK_GRAPH_LOG
-#endif  // TRACK_GRAPH_LOG
+#endif  
 #define TRACK_GRAPH_LOG(msg, ...) \
   TRACK_GRAPH_LOG_INTERNAL(Debug, msg, ##__VA_ARGS__)
 
 #ifdef TRACK_GRAPH_LOGV
 #  undef TRACK_GRAPH_LOGV
-#endif  // TRACK_GRAPH_LOGV
+#endif  
 #define TRACK_GRAPH_LOGV(msg, ...) \
   TRACK_GRAPH_LOG_INTERNAL(Verbose, msg, ##__VA_ARGS__)
 
 #ifdef TRACK_GRAPH_LOGE
 #  undef TRACK_GRAPH_LOGE
-#endif  // TRACK_GRAPH_LOGE
+#endif  
 #define TRACK_GRAPH_LOGE(msg, ...) \
   TRACK_GRAPH_LOG_INTERNAL(Error, msg, ##__VA_ARGS__)
 
 #ifdef CONSUMER_GRAPH_LOG_INTERNAL
 #  undef CONSUMER_GRAPH_LOG_INTERNAL
-#endif  // CONSUMER_GRAPH_LOG_INTERNAL
+#endif  
 #define CONSUMER_GRAPH_LOG_INTERNAL(level, msg, ...)                    \
   LOG_INTERNAL(                                                         \
       level, "(Graph {}, Driver {}) DeviceInputConsumerTrack {}, " msg, \
@@ -64,7 +64,7 @@ namespace mozilla {
 
 #ifdef CONSUMER_GRAPH_LOGV
 #  undef CONSUMER_GRAPH_LOGV
-#endif  // CONSUMER_GRAPH_LOGV
+#endif  
 #define CONSUMER_GRAPH_LOGV(msg, ...) \
   CONSUMER_GRAPH_LOG_INTERNAL(Verbose, msg, ##__VA_ARGS__)
 
@@ -207,7 +207,7 @@ void DeviceInputConsumerTrack::GetInputSourceData(AudioSegment& aOutput,
   }
 }
 
-/* static */
+
 NotNull<RefPtr<DeviceInputTrack>> DeviceInputTrack::OpenAudio(
     MediaTrackGraph* aGraph, CubebUtils::AudioDeviceID aDeviceId,
     const PrincipalHandle& aPrincipalHandle,
@@ -222,24 +222,24 @@ NotNull<RefPtr<DeviceInputTrack>> DeviceInputTrack::OpenAudio(
     MOZ_ASSERT(!track->mConsumerTracks.IsEmpty());
     track->AddDataListener(aConsumer->GetAudioDataListener());
   } else {
-    // Create a NativeInputTrack or NonNativeInputTrack, depending on whether
-    // the given graph already has a native device or not.
+    
+    
     if (aGraph->GetNativeInputTrackMainThread()) {
-      // A native device is already in use. This device will be a non-native
-      // device.
+      
+      
       track = new NonNativeInputTrack(aGraph->GraphRate(), aDeviceId,
                                       aPrincipalHandle);
     } else {
-      // No native device is in use. This device will be the native device.
+      
       track = new NativeInputTrack(aGraph->GraphRate(), aDeviceId,
                                    aPrincipalHandle);
     }
     LOG("Create {}NativeInputTrack {} in MTG {} for device {}",
         (track->AsNativeInputTrack() ? "" : "Non"), fmt::ptr(track.get()),
         fmt::ptr(aGraph), fmt::ptr(aDeviceId));
-    aGraph->AddTrack(track);
-    // Add the listener before opening the device so the device passed to
-    // OpenAudioInput always has a non-zero input channel count.
+    aGraph->AddTrack(track, {});
+    
+    
     track->AddDataListener(aConsumer->GetAudioDataListener());
     aGraph->OpenAudioInput(track);
   }
@@ -260,7 +260,7 @@ NotNull<RefPtr<DeviceInputTrack>> DeviceInputTrack::OpenAudio(
   return WrapNotNull(track);
 }
 
-/* static */
+
 void DeviceInputTrack::CloseAudio(already_AddRefed<DeviceInputTrack> aTrack,
                                   DeviceInputConsumerTrack* aConsumer) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -440,14 +440,14 @@ void NativeInputTrack::ProcessInput(GraphTime aFrom, GraphTime aTo,
   TrackTime dataNeed = std::min(mPendingData.GetDuration(), need);
   TrackTime silenceNeed = std::max(need - dataNeed, (TrackTime)0);
 
-  // TODO (bug 1879353): Reenable assertion.
-  // MOZ_ASSERT_IF(dataNeed > 0, silenceNeed == 0);
+  
+  
 
   GetData<AudioSegment>()->AppendSlice(mPendingData, 0, dataNeed);
   mPendingData.RemoveLeading(dataNeed);
   GetData<AudioSegment>()->AppendNullData(silenceNeed);
 
-  // TODO (bug 1879353): Remove as assertion above will hold.
+  
   if (dataNeed > 0 && silenceNeed > 0) {
     NotifyInputStopped(mGraph);
   }
@@ -480,8 +480,8 @@ void NativeInputTrack::NotifyInputData(MediaTrackGraph* aGraph,
       aFrames, aRate, aChannels, aAlreadyBuffered);
 
   if (!mIsBufferingAppended) {
-    // First time we see live frames getting added. Use what's already buffered
-    // in the driver's scratch buffer as a starting point.
+    
+    
     MOZ_ASSERT(mPendingData.IsEmpty());
     constexpr TrackTime buffering = WEBAUDIO_BLOCK_SIZE;
     const TrackTime remaining =
@@ -535,7 +535,7 @@ void NonNativeInputTrack::ProcessInput(GraphTime aFrom, GraphTime aTo,
   }
 
   AudioInputSource::Consumer consumer = AudioInputSource::Consumer::Same;
-  // GraphRunner keeps the same thread.
+  
   MOZ_ASSERT(!HasGraphThreadChanged());
 
   ReevaluateProcessingParams();
@@ -590,23 +590,23 @@ AudioInputType NonNativeInputTrack::DevicePreference() const {
 void NonNativeInputTrack::NotifyDeviceChanged(uint32_t aSourceId) {
   AssertOnGraphThreadOrNotRunning();
 
-  // No need to forward the notification if the audio input has been stopped or
-  // restarted by it users.
+  
+  
   if (!mAudioSource || mAudioSource->mId != aSourceId) {
     TRACK_GRAPH_LOG("(NonNative) NotifyDeviceChanged: No need to forward");
     return;
   }
 
   TRACK_GRAPH_LOG("(NonNative) NotifyDeviceChanged");
-  // Forward the notification.
+  
   DeviceInputTrack::DeviceChanged(mGraph);
 }
 
 void NonNativeInputTrack::NotifyInputStopped(uint32_t aSourceId) {
   AssertOnGraphThreadOrNotRunning();
 
-  // No need to forward the notification if the audio input has been stopped or
-  // restarted by it users.
+  
+  
   if (!mAudioSource || mAudioSource->mId != aSourceId) {
     TRACK_GRAPH_LOG("(NonNative) NotifyInputStopped: No need to forward");
     return;
@@ -614,7 +614,7 @@ void NonNativeInputTrack::NotifyInputStopped(uint32_t aSourceId) {
 
   TRACK_GRAPH_LOGE(
       "(NonNative) NotifyInputStopped: audio unexpectedly stopped");
-  // Destory the underlying audio stream if it's stopped unexpectedly.
+  
   mAudioSource->Stop();
 }
 
@@ -665,7 +665,7 @@ bool NonNativeInputTrack::HasGraphThreadChanged() {
   mGraphThreadId = currentId;
   return true;
 }
-#endif  // DEBUG
+#endif  
 
 AudioInputSourceListener::AudioInputSourceListener(NonNativeInputTrack* aOwner)
     : mOwner(aOwner) {}
@@ -733,4 +733,4 @@ void AudioInputSourceListener::AudioStateCallback(
 #undef CONSUMER_GRAPH_LOG_INTERNAL
 #undef CONSUMER_GRAPH_LOGV
 
-}  // namespace mozilla
+}  

@@ -86,7 +86,7 @@ TEST_F(TestDeviceInputTrack, DeviceInputConsumerTrack) {
       MOZ_RELEASE_ASSERT(NS_IsMainThread());
       TestDeviceInputConsumerTrack* track =
           new TestDeviceInputConsumerTrack(aGraph->GraphRate());
-      aGraph->AddTrack(track);
+      aGraph->AddTrack(track, {});
       return track;
     }
 
@@ -191,7 +191,7 @@ TEST_F(TestDeviceInputTrack, NativeInputTrackData) {
   
   RefPtr<NativeInputTrack> track =
       new NativeInputTrack(mGraph->GraphRate(), deviceId, testPrincipal);
-  mGraph->AddTrack(track);
+  mGraph->AddTrack(track, {});
 
   
 
@@ -260,7 +260,7 @@ TEST_F(TestDeviceInputTrack, StartAndStop) {
   
   RefPtr<NonNativeInputTrack> track =
       new NonNativeInputTrack(mGraph->GraphRate(), deviceId, testPrincipal);
-  mGraph->AddTrack(track);
+  mGraph->AddTrack(track, {});
 
   
 
@@ -367,7 +367,7 @@ TEST_F(TestDeviceInputTrack, NonNativeInputTrackData) {
   
   RefPtr<NonNativeInputTrack> track =
       new NonNativeInputTrack(mGraph->GraphRate(), deviceId, testPrincipal);
-  mGraph->AddTrack(track);
+  mGraph->AddTrack(track, {});
 
   
 
@@ -458,7 +458,7 @@ TEST_F(TestDeviceInputTrack, NonNativeDeviceChangedCallback) {
   
   RefPtr<NonNativeInputTrack> track =
       new NonNativeInputTrack(mGraph->GraphRate(), deviceId, testPrincipal);
-  mGraph->AddTrack(track);
+  mGraph->AddTrack(track, {});
 
   
 
@@ -515,7 +515,7 @@ TEST_F(TestDeviceInputTrack, NonNativeErrorCallback) {
   
   RefPtr<NonNativeInputTrack> track =
       new NonNativeInputTrack(mGraph->GraphRate(), deviceId, testPrincipal);
-  mGraph->AddTrack(track);
+  mGraph->AddTrack(track, {});
 
   
 

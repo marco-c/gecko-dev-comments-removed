@@ -87,7 +87,12 @@ already_AddRefed<AudioNodeTrack> AudioNodeTrack::Create(
   
   bool isRealtime = !aCtx->IsOffline();
   track->mSuspendedCount += isRealtime;
-  aGraph->AddTrack(track);
+  
+  MediaTrack::Flags trackFlags = {};
+  if (aFlags & (NEED_MAIN_THREAD_ENDED | NEED_MAIN_THREAD_CURRENT_TIME)) {
+    trackFlags += MediaTrack::Flag::EnableCanonicals;
+  }
+  aGraph->AddTrack(track, trackFlags);
   if (isRealtime && !aCtx->ShouldSuspendNewTrack()) {
     nsTArray<RefPtr<mozilla::MediaTrack>> tracks;
     tracks.AppendElement(track);

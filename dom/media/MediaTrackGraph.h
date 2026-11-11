@@ -14,6 +14,7 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/StateMirroring.h"
 #include "mozilla/StateWatching.h"
 #include "mozilla/TaskQueue.h"
 #include "nsAutoRef.h"
@@ -275,6 +276,9 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
   const TrackRate mSampleRate;
   const MediaSegment::Type mType;
 
+  enum class Flag { EnableCanonicals };
+  using Flags = EnumSet<Flag>;
+
  protected:
   
   virtual ~MediaTrack();
@@ -290,8 +294,8 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
   
 
 
-  void SetGraphImpl(MediaTrackGraphImpl* aGraph);
-  void SetGraphImpl(MediaTrackGraph* aGraph);
+  void SetGraphImpl(MediaTrackGraphImpl* aGraph, Flags aFlags);
+  void SetGraphImpl(MediaTrackGraph* aGraph, Flags aFlags);
 
   
   void AddAudioOutput(void* aKey, const AudioDeviceInfo* aSink);
@@ -399,9 +403,18 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
     return mMainThreadEnded;
   }
 
+  
+
+
+
+
+
+  AbstractCanonical<TrackTime>& CanonicalCurrentTime();
+  AbstractCanonical<bool>& CanonicalEnded();
+
   bool IsDestroyed() const {
     NS_ASSERTION(NS_IsMainThread(), "Call only on main thread");
-    return mMainThreadDestroyed;
+    return mDestroyed;
   }
 
   uint64_t GetWindowId() const;
@@ -570,6 +583,10 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
   virtual void AdvanceTimeVaryingValuesToCurrentTime(GraphTime aCurrentTime,
                                                      GraphTime aBlockedTime);
 
+  
+  
+  void DisconnectCanonicals();
+
  private:
   template <typename Function>
   class ControlMessageWithNoShutdown;
@@ -653,11 +670,33 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
   int32_t mSuspendedCount;
 
   
+
+
+
+
+
+  struct Canonicals {
+    Canonicals(AbstractThread* aGraphThread, TrackTime aCurrentTime)
+        : mCurrentTime(aGraphThread, aCurrentTime,
+                       "MediaTrack::Canonicals::mCurrentTime"),
+          mEnded(aGraphThread, false, "MediaTrack::Canonicals::mEnded") {}
+
+    Canonical<TrackTime> mCurrentTime;
+    Canonical<bool> mEnded;
+  };
+  
+  
+  Maybe<Canonicals> mCanonicals;
+
+  
   TrackTime mMainThreadCurrentTime;
   bool mMainThreadEnded;
   bool mEndedNotificationSent;
-  bool mMainThreadDestroyed;
 
+  
+  Atomic<bool> mDestroyed;
+
+  
   
   MediaTrackGraph* mGraph;
 };
@@ -1151,7 +1190,7 @@ class MediaTrackGraph {
   
 
 
-  void AddTrack(MediaTrack* aTrack);
+  void AddTrack(MediaTrack* aTrack, MediaTrack::Flags aFlags);
 
   
 
