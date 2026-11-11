@@ -119,9 +119,7 @@ impl fmt::Debug for EagerPseudoArray {
     }
 }
 
-
-
-const EMPTY_PSEUDO_ARRAY: &EagerPseudoArrayInner = &[None, None, None, None];
+const EMPTY_PSEUDO_ARRAY: &EagerPseudoArrayInner = &[const { None }; EAGER_PSEUDO_COUNT];
 
 impl EagerPseudoStyles {
     

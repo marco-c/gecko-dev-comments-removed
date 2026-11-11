@@ -42,14 +42,9 @@ pub enum PseudoElement {
     Before,
     Selection,
     
-
-    
-
-    
-    
-    
     
     FirstLetter,
+    FirstLine,
 
     
     Backdrop,
@@ -94,6 +89,7 @@ impl ToCss for PseudoElement {
             Before => "::before",
             Selection => "::selection",
             FirstLetter => "::first-letter",
+            FirstLine => "::first-line",
             Backdrop => "::backdrop",
             DetailsContent => "::details-content",
             Marker => "::marker",
@@ -123,7 +119,7 @@ impl ::selectors::parser::PseudoElement for PseudoElement {
 }
 
 
-pub const EAGER_PSEUDO_COUNT: usize = 4;
+pub const EAGER_PSEUDO_COUNT: usize = 5;
 
 impl PseudoElement {
     
@@ -199,7 +195,7 @@ impl PseudoElement {
     
     #[inline]
     pub fn is_first_line(&self) -> bool {
-        false
+        *self == PseudoElement::FirstLine
     }
 
     
@@ -252,6 +248,7 @@ impl PseudoElement {
             PseudoElement::After
             | PseudoElement::Before
             | PseudoElement::FirstLetter
+            | PseudoElement::FirstLine
             | PseudoElement::Selection => PseudoElementCascadeType::Eager,
             PseudoElement::Backdrop
             | PseudoElement::ColorSwatch
@@ -290,6 +287,7 @@ impl PseudoElement {
     pub fn property_restriction(&self) -> PropertyFlags {
         match self {
             PseudoElement::FirstLetter => PropertyFlags::APPLIES_TO_FIRST_LETTER,
+            PseudoElement::FirstLine => PropertyFlags::APPLIES_TO_FIRST_LINE,
             PseudoElement::Marker if crate::pref!("layout.css.marker.restricted") => {
                 PropertyFlags::APPLIES_TO_MARKER
             },
@@ -691,6 +689,7 @@ impl<'a, 'i> ::selectors::Parser<'i> for SelectorParser<'a> {
             "selection" => Selection,
             "file-selector-button" => FileSelectorButton,
             "first-letter" => FirstLetter,
+            "first-line" if crate::pref!("layout.css.first-line.enabled") => FirstLine,
             "marker" => Marker,
             "details-content" => DetailsContent,
             "color-swatch" => ColorSwatch,
