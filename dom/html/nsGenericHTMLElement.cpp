@@ -787,6 +787,13 @@ void nsGenericHTMLElement::AfterSetPopoverAttr() {
     }
 
     if (newState == PopoverAttributeState::None) {
+      
+      
+      
+      if (IsPopoverOpen()) {
+        HidePopoverWithoutRunningScript();
+      }
+
       auto* popoverData = GetPopoverData();
       if (popoverData) {
         
