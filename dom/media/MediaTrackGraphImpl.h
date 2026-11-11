@@ -407,11 +407,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
 
 
-  bool AudioTrackPresent();
-
-  
-
-
   void CheckDriver();
 
   

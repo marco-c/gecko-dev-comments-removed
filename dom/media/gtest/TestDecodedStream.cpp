@@ -118,6 +118,8 @@ class TestDecodedStream : public Test {
     
     
     mDummyTrack->mTrack->Resume();
+    mDummyTrack->mTrack->AddAudioOutput(reinterpret_cast<void*>(1),
+                                        mGraph->PrimaryOutputDeviceID(), 0);
 
     RefPtr fallbackListener = new OnFallbackListener(mDummyTrack->mTrack);
     mDummyTrack->mTrack->AddListener(fallbackListener);

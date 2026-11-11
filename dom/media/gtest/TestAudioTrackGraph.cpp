@@ -265,11 +265,14 @@ TEST_WithTailDispatch(TestAudioTrackGraph, DifferentDeviceIDs) {
   for (MediaTrackGraph* g : {g1, g2}) {
     
     
+    
 
     using SourceTrackPromise = MozPromise<SourceMediaTrack*, nsresult, true>;
     auto p = InvokeAsync([g] {
-      return SourceTrackPromise::CreateAndResolve(
-          g->CreateSourceTrack(MediaSegment::AUDIO), __func__);
+      SourceMediaTrack* track = g->CreateSourceTrack(MediaSegment::AUDIO);
+      track->AddAudioOutput(reinterpret_cast<void*>(1),
+                            g->PrimaryOutputDeviceID(), 0);
+      return SourceTrackPromise::CreateAndResolve(track, __func__);
     });
 
     WaitFor(cubeb->StreamInitEvent());
@@ -295,9 +298,13 @@ TEST_WithTailDispatch(TestAudioTrackGraph, SetOutputDeviceID) {
 
   
   
+  
   RefPtr<SourceMediaTrack> dummySource;
-  DispatchFunction(
-      [&] { dummySource = graph->CreateSourceTrack(MediaSegment::AUDIO); });
+  DispatchFunction([&] {
+    dummySource = graph->CreateSourceTrack(MediaSegment::AUDIO);
+    dummySource->AddAudioOutput(reinterpret_cast<void*>(1),
+                                graph->PrimaryOutputDeviceID(), 0);
+  });
 
   RefPtr<SmartMockCubebStream> stream = WaitFor(cubeb->StreamInitEvent());
 
@@ -326,8 +333,11 @@ TEST_WithTailDispatch(TestAudioTrackGraph, StreamName) {
   
   
   RefPtr<SourceMediaTrack> dummySource;
-  DispatchFunction(
-      [&] { dummySource = graph->CreateSourceTrack(MediaSegment::AUDIO); });
+  DispatchFunction([&] {
+    dummySource = graph->CreateSourceTrack(MediaSegment::AUDIO);
+    dummySource->AddAudioOutput(reinterpret_cast<void*>(1),
+                                graph->PrimaryOutputDeviceID(), 0);
+  });
 
   RefPtr<SmartMockCubebStream> stream = WaitFor(cubeb->StreamInitEvent());
   EXPECT_EQ(stream->StreamName(), name1);
@@ -362,11 +372,14 @@ TEST_WithTailDispatch(TestAudioTrackGraph,
   graph->CurrentDriver()->SetStreamName(name0);
 
   
+  
   RefPtr<SourceMediaTrack> dummySource;
   
   nsLiteralCString name1("name1");
   DispatchFunction([&] {
     dummySource = graph->CreateSourceTrack(MediaSegment::AUDIO);
+    dummySource->AddAudioOutput(reinterpret_cast<void*>(1),
+                                graph->PrimaryOutputDeviceID(), 0);
     graph->QueueControlMessageWithNoShutdown(
         [&] { graph->CurrentDriver()->SetStreamName(name1); });
   });
@@ -384,6 +397,163 @@ TEST_WithTailDispatch(TestAudioTrackGraph,
 
   
   DispatchMethod(dummySource, &SourceMediaTrack::Destroy);
+  WaitFor(cubeb->StreamDestroyEvent());
+}
+
+
+
+static void WaitForGraphIteration(MediaTrackGraphImpl* aGraph) {
+  MozPromiseHolder<GenericPromise> holder;
+  RefPtr<GenericPromise> promise = holder.Ensure(__func__);
+  DispatchFunction([&] {
+    aGraph->QueueControlMessageWithNoShutdown(
+        [&] { holder.Resolve(true, __func__); });
+  });
+  (void)WaitFor(promise);
+}
+
+TEST_WithTailDispatch(TestAudioTrackGraph,
+                      AudioTrackWithoutDeviceUsesSystemClockDriver) {
+  MockCubeb* cubeb = new MockCubeb();
+  CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
+
+  MediaTrackGraphImpl* graph = MediaTrackGraphImpl::GetInstance(
+      MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
+      CubebUtils::PreferredSampleRate( false),
+      nullptr, AbstractThread::MainThread());
+
+  uint32_t streamsInited = 0;
+  MediaEventListener initListener = cubeb->StreamInitEvent().Connect(
+      NS_GetCurrentThread(),
+      [&](const RefPtr<SmartMockCubebStream>&) { ++streamsInited; });
+
+  
+  
+  
+  RefPtr<SourceMediaTrack> dummySource;
+  DispatchFunction(
+      [&] { dummySource = graph->CreateSourceTrack(MediaSegment::AUDIO); });
+  WaitForGraphIteration(graph);
+  WaitForGraphIteration(graph);
+  {
+    MonitorAutoLock lock(graph->GetMonitor());
+    EXPECT_TRUE(graph->CurrentDriver()->AsSystemClockDriver());
+  }
+  initListener.Disconnect();
+  EXPECT_EQ(streamsInited, 0U);
+
+  
+  DispatchFunction([&] {
+    dummySource->AddAudioOutput(reinterpret_cast<void*>(1),
+                                graph->PrimaryOutputDeviceID(), 0);
+  });
+  RefPtr<SmartMockCubebStream> stream = WaitFor(cubeb->StreamInitEvent());
+  EXPECT_TRUE(stream->mHasOutput);
+  EXPECT_FALSE(stream->mHasInput);
+
+  
+  
+  DispatchFunction(
+      [&] { dummySource->RemoveAudioOutput(reinterpret_cast<void*>(1)); });
+  RefPtr<SmartMockCubebStream> destroyedStream =
+      WaitFor(cubeb->StreamDestroyEvent());
+  EXPECT_EQ(destroyedStream.get(), stream.get());
+  {
+    MonitorAutoLock lock(graph->GetMonitor());
+    EXPECT_TRUE(graph->CurrentDriver()->AsSystemClockDriver());
+  }
+
+  
+  
+  DispatchFunction([&] {
+    dummySource->AddAudioOutput(reinterpret_cast<void*>(1),
+                                graph->PrimaryOutputDeviceID(), 0);
+  });
+  (void)WaitFor(cubeb->StreamInitEvent());
+  DispatchMethod(dummySource, &SourceMediaTrack::Destroy);
+  WaitFor(cubeb->StreamDestroyEvent());
+}
+
+TEST_WithTailDispatch(TestAudioTrackGraph,
+                      SuspendedOrEndedTrackOutputUsesSystemClockDriver) {
+  MockCubeb* cubeb = new MockCubeb();
+  CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
+
+  MediaTrackGraphImpl* graph = MediaTrackGraphImpl::GetInstance(
+      MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
+      CubebUtils::PreferredSampleRate( false),
+      nullptr, AbstractThread::MainThread());
+
+  uint32_t streamsInited = 0;
+  MediaEventListener initListener = cubeb->StreamInitEvent().Connect(
+      NS_GetCurrentThread(),
+      [&](const RefPtr<SmartMockCubebStream>&) { ++streamsInited; });
+
+  
+  
+  
+  
+  
+  RefPtr<SourceMediaTrack> suspendedSource;
+  RefPtr<SourceMediaTrack> activeSource;
+  RefPtr<SourceMediaTrack> otherSource;
+  DispatchFunction([&] {
+    suspendedSource = graph->CreateSourceTrack(MediaSegment::AUDIO);
+    suspendedSource->Suspend();
+    suspendedSource->AddAudioOutput(reinterpret_cast<void*>(1),
+                                    graph->PrimaryOutputDeviceID(), 0);
+    activeSource = graph->CreateSourceTrack(MediaSegment::AUDIO);
+    otherSource = graph->CreateSourceTrack(MediaSegment::AUDIO);
+  });
+  WaitForGraphIteration(graph);
+  WaitForGraphIteration(graph);
+  {
+    MonitorAutoLock lock(graph->GetMonitor());
+    EXPECT_TRUE(graph->CurrentDriver()->AsSystemClockDriver());
+  }
+  initListener.Disconnect();
+  EXPECT_EQ(streamsInited, 0U);
+
+  
+  DispatchFunction([&] { suspendedSource->Resume(); });
+  RefPtr<SmartMockCubebStream> stream = WaitFor(cubeb->StreamInitEvent());
+  EXPECT_TRUE(stream->mHasOutput);
+  EXPECT_FALSE(stream->mHasInput);
+
+  
+  
+  DispatchFunction([&] { suspendedSource->Suspend(); });
+  RefPtr<SmartMockCubebStream> destroyedStream =
+      WaitFor(cubeb->StreamDestroyEvent());
+  EXPECT_EQ(destroyedStream.get(), stream.get());
+
+  
+  DispatchFunction([&] {
+    activeSource->AddAudioOutput(reinterpret_cast<void*>(1),
+                                 graph->PrimaryOutputDeviceID(), 0);
+  });
+  stream = WaitFor(cubeb->StreamInitEvent());
+
+  
+  
+  
+  DispatchFunction([&] { activeSource->End(); });
+  destroyedStream = WaitFor(cubeb->StreamDestroyEvent());
+  EXPECT_EQ(destroyedStream.get(), stream.get());
+
+  
+  
+  
+  DispatchFunction([&] {
+    otherSource->AddAudioOutput(reinterpret_cast<void*>(1),
+                                graph->PrimaryOutputDeviceID(), 0);
+  });
+  (void)WaitFor(cubeb->StreamInitEvent());
+  DispatchFunction([&] {
+    suspendedSource->Destroy();
+    activeSource->Destroy();
+    otherSource->Destroy();
+  });
   WaitFor(cubeb->StreamDestroyEvent());
 }
 
@@ -451,6 +621,8 @@ TEST_WithTailDispatch(TestAudioTrackGraph, NonNativeInputTrackStartAndStop) {
     track = new NonNativeInputTrack(graph->GraphRate(), deviceId,
                                     PRINCIPAL_HANDLE_NONE);
     graph->AddTrack(track);
+    track->AddAudioOutput(reinterpret_cast<void*>(1),
+                          graph->PrimaryOutputDeviceID(), 0);
   });
 
   RefPtr<SmartMockCubebStream> driverStream = WaitFor(cubeb->StreamInitEvent());
@@ -620,6 +792,8 @@ TEST_WithTailDispatch(TestAudioTrackGraph, NonNativeInputTrackErrorCallback) {
     track = new NonNativeInputTrack(graph->GraphRate(), deviceId,
                                     PRINCIPAL_HANDLE_NONE);
     graph->AddTrack(track);
+    track->AddAudioOutput(reinterpret_cast<void*>(1),
+                          graph->PrimaryOutputDeviceID(), 0);
   });
 
   RefPtr<SmartMockCubebStream> driverStream = WaitFor(cubeb->StreamInitEvent());
@@ -2111,9 +2285,7 @@ TEST_WithTailDispatch(TestAudioTrackGraph,
   });
 
   
-  RefPtr<SmartMockCubebStream> stream = WaitFor(cubeb->StreamInitEvent());
-  EXPECT_FALSE(stream->mHasInput);
-  EXPECT_TRUE(stream->mHasOutput);
+  
 
   
   RefPtr<MediaInputPort> port;
@@ -2123,7 +2295,7 @@ TEST_WithTailDispatch(TestAudioTrackGraph,
     track->ConnectDeviceInput(deviceId, listener, PRINCIPAL_HANDLE_NONE);
   });
 
-  stream = WaitFor(cubeb->StreamInitEvent());
+  RefPtr<SmartMockCubebStream> stream = WaitFor(cubeb->StreamInitEvent());
   EXPECT_TRUE(stream->mHasInput);
   EXPECT_TRUE(stream->mHasOutput);
   EXPECT_EQ(stream->InputChannels(), 1U);
@@ -3618,8 +3790,13 @@ TEST_WithTailDispatch(TestAudioTrackGraph, GraphRemovalInGetInstance) {
 
   
   RefPtr<SourceMediaTrack> dummySource1;
-  DispatchFunction(
-      [&] { dummySource1 = graph1->CreateSourceTrack(MediaSegment::AUDIO); });
+  DispatchFunction([&] {
+    dummySource1 = graph1->CreateSourceTrack(MediaSegment::AUDIO);
+    
+    
+    dummySource1->AddAudioOutput(reinterpret_cast<void*>(1),
+                                 graph1->PrimaryOutputDeviceID(), 0);
+  });
 
   (void)WaitFor(cubeb->StreamInitEvent());
 
@@ -3662,8 +3839,11 @@ TEST_WithTailDispatch(TestAudioTrackGraph, GraphRemovalInGetInstance) {
   EXPECT_EQ(rv, NS_OK);
   
   RefPtr<SourceMediaTrack> dummySource2;
-  DispatchFunction(
-      [&] { dummySource2 = graph2->CreateSourceTrack(MediaSegment::AUDIO); });
+  DispatchFunction([&] {
+    dummySource2 = graph2->CreateSourceTrack(MediaSegment::AUDIO);
+    dummySource2->AddAudioOutput(reinterpret_cast<void*>(1),
+                                 graph2->PrimaryOutputDeviceID(), 0);
+  });
   (void)WaitFor(cubeb->StreamInitEvent());
   DispatchMethod(dummySource2, &SourceMediaTrack::Destroy);
   (void)WaitFor(cubeb->StreamDestroyEvent());

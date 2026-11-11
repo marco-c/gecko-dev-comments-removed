@@ -388,31 +388,6 @@ const uint32_t NOT_VISITED = UINT32_MAX;
 const uint32_t IN_MUTED_CYCLE = 1;
 }  
 
-bool MediaTrackGraphImpl::AudioTrackPresent() {
-  MOZ_ASSERT(OnGraphThreadOrNotRunning());
-
-  bool audioTrackPresent = false;
-  for (MediaTrack* track : mTracks) {
-    if (track->AsAudioNodeTrack()) {
-      audioTrackPresent = true;
-      break;
-    }
-
-    if (track->mType == MediaSegment::AUDIO && !track->mNotifiedEnded) {
-      audioTrackPresent = true;
-      break;
-    }
-  }
-
-  
-  
-  MOZ_DIAGNOSTIC_ASSERT_IF(
-      !audioTrackPresent,
-      !mDeviceInputTrackManagerGraphThread.GetNativeInputTrack());
-
-  return audioTrackPresent;
-}
-
 void MediaTrackGraphImpl::CheckDriver() {
   MOZ_ASSERT(OnGraphThread());
   
@@ -432,8 +407,26 @@ void MediaTrackGraphImpl::CheckDriver() {
   
   
   
+  
+  
+  
+  
+  
+  
+  bool hasAudioDevice =
+      mDeviceInputTrackManagerGraphThread.GetNativeInputTrack() ||
+      std::any_of(mOutputDevices.begin(), mOutputDevices.end(),
+                  [](const OutputDeviceEntry& aDevice) {
+                    return std::any_of(
+                        aDevice.mTrackOutputs.begin(),
+                        aDevice.mTrackOutputs.end(),
+                        [](const TrackAndVolume& aOutput) {
+                          return !aOutput.mTrack->IsSuspended() &&
+                                 !aOutput.mTrack->mNotifiedEnded;
+                        });
+                  });
   bool needAudioCallbackDriver =
-      !mPendingResumeOperations.IsEmpty() || AudioTrackPresent();
+      !mPendingResumeOperations.IsEmpty() || hasAudioDevice;
   if (!needAudioCallbackDriver) {
     if (audioCallbackDriver && audioCallbackDriver->IsStarted()) {
       SwitchAtNextIteration(
