@@ -280,17 +280,10 @@ impl ToCss for TextOverflow {
     ToShmem,
     ToTyped,
 )]
-#[cfg_attr(
-    feature = "gecko",
-    css(bitflags(
-        single = "none,spelling-error,grammar-error",
-        mixed = "underline,overline,line-through,blink",
-    ))
-)]
-#[cfg_attr(
-    not(feature = "gecko"),
-    css(bitflags(single = "none", mixed = "underline,overline,line-through,blink"))
-)]
+#[css(bitflags(
+    single = "none,spelling-error,grammar-error",
+    mixed = "underline,overline,line-through,blink",
+))]
 #[repr(C)]
 
 pub struct TextDecorationLine(u8);
