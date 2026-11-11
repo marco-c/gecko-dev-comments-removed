@@ -1235,6 +1235,12 @@ void DocAccessible::ElementStateChanged(dom::Document* ,
     FireDelayedEvent(event);
   }
 
+  if (aStateMask.HasState(dom::ElementState::OPEN) &&
+      accessible->IsHTMLCombobox()) {
+    auto event = MakeRefPtr<AccStateChangeEvent>(accessible, states::EXPANDED);
+    FireDelayedEvent(event);
+  }
+
   if (aStateMask.HasState(dom::ElementState::POPOVER_OPEN)) {
     
     
@@ -1808,7 +1814,9 @@ LocalAccessible* DocAccessible::GetAccessibleEvenIfNotInMap(
   }
 
   
-  nsIFrame* frame = aNode->AsContent()->GetPrimaryFrame();
+  
+  nsIFrame* frame =
+      nsLayoutUtils::GetPrimaryOrAreaImageFrame(aNode->AsContent());
   nsImageFrame* imageFrame = do_QueryFrame(frame);
   if (imageFrame) {
     LocalAccessible* parent = GetAccessible(imageFrame->GetContent());

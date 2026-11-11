@@ -90,6 +90,12 @@ MARKUPMAP(
       
       
       if (aElement->IsInNativeAnonymousSubtree()) {
+        
+        
+        if (aElement->GetPseudoElementType() == PseudoStyleType::Picker) {
+          return MakeAndAddRef<HTMLComboboxListAccessible>(
+              aElement, aContext->Document());
+        }
         return nullptr;
       }
       

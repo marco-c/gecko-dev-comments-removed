@@ -3031,7 +3031,8 @@ RootAccessible* LocalAccessible::RootAccessible() const {
 }
 
 nsIFrame* LocalAccessible::GetFrame() const {
-  return mContent ? mContent->GetPrimaryFrame() : nullptr;
+  return mContent ? nsLayoutUtils::GetPrimaryOrAreaImageFrame(mContent)
+                  : nullptr;
 }
 
 nsINode* LocalAccessible::GetNode() const { return mContent; }
@@ -3682,6 +3683,8 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       cacheValueText = true;
     } else if (auto* input = dom::HTMLInputElement::FromNodeOrNull(mContent)) {
       cacheValueText = input->IsInputColor();
+    } else if (IsHTMLCombobox()) {
+      cacheValueText = true;
     }
 
     if (cacheValueText) {

@@ -1348,11 +1348,6 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
       newAcc = MakeRefPtr<HyperTextAccessible>(content, document);
     }
 
-    if (content->IsElement() && content->AsElement()->GetPseudoElementType() ==
-                                    PseudoStyleType::Picker) {
-      newAcc = MakeRefPtr<HTMLComboboxListAccessible>(content, document);
-    }
-
     
     
     
@@ -1398,28 +1393,6 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
       }
     }
   }
-
-  if (frame->GetContent() != content) {
-    
-    
-    
-    
-    
-    
-
-#ifdef DEBUG
-    nsImageFrame* imageFrame = do_QueryFrame(frame);
-    NS_ASSERTION(imageFrame && content->IsHTMLElement(nsGkAtoms::area),
-                 "Unknown case of not main content for the frame!");
-#endif
-    return nullptr;
-  }
-
-#ifdef DEBUG
-  nsImageFrame* imageFrame = do_QueryFrame(frame);
-  NS_ASSERTION(!imageFrame || !content->IsHTMLElement(nsGkAtoms::area),
-               "Image map manages the area accessible creation!");
-#endif
 
   
   RefPtr<LocalAccessible> newAcc;

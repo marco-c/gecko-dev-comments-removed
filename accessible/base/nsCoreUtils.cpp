@@ -597,29 +597,11 @@ bool nsCoreUtils::CanCreateAccessibleWithoutFrame(nsIContent* aContent,
   if (!element) {
     return false;
   }
-  
-  
-  if (auto* option = dom::HTMLOptionElement::FromNode(element)) {
-    if (auto* select = option->GetSelect(); select && select->IsCombobox()) {
-      element = select;
-    }
-  } else if (auto* optgroup = dom::HTMLOptGroupElement::FromNode(element)) {
-    if (auto* select = optgroup->GetSelect(); select && select->IsCombobox()) {
-      element = select;
-    }
-  } else if (element->GetPseudoElementType() == PseudoStyleType::Picker) {
-    if (auto* select =
-            dom::HTMLSelectElement::FromNode(element->GetFlattenedTreeParent());
-        select && select->IsCombobox()) {
-      element = select;
-    }
-  }
+
+  MOZ_ASSERT(!element->GetPrimaryFrame(), "Element should not have a frame");
 
   
-  
-  
-  
-  if (!element->GetPrimaryFrame() && !element->IsDisplayContents()) {
+  if (!element->IsDisplayContents()) {
     
     
     if (aIsSubtreeHidden) {

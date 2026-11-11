@@ -288,8 +288,7 @@ uint64_t HTMLComboboxAccessible::NativeState() const {
   
   uint64_t state = LocalAccessible::NativeState();
 
-  nsComboboxControlFrame* comboFrame = do_QueryFrame(GetFrame());
-  if (comboFrame && comboFrame->IsDroppedDown()) {
+  if (Elm()->State().HasState(dom::ElementState::OPEN)) {
     state |= states::EXPANDED;
   }
 
@@ -297,29 +296,12 @@ uint64_t HTMLComboboxAccessible::NativeState() const {
   return state;
 }
 
-EDescriptionValueFlag HTMLComboboxAccessible::Description(
-    nsString& aDescription) const {
-  aDescription.Truncate();
-  
-  
-  EDescriptionValueFlag descFlag = LocalAccessible::Description(aDescription);
-  if (!aDescription.IsEmpty()) {
-    return descFlag;
-  }
-
-  
-  LocalAccessible* option = SelectedOption();
-  if (option) {
-    return option->Description(aDescription);
-  }
-
-  return eDescriptionOK;
-}
-
 void HTMLComboboxAccessible::Value(nsString& aValue) const {
-  
-  LocalAccessible* option = SelectedOption();
-  if (option) option->Name(aValue);
+  HTMLSelectElement* select = HTMLSelectElement::FromNode(mContent);
+
+  if (HTMLOptionElement* option = select->GetSelectedOption()) {
+    option->GetRenderedLabel(aValue);
+  }
 }
 
 bool HTMLComboboxAccessible::HasPrimaryAction() const { return true; }
