@@ -5,6 +5,7 @@
 use api::ColorF;
 use api::{ImageRendering, LineOrientation, PrimitiveFlags};
 use api::units::*;
+use crate::path_tiler::PathPrimitive;
 use crate::clip::ClipNodeId;
 use crate::render_backend::{DataStores, DlStores};
 use crate::space::SnapRounding;
@@ -44,7 +45,8 @@ use line_dec::LineDecorationKey;
 use picture::PictureDataHandle;
 use rectangle::RectangleKey;
 use crate::dl_interner::DlHandle;
-use text_run::{TextRunDataHandle, TextRunScratch};
+use text_run::TextRunScratch;
+use api::interned_prims::TextRunKey;
 use crate::box_shadow::BoxShadowKey;
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -248,7 +250,8 @@ pub enum PrimitiveKind {
     
     TextRun {
         
-        data_handle: TextRunDataHandle,
+        
+        handle: DlHandle<TextRunKey>,
     },
     
     
@@ -476,8 +479,8 @@ impl PrimitiveInstance {
             PrimitiveKind::ConicGradient { handle } => {
                 dl_stores.conic_gradients.uid(*handle)
             }
-            PrimitiveKind::TextRun { data_handle, .. } => {
-                data_handle.uid()
+            PrimitiveKind::TextRun { handle } => {
+                dl_stores.text_runs.uid(*handle)
             }
             PrimitiveKind::YuvImage { handle } => {
                 dl_stores.yuv_images.uid(*handle)
@@ -566,6 +569,10 @@ pub struct PrimitiveFrameScratch {
     
     pub quad_direct_segments: Vec<QuadSegment>,
     pub quad_indirect_segments: Vec<QuadSegment>,
+
+    
+    
+    pub path_prims: Vec<PathPrimitive>,
 }
 
 impl Default for PrimitiveFrameScratch {
@@ -584,6 +591,7 @@ impl Default for PrimitiveFrameScratch {
             required_backdrop_chains: FastHashSet::default(),
             quad_direct_segments: Vec::new(),
             quad_indirect_segments: Vec::new(),
+            path_prims: Vec::new(),
         }
     }
 }
@@ -683,6 +691,7 @@ impl PrimitiveFrameScratch {
         recycler.recycle_vec(&mut self.debug_items);
         recycler.recycle_vec(&mut self.quad_direct_segments);
         recycler.recycle_vec(&mut self.quad_indirect_segments);
+        recycler.recycle_vec(&mut self.path_prims);
     }
 
     pub fn begin_frame(&mut self) {
@@ -697,6 +706,7 @@ impl PrimitiveFrameScratch {
         self.clip_mask_instances.push(ClipMaskKind::None);
         self.quad_direct_segments.clear();
         self.quad_indirect_segments.clear();
+        self.path_prims.clear();
 
         self.required_backdrop_chains.clear();
 
@@ -968,7 +978,9 @@ fn device_text_runs_do_not_snap_their_clips() {
     use crate::intern::Handle;
 
     assert!(
-        !PrimitiveKind::TextRun { data_handle: Handle::INVALID }.snaps(),
+        !PrimitiveKind::TextRun {
+            handle: DlHandle::new(crate::dl_interner::DlNamespace(0), 0, 0),
+        }.snaps(),
         "device-space text must not snap its clips (bug 2050692)",
     );
 
