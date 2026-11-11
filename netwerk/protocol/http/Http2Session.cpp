@@ -3144,6 +3144,10 @@ nsresult Http2Session::WriteSegmentsAgain(nsAHttpSegmentWriter* writer,
       mInputFrameDataStream->DisableSpdy();
       
       mInputFrameDataStream->MakeNonSticky();
+    } else if (mDownstreamRstReason == NO_HTTP_ERROR &&
+               mInputFrameDataStream->RecvdFin()) {
+      
+      streamCleanupCode = NS_OK;
     } else if (mDownstreamRstReason == CANCEL_ERROR ||
                mDownstreamRstReason == NO_HTTP_ERROR) {
       
