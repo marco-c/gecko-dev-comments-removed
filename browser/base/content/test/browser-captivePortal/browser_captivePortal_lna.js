@@ -104,7 +104,7 @@ add_task(async function test_captivePortalTab_noLnaPrompt() {
   let notification = await ensurePortalNotification(window);
 
   
-  let button = notification.querySelector(".notification-button");
+  let button = notification.querySelector("button.notification-button");
   button.click();
 
   let portalTab = await portalTabPromise;

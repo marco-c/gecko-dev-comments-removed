@@ -143,7 +143,7 @@ async function ensurePortalNotification(win) {
 async function testShowLoginPageButtonVisibility(notification, visibility) {
   await notification.updateComplete;
   let showLoginPageButton = notification.buttonContainer.querySelector(
-    ".notification-button"
+    "button.notification-button"
   );
   
   
