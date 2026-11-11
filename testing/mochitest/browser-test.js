@@ -64,11 +64,7 @@ const SIMPLETEST_OVERRIDES = [
 
 
 
-
-const FAILING_UNCAUGHT_ERROR_NAMES = [
-  "AccessKeyConflictError",
-  "SessionStateValidationError",
-];
+const FAILING_UNCAUGHT_ERROR_NAMES = ["AccessKeyConflictError"];
 
 setTimeout(testInit, 0);
 

@@ -6,12 +6,6 @@
 
 
 
-
-
-
-
-
-
 type WindowID = import("../SessionStore.sys.mjs").WindowID;
 type WindowStateData = import("../SessionStore.sys.mjs").WindowStateData;
 
