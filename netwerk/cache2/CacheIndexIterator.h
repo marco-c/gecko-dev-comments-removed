@@ -18,12 +18,18 @@ class CacheIndexRecordWrapper;
 
 class CacheIndexIterator {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CacheIndexIterator)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DESTROY(CacheIndexIterator,
+                                                     Destroy())
 
   CacheIndexIterator(CacheIndex* aIndex, bool aAddNew);
 
  protected:
   virtual ~CacheIndexIterator();
+
+ private:
+  
+  
+  void Destroy();
 
  public:
   
