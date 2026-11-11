@@ -746,7 +746,7 @@ void AudioContext::ShutdownWorklet() {
 double AudioContext::CurrentTime() {
   mozilla::MediaTrack* track = Destination()->Track();
 
-  double rawTime = track->TrackTimeToSeconds(track->GetCurrentTime());
+  double rawTime = track->TrackTimeToSeconds(Destination()->CurrentTime());
 
   
   

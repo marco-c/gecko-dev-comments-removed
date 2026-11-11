@@ -57,6 +57,11 @@ class AudioDestinationNode final : public AudioNode,
   void OfflineShutdown();
 
   void OnTrackEnded();
+
+  
+  
+  TrackTime CurrentTime() const { return mTrackCurrentTime; }
+
   void FireOfflineCompletionEvent();
 
   const char* NodeType() const override { return "AudioDestinationNode"; }
@@ -130,6 +135,7 @@ class AudioDestinationNode final : public AudioNode,
   bool mIsOffline;
   WatchManager<AudioDestinationNode> mWatchManager;
   Mirror<bool> mTrackEnded;
+  Mirror<TrackTime> mTrackCurrentTime;
 };
 
 }  

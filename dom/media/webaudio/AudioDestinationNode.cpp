@@ -464,7 +464,9 @@ AudioDestinationNode::AudioDestinationNode(AudioContext* aContext,
       mIsOffline(aIsOffline),
       mWatchManager(this, AbstractThread::MainThread()),
       mTrackEnded(AbstractThread::MainThread(), false,
-                  "AudioDestinationNode::mTrackEnded") {
+                  "AudioDestinationNode::mTrackEnded"),
+      mTrackCurrentTime(AbstractThread::MainThread(), 0,
+                        "AudioDestinationNode::mTrackCurrentTime") {
   if (aIsOffline) {
     
     
@@ -487,6 +489,7 @@ AudioDestinationNode::AudioDestinationNode(AudioContext* aContext,
   AudioNodeEngine* engine = new DestinationNodeEngine(this);
 
   mTrack = AudioNodeTrack::Create(aContext, engine, kTrackFlags, graph);
+  mTrackCurrentTime.Connect(&mTrack->CanonicalCurrentTime());
   
   mTrack->AddAudioOutput(nullptr, nullptr);
 }
@@ -575,6 +578,7 @@ AudioNodeTrack* AudioDestinationNode::Track() {
   AudioNodeEngine* engine = new OfflineDestinationNodeEngine(this);
 
   mTrack = AudioNodeTrack::Create(context, engine, kTrackFlags, graph);
+  mTrackCurrentTime.Connect(&mTrack->CanonicalCurrentTime());
   mTrackEnded.Connect(&mTrack->CanonicalEnded());
   mWatchManager.Watch(mTrackEnded, &AudioDestinationNode::OnTrackEnded);
 
@@ -601,6 +605,7 @@ void AudioDestinationNode::DestroyMediaTrack() {
 
   mWatchManager.Shutdown();
   mTrackEnded.DisconnectIfConnected();
+  mTrackCurrentTime.DisconnectIfConnected();
   AudioNode::DestroyMediaTrack();
 }
 
