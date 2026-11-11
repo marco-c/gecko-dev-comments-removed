@@ -678,6 +678,11 @@ const MarItem* mar_find_item(MarFile* mar, const char* name) {
     item = item->next;
   }
 
+  if (!item) {
+    fprintf(stderr, "ERROR: item not found in mar_find_item()\n");
+    return NULL;
+  }
+
   
   if (mar_insert_offset(mar, item->offset, item->length) == 1) {
     return item;
