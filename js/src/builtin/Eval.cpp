@@ -244,11 +244,18 @@ static bool EvalKernel(JSContext* cx, HandleValue v, EvalType evalType,
     return ejr == EvalJSONResult::Success;
   }
 
-  bool isWasmIntroducer = false;
+  bool isIntroducerSupported = true;
   RootedScript evalScript(cx);
   RootedScript introducerScript(cx);
   uint32_t introducerPcOffset = 0;
   if (evalType == EvalType::Direct) {
+    
+    
+    
+    
+    if (callerScript->hasNonSyntacticScope()) {
+      isIntroducerSupported = false;
+    }
     introducerScript = callerScript;
     introducerPcOffset = callerScript->pcToOffset(pc);
   } else {
@@ -267,10 +274,10 @@ static bool EvalKernel(JSContext* cx, HandleValue v, EvalType evalType,
       
       
       
-      isWasmIntroducer = true;
+      isIntroducerSupported = false;
     }
   }
-  if (!isWasmIntroducer) {
+  if (isIntroducerSupported) {
     EvalCacheLookup key(linearStr, cx->global(), introducerScript,
                         introducerPcOffset, evalType);
     if (EvalCache::Ptr entry = cx->caches().evalCache.lookup(key)) {
@@ -351,7 +358,7 @@ static bool EvalKernel(JSContext* cx, HandleValue v, EvalType evalType,
       return false;
     }
 
-    if (isReusable && !isWasmIntroducer) {
+    if (isReusable && isIntroducerSupported) {
       MOZ_ASSERT(!evalScript->treatAsRunOnce());
       MOZ_ASSERT(!evalScript->hasCallSiteObj());
       EvalCacheLookup key(linearStr, cx->global(), introducerScript,
