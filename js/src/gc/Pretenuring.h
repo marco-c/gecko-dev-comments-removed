@@ -334,13 +334,20 @@ class PretenuringZone {
 
   
   
-  uint32_t allocCountInNewlyCreatedArenas = 0;
-  uint32_t survivorCountInNewlyCreatedArenas = 0;
+  struct CountsInNewlyCreatedArenas {
+    uint32_t allocCount = 0;
+    uint32_t survivorCount = 0;
+    void update(uint32_t allocs, uint32_t survivors) {
+      allocCount += allocs;
+      survivorCount += survivors;
+    }
+  };
+  CountsInNewlyCreatedArenas cellCountsInNewlyCreatedArenas[NurseryTraceKinds];
 
   
   
   
-  uint32_t lowYoungTenuredSurvivalCount = 0;
+  uint32_t lowYoungTenuredSurvivalCount[NurseryTraceKinds] = {0};
 
   
   
@@ -372,24 +379,27 @@ class PretenuringZone {
   }
 
   void clearCellCountsInNewlyCreatedArenas() {
-    allocCountInNewlyCreatedArenas = 0;
-    survivorCountInNewlyCreatedArenas = 0;
+    for (auto& counts : cellCountsInNewlyCreatedArenas) {
+      counts = CountsInNewlyCreatedArenas();
+    }
   }
-  void updateCellCountsInNewlyCreatedArenas(uint32_t allocCount,
+  void updateCellCountsInNewlyCreatedArenas(JS::TraceKind kind,
+                                            uint32_t allocCount,
                                             uint32_t survivorCount) {
-    allocCountInNewlyCreatedArenas += allocCount;
-    survivorCountInNewlyCreatedArenas += survivorCount;
+    size_t index = size_t(kind);
+    MOZ_ASSERT(index < NurseryTraceKinds);
+    cellCountsInNewlyCreatedArenas[index].update(allocCount, survivorCount);
   }
 
-  bool calculateYoungTenuredSurvivalRate(double* rateOut);
+  bool calculateYoungTenuredSurvivalRate(size_t kind, double* rateOut) const;
 
-  void noteLowYoungTenuredSurvivalRate(bool lowYoungSurvivalRate);
+  void noteLowYoungTenuredSurvivalRate(size_t kind, bool lowYoungSurvivalRate);
   void noteHighNurserySurvivalRate(bool highNurserySurvivalRate);
 
   
   
   bool shouldResetNurseryAllocSites();
-  bool shouldResetPretenuredAllocSites();
+  bool shouldResetPretenuredAllocSites(JS::TraceKind kind);
 
   uint32_t nurseryPromotedCount(JS::TraceKind kind) const {
     size_t i = size_t(kind);
