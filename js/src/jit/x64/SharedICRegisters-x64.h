@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_x64_SharedICRegisters_x64_h
 #define jit_x64_SharedICRegisters_x64_h
 
@@ -15,7 +13,7 @@ namespace js {
 namespace jit {
 
 static constexpr ValueOperand R0(rcx);
-static constexpr ValueOperand R1(rbx);
+static constexpr ValueOperand R1(r11);
 static constexpr ValueOperand R2(rax);
 
 static constexpr Register ICTailCallReg = rsi;

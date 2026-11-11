@@ -720,7 +720,7 @@ void MacroAssemblerX64::handleFailureWithHandlerTail(
   asMasm().callWithABI<Fn, HandleException>(
       ABIType::General, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
 
-  *returnValueCheckOffset = asMasm().currentOffset();
+  *returnValueCheckOffset = asMasm().indirectTarget(TargetKind::Jump).offset();
 
 #ifdef JS_HW_SHADOW_STACK
   
@@ -849,7 +849,7 @@ void MacroAssemblerX64::handleFailureWithHandlerTail(
 
   
   bind(&wasmCatch);
-  wasm::GenerateJumpToCatchHandler(asMasm(), rsp, rax, rbx, rcx);
+  wasm::GenerateJumpToCatchHandler(asMasm(), rsp, rax, r11, rcx);
 }
 
 void MacroAssemblerX64::profilerEnterFrame(Register framePtr,
@@ -972,7 +972,7 @@ void MacroAssemblerX64::flexibleDivMod64(Register lhs, Register rhs,
 
   
   
-  Register regForRhs = (rhs == rax || rhs == rdx) ? rbx : rhs;
+  Register regForRhs = (rhs == rax || rhs == rdx) ? r11 : rhs;
 
   
   
