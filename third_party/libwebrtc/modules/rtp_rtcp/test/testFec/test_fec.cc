@@ -33,7 +33,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/random.h"
 #include "test/gtest.h"
-#include "test/testsupport/file_utils.h"
 
 
 
@@ -131,14 +130,8 @@ void RunTest(bool use_flexfec) {
   uint8_t fec_packet_masks[kMaxNumberFecPackets][kMaxNumberMediaPackets];
 
   
-  
   const unsigned int random_seed = static_cast<unsigned int>(time(nullptr));
   Random random(random_seed);
-  std::string filename = test::OutputPath() + "randomSeedLog.txt";
-  FILE* random_seed_file = fopen(filename.c_str(), "a");
-  fprintf(random_seed_file, "%u\n", random_seed);
-  fclose(random_seed_file);
-  random_seed_file = nullptr;
 
   uint16_t seq_num = 0;
   uint32_t timestamp = random.Rand<uint32_t>();
