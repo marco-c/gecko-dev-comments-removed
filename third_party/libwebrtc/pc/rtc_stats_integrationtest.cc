@@ -917,11 +917,21 @@ class RTCStatsReportVerifier {
     verifier.TestAttributeIsIDReference(remote_inbound_stream.local_id,
                                         RTCOutboundRtpStreamStats::kType);
     verifier.TestAttributeIsNonNegative<double>(
-        remote_inbound_stream.round_trip_time);
-    verifier.TestAttributeIsNonNegative<double>(
         remote_inbound_stream.total_round_trip_time);
     verifier.TestAttributeIsNonNegative<int32_t>(
         remote_inbound_stream.round_trip_time_measurements);
+    
+    
+    
+    
+    if (remote_inbound_stream.round_trip_time_measurements.value_or(0) > 0) {
+      verifier.TestAttributeIsNonNegative<double>(
+          remote_inbound_stream.round_trip_time);
+    } else {
+      
+      
+      verifier.TestAttributeIsUndefined(remote_inbound_stream.round_trip_time);
+    }
     
     
     verifier.TestAttributeIsUndefined<int64_t>(
