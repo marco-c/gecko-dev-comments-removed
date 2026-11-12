@@ -14,6 +14,7 @@
 #include <optional>
 #include <span>
 
+#include "api/transport/ecn_marking.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/logging.h"
@@ -46,7 +47,8 @@ CopyOnWriteBuffer DtlsPacketProcessor::ProcessOutgoingPacket(
 
 std::optional<CopyOnWriteBuffer> DtlsPacketProcessor::ProcessIncomingPacket(
     CopyOnWriteBuffer packet,
-    Timestamp ) {
+    Timestamp ,
+    EcnMarking ) {
   if (packet.empty()) {
     return std::nullopt;
   }
