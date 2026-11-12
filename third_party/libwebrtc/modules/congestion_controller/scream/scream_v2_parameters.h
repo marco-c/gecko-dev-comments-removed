@@ -85,6 +85,8 @@ struct ScreamV2Parameters {
   
   FieldTrialParameter<double> ref_window_overhead_min;
   FieldTrialParameter<double> ref_window_overhead_max;
+  
+  FieldTrialParameter<int> min_max_data_in_flight_mss;
 
   
   
