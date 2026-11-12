@@ -149,7 +149,13 @@ const LoggingConfig& GetLoggingConfig() {
 LogLineRef::LogLineRef() = default;
 
 std::string LogLineRef::DefaultLogLine() const {
-  StringBuilder log_output(GetLoggingConfig().log_prefix());
+  absl::string_view prefix = GetLoggingConfig().log_prefix();
+  StringBuilder log_output;
+  
+  
+  
+  log_output.Reserve(prefix.size() + filename_.size() + message_.size() + 48);
+  log_output << prefix;
   if (timestamp_ != Timestamp::MinusInfinity()) {
     
     char timestamp[50];  
