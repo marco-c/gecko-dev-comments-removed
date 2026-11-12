@@ -212,13 +212,6 @@ void SessionDescriptionInterface::RelinquishThreadOwnership() {
   
   
   sequence_checker_.Detach();
-  
-  
-  RTC_DCHECK_RUN_ON(&sequence_checker_);
-  for (IceCandidateCollection& collection : candidate_collection_) {
-    collection.RelinquishThreadOwnership();
-  }
-  sequence_checker_.Detach();  
 }
 
 SessionDescriptionInterface::SessionDescriptionInterface(
@@ -243,11 +236,6 @@ SessionDescriptionInterface::SessionDescriptionInterface(
       UpdateConnectionAddress(candidate_collection_[i],
                               description_->contents()[i].media_description());
     }
-    
-    
-    
-    
-    candidate_collection_[i].RelinquishThreadOwnership();
   }
 }
 
