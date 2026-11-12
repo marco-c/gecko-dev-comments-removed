@@ -34,10 +34,20 @@ class DualPi2NetworkQueue : public NetworkQueue {
  public:
   struct Config {
     
-    TimeDelta target_delay = TimeDelta::Micros(500);
+    
+    TimeDelta target_delay = TimeDelta::Millis(15);
     
     
-    TimeDelta step_threshold = TimeDelta::PlusInfinity();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    TimeDelta step_threshold = TimeDelta::Millis(10);
     
     
     size_t min_backlog_packets = 2;
@@ -112,7 +122,8 @@ class DualPi2NetworkQueue : public NetworkQueue {
 
 class DualPi2NetworkQueueFactory : public NetworkQueueFactory {
  public:
-  explicit DualPi2NetworkQueueFactory(const DualPi2NetworkQueue::Config& config)
+  explicit DualPi2NetworkQueueFactory(
+      const DualPi2NetworkQueue::Config& config = DualPi2NetworkQueue::Config())
       : config_(config) {}
 
   std::unique_ptr<NetworkQueue> CreateQueue() override {
