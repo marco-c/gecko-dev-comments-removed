@@ -156,6 +156,10 @@ class TransmissionControlBlock : public Context {
   webrtc::TimeDelta OnRtxTimerExpiry();
   
   webrtc::TimeDelta OnDelayedAckTimerExpiry();
+  
+  
+  
+  bool ShouldSendForwardTsnChunk(TSN new_cumulative_tsn, webrtc::Timestamp now);
 
   const absl::string_view log_prefix_;
   const DcSctpOptions options_;
@@ -176,7 +180,10 @@ class TransmissionControlBlock : public Context {
   const std::function<bool()> is_connection_established_;
   PacketSender& packet_sender_;
   
+  
+  
   webrtc::Timestamp limit_forward_tsn_until_ = webrtc::Timestamp::Zero();
+  TSN last_sent_forward_tsn_ = TSN(*my_initial_tsn_ - 1);
 
   RetransmissionTimeout rto_;
   RetransmissionErrorCounter tx_error_counter_;
