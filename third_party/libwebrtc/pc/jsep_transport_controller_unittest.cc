@@ -64,6 +64,7 @@
 #include "rtc_base/ssl_stream_adapter.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/thread.h"
+#include "rtc_base/virtual_socket_server.h"
 #include "system_wrappers/include/metrics.h"
 #include "test/create_test_environment.h"
 #include "test/create_test_field_trials.h"
@@ -345,7 +346,8 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
         transport_controller_
             ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
             .ok());
-    transport_controller_->MaybeStartGathering();
+    transport_controller_->MaybeStartGathering(
+        false);
 
     SendTask(network_thread_.get(), [this] {
       auto fake_audio_dtls = static_cast<FakeDtlsTransport*>(
@@ -603,11 +605,45 @@ TEST_F(JsepTransportControllerTest, MaybeStartGathering) {
           .ok());
   
   
-  transport_controller_->MaybeStartGathering();
+  transport_controller_->MaybeStartGathering(false);
   EXPECT_THAT(WaitUntil([&] { return kIceGatheringGathering; },
                         ::testing::Eq(gathering_state_), {.timeout = kTimeout}),
               IsRtcOk());
   EXPECT_EQ(1, gathering_state_signal_count_);
+}
+
+TEST_F(JsepTransportControllerTest, MaybeStartGatheringDiscardsCandidatePool) {
+  
+  
+  network_thread_ =
+      std::make_unique<Thread>(std::make_unique<VirtualSocketServer>());
+  network_thread_->Start();
+  CreateJsepTransportController(JsepTransportController::Config(),
+                                network_thread_.get());
+  SendTask(network_thread_.get(), [&] {
+    port_allocator_->SetConfiguration(
+        {}, {}, 2,
+        NO_PRUNE, nullptr,
+        std::nullopt);
+  });
+  auto description = CreateSessionDescriptionWithBundleGroup();
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
+          .ok());
+  
+  EXPECT_EQ(transport_controller_
+                ->MaybeStartGathering(false)
+                .size(),
+            2u);
+  EXPECT_TRUE(transport_controller_
+                  ->MaybeStartGathering(true)
+                  .empty());
+
+  SendTask(network_thread_.get(), [&] {
+    EXPECT_EQ(port_allocator_->GetPooledSession(), nullptr);
+    transport_controller_.reset();
+  });
 }
 
 TEST_F(JsepTransportControllerTest, AddRemoveRemoteCandidates) {
@@ -1219,7 +1255,7 @@ TEST_F(JsepTransportControllerTest, SignalCandidatesGathered) {
       transport_controller_
           ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
           .ok());
-  transport_controller_->MaybeStartGathering();
+  transport_controller_->MaybeStartGathering(false);
 
   auto fake_audio_dtls = static_cast<FakeDtlsTransport*>(
       transport_controller_->GetDtlsTransport(kAudioMid1));

@@ -3179,13 +3179,9 @@ void SdpOfferAnswerHandler::DoSetLocalDescription(
         codecs_mangled_to_raw);
   }
 
-  if (local_description()->GetType() == SdpType::kAnswer) {
+  const bool is_answer = local_description()->GetType() == SdpType::kAnswer;
+  if (is_answer) {
     RemoveStoppedTransceivers();
-
-    
-    
-    context_->network_thread()->BlockingCall(
-        [this] { port_allocator()->DiscardCandidatePool(); });
   }
 
   
@@ -3225,8 +3221,12 @@ void SdpOfferAnswerHandler::DoSetLocalDescription(
   
   
   
+  
+  
+  
   cached_pooled_ice_credentials_ =
-      transport_controller_s()->MaybeStartGathering();
+      transport_controller_s()->MaybeStartGathering(
+          is_answer);
 }
 
 void SdpOfferAnswerHandler::DoCreateOffer(

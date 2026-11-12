@@ -245,7 +245,10 @@ class JsepTransportController final {
   
   
   
-  std::vector<IceParameters> MaybeStartGathering();
+  
+  
+  
+  std::vector<IceParameters> MaybeStartGathering(bool discard_candidate_pool);
   RTCError AddRemoteCandidates(absl::string_view mid,
                                const std::vector<Candidate>& candidates);
   
