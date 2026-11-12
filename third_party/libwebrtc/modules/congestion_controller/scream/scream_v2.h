@@ -140,7 +140,7 @@ class ScreamV2 {
   
   
   
-  double ScaleBackoff(const ScreamFeedback& parsed, double backoff);
+  double ScaleBackoff(double backoff) const;
 
   const Environment env_;
   const ScreamV2Parameters params_;
@@ -161,8 +161,6 @@ class ScreamV2 {
   bool allow_ref_window_i_update_ = true;
 
   double last_ref_window_increase_scale_factor_ = 1.0;
-  double last_backoff_ = 0.0;
-  Timestamp last_backoff_rtt_start_time_ = Timestamp::MinusInfinity();
 
   
   
@@ -195,6 +193,8 @@ class ScreamV2 {
   Timestamp last_ref_window_decrease_time_ = Timestamp::MinusInfinity();
 
   Timestamp drain_queue_start_ = Timestamp::MinusInfinity();
+  TimeDelta queue_delay_avg_prev_ = TimeDelta::MinusInfinity();
+  Timestamp last_queue_delay_avg_check_time_ = Timestamp::MinusInfinity();
 
   DelayBasedCongestionControl delay_based_congestion_control_;
   bool first_feedback_processed_ = false;

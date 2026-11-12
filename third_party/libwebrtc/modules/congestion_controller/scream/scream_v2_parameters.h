@@ -174,7 +174,9 @@ struct ScreamV2Parameters {
   
   
   
-  FieldTrialParameter<bool> use_non_linear_backoff_scale;
+  FieldTrialParameter<bool> use_spec_backoff;
+  FieldTrialParameter<double> acked_bitrate_margin;
+  FieldTrialParameter<double> backoff_scale_low_target_rate;
 
   
   
