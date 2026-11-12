@@ -23,12 +23,29 @@ extern "C" {
 }  
 
 #include <algorithm>
+#include <array>
+#include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <memory>
+#include <optional>
 
+#include "api/scoped_refptr.h"
 #include "api/video/color_space.h"
+#include "api/video/encoded_image.h"
 #include "api/video/i010_buffer.h"
+#include "api/video/i210_buffer.h"
+#include "api/video/i410_buffer.h"
 #include "api/video/i420_buffer.h"
+#include "api/video/i422_buffer.h"
+#include "api/video/i444_buffer.h"
+#include "api/video/render_resolution.h"
+#include "api/video/video_codec_constants.h"
+#include "api/video/video_codec_type.h"
+#include "api/video/video_frame.h"
+#include "api/video/video_frame_buffer.h"
+#include "api/video/video_rotation.h"
+#include "api/video_codecs/video_decoder.h"
 #include "common_video/include/video_frame_buffer.h"
 #include "modules/video_coding/codecs/h264/h264_color_space.h"
 #include "modules/video_coding/include/video_error_codes.h"
@@ -106,10 +123,10 @@ int H264DecoderImpl::AVGetBuffer2(AVCodecContext* context,
   RTC_CHECK_GE(height, 0);
   int ret = av_image_check_size(static_cast<unsigned int>(width),
                                 static_cast<unsigned int>(height), 0, nullptr);
-  if (ret < 0) {
+  if (ret < 0 || width > kMaxFrameSidePixels || height > kMaxFrameSidePixels) {
     RTC_LOG(LS_ERROR) << "Invalid picture size " << width << "x" << height;
     decoder->ReportError();
-    return ret;
+    return ret < 0 ? ret : WEBRTC_VIDEO_CODEC_ERROR;
   }
 
   
