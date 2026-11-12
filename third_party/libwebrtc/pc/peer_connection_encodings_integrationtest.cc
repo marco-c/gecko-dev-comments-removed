@@ -3090,7 +3090,8 @@ TEST_P(PeerConnectionEncodingsIntegrationParameterizedTest,
   
   EXPECT_THAT(
       GetStatsUntil(local_pc_wrapper,
-                    OutboundRtpStatsAre(ElementsAre(ResolutionIs(640, 360)))),
+                    OutboundRtpStatsAre(ElementsAre(ResolutionIs(640, 360))),
+                    {.timeout = kLongTimeoutForRampingUp}),
       IsRtcOk());
 }
 
