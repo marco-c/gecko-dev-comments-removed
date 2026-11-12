@@ -146,18 +146,6 @@ static bool EncodeJpeg(SkWStream* aDst, const SkPixmap& aSrc, int aQuality) {
 
 namespace mozilla::gfx {
 
-struct PrintTargetSkPDF::SkPDFDocState {
-  explicit SkPDFDocState(UniquePtr<GkSkWStream> aStream)
-      : mOStream(std::move(aStream)) {}
-
-  
-  
-  
-  UniquePtr<GkSkWStream> mOStream;
-  sk_sp<SkDocument> mDoc;
-  SkCanvas* mCanvas = nullptr;  
-};
-
 class GkSkWStream final : public SkWStream {
  public:
   
@@ -216,6 +204,18 @@ class GkSkWStream final : public SkWStream {
  private:
   nsCOMPtr<nsIOutputStream> mStream;
   size_t mWritten = 0;
+};
+
+struct PrintTargetSkPDF::SkPDFDocState {
+  explicit SkPDFDocState(UniquePtr<GkSkWStream> aStream)
+      : mOStream(std::move(aStream)) {}
+
+  
+  
+  
+  UniquePtr<GkSkWStream> mOStream;
+  sk_sp<SkDocument> mDoc;
+  SkCanvas* mCanvas = nullptr;  
 };
 
 PrintTargetSkPDF::PrintTargetSkPDF(UniquePtr<GkSkWStream> aStream)
