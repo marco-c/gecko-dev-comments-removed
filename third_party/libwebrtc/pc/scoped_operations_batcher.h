@@ -11,6 +11,7 @@
 #ifndef PC_SCOPED_OPERATIONS_BATCHER_H_
 #define PC_SCOPED_OPERATIONS_BATCHER_H_
 
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -37,12 +38,27 @@ namespace webrtc {
 
 
 
+
 class ScopedOperationsBatcher {
  public:
   using SimpleBatchTask = absl::AnyInvocable<void() &&>;
   using FinalizerTask = absl::AnyInvocable<void() &&>;
-  using BatchTaskWithFinalizer =
-      absl::AnyInvocable<RTCErrorOr<FinalizerTask>() &&>;
+
+  
+  
+  struct BatchTaskResult {
+    BatchTaskResult() = default;
+    BatchTaskResult(RTCError error)  
+        : error(std::move(error)) {}
+    BatchTaskResult(FinalizerTask finalizer)  
+        : finalizer(std::move(finalizer)) {}
+    BatchTaskResult(RTCError error, FinalizerTask finalizer)
+        : error(std::move(error)), finalizer(std::move(finalizer)) {}
+
+    RTCError error = RTCError::OK();
+    FinalizerTask finalizer;
+  };
+  using BatchTaskWithFinalizer = absl::AnyInvocable<BatchTaskResult() &&>;
 
   explicit ScopedOperationsBatcher(Thread* target_thread);
   ~ScopedOperationsBatcher();
