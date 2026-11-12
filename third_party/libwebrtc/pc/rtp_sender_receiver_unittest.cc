@@ -674,6 +674,21 @@ class RtpSenderReceiverTest
     worker_tasks.AddWithFinalizer(sender.SetSsrcTask(ssrc, layer_count));
   }
 
+  
+  
+  void ExpectParametersFromCache(const RtpSenderInternal& sender,
+                                 MediaSendChannelInterface* media_channel,
+                                 uint32_t ssrc) {
+    RtpParameters parameters;
+    {
+      RTC_DCHECK_DISALLOW_THREAD_BLOCKING_CALLS();
+      parameters = sender.GetParametersInternal(false);
+    }
+    EXPECT_EQ(parameters, worker_thread_->BlockingCall([&] {
+      return media_channel->GetRtpSendParameters(ssrc);
+    }));
+  }
+
   test::RunLoop run_loop_;
   
   
@@ -2219,6 +2234,37 @@ TEST_F(RtpSenderReceiverTest, SetParametersAsyncCompletionAfterSsrcChange) {
   EXPECT_EQ(video_rtp_sender_->GetParameters(), channel_params);
 
   DestroyVideoRtpSender();
+}
+
+
+
+TEST_F(RtpSenderReceiverTest, SetSsrcPopulatesCachedParameters) {
+  CreateVideoRtpSender();
+  
+  SetSsrc(kVideoSsrc2, *video_rtp_sender_);
+  ExpectParametersFromCache(*video_rtp_sender_, video_media_send_channel(),
+                            kVideoSsrc2);
+  DestroyVideoRtpSender();
+}
+
+
+TEST_F(RtpSenderReceiverTest,
+       VideoSenderContentHintChangePopulatesCachedParameters) {
+  CreateVideoRtpSender();
+  video_track_->set_content_hint(VideoTrackInterface::ContentHint::kDetailed);
+  ExpectParametersFromCache(*video_rtp_sender_, video_media_send_channel(),
+                            kVideoSsrc);
+  DestroyVideoRtpSender();
+}
+
+
+TEST_F(RtpSenderReceiverTest,
+       AudioSenderTrackEnabledChangePopulatesCachedParameters) {
+  CreateAudioRtpSender();
+  audio_track_->set_enabled(false);
+  ExpectParametersFromCache(*audio_rtp_sender_, voice_media_send_channel(),
+                            kAudioSsrc);
+  DestroyAudioRtpSender();
 }
 
 TEST_F(RtpSenderReceiverTest, VideoSenderDetectTransactionIdModification) {
