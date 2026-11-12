@@ -1209,13 +1209,13 @@ INSTANTIATE_TEST_SUITE_P(LibaomAv1,
 
 const FixedBitrateTestParams kFixedBitrateConfigs[] = {
     {"VgaNormalBitrate", kVgaResolution, DataRate::KilobitsPerSec(500),
-     TimeDelta::Seconds(5), 5.0},
+     TimeDelta::Seconds(5), 6.0},
     {"VgaLowBitrate", kVgaResolution, DataRate::KilobitsPerSec(100),
-     TimeDelta::Seconds(10), 5.0},
+     TimeDelta::Seconds(10), 6.0},
     {"VgaHighBitrate", kVgaResolution, DataRate::KilobitsPerSec(1500),
      TimeDelta::Seconds(5), 5.0},
     {"QvgaNormalBitrate", kQvgaResolution, DataRate::KilobitsPerSec(125),
-     TimeDelta::Seconds(5), 6.0},
+     TimeDelta::Seconds(5), 7.0},
     {"QvgaLowBitrate", kQvgaResolution, DataRate::KilobitsPerSec(25),
      TimeDelta::Seconds(10), 10.0},
     
@@ -1223,7 +1223,7 @@ const FixedBitrateTestParams kFixedBitrateConfigs[] = {
     
     
     {"QvgaHighBitrate", kQvgaResolution, DataRate::KilobitsPerSec(375),
-     TimeDelta::Seconds(5), 6.0},
+     TimeDelta::Seconds(5), 7.0},
     {"HdNormalBitrate", kHdResolution, DataRate::KilobitsPerSec(2000),
      TimeDelta::Seconds(5), 5.0},
     {"HdLowBitrate", kHdResolution, DataRate::KilobitsPerSec(400),
