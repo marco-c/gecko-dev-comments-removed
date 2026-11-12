@@ -69,6 +69,7 @@ class LibaomAv1EncoderV2 : public VideoEncoderInterface {
 
   std::optional<ContentHint> content_type_;
   std::optional<int> effort_level_;
+  std::optional<int> cq_level_;
   
   
   

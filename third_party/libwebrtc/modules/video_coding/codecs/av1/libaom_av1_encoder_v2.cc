@@ -87,6 +87,11 @@ constexpr int kDefaultMaxIntraBitratePct = 300;
 
 
 
+constexpr int kCqpQuantizerOffset = 4;
+
+
+
+
 
 
 
@@ -625,8 +630,13 @@ aom_svc_params_t LibaomAv1EncoderV2::GetSvcParams(
               
               
               layer_target_bitrate_view[id] = 1;
-              max_quantizers_view[id] = quantizer;
-              min_quantizers_view[id] = quantizer;
+              max_quantizers_view[id] =
+                  quantizer == 0 ? 0
+                                 : std::min(kMaxQuantizer,
+                                            quantizer + kCqpQuantizerOffset);
+              min_quantizers_view[id] =
+                  quantizer == 0 ? 0
+                                 : std::max(1, quantizer - kCqpQuantizerOffset);
             }
             RTC_LOG(LS_VERBOSE)
                 << __FUNCTION__ << " svc_params.qp[" << first_layer_id
@@ -733,6 +743,7 @@ bool LibaomAv1EncoderV2::InitEncode(
   rate_tracker_ = std::make_unique<CbrLayerRateTracker>();
   content_type_.reset();
   effort_level_.reset();
+  cq_level_.reset();
   applied_cfg_.reset();
   applied_svc_params_.reset();
   num_spatial_layers_ = 0;
@@ -895,11 +906,15 @@ void LibaomAv1EncoderV2::Encode(
     
     
     
-    
     int quantizer = ToLibaomQuantizer(
         std::get<Cqp>(frame_settings[0].rate_options()).target_qp);
-    cfg_.rc_min_quantizer = quantizer;
-    cfg_.rc_max_quantizer = quantizer;
+    cfg_.use_fixed_qp_offsets = 2;
+    cfg_.rc_min_quantizer =
+        quantizer == 0 ? 0 : std::max(1, quantizer - kCqpQuantizerOffset);
+    cfg_.rc_max_quantizer =
+        quantizer == 0
+            ? 0
+            : std::min(kMaxQuantizer, quantizer + kCqpQuantizerOffset);
   }
 
   if (static_cast<int>(cfg_.g_w) != frame_buffer->width() ||
@@ -1003,6 +1018,15 @@ void LibaomAv1EncoderV2::Encode(
       comp_pred.use_comp_pred[2] = 1;
     }
     SET_OR_RETURN(AV1E_SET_SVC_REF_FRAME_COMP_PRED, &comp_pred);
+
+    if (layer_enabled && std::holds_alternative<Cqp>(settings.rate_options())) {
+      const int cq_level =
+          ToLibaomQuantizer(std::get<Cqp>(settings.rate_options()).target_qp);
+      if (cq_level != cq_level_) {
+        SET_OR_RETURN(AOME_SET_CQ_LEVEL, cq_level);
+        cq_level_ = cq_level;
+      }
+    }
 
     if (layer_enabled && settings.effort_level() != effort_level_) {
       
