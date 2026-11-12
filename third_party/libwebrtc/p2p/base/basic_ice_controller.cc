@@ -444,7 +444,6 @@ BasicIceController::GetBestWritableConnectionPerNetwork() const {
 
 IceControllerInterface::SwitchResult
 BasicIceController::HandleInitialSelectDampening(
-    IceSwitchReason ,
     const Connection* new_connection) {
   if (!field_trials_->initial_select_dampening.has_value() &&
       !field_trials_->initial_select_dampening_ping_received.has_value()) {
@@ -503,14 +502,14 @@ IceControllerInterface::SwitchResult BasicIceController::ShouldSwitchConnection(
   }
 
   if (selected_connection_ == nullptr) {
-    return HandleInitialSelectDampening(reason, new_connection);
+    return HandleInitialSelectDampening(new_connection);
   }
 
   
   
   
-  int compare_a_b_by_networks = CompareCandidatePairNetworks(
-      new_connection, selected_connection_, config_.network_preference);
+  int compare_a_b_by_networks =
+      CompareCandidatePairNetworks(new_connection, selected_connection_);
   if (compare_a_b_by_networks == b_is_better && !new_connection->receiving()) {
     return {};
   }
@@ -680,8 +679,7 @@ int BasicIceController::CompareConnectionStates(
 
 int BasicIceController::CompareConnectionCandidates(const Connection* a,
                                                     const Connection* b) const {
-  int compare_a_b_by_networks =
-      CompareCandidatePairNetworks(a, b, config_.network_preference);
+  int compare_a_b_by_networks = CompareCandidatePairNetworks(a, b);
   if (compare_a_b_by_networks != a_and_b_equal) {
     return compare_a_b_by_networks;
   }
@@ -761,8 +759,7 @@ int BasicIceController::CompareConnections(
 
 int BasicIceController::CompareCandidatePairNetworks(
     const Connection* a,
-    const Connection* b,
-    std::optional<AdapterType> ) const {
+    const Connection* b) const {
   int compare_a_b_by_network_preference =
       CompareCandidatePairsByNetworkPreference(a, b,
                                                config_.network_preference);
