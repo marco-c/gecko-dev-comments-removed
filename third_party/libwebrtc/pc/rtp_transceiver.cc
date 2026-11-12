@@ -875,11 +875,15 @@ void RtpTransceiver::OnFirstPacketReceived_s(uint32_t ssrc) {
       return;
     }
   }
+  
+  
+  
+  
   for (const auto& receiver : receivers_) {
-    if (!receiver->internal()->ssrc_s().has_value()) {
-      receiver->internal()->SetSsrc_s(ssrc);
+    if (!receiver->internal()->has_signaled_ssrc_s()) {
+      receiver->internal()->SetUnsignaledSsrc_s(ssrc);
       receiver->internal()->NotifyFirstPacketReceived(ssrc);
-      break;  
+      break;
     }
   }
 }
