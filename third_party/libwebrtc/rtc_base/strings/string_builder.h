@@ -74,6 +74,10 @@ class RTC_EXPORT StringBuilder {
   size_t size() const { return str_.size(); }
 
   
+  
+  void Reserve(size_t size) { str_.reserve(size); }
+
+  
   std::string Release() { return std::move(str_); }
 
   
