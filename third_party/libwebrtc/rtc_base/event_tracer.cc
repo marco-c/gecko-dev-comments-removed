@@ -256,7 +256,7 @@ class EventLogger final {
                          TRACE_EVENT_SCOPE_GLOBAL);
     
     int one = 1;
-    if (g_event_logging_active.compare_exchange_strong(one, 0))
+    if (!g_event_logging_active.compare_exchange_strong(one, 0))
       return;
 
     
