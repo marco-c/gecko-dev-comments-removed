@@ -22,6 +22,7 @@
 #include "api/field_trials_view.h"
 #include "api/frame_transformer_interface.h"
 #include "api/scoped_refptr.h"
+#include "api/sframe/sframe_types.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "api/transport/rtp/dependency_descriptor.h"
 #include "api/units/data_rate.h"
@@ -215,6 +216,13 @@ class RTPSenderVideo : public RTPVideoFrameSenderInterface {
 
   RtpPacketizer::PacketizationFormat GetPacketizationFormat(
       VideoCodecType codec_type) const;
+
+  
+  
+  bool IsSframeEncryptionSupported() const;
+
+  
+  bool IsSframeModeActive(SframeMode mode) const;
 
   bool UpdateConditionalRetransmit(uint8_t temporal_id,
                                    TimeDelta expected_retransmission_time)
