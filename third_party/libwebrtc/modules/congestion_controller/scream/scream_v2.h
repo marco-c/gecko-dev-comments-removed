@@ -158,7 +158,11 @@ class ScreamV2 {
   DataSize ref_window_i_ = DataSize::Bytes(1);
   
   
-  bool allow_ref_window_i_update_ = true;
+  
+  
+  
+  DataSize ref_window_lowest_ = DataSize::Zero();
+  Timestamp last_ref_window_i_update_time_ = Timestamp::MinusInfinity();
 
   double last_ref_window_increase_scale_factor_ = 1.0;
 
