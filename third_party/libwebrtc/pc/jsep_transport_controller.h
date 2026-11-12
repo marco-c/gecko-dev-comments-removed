@@ -56,6 +56,7 @@
 #include "pc/jsep_transport_collection.h"
 #include "pc/rtp_transport.h"
 #include "pc/rtp_transport_internal.h"
+#include "pc/scoped_operations_batcher.h"
 #include "pc/sctp_transport.h"
 #include "pc/session_description.h"
 #include "pc/transport_stats.h"
@@ -311,7 +312,15 @@ class JsepTransportController final {
   bool GetStats(absl::string_view transport_name, TransportStats* stats) const;
 
   
-  RTCError RollbackTransports();
+  
+  
+  
+  
+  
+  
+  
+  ScopedOperationsBatcher::BatchTaskWithFinalizer MakeRollbackTask(
+      RTCError* absl_nonnull error);
 
   
   absl::AnyInvocable<void() &&> MakeCloseTask();
