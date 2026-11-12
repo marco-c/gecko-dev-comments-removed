@@ -222,6 +222,10 @@ void RtcEventLogDriver::OnLoggedVideoRecvConfig(
             << "Stream for ssrc=" << ssrc << " already existed. Overwriting it."
             << " (simulated_ts=" << env_.clock().CurrentTime() << ")";
         it->second->Close();
+        absl::erase_if(receiving_streams_,
+                       [old_stream = it->second.get()](const auto& kv) {
+                         return kv.second == old_stream;
+                       });
       }
     }
     std::unique_ptr<StreamInterface> stream =
