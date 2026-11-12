@@ -3631,7 +3631,6 @@ bool SdpOfferAnswerHandler::RemoveIceCandidate(const IceCandidate* candidate) {
   bool removed = mutable_remote_description()->RemoveCandidate(candidate);
   
   
-  
   transport_controller_s()->RemoveRemoteCandidate(candidate);
   return removed;
 }

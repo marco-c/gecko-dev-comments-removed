@@ -277,7 +277,11 @@ class JsepTransportController final {
   RTCError AddRemoteCandidates(absl::string_view mid,
                                const std::vector<Candidate>& candidates);
   
-  bool RemoveRemoteCandidate(const IceCandidate* candidate);
+  
+  
+  
+  
+  void RemoveRemoteCandidate(const IceCandidate* absl_nonnull candidate);
 
   
 
@@ -339,7 +343,8 @@ class JsepTransportController final {
       RTC_RUN_ON(network_thread_);
 
   
-  bool RemoveRemoteCandidate_n(const IceCandidate* candidate)
+  void RemoveRemoteCandidate_n(absl::string_view mid,
+                               const Candidate& candidate)
       RTC_RUN_ON(network_thread_);
 
   
