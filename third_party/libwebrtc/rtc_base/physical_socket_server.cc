@@ -599,9 +599,18 @@ int PhysicalSocket::DoReadFromSocket(void* buffer,
     struct cmsghdr* cmsg;
     for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
       if (ecn) {
+#if defined(WEBRTC_MAC)
+        
+        
+        
+        constexpr int kIpTosCmsgType = IP_RECVTOS;
+#else
+        constexpr int kIpTosCmsgType = IP_TOS;
+#endif
         if ((cmsg->cmsg_type == IPV6_TCLASS &&
              cmsg->cmsg_level == IPPROTO_IPV6) ||
-            (cmsg->cmsg_type == IP_TOS && cmsg->cmsg_level == IPPROTO_IP)) {
+            (cmsg->cmsg_type == kIpTosCmsgType &&
+             cmsg->cmsg_level == IPPROTO_IP)) {
           *ecn = EcnFromDs(CMSG_DATA(cmsg)[0]);
         }
       }
