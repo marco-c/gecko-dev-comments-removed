@@ -565,6 +565,21 @@ TEST_F(SctpDataChannelTest, DeprecatedSendEmptyData) {
 }
 
 
+
+TEST_F(SctpDataChannelTest, SendAsyncAfterCloseCompletesWithInvalidState) {
+  SetChannelReady();
+  channel_->Close();
+  ASSERT_EQ(channel_->state(), DataChannelInterface::kClosed);
+
+  std::optional<RTCError> result;
+  channel_->SendAsync(DataBuffer("data"),
+                      [&](RTCError error) { result = error; });
+  FlushNetworkThread();
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->type(), RTCErrorType::INVALID_STATE);
+}
+
+
 TEST_F(SctpDataChannelTest, NeverOpened) {
   controller_->set_transport_available(true);
   network_thread_.BlockingCall(
@@ -621,6 +636,8 @@ TEST_F(SctpDataChannelTest, ChannelDeletedWhileDataBuffered) {
   channel_->SendAsync(packet, nullptr);
 
   
+  
+  channel_->Close();
   inner_channel_ = nullptr;
   channel_ = nullptr;
 }

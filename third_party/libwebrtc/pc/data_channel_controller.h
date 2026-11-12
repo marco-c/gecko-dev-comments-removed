@@ -115,7 +115,11 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   Thread* signaling_thread() const;
 
  private:
-  void OnSctpDataChannelClosed(SctpDataChannel* channel);
+  
+  
+  
+  scoped_refptr<SctpDataChannel> OnSctpDataChannelClosed(
+      SctpDataChannel* channel);
 
   
   RTCErrorOr<scoped_refptr<SctpDataChannel>> CreateDataChannel(
