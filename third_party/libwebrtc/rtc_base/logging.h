@@ -247,7 +247,6 @@ class LoggingConfig {
   std::vector<std::unique_ptr<LogSink>> sinks_;
 };
 
-#if RTC_LOG_ENABLED()
 
 
 
@@ -256,12 +255,16 @@ bool InitializeLogging(LoggingConfig config);
 
 
 const LoggingConfig& GetLoggingConfig();
-#else
-inline bool InitializeLogging(LoggingConfig config) {
-  return false;
-}
-const LoggingConfig& GetLoggingConfig();
-#endif
+
+
+
+
+
+
+
+
+LoggingConfig ResetLoggingForTesting(
+    std::optional<LoggingConfig> restore_config = std::nullopt);
 
 namespace webrtc_logging_impl {
 

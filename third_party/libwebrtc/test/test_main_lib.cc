@@ -195,34 +195,23 @@ class TestMainImpl : public TestMain {
     
     (void)absl::GetFlag(FLAGS_resources_dir);
 
+    LoggingConfig config;
+    const bool verbose = absl::GetFlag(FLAGS_verbose);
+    LoggingSeverity severity =
+        verbose ? LS_VERBOSE : absl::GetFlag(FLAGS_log_level);
+    config.set_min_severity(severity);
+    config.set_debug_severity(severity);
+
+    config.set_log_to_stderr(absl::GetFlag(FLAGS_logs) || verbose);
+
+    InitializeLogging(std::move(config));
+
     
     
-    
-    
-    bool do_logging_init = true;
-
-    const char* skip_logging_init_env = getenv("WEBRTC_TEST_SKIP_LOGGING_INIT");
-    if (skip_logging_init_env != nullptr &&
-        std::string(skip_logging_init_env) == "1") {
-      do_logging_init = false;
-    }
-
-    if (do_logging_init) {
-      LoggingConfig config;
-      LoggingSeverity severity = absl::GetFlag(FLAGS_log_level);
-      if (absl::GetFlag(FLAGS_verbose)) {
-        RTC_LOG(LS_WARNING)
-            << "Both --verbose and --log-level= flags are specified. "
-            << "Prefer using only --log-level.";
-        severity = LS_VERBOSE;
-      }
-      config.set_min_severity(severity);
-      config.set_debug_severity(severity);
-
-      config.set_log_to_stderr(absl::GetFlag(FLAGS_logs) ||
-                               absl::GetFlag(FLAGS_verbose));
-
-      InitializeLogging(std::move(config));
+    if (verbose) {
+      RTC_LOG(LS_WARNING)
+          << "Both --verbose and --log-level= flags are specified. "
+          << "Prefer using only --log-level.";
     }
 
     metrics::Enable();
