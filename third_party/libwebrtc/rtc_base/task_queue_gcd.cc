@@ -15,18 +15,20 @@
 #include "rtc_base/task_queue_gcd.h"
 
 #include <dispatch/dispatch.h>
-#include <string.h>
 
+#include <algorithm>
+#include <cstdint>
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/location.h"
 #include "api/task_queue/task_queue_base.h"
+#include "api/task_queue/task_queue_factory.h"
 #include "api/units/time_delta.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
 #include "rtc_base/system/gcd_helpers.h"
 
 namespace webrtc {
@@ -46,6 +48,13 @@ int TaskQueuePriorityToGCD(TaskQueueFactory::Priority priority) {
     case TaskQueueFactory::Priority::kLow:
       return DISPATCH_QUEUE_PRIORITY_LOW;
   }
+}
+
+
+
+
+uint64_t HighPrecisionLeewayNs(TimeDelta delay) {
+  return std::min(delay / 10, TimeDelta::Millis(1)).ns<uint64_t>();
 }
 
 class TaskQueueGcd final : public TaskQueueBase {
@@ -71,10 +80,14 @@ class TaskQueueGcd final : public TaskQueueBase {
 
     TaskQueueGcd* const queue;
     absl::AnyInvocable<void() &&> task;
+    
+    
+    dispatch_source_t timer = nullptr;
   };
 
   ~TaskQueueGcd() override;
   static void RunTask(void* task_context);
+  static void RunTimerTask(void* task_context);
   static void SetNotActive(void* task_queue);
   static void DeleteQueue(void* task_queue);
 
@@ -131,8 +144,32 @@ void TaskQueueGcd::PostDelayedTaskImpl(absl::AnyInvocable<void() &&> task,
                                        const PostDelayedTaskTraits& traits,
                                        const Location& location) {
   auto* context = new TaskContext(this, std::move(task));
-  dispatch_after_f(dispatch_time(DISPATCH_TIME_NOW, delay.us() * NSEC_PER_USEC),
-                   queue_, context, &RunTask);
+  const dispatch_time_t when =
+      dispatch_time(DISPATCH_TIME_NOW, delay.us() * NSEC_PER_USEC);
+  
+  
+  if (!traits.high_precision || delay <= TimeDelta::Zero()) {
+    dispatch_after_f(when, queue_, context, &RunTask);
+    return;
+  }
+
+  
+  
+  
+  
+  
+  dispatch_source_t timer = dispatch_source_create(
+      DISPATCH_SOURCE_TYPE_TIMER, 0, DISPATCH_TIMER_STRICT, queue_);
+  RTC_CHECK(timer);
+  context->timer = timer;
+  
+  
+  dispatch_set_context(timer, context);
+  dispatch_source_set_event_handler_f(timer, &RunTimerTask);
+  dispatch_source_set_timer(timer, when, DISPATCH_TIME_FOREVER,
+                            HighPrecisionLeewayNs(delay));
+  
+  dispatch_activate(timer);
 }
 
 
@@ -145,6 +182,18 @@ void TaskQueueGcd::RunTask(void* task_context) {
   
   
   tc = nullptr;
+}
+
+
+void TaskQueueGcd::RunTimerTask(void* task_context) {
+  auto* tc = static_cast<TaskContext*>(task_context);
+  
+  
+  
+  dispatch_source_cancel(tc->timer);
+  dispatch_release(tc->timer);
+  tc->timer = nullptr;
+  RunTask(tc);  
 }
 
 
