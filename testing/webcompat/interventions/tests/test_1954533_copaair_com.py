@@ -77,8 +77,9 @@ async def get_accept_button(client, in_headless_mode):
         client.await_css(COUNTRY_RESIDENCE_SELECTOR_CSS, is_displayed=True), force=True
     )
     client.soft_click(client.await_css(COUNTRY_RESIDENCE_CSS, is_displayed=True))
-    client.click(client.await_css(DOC_SELECTOR_CSS, is_displayed=True), force=True)
-    client.click(client.await_css(DOC_CSS, is_displayed=True), force=True)
+    if client.find_css(DOC_SELECTOR_CSS, is_displayed=True):
+        client.click(client.await_css(DOC_SELECTOR_CSS, is_displayed=True), force=True)
+        client.click(client.await_css(DOC_CSS, is_displayed=True), force=True)
     client.await_css(DOC_NUMBER_CSS, is_displayed=True).send_keys("1235123")
     client.click(
         client.await_css(DOC_COUNTRY_SELECTOR_CSS, is_displayed=True), force=True
@@ -118,6 +119,7 @@ async def get_accept_button(client, in_headless_mode):
     )
 
 
+@pytest.mark.only_firefox_versions(min=141)
 @pytest.mark.asyncio
 @pytest.mark.with_interventions
 async def test_with_interventions(client, in_headless_mode):
@@ -125,6 +127,7 @@ async def test_with_interventions(client, in_headless_mode):
     assert client.await_css(OOPS_CSS, is_displayed=True)
 
 
+@pytest.mark.only_firefox_versions(min=141)
 @pytest.mark.asyncio
 @pytest.mark.without_interventions
 async def test_disabled(client, in_headless_mode):

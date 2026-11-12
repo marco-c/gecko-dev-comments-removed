@@ -1,5 +1,3 @@
-import time
-
 import pytest
 
 URL = "https://www.gracobaby.ca/en_CA/All%20In%20Ones/SAP_2184499.html"
@@ -9,6 +7,7 @@ async def check_can_scroll(client):
     
     client.set_screen_size(400, 800)
     await client.navigate(URL)
+    await client.stall(2)
 
     
     old_sy = client.execute_script("return window.scrollY")
@@ -17,7 +16,7 @@ async def check_can_scroll(client):
 
     
     
-    time.sleep(1)
+    await client.stall(2)
     return old_sy != client.execute_script(
         "return window.scrollY"
     ) or old_st != client.execute_script("return document.body.scrollTop")

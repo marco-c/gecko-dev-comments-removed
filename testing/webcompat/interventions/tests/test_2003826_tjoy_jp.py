@@ -6,6 +6,7 @@ URL = "https://tjoy.jp/shinjuku_wald9#schedule-content"
 DATES_CSS = ".calendar-item"
 CARD_CSS = ".box-film-wapper:has(.schedule-status[onclick])"
 RESERVE_CSS = ".schedule-status[onclick]"
+MAP_LOADER_CSS = ".map-content .loader"
 ZOOM_WRAPPER_CSS = ".js-zoom-in"
 MAP_CSS = ".js-map"
 
@@ -14,6 +15,10 @@ MAP_CSS = ".js-map"
 async def does_correct_zoom(client):
     
     await client.navigate(URL, wait="load")
+
+    if client.find_text("403 ERROR"):
+        pytest.skip("Region-locked, cannot test. Try using a VPN set to Japan.")
+        return False
 
     
     
@@ -32,11 +37,14 @@ async def does_correct_zoom(client):
 
     
     try:
-        
-        seat_map_zoom_wrapper = client.await_css(ZOOM_WRAPPER_CSS, timeout=10)
+        client.await_css(MAP_LOADER_CSS, is_displayed=True)
+        client.await_element_hidden(client.css(MAP_LOADER_CSS))
     except NoSuchElementException:
-        return False
-    client.execute_script("arguments[0].click()", seat_map_zoom_wrapper)
+        pass
+    await client.stall(1)
+
+    
+    client.soft_click(client.await_css(ZOOM_WRAPPER_CSS, is_displayed=True))
     seat_map = client.await_css(MAP_CSS)
     moz_transform = client.execute_script(
         "return getComputedStyle(arguments[0]).MozTransform", seat_map
