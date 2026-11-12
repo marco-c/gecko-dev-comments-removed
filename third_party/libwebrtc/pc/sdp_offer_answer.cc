@@ -3959,10 +3959,6 @@ RTCError SdpOfferAnswerHandler::Rollback(SdpType desc_type) {
       transceivers()->Remove(transceiver);
     }
   };
-  
-  
-  
-  RTCError rollback_error;
   ScopedOperationsBatcher worker_tasks(context_->worker_thread());
   ScopedOperationsBatcher network_tasks(context_->network_thread());
 
@@ -4060,12 +4056,10 @@ RTCError SdpOfferAnswerHandler::Rollback(SdpType desc_type) {
   
   
   
-  network_tasks.AddWithFinalizer(
-      transport_controller_s()->MakeRollbackTask(&rollback_error));
+  network_tasks.AddWithFinalizer(transport_controller_s()->MakeRollbackTask());
 
-  RTCError e = network_tasks.Run();
-  RTC_DCHECK(e.ok());  
-  e = worker_tasks.Run();
+  RTCError rollback_error = network_tasks.Run();
+  RTCError e = worker_tasks.Run();
   RTC_DCHECK(e.ok());  
 
   for (const auto& [sender, encodings] : senders_to_restore) {

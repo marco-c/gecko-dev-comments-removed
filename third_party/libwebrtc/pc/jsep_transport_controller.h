@@ -317,10 +317,7 @@ class JsepTransportController final {
   
   
   
-  
-  
-  ScopedOperationsBatcher::BatchTaskWithFinalizer MakeRollbackTask(
-      RTCError* absl_nonnull error);
+  ScopedOperationsBatcher::BatchTaskWithFinalizer MakeRollbackTask();
 
   
   absl::AnyInvocable<void() &&> MakeCloseTask();
