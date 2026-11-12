@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/base/nullability.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/async_dns_resolver.h"
@@ -261,6 +262,10 @@ class JsepTransportController final {
   
   
   
+  
+  
+  
+  
   bool SetLocalCertificate(const scoped_refptr<RTCCertificate>& certificate);
   scoped_refptr<RTCCertificate> GetLocalCertificate(
       absl::string_view mid) const;
@@ -315,7 +320,17 @@ class JsepTransportController final {
   void MaybeStartGathering_n() RTC_RUN_ON(network_thread_);
 
   
-  bool SetLocalCertificate_n(const scoped_refptr<RTCCertificate>& certificate)
+  
+  
+  
+  
+  
+  
+  void RunOnNetworkThread(absl::AnyInvocable<void() &&> task);
+
+  
+  void SetLocalCertificate_n(
+      const absl_nonnull scoped_refptr<RTCCertificate>& certificate)
       RTC_RUN_ON(network_thread_);
 
   
@@ -482,6 +497,9 @@ class JsepTransportController final {
   IceConfig ice_config_;
   IceRole ice_role_ = ICEROLE_CONTROLLING;
   scoped_refptr<RTCCertificate> certificate_;
+  
+  
+  bool local_certificate_set_ RTC_GUARDED_BY(signaling_thread_) = false;
 
   BundleManager bundles_;
 
@@ -493,6 +511,9 @@ class JsepTransportController final {
       RTC_GUARDED_BY(signaling_thread_);
   scoped_refptr<PendingTaskSafetyFlag> role_update_safety_flag_n_
       RTC_GUARDED_BY(network_thread_);
+  
+  
+  const absl_nonnull scoped_refptr<PendingTaskSafetyFlag> network_safety_;
 };
 
 }  
