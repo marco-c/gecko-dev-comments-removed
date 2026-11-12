@@ -1463,6 +1463,8 @@ struct RTC_EXPORT PeerConnectionDependencies final {
 
 
 
+
+#define WEBRTC_REMOVED_WORKER_THREAD 1
 struct RTC_EXPORT PeerConnectionFactoryDependencies final {
   PeerConnectionFactoryDependencies();
   
@@ -1477,15 +1479,10 @@ struct RTC_EXPORT PeerConnectionFactoryDependencies final {
   ~PeerConnectionFactoryDependencies();
 
   
+  
+  
+  
   Thread* network_thread = nullptr;
-  
-  
-  
-  
-  [[deprecated(
-      "A worker thread that is distinct from the network thread is no longer "
-      "supported. Stop setting worker_thread.")]]
-  Thread* worker_thread = nullptr;
   Thread* signaling_thread = nullptr;
   SocketFactory* socket_factory = nullptr;
 
