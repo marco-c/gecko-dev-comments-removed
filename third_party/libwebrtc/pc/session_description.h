@@ -305,6 +305,7 @@ class MediaContentDescription {
 
   
   const std::vector<Codec>& codecs() const { return codecs_; }
+  std::vector<Codec>& mutable_codecs() { return codecs_; }
   void set_codecs(const std::vector<Codec>& codecs) { codecs_ = codecs; }
   virtual bool has_codecs() const { return !codecs_.empty(); }
   bool HasCodec(int id) {
