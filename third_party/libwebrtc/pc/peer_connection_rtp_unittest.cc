@@ -233,6 +233,29 @@ class PeerConnectionRtpTestUnifiedPlan : public PeerConnectionRtpBaseTest {
     EXPECT_TRUE(set_remote_answer);
     return set_remote_answer;
   }
+
+  
+  
+  RtpParameters GetMediaChannelParameters(PeerConnectionWrapper* pc,
+                                          const RtpSenderInterface& sender) {
+    const uint32_t ssrc = sender.ssrc();
+    for (const auto& transceiver :
+         pc->GetInternalPeerConnection()->GetTransceiversInternal()) {
+      if (transceiver->sender()->id() != sender.id()) {
+        continue;
+      }
+      MediaSendChannelInterface* media_channel =
+          transceiver->internal()->media_send_channel();
+      if (!media_channel) {
+        ADD_FAILURE() << "No media channel for sender " << sender.id();
+        return RtpParameters();
+      }
+      return pc->GetInternalPeerConnection()->worker_thread()->BlockingCall(
+          [&] { return media_channel->GetRtpSendParameters(ssrc); });
+    }
+    ADD_FAILURE() << "No transceiver for sender " << sender.id();
+    return RtpParameters();
+  }
 };
 
 
@@ -2142,10 +2165,10 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan,
 
   
   
-  
   auto parameters2 = sender->GetParameters();
   ASSERT_GT(parameters2.codecs.size(), 0u);
   EXPECT_NE(parameters1.codecs[0].name, parameters2.codecs[0].name);
+  EXPECT_EQ(parameters2, GetMediaChannelParameters(caller.get(), *sender));
 }
 
 TEST_F(PeerConnectionRtpTestUnifiedPlan,
@@ -2181,11 +2204,9 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan,
 
   
   
-  
   auto parameters_after = sender->GetParameters();
-
-  
   EXPECT_EQ(parameters_after.encodings.size(), 1u);
+  EXPECT_EQ(parameters_after, GetMediaChannelParameters(caller.get(), *sender));
 }
 
 TEST_F(PeerConnectionRtpTestUnifiedPlan,
@@ -2256,10 +2277,10 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan,
 
   
   
-  
   auto parameters_after = sender->GetParameters();
 
   EXPECT_EQ(parameters_after.encodings.size(), 1u);
+  EXPECT_EQ(parameters_after, GetMediaChannelParameters(caller.get(), *sender));
 }
 
 TEST_F(PeerConnectionRtpTestUnifiedPlan, SendParamsCorrectWhenEncoderFallback) {
@@ -2304,6 +2325,7 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan, SendParamsCorrectWhenEncoderFallback) {
   
   auto parameters_after = sender->GetParameters();
   EXPECT_EQ(parameters_after.codecs.size(), parameters.codecs.size());
+  EXPECT_EQ(parameters_after, GetMediaChannelParameters(caller.get(), *sender));
 }
 
 RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN()
