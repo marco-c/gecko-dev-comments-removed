@@ -129,10 +129,12 @@ std::unique_ptr<SSLIdentity> OpenSSLIdentity::CreateFromPEMChainStrings(
     X509* x509 =
         PEM_read_bio_X509(bio, nullptr, nullptr, const_cast<char*>("\0"));
     if (x509 == nullptr) {
-      uint32_t err = ERR_peek_error();
+      
+      
+      uint32_t err = ERR_peek_last_error();
       if (ERR_GET_LIB(err) == ERR_LIB_PEM &&
           ERR_GET_REASON(err) == PEM_R_NO_START_LINE) {
-        err = ERR_get_error();
+        ERR_clear_error();
         break;
       }
       RTC_LOG(LS_ERROR) << "Failed to parse certificate from PEM string: "

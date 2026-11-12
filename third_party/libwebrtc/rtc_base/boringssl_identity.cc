@@ -14,9 +14,9 @@
 #include <openssl/err.h>
 #include <openssl/pem.h>
 #include <openssl/pool.h>
-#include <stdint.h>
-#include <string.h>
 
+#include <cstdint>
+#include <cstring>
 #include <ctime>
 #include <memory>
 #include <string>
@@ -130,10 +130,12 @@ std::unique_ptr<SSLIdentity> BoringSSLIdentity::CreateFromPEMChainStrings(
     long len;  
     int ret = PEM_read_bio(bio.get(), &name, &header, &data, &len);
     if (ret == 0) {
-      uint32_t err = ERR_peek_error();
+      
+      
+      uint32_t err = ERR_peek_last_error();
       if (ERR_GET_LIB(err) == ERR_LIB_PEM &&
           ERR_GET_REASON(err) == PEM_R_NO_START_LINE) {
-        err = ERR_get_error();
+        ERR_clear_error();
         break;
       }
       RTC_LOG(LS_ERROR) << "Failed to parse certificate from PEM string.";
@@ -175,7 +177,7 @@ const BoringSSLCertificate& BoringSSLIdentity::certificate() const {
 }
 
 const SSLCertChain& BoringSSLIdentity::cert_chain() const {
-  return *cert_chain_.get();
+  return *cert_chain_;
 }
 
 std::unique_ptr<SSLIdentity> BoringSSLIdentity::CloneInternal() const {
