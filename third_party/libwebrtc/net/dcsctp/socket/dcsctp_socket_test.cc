@@ -2249,6 +2249,32 @@ TEST(DcSctpSocketTest, RetransmissionMetricsAreSetForFastRetransmit) {
   EXPECT_EQ(a.socket.GetMetrics()->rtx_bytes_count, expected_data_size);
 }
 
+TEST(DcSctpSocketTest, RetransmitsLostPacketOnlyOnceInLargeBurst) {
+  SocketUnderTest a("A");
+  SocketUnderTest z("Z");
+  ConnectSockets(a, z);
+
+  
+  
+  
+  
+  std::vector<uint8_t> payload(kLargeMessageSize);
+  a.socket.Send(DcSctpMessage(StreamID(1), PPID(53), payload), kSendOptions);
+
+  
+  z.socket.ReceivePacket(a.cb.ConsumeSentPacket());
+  a.cb.ConsumeSentPacket();
+  ExchangeMessagesAndAdvanceTime(a, z);
+
+  EXPECT_THAT(
+      z.cb.ConsumeReceivedMessage(),
+      Optional(Property(&DcSctpMessage::payload, SizeIs(payload.size()))));
+  EXPECT_EQ(a.socket.GetMetrics()->rtx_packets_count, 1u);
+  EXPECT_EQ(
+      a.socket.GetMetrics()->rtx_bytes_count,
+      RoundDownTo4(DcSctpOptions::kMaxSafeMTUSize - SctpPacket::kHeaderSize));
+}
+
 TEST(DcSctpSocketTest, RetransmissionMetricsAreSetForNormalRetransmit) {
   SocketUnderTest a("A");
   SocketUnderTest z("Z");

@@ -201,7 +201,8 @@ class OutstandingData {
       kAbandon,
     };
 
-    Item(OutgoingMessageId message_id,
+    Item(UnwrappedTSN tsn,
+         OutgoingMessageId message_id,
          Data data,
          webrtc::Timestamp time_sent,
          MaxRetransmits max_retransmissions,
@@ -214,6 +215,7 @@ class OutstandingData {
           num_retransmissions_(num_retransmissions),
           expires_at_(expires_at),
           lifecycle_id_(lifecycle_id),
+          retransmission_boundary_tsn_(tsn.next_value()),
           data_(std::move(data)) {}
 
     Item(const Item&) = delete;
@@ -240,7 +242,8 @@ class OutstandingData {
 
     
     
-    void MarkAsRetransmitted();
+    
+    void MarkAsRetransmitted(UnwrappedTSN next_tsn);
 
     void MarkAsToBeRetransmitted() {
       lifecycle_ = Lifecycle::kToBeRetransmitted;
@@ -248,6 +251,23 @@ class OutstandingData {
     }
 
     void MarkAsNacked() { ack_state_ = AckState::kNacked; }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool IsMissIndication(UnwrappedTSN highest_tsn_newly_acked) const {
+      return !has_been_retransmitted() ||
+             highest_tsn_newly_acked >= retransmission_boundary_tsn_;
+    }
 
     void Abandon();
 
@@ -324,6 +344,12 @@ class OutstandingData {
 
     
     const LifecycleId lifecycle_id_;
+
+    
+    
+    
+    
+    UnwrappedTSN retransmission_boundary_tsn_;
 
     
     const Data data_;
