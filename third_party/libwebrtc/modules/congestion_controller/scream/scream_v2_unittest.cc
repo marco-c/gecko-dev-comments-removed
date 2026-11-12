@@ -272,7 +272,7 @@ TEST(ScreamV2Test, L4sAlphaScalesUpAndDownWithRtt) {
     packet.ecn = EcnMarking::kCe;
   }
   scream.OnTransportPacketsFeedback(ce_feedback);
-  EXPECT_DOUBLE_EQ(scream.l4s_alpha(), (1.0 / 8.0) / 4.0);
+  EXPECT_DOUBLE_EQ(scream.l4s_alpha(), (1.0 / 16.0) / 4.0);
 
   
   
