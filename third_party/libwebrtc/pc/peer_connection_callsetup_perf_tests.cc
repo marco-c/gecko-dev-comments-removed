@@ -214,20 +214,11 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Combine(
         testing::Values(  
                           
-            "WebRTC-IceHandshakeDtls/Disabled/WebRTC-ForceDtls13/"
-            "Disabled/",
+            "WebRTC-IceHandshakeDtls/Disabled/",
             
-            "WebRTC-IceHandshakeDtls/Enabled/WebRTC-ForceDtls13/"
-            "Disabled/",
+            "WebRTC-IceHandshakeDtls/Enabled/",
             
-            "WebRTC-IceHandshakeDtls/Disabled/WebRTC-ForceDtls13/"
-            "Enabled/",
-            
-            "WebRTC-IceHandshakeDtls/Enabled/WebRTC-ForceDtls13/"
-            "Enabled/",
-            
-            "WebRTC-IceHandshakeDtls/Enabled/WebRTC-ForceDtls13/"
-            "Enabled/WebRTC-Sctp-Snap/Enabled/"),
+            "WebRTC-IceHandshakeDtls/Enabled/WebRTC-Sctp-Snap/Enabled/"),
         testing::Bool(),  
                           
         testing::Values(

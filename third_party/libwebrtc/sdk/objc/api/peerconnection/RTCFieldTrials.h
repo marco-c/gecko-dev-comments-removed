@@ -17,7 +17,6 @@
 RTC_EXTERN NSString *const kRTCFieldTrialAudioForceABWENoTWCCKey;
 RTC_EXTERN NSString *const kRTCFieldTrialFlexFec03AdvertisedKey;
 RTC_EXTERN NSString *const kRTCFieldTrialFlexFec03Key;
-RTC_EXTERN NSString *const kRTCFieldTrialH264HighProfileKey;
 RTC_EXTERN NSString *const kRTCFieldTrialMinimizeResamplingOnMobileKey;
 RTC_EXTERN NSString *const kRTCFieldTrialUseNWPathMonitor;
 
@@ -28,5 +27,7 @@ RTC_EXTERN NSString *const kRTCFieldTrialEnabledValue;
 
 
 
+
+RTC_OBJC_DEPRECATED("Pass field trials when building PeerConnectionFactory")
 RTC_EXTERN void RTCInitFieldTrialDictionary(
     NSDictionary<NSString *, NSString *> *fieldTrials);
