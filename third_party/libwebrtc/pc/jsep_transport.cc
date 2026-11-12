@@ -400,6 +400,9 @@ void JsepTransport::ActivateRtcpMux() {
   RTC_DCHECK_RUN_ON(&transport_sequence_);
   
   
+  
+  
+  rtp_transport_->SetRtcpMuxEnabled(true);
   if (auto* dtls_srtp_transport = rtp_transport_->AsDtlsSrtpTransport()) {
     dtls_srtp_transport->SetDtlsTransports(rtp_dtls_transport(),
                                            nullptr);
