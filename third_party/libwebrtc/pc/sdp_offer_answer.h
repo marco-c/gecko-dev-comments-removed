@@ -41,7 +41,6 @@
 #include "media/base/media_channel.h"
 #include "media/base/media_engine.h"
 #include "media/base/stream_params.h"
-#include "p2p/base/port_allocator.h"
 #include "p2p/base/transport_description.h"
 #include "pc/codec_vendor.h"
 #include "pc/connection_context.h"
@@ -329,6 +328,12 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   void SetRemoteDescriptionPostProcess(bool was_answer)
       RTC_RUN_ON(signaling_thread());
+
+  
+  
+  
+  void OnPooledIceCredentials(uint32_t generation,
+                              std::vector<IceParameters> credentials);
 
   
   void ChangeSignalingState(
@@ -627,8 +632,6 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   const TransceiverList* transceivers() const;
   DataChannelController* data_channel_controller();
   const DataChannelController* data_channel_controller() const;
-  PortAllocator* port_allocator();
-  const PortAllocator* port_allocator() const;
   RtpTransmissionManager* rtp_manager();
   const RtpTransmissionManager* rtp_manager() const;
   JsepTransportController* transport_controller_s()
@@ -748,6 +751,11 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   const VideoOptions video_options_;
   std::vector<IceParameters> cached_pooled_ice_credentials_
       RTC_GUARDED_BY(signaling_thread());
+  
+  
+  
+  uint32_t cached_pooled_ice_credentials_generation_
+      RTC_GUARDED_BY(signaling_thread()) = 0;
 
   
   

@@ -79,8 +79,11 @@ namespace webrtc {
 namespace {
 
 using ::testing::ElementsAre;
+using ::testing::IsEmpty;
+using ::testing::IsTrue;
 using ::testing::Optional;
 using ::testing::Pair;
+using ::testing::SizeIs;
 
 constexpr TimeDelta kTimeout = TimeDelta::Millis(100);
 const char kIceUfrag1[] = "u0001";
@@ -392,7 +395,8 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
             ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
             .ok());
     transport_controller_->MaybeStartGathering(
-        false);
+        false,
+        nullptr);
 
     SendTask(network_thread_.get(), [this] {
       auto fake_audio_dtls = static_cast<FakeDtlsTransport*>(
@@ -765,7 +769,8 @@ TEST_F(JsepTransportControllerTest, MaybeStartGathering) {
           .ok());
   
   
-  transport_controller_->MaybeStartGathering(false);
+  transport_controller_->MaybeStartGathering(false,
+                                             nullptr);
   EXPECT_THAT(
       WaitUntil([&] { return gathering_state_; },
                 ::testing::Eq(kIceGatheringGathering), {.timeout = kTimeout}),
@@ -787,14 +792,42 @@ TEST_F(JsepTransportControllerTest, MaybeStartGatheringDiscardsCandidatePool) {
           ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
           .ok());
   
-  EXPECT_EQ(transport_controller_
-                ->MaybeStartGathering(false)
-                .size(),
-            2u);
-  EXPECT_TRUE(transport_controller_
-                  ->MaybeStartGathering(true)
-                  .empty());
+  std::optional<std::vector<IceParameters>> credentials;
+  auto on_pooled_credentials = [&](std::vector<IceParameters> c) {
+    credentials = std::move(c);
+  };
+  
+  transport_controller_->MaybeStartGathering(false,
+                                             on_pooled_credentials);
+  EXPECT_THAT(WaitUntil([&] { return credentials.has_value(); }, IsTrue(),
+                        {.timeout = kTimeout}),
+              IsRtcOk());
+  EXPECT_THAT(credentials, Optional(SizeIs(2)));
 
+  credentials.reset();
+  transport_controller_->MaybeStartGathering(true,
+                                             on_pooled_credentials);
+  EXPECT_THAT(WaitUntil([&] { return credentials.has_value(); }, IsTrue(),
+                        {.timeout = kTimeout}),
+              IsRtcOk());
+  EXPECT_THAT(credentials, Optional(IsEmpty()));
+
+  SendTask(network_thread_.get(),
+           [&] { EXPECT_EQ(port_allocator_->GetPooledSession(), nullptr); });
+}
+
+TEST_F(JsepTransportControllerTest, DiscardCandidatePool) {
+  CreateJsepTransportController(JsepTransportController::Config());
+  SendTask(network_thread_.get(), [&] {
+    port_allocator_->SetConfiguration(
+        {}, {}, 1,
+        NO_PRUNE, nullptr,
+        std::nullopt);
+    EXPECT_NE(port_allocator_->GetPooledSession(), nullptr);
+  });
+  transport_controller_->DiscardCandidatePool();
+  
+  
   SendTask(network_thread_.get(),
            [&] { EXPECT_EQ(port_allocator_->GetPooledSession(), nullptr); });
 }
@@ -1504,7 +1537,8 @@ TEST_F(JsepTransportControllerTest, SignalCandidatesGathered) {
       transport_controller_
           ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
           .ok());
-  transport_controller_->MaybeStartGathering(false);
+  transport_controller_->MaybeStartGathering(false,
+                                             nullptr);
 
   auto fake_audio_dtls = GetFakeDtlsTransport(kAudioMid1);
   SendTask(network_thread_.get(), [&] {

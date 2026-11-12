@@ -263,7 +263,16 @@ class JsepTransportController final {
   
   
   
-  std::vector<IceParameters> MaybeStartGathering(bool discard_candidate_pool);
+  
+  void MaybeStartGathering(
+      bool discard_candidate_pool,
+      absl::AnyInvocable<void(std::vector<IceParameters>) &&>
+          on_pooled_credentials);
+  
+  
+  
+  
+  void DiscardCandidatePool();
   RTCError AddRemoteCandidates(absl::string_view mid,
                                const std::vector<Candidate>& candidates);
   
