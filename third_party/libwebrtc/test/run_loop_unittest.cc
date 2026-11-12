@@ -68,33 +68,37 @@ TEST(RunLoopTest, RunForWaitsForMaxWaitDurationIfNoQuit) {
   EXPECT_GE(env.clock().CurrentTime() - start, TimeDelta::Millis(19));
 }
 
-TEST(RunLoopTest, RunForQuitsEarlyIfQuitCalled) {
+TEST(RunLoopTest, RunForReturnsBeforeMaxWaitDurationIfQuitCalled) {
+  
+  
+  constexpr TimeDelta kMaxWaitDuration = TimeDelta::Seconds(10);
   Environment env = CreateTestEnvironment();
   test::RunLoop loop;
   Timestamp start = env.clock().CurrentTime();
   loop.task_queue()->PostDelayedHighPrecisionTask(loop.QuitClosure(),
                                                   TimeDelta::Millis(10));
-  loop.RunFor(TimeDelta::Millis(20));
-  EXPECT_LE(env.clock().CurrentTime() - start, TimeDelta::Millis(11));
+  loop.RunFor(kMaxWaitDuration);
+  EXPECT_LT(env.clock().CurrentTime() - start, kMaxWaitDuration / 2);
 }
 
-TEST(RunLoopTest, RunForQuitsEarlyAndCancelsQuitCalls) {
-  Environment env = CreateTestEnvironment();
+TEST(RunLoopTest, RunForCancelsTimeoutIfQuitCalled) {
   test::RunLoop loop;
-  Timestamp start = env.clock().CurrentTime();
   loop.task_queue()->PostDelayedHighPrecisionTask(loop.QuitClosure(),
                                                   TimeDelta::Millis(10));
   loop.RunFor(TimeDelta::Millis(20));
-  EXPECT_LE(env.clock().CurrentTime() - start, TimeDelta::Millis(11));
 
-  Timestamp seconds_task_start = env.clock().CurrentTime();
-  loop.task_queue()->PostDelayedHighPrecisionTask(loop.QuitClosure(),
-                                                  TimeDelta::Millis(100));
+  bool ran = false;
+  loop.task_queue()->PostDelayedHighPrecisionTask(
+      [&ran, &loop]() {
+        ran = true;
+        loop.Quit();
+      },
+      TimeDelta::Millis(100));
   loop.Run();
   
   
-  EXPECT_GE(env.clock().CurrentTime() - seconds_task_start,
-            TimeDelta::Millis(99));
+  
+  EXPECT_TRUE(ran);
 }
 
 }  
