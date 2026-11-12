@@ -133,7 +133,7 @@ void RTC_NO_SANITIZE("signed-integer-overflow")
 
   
   for (i = 0; i < len; i++) {
-    tmp0 = ((int32_t)in[i << 1] << 15) + (1 << 14);
+    tmp0 = ((int32_t)in[i << 1] * (1 << 15)) + (1 << 14);
     diff = tmp0 - state[1];
     
     diff = (diff + (1 << 13)) >> 14;
@@ -164,7 +164,7 @@ void RTC_NO_SANITIZE("signed-integer-overflow")
 
   
   for (i = 0; i < len; i++) {
-    tmp0 = ((int32_t)in[i << 1] << 15) + (1 << 14);
+    tmp0 = ((int32_t)in[i << 1] * (1 << 15)) + (1 << 14);
     diff = tmp0 - state[5];
     
     diff = (diff + (1 << 13)) >> 14;
@@ -206,7 +206,7 @@ void WebRtcSpl_UpBy2ShortToInt(const int16_t* in,
 
   
   for (i = 0; i < len; i++) {
-    tmp0 = ((int32_t)in[i] << 15) + (1 << 14);
+    tmp0 = ((int32_t)in[i] * (1 << 15)) + (1 << 14);
     diff = tmp0 - state[5];
     
     diff = (diff + (1 << 13)) >> 14;
@@ -235,7 +235,7 @@ void WebRtcSpl_UpBy2ShortToInt(const int16_t* in,
 
   
   for (i = 0; i < len; i++) {
-    tmp0 = ((int32_t)in[i] << 15) + (1 << 14);
+    tmp0 = ((int32_t)in[i] * (1 << 15)) + (1 << 14);
     diff = tmp0 - state[1];
     
     diff = (diff + (1 << 13)) >> 14;
@@ -449,13 +449,13 @@ void WebRtcSpl_LPBy2ShortToInt(const int16_t* in,
 
     
     out[i << 1] = state[3] >> 1;
-    tmp0 = ((int32_t)in[i << 1] << 15) + (1 << 14);
+    tmp0 = ((int32_t)in[i << 1] * (1 << 15)) + (1 << 14);
   }
   in--;
 
   
   for (i = 0; i < len; i++) {
-    tmp0 = ((int32_t)in[i << 1] << 15) + (1 << 14);
+    tmp0 = ((int32_t)in[i << 1] * (1 << 15)) + (1 << 14);
     diff = tmp0 - state[5];
     
     diff = (diff + (1 << 13)) >> 14;
@@ -485,7 +485,7 @@ void WebRtcSpl_LPBy2ShortToInt(const int16_t* in,
 
   
   for (i = 0; i < len; i++) {
-    tmp0 = ((int32_t)in[i << 1] << 15) + (1 << 14);
+    tmp0 = ((int32_t)in[i << 1] * (1 << 15)) + (1 << 14);
     diff = tmp0 - state[9];
     
     diff = (diff + (1 << 13)) >> 14;
@@ -513,7 +513,7 @@ void WebRtcSpl_LPBy2ShortToInt(const int16_t* in,
   
   in++;
   for (i = 0; i < len; i++) {
-    tmp0 = ((int32_t)in[i << 1] << 15) + (1 << 14);
+    tmp0 = ((int32_t)in[i << 1] * (1 << 15)) + (1 << 14);
     diff = tmp0 - state[13];
     
     diff = (diff + (1 << 13)) >> 14;
