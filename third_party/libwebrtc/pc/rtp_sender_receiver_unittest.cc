@@ -89,6 +89,7 @@
 #include "pc/video_rtp_receiver.h"
 #include "pc/video_track.h"
 #include "rtc_base/checks.h"  
+#include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/unique_id_generator.h"
 #include "test/create_test_environment.h"
@@ -2988,12 +2989,8 @@ TEST_F(RtpSenderReceiverTest, SetSsrcPropagatesSframeEncryptor) {
             options.mode);
 }
 
-
-
-
-
-
-TEST_F(RtpSenderReceiverTest, SframeEncryptorHandleMarshalsToWorkerThread) {
+TEST_F(RtpSenderReceiverTest,
+       SframeEncryptorHandleSharesContextWithMediaThreads) {
   auto mock_channel = std::make_unique<MockVideoMediaSendChannel>(
       VideoOptions(), network_thread_.get());
   MockVideoMediaSendChannel* mock_channel_ptr = mock_channel.get();
@@ -3023,6 +3020,12 @@ TEST_F(RtpSenderReceiverTest, SframeEncryptorHandleMarshalsToWorkerThread) {
                     ->Encrypt(frame, {},
                               std::span<uint8_t>(encrypted_frame))
                     .ok());
+  });
+  
+  
+  TaskQueueForTest encoder_queue("EncoderQueue");
+  encoder_queue.SendTask([&] {
+    EXPECT_TRUE(encryptor->Encrypt(frame, {}, encrypted_frame).ok());
   });
 }
 
