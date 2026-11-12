@@ -154,7 +154,7 @@ class RTC_EXPORT Port : public PortInterface {
  public:
   
   
-  struct Callbacks {
+  struct RTC_EXPORT Callbacks {
     Callbacks();
     Callbacks(Callbacks&&);
     Callbacks& operator=(Callbacks&&);
