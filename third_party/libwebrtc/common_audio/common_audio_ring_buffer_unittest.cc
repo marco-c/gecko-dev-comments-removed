@@ -8,8 +8,6 @@
 
 
 
-#include "common_audio/ring_buffer.h"
-
 #include <algorithm>
 #include <cstdint>
 #include <cstdio>
@@ -17,6 +15,7 @@
 #include <ctime>
 #include <memory>
 
+#include "common_audio/ring_buffer.h"
 #include "test/gtest.h"
 
 namespace webrtc {

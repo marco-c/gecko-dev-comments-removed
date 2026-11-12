@@ -8,13 +8,12 @@
 
 
 
-#include "api/audio_codecs/opus/audio_decoder_opus.h"
-
 #include <cstddef>
 #include <memory>
 #include <optional>
 
 #include "api/audio_codecs/audio_format.h"
+#include "api/audio_codecs/opus/audio_decoder_opus.h"
 #include "api/environment/environment.h"
 #include "test/create_test_environment.h"
 #include "test/gmock.h"
