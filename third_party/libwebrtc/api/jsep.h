@@ -228,6 +228,10 @@ struct EncodingOptions {
 
 class RTC_EXPORT SessionDescriptionInterface final {
  public:
+  
+  
+  
+  
   static std::unique_ptr<SessionDescriptionInterface> Create(
       SdpType type,
       std::unique_ptr<SessionDescription> description,
