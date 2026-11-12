@@ -112,7 +112,7 @@ class TCPPort : public Port {
 
   void OnReadyToSend(AsyncPacketSocket* socket);
 
-  bool allow_listen_;
+  const bool allow_listen_;
   std::unique_ptr<AsyncListenSocket> listen_socket_;
   
   

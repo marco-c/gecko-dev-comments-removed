@@ -184,11 +184,11 @@ class RTC_EXPORT UDPPort : public Port {
     typedef std::map<SocketAddress, std::unique_ptr<AsyncDnsResolverInterface>>
         ResolverMap;
 
-    PacketSocketFactory* socket_factory_;
+    PacketSocketFactory* const socket_factory_;
     
     
     
-    std::function<void(const SocketAddress&, int)> done_;
+    const std::function<void(const SocketAddress&, int)> done_;
     
     
     ResolverMap resolvers_;
@@ -248,7 +248,7 @@ class RTC_EXPORT UDPPort : public Port {
 
   
   
-  bool emit_local_for_anyaddress_;
+  const bool emit_local_for_anyaddress_;
 
   friend class StunBindingRequest;
 };

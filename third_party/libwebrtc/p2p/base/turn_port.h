@@ -91,21 +91,26 @@ class TurnPort : public Port {
       return nullptr;
     }
     
-    return absl::WrapUnique(
-        new TurnPort({.env = args.env,
-                      .network_thread = args.network_thread,
-                      .socket_factory = args.socket_factory,
-                      .network = args.network,
-                      .ice_username_fragment = args.username,
-                      .ice_password = args.password,
-                      .content_name = args.content_name,
-                      .lna_permission_factory = args.lna_permission_factory,
-                      .ice_tiebreaker = args.ice_tiebreaker,
-                      .callbacks = std::move(args.callbacks)},
-                     socket, *args.server_address, args.config->credentials,
-                     args.relative_priority, args.config->tls_alpn_protocols,
-                     args.config->tls_elliptic_curves, args.turn_customizer,
-                     args.config->tls_cert_verifier));
+    return absl::WrapUnique(new TurnPort(
+        {.env = args.env,
+         .network_thread = args.network_thread,
+         .socket_factory = args.socket_factory,
+         .network = args.network,
+         .ice_username_fragment = args.username,
+         .ice_password = args.password,
+         .content_name = args.content_name,
+         .component = args.component,
+         .generation = args.generation,
+         .send_retransmit_count_attribute =
+             args.send_retransmit_count_attribute,
+         .lna_permission_factory = args.lna_permission_factory,
+         .ice_tiebreaker = args.ice_tiebreaker,
+         .callbacks = std::move(args.callbacks)},
+        socket, *args.server_address, args.config->credentials,
+        args.relative_priority, args.config->tls_alpn_protocols,
+        args.config->tls_elliptic_curves, args.turn_customizer,
+        args.config->tls_cert_verifier, args.config->tls_cert_policy,
+        args.config->turn_logging_id));
   }
 
   
@@ -125,13 +130,18 @@ class TurnPort : public Port {
          .ice_username_fragment = args.username,
          .ice_password = args.password,
          .content_name = args.content_name,
+         .component = args.component,
+         .generation = args.generation,
+         .send_retransmit_count_attribute =
+             args.send_retransmit_count_attribute,
          .lna_permission_factory = args.lna_permission_factory,
          .ice_tiebreaker = args.ice_tiebreaker,
          .callbacks = std::move(args.callbacks)},
         min_port, max_port, *args.server_address, args.config->credentials,
         args.relative_priority, args.config->tls_alpn_protocols,
         args.config->tls_elliptic_curves, args.turn_customizer,
-        args.config->tls_cert_verifier));
+        args.config->tls_cert_verifier, args.config->tls_cert_policy,
+        args.config->turn_logging_id));
   }
 
   ~TurnPort() override;
@@ -150,8 +160,6 @@ class TurnPort : public Port {
 
   virtual TlsCertPolicy GetTlsCertPolicy() const;
   virtual void SetTlsCertPolicy(TlsCertPolicy tls_cert_policy);
-
-  void SetTurnLoggingId(absl::string_view turn_logging_id);
 
   virtual const std::vector<std::string>& GetTlsAlpnProtocols() const;
   virtual const std::vector<std::string>& GetTlsEllipticCurves() const;
@@ -225,26 +233,32 @@ class TurnPort : public Port {
   void CloseForTest() { Close(); }
 
  protected:
-  TurnPort(PortParametersRef args,
-           AsyncPacketSocket* socket,
-           const ProtocolAddress& server_address,
-           const RelayCredentials& credentials,
-           int server_priority,
-           const std::vector<std::string>& tls_alpn_protocols,
-           const std::vector<std::string>& tls_elliptic_curves,
-           TurnCustomizer* customizer,
-           SSLCertificateVerifier* tls_cert_verifier = nullptr);
+  TurnPort(
+      PortParametersRef args,
+      AsyncPacketSocket* socket,
+      const ProtocolAddress& server_address,
+      const RelayCredentials& credentials,
+      int server_priority,
+      const std::vector<std::string>& tls_alpn_protocols,
+      const std::vector<std::string>& tls_elliptic_curves,
+      TurnCustomizer* customizer,
+      SSLCertificateVerifier* tls_cert_verifier = nullptr,
+      TlsCertPolicy tls_cert_policy = TlsCertPolicy::TLS_CERT_POLICY_SECURE,
+      absl::string_view turn_logging_id = "");
 
-  TurnPort(PortParametersRef args,
-           uint16_t min_port,
-           uint16_t max_port,
-           const ProtocolAddress& server_address,
-           const RelayCredentials& credentials,
-           int server_priority,
-           const std::vector<std::string>& tls_alpn_protocols,
-           const std::vector<std::string>& tls_elliptic_curves,
-           TurnCustomizer* customizer,
-           SSLCertificateVerifier* tls_cert_verifier = nullptr);
+  TurnPort(
+      PortParametersRef args,
+      uint16_t min_port,
+      uint16_t max_port,
+      const ProtocolAddress& server_address,
+      const RelayCredentials& credentials,
+      int server_priority,
+      const std::vector<std::string>& tls_alpn_protocols,
+      const std::vector<std::string>& tls_elliptic_curves,
+      TurnCustomizer* customizer,
+      SSLCertificateVerifier* tls_cert_verifier = nullptr,
+      TlsCertPolicy tls_cert_policy = TlsCertPolicy::TLS_CERT_POLICY_SECURE,
+      absl::string_view turn_logging_id = "");
 
   
   
@@ -320,12 +334,12 @@ class TurnPort : public Port {
   
   
   std::string ReconstructServerUrl();
-  std::string server_url_;
+  const std::string server_url_;
 
   TlsCertPolicy tls_cert_policy_ = TlsCertPolicy::TLS_CERT_POLICY_SECURE;
-  std::vector<std::string> tls_alpn_protocols_;
-  std::vector<std::string> tls_elliptic_curves_;
-  SSLCertificateVerifier* tls_cert_verifier_;
+  const std::vector<std::string> tls_alpn_protocols_;
+  const std::vector<std::string> tls_elliptic_curves_;
+  SSLCertificateVerifier* const tls_cert_verifier_;
   RelayCredentials credentials_;
   AttemptedServerSet attempted_server_addresses_;
 
@@ -347,22 +361,19 @@ class TurnPort : public Port {
   PortState state_;
   
   
-  int server_priority_;
+  const int server_priority_;
 
   
   size_t allocate_mismatch_retries_;
 
   
   
-  TurnCustomizer* turn_customizer_ = nullptr;
+  TurnCustomizer* const turn_customizer_;
 
   
   
   
-  
-  
-  
-  std::string turn_logging_id_;
+  const std::string turn_logging_id_;
 
   ScopedTaskSafety task_safety_;
 
