@@ -713,6 +713,8 @@ VideoStreamEncoder::VideoStreamEncoder(
                                     nullptr),
       qp_parsing_allowed_(
           !env_.field_trials().IsEnabled("WebRTC-QpParsingKillSwitch")),
+      qcm_ignore_enhancement_temporal_layers_(!env_.field_trials().IsDisabled(
+          "WebRTC-QCM-IgnoreEnhancementTemporalLayers")),
       switch_encoder_on_init_failures_(!env_.field_trials().IsDisabled(
           kSwitchEncoderOnInitializationFailuresFieldTrial)),
       vp9_low_tier_core_threshold_(
@@ -2307,19 +2309,23 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
   unsigned int image_height = image_copy._encodedHeight;
   encoder_queue_->PostTask(
       [this, codec_type, image_width, image_height, simulcast_index,
+       temporal_index = image_copy.TemporalIndex().value_or(0),
        qp = image_copy.qp_,
        is_steady_state_refresh_frame = image_copy.IsSteadyStateRefreshFrame()] {
         RTC_DCHECK_RUN_ON(encoder_queue_.get());
 
-        
-        bool at_target_quality =
-            quality_convergence_controller_.AddSampleAndCheckTargetQuality(
-                simulcast_index, qp, is_steady_state_refresh_frame);
+        if (temporal_index == 0 || !qcm_ignore_enhancement_temporal_layers_) {
+          
+          bool at_target_quality =
+              quality_convergence_controller_.AddSampleAndCheckTargetQuality(
+                  simulcast_index, qp, is_steady_state_refresh_frame);
 
-        
-        if (frame_cadence_adapter_)
-          frame_cadence_adapter_->UpdateLayerQualityConvergence(
-              simulcast_index, at_target_quality);
+          
+          if (frame_cadence_adapter_) {
+            frame_cadence_adapter_->UpdateLayerQualityConvergence(
+                simulcast_index, at_target_quality);
+          }
+        }
 
         
         

@@ -448,6 +448,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   
   QualityConvergenceController quality_convergence_controller_
       RTC_GUARDED_BY(encoder_queue_);
+  
+  const bool qcm_ignore_enhancement_temporal_layers_;
 
   
   bool switch_encoder_on_init_failures_;
