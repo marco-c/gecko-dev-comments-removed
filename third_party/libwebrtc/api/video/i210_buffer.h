@@ -42,6 +42,12 @@ class I210Buffer : public I210BufferInterface {
   scoped_refptr<I420BufferInterface> ToI420() override;
 
   
+  
+  
+  
+  void InitializeData();
+
+  
   int width() const override;
   int height() const override;
   const uint16_t* DataY() const override;
