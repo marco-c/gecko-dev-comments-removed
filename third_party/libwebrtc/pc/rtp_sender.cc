@@ -368,8 +368,7 @@ void RtpSenderBase::OnParametersChanged() {
   RTC_LOG(LS_INFO) << "RtpSender: OnParametersChanged cache cleared.";
 }
 
-RtpParameters RtpSenderBase::GetParametersInternal(bool may_use_cache,
-                                                   bool with_all_layers) const {
+RtpParameters RtpSenderBase::GetParametersInternal(bool with_all_layers) const {
   RTC_DCHECK_RUN_ON(signaling_thread_);
   if (stopped_) {
     return RtpParameters();
@@ -379,7 +378,7 @@ RtpParameters RtpSenderBase::GetParametersInternal(bool may_use_cache,
   }
 
   RtpParameters result;
-  if (may_use_cache && cached_parameters_) {
+  if (cached_parameters_) {
     result = *cached_parameters_;
   } else {
     bool success = worker_thread_->BlockingCall([&, ssrc = ssrc_]() {
@@ -405,14 +404,12 @@ RtpParameters RtpSenderBase::GetParametersInternal(bool may_use_cache,
 
 RtpParameters RtpSenderBase::GetParametersInternalWithAllLayers() const {
   RTC_DCHECK_RUN_ON(signaling_thread_);
-  return GetParametersInternal(true,
-                               true);
+  return GetParametersInternal(true);
 }
 
 RtpParameters RtpSenderBase::GetParameters() const {
   RTC_DCHECK_RUN_ON(signaling_thread_);
-  RtpParameters result = GetParametersInternal(true,
-                                               false);
+  RtpParameters result = GetParametersInternal(false);
   
   
   last_transaction_id_ = CreateRandomUuid();

@@ -109,8 +109,7 @@ class RtpSenderInternal : public RtpSenderInterface {
 
   
   
-  virtual RtpParameters GetParametersInternal(bool may_use_cache,
-                                              bool with_all_layers) const = 0;
+  virtual RtpParameters GetParametersInternal(bool with_all_layers) const = 0;
   virtual RTCError SetParametersInternal(const RtpParameters& parameters,
                                          SetParametersCallback,
                                          bool blocking) = 0;
@@ -175,7 +174,6 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   
   
   RtpParameters GetParametersInternal(
-      bool may_use_cache = true,
       bool with_all_layers = false) const override;
   RTCError SetParametersInternal(const RtpParameters& parameters,
                                  SetParametersCallback callback = nullptr,
