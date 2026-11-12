@@ -12,6 +12,10 @@
 #define RTC_BASE_OPENSSL_UTILITY_H_
 
 #include <openssl/ossl_typ.h>
+#ifdef OPENSSL_IS_BORINGSSL
+#include <openssl/pool.h>
+#endif
+#include <openssl/x509.h>
 
 #include <cstdint>
 #include <span>
@@ -50,6 +54,13 @@ bool VerifyPeerCertMatchesHost(SSL* ssl, absl::string_view host);
 
 
 bool IsDistrustedCertificate(std::span<const uint8_t> cert_der);
+
+
+
+#ifdef OPENSSL_IS_BORINGSSL
+bool ContainsDistrustedCertificate(const STACK_OF(CRYPTO_BUFFER) * chain);
+#endif
+bool ContainsDistrustedCertificate(const STACK_OF(X509) * chain);
 
 
 

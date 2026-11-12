@@ -21,7 +21,6 @@
 #include <cstring>
 #include <ctime>
 #include <memory>
-#include <span>
 #include <string>
 #include <utility>
 #include <vector>
@@ -177,51 +176,6 @@ static void LogSslError() {
 
 
 namespace webrtc {
-
-namespace {
-
-
-
-
-
-
-
-
-
-
-
-#ifdef WEBRTC_USE_CRYPTO_BUFFER_CALLBACK
-bool ContainsDistrustedCertificate(const STACK_OF(CRYPTO_BUFFER) * chain) {
-  for (size_t i = 0; i < sk_CRYPTO_BUFFER_num(chain); ++i) {
-    const CRYPTO_BUFFER* cert = sk_CRYPTO_BUFFER_value(chain, i);
-    if (openssl::IsDistrustedCertificate(std::span<const uint8_t>(
-            CRYPTO_BUFFER_data(cert), CRYPTO_BUFFER_len(cert)))) {
-      return true;
-    }
-  }
-  return false;
-}
-#else   
-bool ContainsDistrustedCertificate(STACK_OF(X509) * chain) {
-  for (int i = 0; i < static_cast<int>(sk_X509_num(chain)); ++i) {
-    unsigned char* der = nullptr;
-    int der_len = i2d_X509(sk_X509_value(chain, i), &der);
-    if (der_len <= 0) {
-      
-      return true;
-    }
-    bool distrusted = openssl::IsDistrustedCertificate(
-        std::span<const uint8_t>(der, static_cast<size_t>(der_len)));
-    OPENSSL_free(der);
-    if (distrusted) {
-      return true;
-    }
-  }
-  return false;
-}
-#endif  
-
-}  
 
 bool OpenSSLAdapter::InitializeSSL() {
   
@@ -821,6 +775,16 @@ bool OpenSSLAdapter::SSLPostConnectionCheck(SSL* ssl, absl::string_view host) {
   return is_valid_cert_name;
 }
 
+
+
+
+
+
+
+
+
+
+
 #ifdef WEBRTC_USE_CRYPTO_BUFFER_CALLBACK
 
 enum ssl_verify_result_t OpenSSLAdapter::SSLVerifyCallback(SSL* ssl,
@@ -834,7 +798,7 @@ enum ssl_verify_result_t OpenSSLAdapter::SSLVerifyCallback(SSL* ssl,
   
   
   if (ret == ssl_verify_ok &&
-      ContainsDistrustedCertificate(SSL_get0_peer_certificates(ssl))) {
+      openssl::ContainsDistrustedCertificate(SSL_get0_peer_certificates(ssl))) {
     RTC_LOG(LS_WARNING) << "Peer certificate chain contains a distrusted "
                            "certificate.";
     stream->custom_cert_verifier_status_ = false;
@@ -899,9 +863,10 @@ int OpenSSLAdapter::SSLVerifyCallback(int status, X509_STORE_CTX* store) {
   
   
   
-  if (status &&
-      (ContainsDistrustedCertificate(X509_STORE_CTX_get0_untrusted(store)) ||
-       ContainsDistrustedCertificate(X509_STORE_CTX_get0_chain(store)))) {
+  if (status && (openssl::ContainsDistrustedCertificate(
+                     X509_STORE_CTX_get0_untrusted(store)) ||
+                 openssl::ContainsDistrustedCertificate(
+                     X509_STORE_CTX_get0_chain(store)))) {
     RTC_LOG(LS_WARNING) << "Certificate chain contains a distrusted "
                            "certificate.";
     X509_STORE_CTX_set_error(store, X509_V_ERR_CERT_REJECTED);
