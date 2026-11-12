@@ -10,7 +10,10 @@
 
 #include "rtc_base/ssl_adapter.h"
 
+#include <cstddef>
+#include <cstdint>
 #include <memory>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
@@ -19,6 +22,8 @@
 #include "absl/strings/string_view.h"
 #include "api/test/rtc_error_matchers.h"
 #include "api/units/time_delta.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/distrusted_certificates_for_testing.h"
 #include "rtc_base/ip_address.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/socket.h"
@@ -179,6 +184,21 @@ class SSLAdapterTestDummyServer : public SSLAdapterTestDummy {
 
   SocketAddress GetAddress() const { return socket_->GetLocalAddress(); }
 
+  
+  
+  void AppendToCertificateChain(std::span<const uint8_t> der) {
+    std::string chain_pem;
+    const SSLCertChain& chain = ssl_identity_->cert_chain();
+    for (size_t i = 0; i < chain.GetSize(); ++i) {
+      chain_pem += chain.Get(i).ToPEMString();
+    }
+    chain_pem +=
+        SSLIdentity::DerToPem(kPemTypeCertificate, der.data(), der.size());
+    ssl_identity_ = SSLIdentity::CreateFromPEMChainStrings(
+        ssl_identity_->PrivateKeyToPEMString(), chain_pem);
+    ASSERT_NE(ssl_identity_, nullptr);
+  }
+
   std::string GetHostname() const {
     
     
@@ -233,6 +253,14 @@ class SSLAdapterTestBase : public ::testing::Test {
 
     SetIgnoreBadCert(false);
     SetCertVerifier(cert_verifier_.get());
+  }
+
+  
+  
+  
+  
+  void AppendDistrustedCertificateToServerChain() {
+    server_->AppendToCertificateChain(kDistrustedCertificateCrossSigned);
   }
 
   void TestHandshake(bool expect_success) {
@@ -343,6 +371,59 @@ TEST_F(SSLAdapterTestTLS_ECDSA, TestTLSConnectCustomCertVerifierSucceeds) {
 TEST_F(SSLAdapterTestTLS_ECDSA, TestTLSConnectCustomCertVerifierFails) {
   SetMockCertVerifier(false);
   TestHandshake(false);
+}
+
+
+
+TEST_F(SSLAdapterTestTLS_RSA, TestTLSConnectDistrustedCertificateFails) {
+  SetMockCertVerifier(true);
+  ASSERT_NO_FATAL_FAILURE(AppendDistrustedCertificateToServerChain());
+  TestHandshake(false);
+}
+
+
+
+TEST_F(SSLAdapterTestTLS_ECDSA, TestTLSConnectDistrustedCertificateFails) {
+  SetMockCertVerifier(true);
+  ASSERT_NO_FATAL_FAILURE(AppendDistrustedCertificateToServerChain());
+  TestHandshake(false);
+}
+
+
+
+TEST_F(SSLAdapterTestTLS_RSA, TestTLSConnectUnrelatedChainCertificate) {
+  SetMockCertVerifier(true);
+  std::unique_ptr<SSLIdentity> unrelated =
+      SSLIdentity::Create("unrelated.example.com", KeyParams::RSA());
+  ASSERT_NE(unrelated, nullptr);
+  Buffer der;
+  unrelated->certificate().ToDER(&der);
+  ASSERT_NO_FATAL_FAILURE(server_->AppendToCertificateChain(der));
+  TestHandshake(true);
+}
+
+
+
+TEST_F(SSLAdapterTestTLS_ECDSA, TestTLSConnectUnrelatedChainCertificate) {
+  SetMockCertVerifier(true);
+  std::unique_ptr<SSLIdentity> unrelated =
+      SSLIdentity::Create("unrelated.example.com", KeyParams::ECDSA());
+  ASSERT_NE(unrelated, nullptr);
+  Buffer der;
+  unrelated->certificate().ToDER(&der);
+  ASSERT_NO_FATAL_FAILURE(server_->AppendToCertificateChain(der));
+  TestHandshake(true);
+}
+
+
+TEST_F(SSLAdapterTestTLS_ECDSA,
+       TestTLSConnectDistrustedCertificateWithIgnoreBadCert) {
+  
+  
+  SetMockCertVerifier(true);
+  SetIgnoreBadCert(true);
+  ASSERT_NO_FATAL_FAILURE(AppendDistrustedCertificateToServerChain());
+  TestHandshake(true);
 }
 
 

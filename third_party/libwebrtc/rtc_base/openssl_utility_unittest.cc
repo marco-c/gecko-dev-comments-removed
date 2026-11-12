@@ -23,10 +23,12 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <vector>
 
 #include "rtc_base/checks.h"
+#include "rtc_base/distrusted_certificates_for_testing.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/openssl.h"
 #include "test/gtest.h"
@@ -34,7 +36,7 @@
 namespace webrtc {
 namespace {
 
-const unsigned char kFakeSSLPrivateKey[] = {
+constexpr unsigned char kFakeSSLPrivateKey[] = {
     0x30, 0x81, 0x87, 0x02, 0x01, 0x00, 0x30, 0x13, 0x06, 0x07, 0x2a, 0x86,
     0x48, 0xce, 0x3d, 0x02, 0x01, 0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d,
     0x03, 0x01, 0x07, 0x04, 0x6d, 0x30, 0x6b, 0x02, 0x01, 0x01, 0x04, 0x20,
@@ -50,7 +52,7 @@ const unsigned char kFakeSSLPrivateKey[] = {
 
 
 
-const unsigned char kFakeSSLCertificate[] = {
+constexpr unsigned char kFakeSSLCertificate[] = {
     0x30, 0x82, 0x02, 0x9e, 0x30, 0x82, 0x02, 0x42, 0xa0, 0x03, 0x02, 0x01,
     0x02, 0x02, 0x09, 0x00, 0xc8, 0x83, 0x59, 0x4d, 0x90, 0xc3, 0x5f, 0xc8,
     0x30, 0x0c, 0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x04, 0x03, 0x02,
@@ -110,7 +112,7 @@ const unsigned char kFakeSSLCertificate[] = {
     0xc3, 0x71};
 
 
-const unsigned char kFakeSSLCertificateLegacy[] = {
+constexpr unsigned char kFakeSSLCertificateLegacy[] = {
     0x30, 0x82, 0x02, 0x6a, 0x30, 0x82, 0x02, 0x0e, 0xa0, 0x03, 0x02, 0x01,
     0x02, 0x02, 0x09, 0x00, 0xc8, 0x83, 0x59, 0x4d, 0x90, 0xc3, 0x5f, 0xc8,
     0x30, 0x0c, 0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x04, 0x03, 0x02,
@@ -294,6 +296,36 @@ TEST(OpenSSLUtilityTest, VerifyPeerCertMatchesHostLegacy) {
   EXPECT_FALSE(openssl::VerifyPeerCertMatchesHost(ssl, "webrtc.org"));
 
   SSL_free(ssl);
+}
+
+TEST(OpenSSLUtilityTest, IsDistrustedCertificateMatchesOnPublicKey) {
+  EXPECT_TRUE(openssl::IsDistrustedCertificate(kDistrustedCertificate));
+  
+  EXPECT_TRUE(
+      openssl::IsDistrustedCertificate(kDistrustedCertificateCrossSigned));
+  EXPECT_FALSE(openssl::IsDistrustedCertificate(kFakeSSLCertificate));
+  EXPECT_FALSE(openssl::IsDistrustedCertificate(kFakeSSLCertificateLegacy));
+}
+
+TEST(OpenSSLUtilityTest, IsDistrustedCertificateTreatsMalformedAsDistrusted) {
+  EXPECT_TRUE(openssl::IsDistrustedCertificate(std::span<const uint8_t>()));
+  
+  EXPECT_TRUE(openssl::IsDistrustedCertificate(
+      std::span<const uint8_t>(kDistrustedCertificate).first(100)));
+}
+
+TEST(OpenSSLUtilityTest,
+     IsDistrustedCertificateRejectsBerReencodingOfDistrustedCertificate) {
+  
+  
+  
+  std::span<const uint8_t> der(kDistrustedCertificate);
+  ASSERT_EQ(der[0], 0x30);  
+  ASSERT_EQ(der[1], 0x82);  
+  std::vector<uint8_t> ber = {0x30, 0x83, 0x00, der[2], der[3]};
+  std::span<const uint8_t> contents = der.subspan(4);
+  ber.insert(ber.end(), contents.begin(), contents.end());
+  EXPECT_TRUE(openssl::IsDistrustedCertificate(ber));
 }
 
 }  

@@ -14,6 +14,7 @@
 #include <openssl/ossl_typ.h>
 
 #include <cstdint>
+#include <span>
 
 #include "absl/strings/string_view.h"
 
@@ -38,6 +39,17 @@ bool ParseCertificate(CRYPTO_BUFFER* cert_buffer,
 
 
 bool VerifyPeerCertMatchesHost(SSL* ssl, absl::string_view host);
+
+
+
+
+
+
+
+
+
+
+bool IsDistrustedCertificate(std::span<const uint8_t> cert_der);
 
 
 
