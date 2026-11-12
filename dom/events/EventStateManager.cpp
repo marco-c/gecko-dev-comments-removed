@@ -81,6 +81,7 @@
 #include "nsCOMPtr.h"
 #include "nsComboboxControlFrame.h"
 #include "nsCommandParams.h"
+#include "nsComputedDOMStyle.h"
 #include "nsContentAreaDragDrop.h"
 #include "nsContentUtils.h"
 #include "nsCopySupport.h"
@@ -160,7 +161,7 @@ static uint32_t gNonSynthesizedMouseOrKeyboardEventCounter = 0;
 static nsITimer* gUserInteractionTimer = nullptr;
 static nsITimerCallback* gUserInteractionTimerCallback = nullptr;
 
-static const double kCursorLoadingTimeout = 1000;  
+static const int32_t kCursorLoadingTimeout = 1000;  
 constinit static AutoWeakFrame gLastCursorSourceFrame;
 static TimeStamp gLastCursorUpdateTime;
 static TimeStamp gTypingStartTime;
@@ -1835,7 +1836,8 @@ static bool IsAccessKeyTarget(Element* aElement, nsAString& aKey) {
     return false;
   }
 
-  if (!aElement->IsXULElement()) {
+  if (!aElement->IsXULElement() &&
+      !nsContentUtils::IsChromeDoc(aElement->OwnerDoc())) {
     return true;
   }
 
@@ -1861,7 +1863,8 @@ static bool IsAccessKeyTarget(Element* aElement, nsAString& aKey) {
 
   
   
-  if (aElement->IsXULElement(nsGkAtoms::label)) {
+  if (aElement->IsXULElement(nsGkAtoms::label) ||
+      aElement->IsHTMLElement(nsGkAtoms::label)) {
     return true;
   }
 
@@ -4464,7 +4467,11 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
             break;
           }
 
+          AutoWeakFrame weakScrollTarget(scrollTarget);
           ScrollbarsForWheel::SetActiveScrollTarget(scrollTarget);
+          if (scrollTarget && !weakScrollTarget.IsAlive()) {
+            break;
+          }
 
           ScrollContainerFrame* rootScrollContainerFrame =
               !mCurrentTarget
