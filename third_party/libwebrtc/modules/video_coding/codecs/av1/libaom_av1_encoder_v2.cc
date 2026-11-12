@@ -40,7 +40,6 @@
 #include "api/video_codecs/video_encoder_interface.h"
 #include "api/video_codecs/video_encoding_general.h"
 #include "modules/video_coding/utility/cbr_layer_rate_tracker.h"
-#include "modules/video_coding/utility/reference_buffer_tracker.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/rational.h"
@@ -450,8 +449,7 @@ void PrepareInputImage(const VideoFrameBuffer& input_buffer,
 }
 
 aom_svc_ref_frame_config_t GetSvcRefFrameConfig(
-    const FrameEncodeSettings& settings,
-    const ReferenceBufferTracker& reference_buffer_tracker) {
+    const FrameEncodeSettings& settings) {
   
   
   
@@ -478,10 +476,10 @@ aom_svc_ref_frame_config_t GetSvcRefFrameConfig(
 
   int alias_index = 0;
   if (!settings.reference_buffers().empty()) {
-    std::vector<int> sorted_references =
-        reference_buffer_tracker.OrderByTimestamp(settings.reference_buffers());
-    for (size_t i = 0; i < sorted_references.size(); ++i) {
-      ref_idx_view[kPreferredAlias[alias_index]] = sorted_references[i];
+    std::span<const int> references = settings.reference_buffers();
+    RTC_DCHECK_LE(references.size(), kMaxReferences);
+    for (int ref : references) {
+      ref_idx_view[kPreferredAlias[alias_index]] = ref;
       reference_view[kPreferredAlias[alias_index]] = 1;
       alias_index++;
     }
@@ -489,8 +487,9 @@ aom_svc_ref_frame_config_t GetSvcRefFrameConfig(
     
     
     
-    for (size_t i = sorted_references.size(); i < ref_idx_view.size(); ++i) {
-      ref_idx_view[kPreferredAlias[i]] = sorted_references.back();
+    
+    for (size_t i = references.size(); i < ref_idx_view.size(); ++i) {
+      ref_idx_view[kPreferredAlias[i]] = references.back();
     }
   }
 
@@ -739,7 +738,6 @@ bool LibaomAv1EncoderV2::InitEncode(
   }
 
   last_resolution_in_buffer_ = {};
-  reference_buffer_tracker_.Reset();
   rate_tracker_ = std::make_unique<CbrLayerRateTracker>();
   content_type_.reset();
   effort_level_.reset();
@@ -1000,8 +998,7 @@ void LibaomAv1EncoderV2::Encode(
                                            : frame_settings[0].temporal_id(),
     };
     SET_OR_RETURN(AV1E_SET_SVC_LAYER_ID, &layer_id);
-    aom_svc_ref_frame_config_t ref_config =
-        GetSvcRefFrameConfig(settings, reference_buffer_tracker_);
+    aom_svc_ref_frame_config_t ref_config = GetSvcRefFrameConfig(settings);
     SET_OR_RETURN(AV1E_SET_SVC_REF_FRAME_CONFIG, &ref_config);
     
     
@@ -1066,14 +1063,11 @@ void LibaomAv1EncoderV2::Encode(
 
     if (settings.frame_type() == VideoEncoderInterface::FrameType::kKeyframe) {
       last_resolution_in_buffer_ = {};
-      reference_buffer_tracker_.Reset();
     }
 
     if (settings.update_buffer()) {
       last_resolution_in_buffer_[*settings.update_buffer()] =
           settings.resolution();
-      reference_buffer_tracker_.Update(*settings.update_buffer(),
-                                       tu_settings.presentation_timestamp());
     }
 
     VideoEncoderInterface::EncodedData result;
