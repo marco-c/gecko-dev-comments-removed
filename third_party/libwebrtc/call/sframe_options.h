@@ -24,6 +24,9 @@ struct SframeSendOptions {
   
   
   std::optional<SframeEncryptionConfig> encryption_config;
+
+  friend bool operator==(const SframeSendOptions&,
+                         const SframeSendOptions&) = default;
 };
 
 

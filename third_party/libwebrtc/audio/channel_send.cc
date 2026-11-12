@@ -50,6 +50,7 @@
 #include "audio/channel_send_frame_transformer_delegate.h"
 #include "audio/utility/audio_frame_operations.h"
 #include "call/rtp_transport_controller_send_interface.h"
+#include "call/sframe_options.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "modules/audio_processing/rms_level.h"
@@ -61,6 +62,7 @@
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_impl2.h"
 #include "modules/rtp_rtcp/source/rtp_sender_audio.h"
+#include "modules/sframe/sframe_encryption_config.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"
@@ -231,6 +233,8 @@ class ChannelSend : public ChannelSendInterface,
   void SetFrameEncryptor(
       scoped_refptr<FrameEncryptorInterface> frame_encryptor) override;
 
+  void SetSframeOptions(const SframeSendOptions& options) override;
+
   
   
   void SetEncoderToPacketizerFrameTransformer(
@@ -335,6 +339,11 @@ class ChannelSend : public ChannelSendInterface,
       RTC_GUARDED_BY(worker_thread_);
   
   const CryptoOptions crypto_options_;
+
+  
+  bool sframe_required_by_negotiation_ RTC_GUARDED_BY(worker_thread_) = false;
+  std::optional<SframeEncryptionConfig> sframe_encryption_config_
+      RTC_GUARDED_BY(worker_thread_);
 
   
   
@@ -466,6 +475,13 @@ int32_t ChannelSend::SendRtpAudio(AudioFrameType frameType,
   
   
   if (!payload.empty()) {
+    if (sframe_required_by_negotiation_) {
+      
+      RTC_DLOG(LS_ERROR) << "Dropping audio frame: Sframe is required but no "
+                            "Sframe encryptor is set up for this stream.";
+      return -1;
+    }
+
     if (frame_encryptor_ != nullptr) {
       
       
@@ -982,6 +998,12 @@ void ChannelSend::SetFrameEncryptor(
     scoped_refptr<FrameEncryptorInterface> frame_encryptor) {
   RTC_DCHECK_RUN_ON(worker_thread_);
   frame_encryptor_ = std::move(frame_encryptor);
+}
+
+void ChannelSend::SetSframeOptions(const SframeSendOptions& options) {
+  RTC_DCHECK_RUN_ON(worker_thread_);
+  sframe_required_by_negotiation_ = options.required;
+  sframe_encryption_config_ = options.encryption_config;
 }
 
 void ChannelSend::SetEncoderToPacketizerFrameTransformer(

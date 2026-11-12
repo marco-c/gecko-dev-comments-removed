@@ -31,6 +31,7 @@
 #include "api/scoped_refptr.h"
 #include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
+#include "call/sframe_options.h"
 #include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_interface.h"
@@ -111,6 +112,10 @@ class ChannelSendInterface {
   
   virtual void SetFrameEncryptor(
       scoped_refptr<FrameEncryptorInterface> frame_encryptor) = 0;
+
+  
+  
+  virtual void SetSframeOptions(const SframeSendOptions& options) = 0;
 
   
   

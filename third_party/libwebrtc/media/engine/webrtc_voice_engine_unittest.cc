@@ -3347,6 +3347,27 @@ TEST_P(WebRtcVoiceEngineTestFake, SetsSyncGroupFromStreamId) {
 
 
 
+TEST_P(WebRtcVoiceEngineTestFake, EnableSframePropagatesToSendStreamConfig) {
+  ASSERT_TRUE(SetupChannel());
+  send_channel_->EnableSframe();
+
+  ASSERT_TRUE(send_channel_->AddSendStream(StreamParams::CreateLegacy(kSsrcX)));
+
+  EXPECT_TRUE(GetSendStreamConfig(kSsrcX).sframe_options.required);
+}
+
+
+TEST_P(WebRtcVoiceEngineTestFake, EnableSframeReconfiguresExistingSendStream) {
+  ASSERT_TRUE(SetupSendStream());
+  ASSERT_FALSE(GetSendStreamConfig(kSsrcX).sframe_options.required);
+
+  send_channel_->EnableSframe();
+
+  EXPECT_TRUE(GetSendStreamConfig(kSsrcX).sframe_options.required);
+}
+
+
+
 TEST_P(WebRtcVoiceEngineTestFake, ConfiguresAudioReceiveStreamRtpExtensions) {
   
   
