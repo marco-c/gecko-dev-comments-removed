@@ -1362,16 +1362,12 @@ nsEventStatus AsyncPanZoomController::HandleGestureEvent(
           rv = OnSingleTapConfirmed(tapGestureInput);
           break;
         case TapGestureInput::TAPGESTURE_DOUBLE:
-          if (!IsRootContent()) {
-            if (APZCTreeManager* treeManagerLocal = GetApzcTreeManager()) {
-              if (AsyncPanZoomController* apzc =
-                      treeManagerLocal->FindRootApzcFor(GetLayersId())) {
-                rv = apzc->OnDoubleTap(tapGestureInput);
-              }
+          if (APZCTreeManager* treeManagerLocal = GetApzcTreeManager()) {
+            if (AsyncPanZoomController* apzc =
+                    treeManagerLocal->FindDoubleTapHandlerFor(this)) {
+              rv = apzc->OnDoubleTap(tapGestureInput);
             }
-            break;
           }
-          rv = OnDoubleTap(tapGestureInput);
           break;
         case TapGestureInput::TAPGESTURE_SECOND:
           rv = OnSecondTap(tapGestureInput);
@@ -3428,15 +3424,14 @@ nsEventStatus AsyncPanZoomController::OnDoubleTap(
   APZC_LOG_DETAIL("got a double-tap in state %s\n", this,
                   ToString(mState).c_str());
 
-  MOZ_ASSERT(IsRootForLayersId(),
-             "This function should be called for the root content APZC or "
-             "OOPIF root APZC");
-
   CSSToCSSMatrix4x4 transformToRootContentApzc;
   RefPtr<AsyncPanZoomController> rootContentApzc;
   if (IsRootContent()) {
     rootContentApzc = RefPtr{this};
   } else {
+    MOZ_ASSERT(IsRootForLayersId(),
+               "This function should be called for the root content APZC or "
+               "OOPIF root APZC");
     if (APZCTreeManager* treeManagerLocal = GetApzcTreeManager()) {
       rootContentApzc = treeManagerLocal->FindZoomableApzc(this);
       if (rootContentApzc) {
@@ -4153,8 +4148,7 @@ ParentLayerPoint AsyncPanZoomController::AttemptFling(
   
   
   
-  ScrollSnapToDestination();
-  if (!InScrollAnimation(ScrollAnimationKind::SmoothMsd)) {
+  if (!ScrollSnapToDestination()) {
     SetState(FLING);
     RefPtr<AsyncPanZoomAnimation> fling =
         GetPlatformSpecificState()->CreateFlingAnimation(*this, aHandoffState,
@@ -7156,7 +7150,7 @@ void AsyncPanZoomController::ScrollSnap(ScrollSnapFlags aSnapFlags) {
   ScrollSnapNear(Metrics().GetVisualScrollOffset(), aSnapFlags);
 }
 
-void AsyncPanZoomController::ScrollSnapToDestination() {
+bool AsyncPanZoomController::ScrollSnapToDestination() {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
 
   float friction = StaticPrefs::apz_fling_friction();
@@ -7177,7 +7171,7 @@ void AsyncPanZoomController::ScrollSnapToDestination() {
       IsOverscrolled() && ((velocity.x.value * mX.GetOverscroll() >= 0) ||
                            (velocity.y.value * mY.GetOverscroll() >= 0));
   if (flingWillOverscroll) {
-    return;
+    return false;
   }
 
   CSSPoint startPosition = Metrics().GetVisualScrollOffset();
@@ -7208,7 +7202,16 @@ void AsyncPanZoomController::ScrollSnapToDestination() {
     SmoothScrollTo(std::move(*snapDestination), ScrollTriggeredByScript::No,
                    ScrollAnimationKind::SmoothMsd, ViewportType::Visual,
                    ScrollOrigin::NotSpecified, GetFrameTime().Time());
+    if (!InScrollAnimation(ScrollAnimationKind::SmoothMsd)) {
+      
+      
+      
+      
+      SetVelocityVector(ParentLayerPoint(0, 0));
+    }
+    return true;
   }
+  return false;
 }
 
 Maybe<CSSSnapDestination>

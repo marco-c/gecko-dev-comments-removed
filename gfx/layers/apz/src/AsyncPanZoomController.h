@@ -2065,7 +2065,9 @@ class AsyncPanZoomController {
 
   
   
-  void ScrollSnapToDestination();
+  
+  
+  bool ScrollSnapToDestination();
 
   
   void ScrollSnapNear(const CSSPoint& aDestination, ScrollSnapFlags aSnapFlags);
