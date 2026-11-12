@@ -80,14 +80,6 @@ class RTC_EXPORT CopyOnWriteBuffer {
             capacity) {}
 
   
-  template <typename T,
-            size_t N,
-            typename std::enable_if<
-                internal::BufferCompat<uint8_t, T>::value>::type* = nullptr>
-  CopyOnWriteBuffer(const T (&array)[N])  
-      : CopyOnWriteBuffer(std::span(array)) {}
-
-  
   template <typename VecT,
             typename ElemT = typename std::remove_pointer_t<
                 decltype(std::declval<VecT>().data())>,
