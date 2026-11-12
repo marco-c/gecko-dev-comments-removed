@@ -696,7 +696,7 @@ void MediaPipeline::RtpPacketReceived(std::string& aTransportId,
   
   
   
-  webrtc::CopyOnWriteBuffer packet_buffer(packet.data(), packet.len());
+  webrtc::CopyOnWriteBuffer packet_buffer({packet.data(), packet.len()});
   webrtc::RtpPacketReceived parsedPacket(mRtpHeaderExtensionMap.get());
   if (!parsedPacket.Parse(packet_buffer)) {
     return;
@@ -786,7 +786,7 @@ void MediaPipeline::RtcpPacketReceived(std::string& aTransportId,
   
   
   mRtcpReceiveEvent.Notify(
-      webrtc::CopyOnWriteBuffer(packet.data(), packet.len()));
+      webrtc::CopyOnWriteBuffer({packet.data(), packet.len()}));
 }
 
 void MediaPipeline::AlpnNegotiated(const std::string& aAlpn,
