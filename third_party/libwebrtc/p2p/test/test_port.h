@@ -34,7 +34,7 @@ namespace webrtc {
 
 class TestPort : public Port {
  public:
-  TestPort(const PortParametersRef& args, uint16_t min_port, uint16_t max_port);
+  TestPort(PortParametersRef args, uint16_t min_port, uint16_t max_port);
   ~TestPort() override;
 
   

@@ -154,6 +154,39 @@ class RTC_EXPORT Port : public PortInterface {
  public:
   
   
+  struct Callbacks {
+    Callbacks();
+    Callbacks(Callbacks&&);
+    Callbacks& operator=(Callbacks&&);
+    
+    
+    
+    Callbacks(const Callbacks& other);
+    Callbacks& operator=(const Callbacks& other);
+    ~Callbacks();
+
+    bool IsEmpty() const {
+      return !candidate_ready && !candidate_error && !port_complete &&
+             !port_destroyed && !port_error && !unknown_address;
+    }
+
+    const void* tag = nullptr;
+    absl::AnyInvocable<void(Port*, const Candidate&)> candidate_ready;
+    absl::AnyInvocable<void(Port*, const IceCandidateErrorEvent&)>
+        candidate_error;
+    absl::AnyInvocable<void(Port*)> port_complete;
+    absl::AnyInvocable<void(PortInterface*)> port_destroyed;
+    absl::AnyInvocable<void(Port*)> port_error;
+    absl::AnyInvocable<void(PortInterface*,
+                            const SocketAddress&,
+                            ProtocolType,
+                            IceMessage*,
+                            const std::string&,
+                            bool)>
+        unknown_address;
+  };
+  
+  
   struct PortParametersRef {
     Environment env;
     TaskQueueBase* network_thread;
@@ -164,13 +197,14 @@ class RTC_EXPORT Port : public PortInterface {
     absl::string_view content_name;
     LocalNetworkAccessPermissionFactoryInterface* lna_permission_factory =
         nullptr;
-    uint64_t ice_tiebreaker;
+    uint64_t ice_tiebreaker = 0;
+    Callbacks callbacks;
   };
 
  protected:
   
-  Port(const PortParametersRef& args, IceCandidateType type);
-  Port(const PortParametersRef& args,
+  Port(PortParametersRef args, IceCandidateType type);
+  Port(PortParametersRef args,
        IceCandidateType type,
        uint16_t min_port,
        uint16_t max_port,
@@ -178,6 +212,13 @@ class RTC_EXPORT Port : public PortInterface {
 
  public:
   ~Port() override;
+
+  
+  
+  
+  
+  
+  void RegisterCallbacks(Callbacks&& callbacks);
 
   
   
@@ -268,6 +309,8 @@ class RTC_EXPORT Port : public PortInterface {
 
   
   
+  
+  
   void SubscribeCandidateReadyCallback(
       const void* tag,
       absl::AnyInvocable<void(Port*, const Candidate&)> callback);
@@ -278,7 +321,9 @@ class RTC_EXPORT Port : public PortInterface {
   
   const std::vector<Candidate>& Candidates() const override;
   
-
+  
+  
+  [[deprecated("Use PortParametersRef::callbacks instead")]]
   void SubscribeCandidateError(
       const void* tag,
       std::function<void(Port*, const IceCandidateErrorEvent&)> callback);
@@ -293,6 +338,8 @@ class RTC_EXPORT Port : public PortInterface {
     port_complete_callback_list_.Send(this);
   }
 
+  
+  
   
   
   

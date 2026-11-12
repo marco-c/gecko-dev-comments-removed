@@ -126,16 +126,14 @@ class LocalNetworkAccessPortTest
         .lna_permission_factory = &lna_permission_factory,
     };
 
-    auto turn_port = TurnPort::Create(args, 0, 0);
     
     
     
-    turn_port->SubscribePortComplete(
-        this, [this](Port* port) { OnPortComplete(port); });
-    turn_port->SubscribePortError(this,
-                                  [this](Port* port) { OnPortError(port); });
+    args.callbacks.tag = this;
+    args.callbacks.port_complete = [this](Port* port) { OnPortComplete(port); };
+    args.callbacks.port_error = [this](Port* port) { OnPortError(port); };
 
-    return turn_port;
+    return TurnPort::Create(std::move(args), 0, 0);
   }
 
   std::unique_ptr<StunPort> CreateStunPort(
@@ -151,14 +149,15 @@ class LocalNetworkAccessPortTest
         .lna_permission_factory = &lna_permission_factory,
     };
 
-    auto stun_port = StunPort::Create(
-        params, 0, 0, {SocketAddress(server_address, 5000)}, std::nullopt);
-    stun_port->SubscribePortComplete(
-        this, [this](Port* port) { OnPortComplete(port); });
-    stun_port->SubscribePortError(this,
-                                  [this](Port* port) { OnPortError(port); });
+    params.callbacks.tag = this;
+    params.callbacks.port_complete = [this](Port* port) {
+      OnPortComplete(port);
+    };
+    params.callbacks.port_error = [this](Port* port) { OnPortError(port); };
 
-    return stun_port;
+    return StunPort::Create(std::move(params), 0, 0,
+                            {SocketAddress(server_address, 5000)},
+                            std::nullopt);
   }
 
   void setup_dns_resolver_mock() {

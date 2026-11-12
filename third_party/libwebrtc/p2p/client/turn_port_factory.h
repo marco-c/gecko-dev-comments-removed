@@ -24,22 +24,17 @@ class TurnPortFactory : public RelayPortFactoryInterface {
  public:
   ~TurnPortFactory() override;
 
-  std::unique_ptr<Port> Create(const CreateRelayPortArgs& args,
+  using RelayPortFactoryInterface::Create;
+
+  std::unique_ptr<Port> Create(CreateRelayPortArgs&& args,
                                AsyncPacketSocket* udp_socket) override;
 
-  std::unique_ptr<Port> Create(const CreateRelayPortArgs& args,
+  std::unique_ptr<Port> Create(CreateRelayPortArgs&& args,
                                int min_port,
                                int max_port) override;
 };
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::TurnPortFactory;
-}  
-#endif  
 
 #endif  
