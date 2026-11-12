@@ -10,6 +10,7 @@
 
 #include "modules/rtp_rtcp/source/fec_private_tables_random.h"
 
+#include <array>
 #include <cstdint>
 
 namespace webrtc {
@@ -643,7 +644,7 @@ namespace {
 
 namespace fec_private_tables {
 
-const uint8_t kPacketMaskRandomTbl[] = {
+constexpr std::array<uint8_t, kPacketMaskRandomTblSize> kPacketMaskRandomTbl = {
     12,
     kPacketMaskRandom1,  
     kPacketMaskRandom2,
@@ -658,6 +659,12 @@ const uint8_t kPacketMaskRandomTbl[] = {
     kPacketMaskRandom11,
     kPacketMaskRandom12,
 };
+
+
+
+
+
+static_assert(kPacketMaskRandomTbl.back() != 0);
 
 }  
 }  

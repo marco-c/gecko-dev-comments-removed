@@ -25,12 +25,23 @@
 
 
 
-#include <stdint.h>
+#include <array>
+#include <cstddef>
+#include <cstdint>
 
 namespace webrtc {
 namespace fec_private_tables {
 
-extern const uint8_t kPacketMaskBurstyTbl[];
+
+
+
+
+
+
+
+
+inline constexpr size_t kPacketMaskBurstyTblSize = 741;
+extern const std::array<uint8_t, kPacketMaskBurstyTblSize> kPacketMaskBurstyTbl;
 
 }  
 }  

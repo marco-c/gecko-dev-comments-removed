@@ -10,6 +10,7 @@
 
 #include "modules/rtp_rtcp/source/fec_private_tables_bursty.h"
 
+#include <array>
 #include <cstdint>
 
 namespace webrtc {
@@ -643,7 +644,7 @@ namespace {
 
 namespace fec_private_tables {
 
-const uint8_t kPacketMaskBurstyTbl[] = {
+constexpr std::array<uint8_t, kPacketMaskBurstyTblSize> kPacketMaskBurstyTbl = {
     12,
     kPacketMaskBursty1,
     kPacketMaskBursty2,
@@ -658,6 +659,12 @@ const uint8_t kPacketMaskBurstyTbl[] = {
     kPacketMaskBursty11,
     kPacketMaskBursty12,
 };
+
+
+
+
+
+static_assert(kPacketMaskBurstyTbl.back() != 0);
 
 }  
 }  

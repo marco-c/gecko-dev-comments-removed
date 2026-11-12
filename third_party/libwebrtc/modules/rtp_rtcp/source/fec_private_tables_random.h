@@ -15,12 +15,23 @@
 
 
 
-#include <stdint.h>
+#include <array>
+#include <cstddef>
+#include <cstdint>
 
 namespace webrtc {
 namespace fec_private_tables {
 
-extern const uint8_t kPacketMaskRandomTbl[];
+
+
+
+
+
+
+
+
+inline constexpr size_t kPacketMaskRandomTblSize = 741;
+extern const std::array<uint8_t, kPacketMaskRandomTblSize> kPacketMaskRandomTbl;
 
 }  
 }  
