@@ -20,8 +20,8 @@
  */
 
 /**
- * pdfjsVersion = 6.5.447
- * pdfjsBuild = c7ca8a32e
+ * pdfjsVersion = 7.0.84
+ * pdfjsBuild = 94a48f3c8
  */
 
 ;// ./web/ui_utils.js
@@ -168,6 +168,7 @@ function binarySearchFirstItem(items, condition, start = 0) {
   }
   return minIndex;
 }
+const ApproximateFractionCache = new Map();
 function approximateFraction(x) {
   if (Math.floor(x) === x) {
     return [x, 1];
@@ -178,6 +179,10 @@ function approximateFraction(x) {
     return [1, limit];
   } else if (Math.floor(xinv) === xinv) {
     return [1, xinv];
+  }
+  const cached = ApproximateFractionCache.get(x);
+  if (cached) {
+    return cached.slice();
   }
   const x_ = x > 1 ? xinv : x;
   let a = 0,
@@ -198,10 +203,14 @@ function approximateFraction(x) {
       b = q;
     }
   }
+  let res;
   if (x_ - a / b < c / d - x_) {
-    return x_ === x ? [a, b] : [b, a];
+    res = x_ === x ? [a, b] : [b, a];
+  } else {
+    res = x_ === x ? [c, d] : [d, c];
   }
-  return x_ === x ? [c, d] : [d, c];
+  ApproximateFractionCache.set(x, res);
+  return res;
 }
 function floorToDivide(x, div) {
   return x - x % div;
@@ -604,9 +613,6 @@ const defaultOptions = new Map([["allowedGlobalEvents", {
 }], ["enableHighlightFloatingButton", {
   value: false,
   kind: OptionKind.VIEWER + OptionKind.PREFERENCE
-}], ["enableMerge", {
-  value: false,
-  kind: OptionKind.VIEWER + OptionKind.PREFERENCE
 }], ["enableNewAltTextWhenAddingImage", {
   value: true,
   kind: OptionKind.VIEWER + OptionKind.PREFERENCE
@@ -638,7 +644,7 @@ const defaultOptions = new Map([["allowedGlobalEvents", {
   value: true,
   kind: OptionKind.VIEWER + OptionKind.PREFERENCE
 }], ["enableSplitMerge", {
-  value: false,
+  value: true,
   kind: OptionKind.VIEWER + OptionKind.PREFERENCE
 }], ["enableUpdatedAddImage", {
   value: false,
@@ -753,9 +759,6 @@ const defaultOptions = new Map([["allowedGlobalEvents", {
   kind: OptionKind.API
 }], ["isOffscreenCanvasSupported", {
   value: true,
-  kind: OptionKind.API
-}], ["maxImageSize", {
-  value: -1,
   kind: OptionKind.API
 }], ["pdfBug", {
   value: false,
@@ -907,7 +910,7 @@ const {
 } = globalThis.pdfjsLib;
 
 ;// ./web/internal_evt.js
-const INTERNAL_EVT = "ba7bc200-d8f4-4157-9972-b20498608fe7";
+const INTERNAL_EVT = "7c2d88f0-b1d4-4f20-9ce1-090bc0ccf65a";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -8665,7 +8668,7 @@ class PDFThumbnailView extends RenderableView {
     this.viewport = defaultViewport;
     this.pdfPageRotate = defaultViewport.rotation;
     this._optionalContentConfigPromise = optionalContentConfigPromise || null;
-    this.maxCanvasPixels = maxCanvasPixels ?? AppOptions.get("maxCanvasPixels");
+    this.maxCanvasPixels = maxCanvasPixels || AppOptions.get("maxCanvasPixels");
     this.maxCanvasDim = maxCanvasDim || AppOptions.get("maxCanvasDim");
     this.pageColors = pageColors || null;
     this.eventBus = eventBus;
@@ -9038,7 +9041,6 @@ const PIXELS_TO_SCROLL_WHEN_DRAGGING = 20;
 const SPACE_FOR_DRAG_MARKER_WHEN_NO_NEXT_ELEMENT = 15;
 class PDFThumbnailViewer {
   static #draggingScaleFactor = 0;
-  #enableMerge = false;
   #enableSplitMerge = false;
   #dragAC = null;
   #abortSignal = undefined;
@@ -9094,7 +9096,6 @@ class PDFThumbnailViewer {
     maxCanvasDim,
     pageColors,
     abortSignal,
-    enableMerge,
     enableSplitMerge,
     enableNewBadge,
     statusBar,
@@ -9113,7 +9114,6 @@ class PDFThumbnailViewer {
     this.maxCanvasDim = maxCanvasDim;
     this.pageColors = pageColors || null;
     this.#abortSignal = abortSignal;
-    this.#enableMerge = enableMerge || false;
     this.#enableSplitMerge = enableSplitMerge || false;
     this.#statusLabel = statusBar?.viewsManagerStatusActionLabel || null;
     this.#deselectButton = statusBar?.viewsManagerStatusActionDeselectButton || null;
@@ -9195,7 +9195,7 @@ class PDFThumbnailViewer {
         this.#updateStatus("select");
       });
       this.#deselectButton.classList.toggle("hidden", true);
-      if (this.#enableMerge && addFileComponent) {
+      if (addFileComponent) {
         const {
           picker,
           button
@@ -10330,7 +10330,7 @@ class PDFThumbnailViewer {
     });
   }
   #addExternalFileDropListeners() {
-    if (!this.#enableMerge) {
+    if (!this.#enableSplitMerge) {
       return;
     }
     const container = this.container;
@@ -11140,20 +11140,6 @@ class BasePDFPageView extends RenderableView {
       prevCanvas
     };
   }
-  #renderContinueCallback = cont => {
-    if (!this.renderTask?.isWorkerRendering) {
-      this.#showCanvas?.(false);
-    }
-    if (this.renderingQueue && !this.renderingQueue.isHighestPriority(this)) {
-      this.renderingState = RenderingStates.PAUSED;
-      this.resume = () => {
-        this.renderingState = RenderingStates.RUNNING;
-        cont();
-      };
-      return;
-    }
-    cont();
-  };
   _resetCanvas() {
     const {
       canvas
@@ -11174,8 +11160,26 @@ class BasePDFPageView extends RenderableView {
   }
   async _drawCanvas(options, onCancel, onFinish) {
     const renderTask = this.renderTask = this.pdfPage.render(options);
-    renderTask.onContinue = this.#renderContinueCallback;
-    renderTask.onFrame = () => this.#showCanvas?.(false);
+    let hasCanvasPixels = false;
+    const showCanvas = () => {
+      hasCanvasPixels = true;
+      this.#showCanvas?.(false);
+    };
+    renderTask.onFrame = showCanvas;
+    renderTask.onContinue = cont => {
+      if (!this.renderTask?.isWorkerRendering) {
+        showCanvas();
+      }
+      if (this.renderingQueue && !this.renderingQueue.isHighestPriority(this)) {
+        this.renderingState = RenderingStates.PAUSED;
+        this.resume = () => {
+          this.renderingState = RenderingStates.RUNNING;
+          cont();
+        };
+        return;
+      }
+      cont();
+    };
     renderTask.onError = error => {
       if (error instanceof RenderingCancelledException) {
         onCancel();
@@ -11191,7 +11195,11 @@ class BasePDFPageView extends RenderableView {
         return;
       }
       error = e;
-      this.#showCanvas?.(true);
+      if (hasCanvasPixels) {
+        this.#showCanvas?.(true);
+      } else {
+        onCancel();
+      }
     } finally {
       this.#renderError = error;
       if (renderTask === this.renderTask) {
@@ -12308,6 +12316,7 @@ class TextLayerBuilder {
   #abortSignal = null;
   #enablePermissions = false;
   #onAppend = null;
+  #removeOwnSelectionListener = null;
   #renderingDone = false;
   #textLayer = null;
   static #textLayers = new Map();
@@ -12387,13 +12396,16 @@ class TextLayerBuilder {
     this.div.replaceChildren();
     this.highlighter?.disable();
     this.accessibilityManager?.disable();
-    TextLayerBuilder.#removeGlobalSelectionListener(this.div);
+    this.#removeOwnSelectionListener?.();
   }
   #bindMouse(end) {
+    const abortSignal = this.#abortSignal;
+    if (abortSignal?.aborted) {
+      return;
+    }
     const {
       div
     } = this;
-    const abortSignal = this.#abortSignal;
     const opts = abortSignal ? {
       signal: abortSignal
     } : null;
@@ -12408,7 +12420,16 @@ class TextLayerBuilder {
       stopEvent(event);
     }, opts);
     TextLayerBuilder.#textLayers.set(div, end);
-    TextLayerBuilder.#enableGlobalSelectionListener(abortSignal);
+    TextLayerBuilder.#enableGlobalSelectionListener();
+    if (!this.#removeOwnSelectionListener) {
+      const onAbort = () => {
+        this.#removeOwnSelectionListener = null;
+        abortSignal?.removeEventListener("abort", onAbort);
+        TextLayerBuilder.#removeGlobalSelectionListener(div);
+      };
+      abortSignal?.addEventListener("abort", onAbort);
+      this.#removeOwnSelectionListener = onAbort;
+    }
   }
   static #removeGlobalSelectionListener(textLayerDiv) {
     this.#textLayers.delete(textLayerDiv);
@@ -12417,12 +12438,14 @@ class TextLayerBuilder {
       this.#selectionChangeAC = null;
     }
   }
-  static #enableGlobalSelectionListener(globalAbortSignal) {
+  static #enableGlobalSelectionListener() {
     if (this.#selectionChangeAC) {
       return;
     }
     this.#selectionChangeAC = new AbortController();
-    const signal = globalAbortSignal ? AbortSignal.any([this.#selectionChangeAC.signal, globalAbortSignal]) : this.#selectionChangeAC.signal;
+    const {
+      signal
+    } = this.#selectionChangeAC;
     const reset = (end, textLayer) => {
       textLayer.classList.remove("selecting");
     };
@@ -12498,9 +12521,6 @@ class TextLayerBuilder {
 
 
 
-
-
-const DEFAULT_LAYER_PROPERTIES = null;
 const LAYERS_ORDER = new Map([["canvasWrapper", 0], ["textLayer", 1], ["annotationLayer", 2], ["annotationEditorLayer", 3], ["xfaLayer", 3]]);
 class PDFPageView extends BasePDFPageView {
   #abortSignal = null;
@@ -12514,8 +12534,8 @@ class PDFPageView extends BasePDFPageView {
   #needsRestrictedScaling = false;
   #originalViewport = null;
   #previousRotation = null;
-  #scaleRoundX = 1;
-  #scaleRoundY = 1;
+  #sfx = [1, 1];
+  #sfy = [1, 1];
   #textLayerMode = TextLayerMode.ENABLE;
   #userUnit = 1;
   #useThumbnailCanvas = {
@@ -12531,7 +12551,7 @@ class PDFPageView extends BasePDFPageView {
       defaultViewport
     } = options;
     this.renderingId = "page" + this.id;
-    this.#layerProperties = options.layerProperties || DEFAULT_LAYER_PROPERTIES;
+    this.#layerProperties = options.layerProperties;
     this.#abortSignal = options.abortSignal || null;
     this.pdfPage = null;
     this.pageLabel = null;
@@ -12544,7 +12564,7 @@ class PDFPageView extends BasePDFPageView {
     this.#annotationMode = options.annotationMode ?? AnnotationMode.ENABLE_FORMS;
     this.imageResourcesPath = options.imageResourcesPath || "";
     this.enableDetailCanvas = options.enableDetailCanvas ?? true;
-    this.maxCanvasPixels = options.maxCanvasPixels ?? AppOptions.get("maxCanvasPixels");
+    this.maxCanvasPixels = options.maxCanvasPixels || AppOptions.get("maxCanvasPixels");
     this.maxCanvasDim = options.maxCanvasDim || AppOptions.get("maxCanvasDim");
     this.capCanvasAreaFactor = options.capCanvasAreaFactor ?? AppOptions.get("capCanvasAreaFactor");
     this.#enableAutoLinking = options.enableAutoLinking !== false;
@@ -12568,6 +12588,7 @@ class PDFPageView extends BasePDFPageView {
     }));
     this.div = div;
     this.#setDimensions();
+    this.#computeScale();
     container?.append(div);
   }
   clone(id) {
@@ -12665,6 +12686,7 @@ class PDFPageView extends BasePDFPageView {
       rotation: totalRotation
     });
     this.#setDimensions();
+    this.#computeScale();
     this.reset();
   }
   destroy() {
@@ -12910,7 +12932,7 @@ class PDFPageView extends BasePDFPageView {
   }
   updateVisibleArea(visibleArea) {
     if (this.enableDetailCanvas) {
-      if (this.#needsRestrictedScaling && this.maxCanvasPixels > 0 && visibleArea) {
+      if (this.#needsRestrictedScaling && visibleArea) {
         this.detailView ??= new PDFPageDetailView({
           pageView: this,
           enableOptimizedPartialRendering: this.enableOptimizedPartialRendering,
@@ -12999,16 +13021,34 @@ class PDFPageView extends BasePDFPageView {
   }
   #computeScale() {
     const {
-      width,
-      height
-    } = this.viewport;
+      div,
+      viewport
+    } = this;
     const outputScale = this.outputScale = new OutputScale();
-    this.#needsRestrictedScaling = outputScale.limitCanvas(width, height, this.maxCanvasPixels, this.maxCanvasDim, this.capCanvasAreaFactor);
+    this.#needsRestrictedScaling = outputScale.limitCanvas(viewport.width, viewport.height, this.maxCanvasPixels, this.maxCanvasDim, this.capCanvasAreaFactor);
     if (this.#needsRestrictedScaling && this.enableDetailCanvas) {
       const factor = this.enableOptimizedPartialRendering ? 4 : 2;
       outputScale.sx /= factor;
       outputScale.sy /= factor;
     }
+    const sfx = approximateFraction(outputScale.sx),
+      sfy = approximateFraction(outputScale.sy);
+    if (this.#sfx[1] !== sfx[1]) {
+      if (sfx[1] !== 1) {
+        div.style.setProperty("--scale-round-x", `${sfx[1]}px`);
+      } else {
+        div.style.removeProperty("--scale-round-x");
+      }
+    }
+    if (this.#sfy[1] !== sfy[1]) {
+      if (sfy[1] !== 1) {
+        div.style.setProperty("--scale-round-y", `${sfy[1]}px`);
+      } else {
+        div.style.removeProperty("--scale-round-y");
+      }
+    }
+    this.#sfx = sfx;
+    this.#sfy = sfy;
   }
   cancelRendering({
     keepAnnotationLayer = false,
@@ -13140,6 +13180,7 @@ class PDFPageView extends BasePDFPageView {
     const {
       div,
       l10n,
+      outputScale,
       pdfPage,
       viewport
     } = this;
@@ -13211,29 +13252,15 @@ class PDFPageView extends BasePDFPageView {
       canvasWrapper.prepend(newCanvas);
     });
     canvas.setAttribute("role", "presentation");
-    if (!this.outputScale) {
-      this.#computeScale();
-    }
-    const {
-      outputScale
-    } = this;
     this.#hasRestrictedScaling = this.#needsRestrictedScaling;
-    const sfx = approximateFraction(outputScale.sx);
-    const sfy = approximateFraction(outputScale.sy);
+    const sfx = this.#sfx;
+    const sfy = this.#sfy;
     const canvasWidth = canvas.width = floorToDivide(calcRound(width * outputScale.sx), sfx[0]);
     const canvasHeight = canvas.height = floorToDivide(calcRound(height * outputScale.sy), sfy[0]);
     const pageWidth = floorToDivide(calcRound(width), sfx[1]);
     const pageHeight = floorToDivide(calcRound(height), sfy[1]);
     outputScale.sx = canvasWidth / pageWidth;
     outputScale.sy = canvasHeight / pageHeight;
-    if (this.#scaleRoundX !== sfx[1]) {
-      div.style.setProperty("--scale-round-x", `${sfx[1]}px`);
-      this.#scaleRoundX = sfx[1];
-    }
-    if (this.#scaleRoundY !== sfy[1]) {
-      div.style.setProperty("--scale-round-y", `${sfy[1]}px`);
-      this.#scaleRoundY = sfy[1];
-    }
     const recordBBoxes = this.enableOptimizedPartialRendering && this.#hasRestrictedScaling && !this.recordedBBoxes;
     const recordImages = this.imagesRightClickMinSize !== -1 && !this.imageCoordinates;
     const transform = outputScale.scaled ? [outputScale.sx, 0, 0, outputScale.sy, 0, 0] : null;
@@ -13430,7 +13457,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "6.5.447";
+    const viewerVersion = "7.0.84";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
@@ -13473,7 +13500,6 @@ class PDFViewer {
     this.#supportsPinchToZoom = options.supportsPinchToZoom !== false;
     this.#enableAutoLinking = options.enableAutoLinking !== false;
     this.#minDurationToUpdateCanvas = options.minDurationToUpdateCanvas ?? 500;
-    this.defaultRenderingQueue = !options.renderingQueue;
     this.renderingQueue = options.renderingQueue;
     const {
       abortSignal
@@ -13652,9 +13678,6 @@ class PDFViewer {
       pagesRotation: rotation,
       pageNumber
     });
-    if (this.defaultRenderingQueue) {
-      this.update();
-    }
   }
   get firstPagePromise() {
     return this.pdfDocument ? this._firstPageCapability.promise : null;
@@ -14026,9 +14049,6 @@ class PDFViewer {
           viewer.lang = info.Language;
         }
       });
-      if (this.defaultRenderingQueue) {
-        this.update();
-      }
     }).catch(reason => {
       console.error("Unable to initialize viewer", reason);
       this._pagesCapability.reject(reason);
@@ -14365,9 +14385,6 @@ class PDFViewer {
       scale: newScale,
       presetValue: preset ? newValue : undefined
     });
-    if (this.defaultRenderingQueue) {
-      this.update();
-    }
   }
   get #pageWidthScaleFactor() {
     return this._spreadMode !== SpreadMode.NONE && this._scrollMode !== ScrollMode.HORIZONTAL ? 2 : 1;
@@ -14499,7 +14516,7 @@ class PDFViewer {
         y = destArray[3];
         width = destArray[4] - x;
         height = destArray[5] - y;
-        let hPadding = (/* inlined export .SCROLLBAR_PADDING */40),
+        const hPadding = (/* inlined export .SCROLLBAR_PADDING */40),
           vPadding = (/* inlined export .VERTICAL_PADDING */5);
         widthScale = (this.container.clientWidth - hPadding) / width / PixelsPerInch.PDF_TO_CSS_UNITS;
         heightScale = (this.container.clientHeight - vPadding) / height / PixelsPerInch.PDF_TO_CSS_UNITS;
@@ -17276,7 +17293,6 @@ class ViewsManager extends Sidebar {
     },
     eventBus,
     l10n,
-    enableMerge = false,
     enableSplitMerge = false,
     globalAbortSignal
   }) {
@@ -17310,12 +17326,9 @@ class ViewsManager extends Sidebar {
     this.eventBus = eventBus;
     if (!enableSplitMerge) {
       viewsManagerStatus.hidden = true;
-    }
-    this._enableSplitMerge = enableSplitMerge;
-    this._enableMerge = enableMerge;
-    if (!enableMerge) {
       viewsManagerAddFileButton.hidden = true;
     }
+    this._enableSplitMerge = enableSplitMerge;
     this.menu = new Menu(viewsManagerSelectorOptions, viewsManagerSelectorButton, [thumbnailButton, outlineButton, attachmentsButton, layersButton]);
     ViewsManager.#l10nDescription ||= Object.freeze({
       pagesTitle: "pdfjs-views-manager-pages-title",
@@ -17390,8 +17403,9 @@ class ViewsManager extends Sidebar {
         console.error(`PDFSidebar.switchView: "${view}" is not a valid view.`);
         return;
     }
-    this.viewsManagerStatus.hidden = !this._enableSplitMerge || view !== SidebarView.THUMBS;
-    this.viewsManagerAddFileButton.hidden = !this._enableMerge || view !== SidebarView.THUMBS;
+    const hideSplitMerge = !this._enableSplitMerge || view !== SidebarView.THUMBS;
+    this.viewsManagerStatus.hidden = hideSplitMerge;
+    this.viewsManagerAddFileButton.hidden = hideSplitMerge;
     this.viewsManagerCurrentOutlineButton.hidden = view !== SidebarView.OUTLINE;
     this.viewsManagerHeaderLabel.setAttribute("data-l10n-id", ViewsManager.#l10nDescription[titleL10nId] || "");
     this.active = view;
@@ -17681,6 +17695,7 @@ const PDFViewerApplication = {
   _isScrolling: false,
   editorUndoBar: null,
   _printPermissionPromise: null,
+  _preloadedIcons: null,
   async initialize(appConfig) {
     this.appConfig = appConfig;
     try {
@@ -17852,7 +17867,6 @@ const PDFViewerApplication = {
       background: AppOptions.get("pageColorsBackground"),
       foreground: AppOptions.get("pageColorsForeground")
     } : null;
-    const enableMerge = AppOptions.get("enableMerge");
     const enableSplitMerge = AppOptions.get("enableSplitMerge");
     let altTextManager;
     if (AppOptions.get("enableUpdatedAddImage")) {
@@ -18020,7 +18034,6 @@ const PDFViewerApplication = {
         pageColors,
         abortSignal,
         enableSplitMerge,
-        enableMerge,
         enableNewBadge: AppOptions.get("enableNewBadge"),
         statusBar: viewsManager.viewsManagerStatusBar,
         undoBar: viewsManager.viewsManagerUndoBar,
@@ -18120,7 +18133,6 @@ const PDFViewerApplication = {
         elements: appConfig.viewsManager,
         eventBus,
         l10n,
-        enableMerge,
         enableSplitMerge,
         globalAbortSignal: abortSignal
       });
@@ -18164,9 +18176,7 @@ const PDFViewerApplication = {
     if (!this.supportsFullscreen) {
       appConfig.secondaryToolbar?.presentationModeButton.classList.add("hidden");
     }
-    if (this.supportsIntegratedFind) {
-      appConfig.findBar?.toggleButton?.classList.add("hidden");
-    }
+    appConfig.findBar?.toggleButton?.classList.toggle("hidden", this.supportsIntegratedFind);
     this.setTitleUsingUrl(file, file);
     this.externalServices.initPassiveLoading();
   },
@@ -18430,7 +18440,9 @@ const PDFViewerApplication = {
     } = this;
     try {
       await this.pdfScriptingManager.dispatchWillSave();
-      const data = await pdfDocument.saveDocument(this.externalServices.printToPDF);
+      const data = await pdfDocument.saveDocument({
+        printToPDF: this.externalServices.printToPDF
+      });
       this.downloadManager.download(data, this._downloadUrl, this._docFilename, true);
     } catch (reason) {
       console.error(`Error when saving the document:`, reason);
@@ -18700,6 +18712,17 @@ const PDFViewerApplication = {
             optionalContentConfig,
             pdfDocument
           });
+        });
+      }
+      if (!this._preloadedIcons) {
+        this._preloadedIcons = [];
+        window.requestIdleCallback(() => {
+          const path = AppOptions.get("imageResourcesPath");
+          for (const name of ["toolbarButton-print.svg", "toolbarButton-download.svg", "toolbarButton-presentationMode.svg", "toolbarButton-bookmark.svg", "secondaryToolbarButton-firstPage.svg", "secondaryToolbarButton-lastPage.svg", "secondaryToolbarButton-rotateCw.svg", "secondaryToolbarButton-rotateCcw.svg", "secondaryToolbarButton-selectTool.svg", "secondaryToolbarButton-handTool.svg", "secondaryToolbarButton-scrollPage.svg", "secondaryToolbarButton-scrollVertical.svg", "secondaryToolbarButton-scrollHorizontal.svg", "secondaryToolbarButton-scrollWrapped.svg", "secondaryToolbarButton-spreadNone.svg", "secondaryToolbarButton-spreadOdd.svg", "secondaryToolbarButton-spreadEven.svg", "secondaryToolbarButton-documentProperties.svg", "pages_viewButton.svg", "pages_viewArrow.svg", "checkmark.svg", "toolbarButton-viewOutline.svg", "toolbarButton-viewAttachments.svg", "toolbarButton-viewLayers.svg", "pages_closeButton.svg", "altText_spinner.svg", "altText_done.svg"]) {
+            const image = new Image();
+            image.src = path + name;
+            this._preloadedIcons.push(image);
+          }
         });
       }
     });
@@ -19509,7 +19532,7 @@ function onWheel(evt) {
   const origin = [evt.clientX, evt.clientY];
   if (isPinchToZoom || evt.ctrlKey && supportsMouseWheelZoomCtrlKey || evt.metaKey && supportsMouseWheelZoomMetaKey) {
     evt.preventDefault();
-    if (this._isScrolling || document.visibilityState === "hidden" || this.overlayManager.active) {
+    if (this._isScrolling && !isPinchToZoom || document.visibilityState === "hidden" || this.overlayManager.active) {
       return;
     }
     if (isPinchToZoom && supportsPinchToZoom) {
