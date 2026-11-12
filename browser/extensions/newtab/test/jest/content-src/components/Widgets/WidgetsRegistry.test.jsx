@@ -18,8 +18,11 @@ import {
   resolveWidgetHasSidebar,
   resolveSidebarWidget,
   hasContentAreaWidgets,
-  resolveCrosswordEndpoint,
-  resolveWidgetSrc,
+  isAllowedFrameUrl,
+  resolveWidgetEventSource,
+  resolveFrameVariant,
+  isRecordedFrameUserEvent,
+  resolveWidgetFrame,
   resolvePrivacyBlankChance,
   resolvePrivacyMaxCount,
   resolvePrivacyDisplayCount,
@@ -1016,57 +1019,122 @@ describe("hasContentAreaWidgets", () => {
   });
 });
 
-describe("resolveCrosswordEndpoint", () => {
-  const dedicatedEndpoint = "https://dedicated.example.com/index.html";
-  const sharedEndpoint = "https://shared.example.com/index.html";
-  const prefEndpoint = "https://pref.example.com/index.html";
-
-  it("prefers the dedicated widgetCrossword endpoint over the shared key and pref", () => {
-    expect(
-      resolveCrosswordEndpoint({
-        "widgets.crossword.endpoint": prefEndpoint,
-        trainhopConfig: {
-          widgetCrossword: { endpoint: dedicatedEndpoint },
-          widgets: { crosswordEndpoint: sharedEndpoint },
-        },
-      })
-    ).toBe(dedicatedEndpoint);
-  });
-
-  it("falls back to the shared widgets endpoint when no dedicated endpoint", () => {
-    expect(
-      resolveCrosswordEndpoint({
-        "widgets.crossword.endpoint": prefEndpoint,
-        trainhopConfig: { widgets: { crosswordEndpoint: sharedEndpoint } },
-      })
-    ).toBe(sharedEndpoint);
-  });
-
-  it("falls back to the raw pref when no trainhop override is present", () => {
-    expect(
-      resolveCrosswordEndpoint({ "widgets.crossword.endpoint": prefEndpoint })
-    ).toBe(prefEndpoint);
-  });
-});
-
 const testWidget = {
   id: "testWidget",
   src: "https://static.example.com/widget.html",
   trainhopNamespace: "widgetTest",
 };
+const framedWidget = {
+  id: "testFramed",
+  framed: true,
+  trainhopNamespace: "widgetTestFramed",
+};
+const frameUrl = "https://frame.example.mozgcp.net/index.html";
+const FRAME_HOST_PREFS = {
+  "widgets.framed.allowedHostSuffixes": ".mozgcp.net, .mozilla.com",
+};
 
-describe("resolveWidgetSrc", () => {
-  it("prefers the trainhop namespace src over the static src", () => {
+describe("resolveWidgetFrame", () => {
+  it("prefers the trainhop namespace iframeSrcOverride over the static src", () => {
     const trainhopSrc = "https://trainhop.example.com/widget.html";
     expect(
-      resolveWidgetSrc(testWidget, {
-        trainhopConfig: { widgetTest: { src: trainhopSrc } },
+      resolveWidgetFrame(testWidget, {
+        trainhopConfig: { widgetTest: { iframeSrcOverride: trainhopSrc } },
       })
-    ).toBe(trainhopSrc);
+    ).toEqual({ src: trainhopSrc, state: "ok" });
   });
 
-  it("falls back to the static entry src", () => {
-    expect(resolveWidgetSrc(testWidget, {})).toBe(testWidget.src);
+  it("uses the static src for a non-framed widget", () => {
+    expect(resolveWidgetFrame(testWidget, {}, {})).toEqual({
+      src: testWidget.src,
+      state: "ok",
+    });
+  });
+
+  it("loads the url of a manifest entry", () => {
+    expect(
+      resolveWidgetFrame(framedWidget, {}, { testFramed: { url: frameUrl } })
+    ).toEqual({ src: frameUrl, state: "ok" });
+  });
+
+  it("is hidden when the manifest has no entry", () => {
+    expect(resolveWidgetFrame(framedWidget, {}, {}).state).toBe("hidden");
+    expect(resolveWidgetFrame(framedWidget, {}, undefined).state).toBe(
+      "hidden"
+    );
+  });
+
+  it("ignores a framed widget's iframeSrcOverride that isAllowedFrameUrl rejects", () => {
+    expect(
+      resolveWidgetFrame(
+        framedWidget,
+        {
+          ...FRAME_HOST_PREFS,
+          trainhopConfig: {
+            widgetTestFramed: {
+              iframeSrcOverride: "https://evil.example.com/",
+            },
+          },
+        },
+        { testFramed: { url: frameUrl } }
+      )
+    ).toEqual({ src: frameUrl, state: "ok" });
+  });
+
+  it("keeps an unavailable framed widget hidden, even with an override", () => {
+    expect(
+      resolveWidgetFrame(
+        framedWidget,
+        {
+          ...FRAME_HOST_PREFS,
+          trainhopConfig: {
+            widgetTestFramed: {
+              iframeSrcOverride:
+                "https://hotfix.merino.prod.webservices.mozgcp.net/index.html",
+            },
+          },
+        },
+        { testFramed: { unavailable: true } }
+      )
+    ).toEqual({ src: "", state: "hidden" });
+  });
+
+  it("lets the trainhop iframeSrcOverride override a hidden framed widget", () => {
+    const trainhopSrc =
+      "https://hotfix.merino.prod.webservices.mozgcp.net/index.html";
+    expect(
+      resolveWidgetFrame(
+        framedWidget,
+        {
+          ...FRAME_HOST_PREFS,
+          trainhopConfig: {
+            widgetTestFramed: { iframeSrcOverride: trainhopSrc },
+          },
+        },
+        {}
+      )
+    ).toEqual({ src: trainhopSrc, state: "ok" });
+  });
+});
+
+describe("isAllowedFrameUrl", () => {
+  it("rejects everything when the pref is empty", () => {
+    expect(
+      isAllowedFrameUrl("https://frame.example.mozgcp.net/", {
+        "widgets.framed.allowedHostSuffixes": "",
+      })
+    ).toBe(false);
+  });
+
+  it.each([
+    ["https://prod-games-particle.merino.prod.webservices.mozgcp.net/", true],
+    ["https://example.mozilla.com/", true],
+    ["ftp://prod-games-particle.merino.prod.webservices.mozgcp.net/", false],
+    ["https://evil.example.com/", false],
+    ["https://mozgcp.net.evil.example/", false],
+    ["not a url", false],
+  ])("%s -> %p", (url, expected) => {
+    expect(isAllowedFrameUrl(url, FRAME_HOST_PREFS)).toBe(expected);
   });
 });
 
@@ -1462,5 +1530,42 @@ describe("isWeatherAvailable", () => {
         trainhopConfig: { widgetsSettings: { weatherVisible: true } },
       })
     ).toBe(true);
+  });
+});
+
+describe("resolveWidgetEventSource", () => {
+  it("is iframe for framed widgets and widget otherwise", () => {
+    const byId = id => WIDGET_REGISTRY.find(w => w.id === id);
+    expect(resolveWidgetEventSource(byId("travel"))).toBe("iframe");
+    expect(resolveWidgetEventSource(byId("crossword"))).toBe("iframe");
+    expect(resolveWidgetEventSource(byId("stocks"))).toBe("widget");
+  });
+});
+
+describe("framed widget telemetry allowlists", () => {
+  const travel = WIDGET_REGISTRY.find(w => w.id === "travel");
+  const stocks = WIDGET_REGISTRY.find(w => w.id === "stocks");
+
+  it("records only listed variants", () => {
+    expect(resolveFrameVariant(travel, "lagoon")).toBe("lagoon");
+    expect(resolveFrameVariant(travel, "london")).toBeUndefined();
+    expect(resolveFrameVariant(stocks, "lagoon")).toBeUndefined();
+  });
+
+  it("records only listed user_actions and action_values", () => {
+    const ok = payload => isRecordedFrameUserEvent(travel, payload);
+    expect(ok({ user_action: "search_open", action_value: "beach" })).toBe(
+      true
+    );
+    expect(ok({ user_action: "search_open" })).toBe(true);
+    expect(ok({ user_action: "route_swap" })).toBe(true);
+    expect(ok({ user_action: "route_swap", action_value: "cars" })).toBe(false);
+    expect(ok({ user_action: "search_submit", action_value: "london" })).toBe(
+      false
+    );
+    expect(ok({ user_action: "constructor" })).toBe(false);
+    expect(
+      isRecordedFrameUserEvent(stocks, { user_action: "route_swap" })
+    ).toBe(false);
   });
 });

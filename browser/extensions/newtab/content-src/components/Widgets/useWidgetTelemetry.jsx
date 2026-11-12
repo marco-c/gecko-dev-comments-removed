@@ -11,8 +11,8 @@ const IMPRESSION_THRESHOLD = 0.3;
 
 /**
  * Shared telemetry hook for function-component widgets. Returns recorders
- * for the four widget telemetry actions (impression, user event, enabled,
- * error) so call sites don't hand-build payloads. `widget` is a
+ * for the five widget telemetry actions (impression, user event, enabled,
+ * error, ready) so call sites don't hand-build payloads. `widget` is a
  * WIDGET_REGISTRY entry; `widget.telemetryName` becomes `widget_name`.
  *
  *   const {
@@ -21,10 +21,14 @@ const IMPRESSION_THRESHOLD = 0.3;
  *     recordUserAction,
  *     recordEnabled,
  *     recordError,
+ *     recordReady,
  *   } = useWidgetTelemetry({ dispatch, widget, widgetSize });
  *
  *   <article ref={impressionRef}>...</article>
  *   recordUserAction("learn_more", { source: "context_menu" });
+ *
+ * Optional `widgetVariant` is sent as `widget_variant` on all five events, and
+ * left off while it's undefined.
  *
  * Per-call options on `recordUserAction`: `value` (action_value), `size`
  * (overrides widgetSize), `alsoToMain: true` (routes via AlsoToMain), and
@@ -41,14 +45,16 @@ const IMPRESSION_THRESHOLD = 0.3;
  * co-dispatches fire legacy first, unified second.
  *
  * `onImpression` (optional) runs once, right after the widget impression fires
- * (from the IntersectionObserver, or a manual recordImpression). Use it to hang
- * extra, view-gated telemetry off the same trigger so it lines up with the
- * impression and never fires on a preloaded tab that was never seen.
+ * (from the IntersectionObserver, or a manual recordImpression), receiving the
+ * impression payload. Use it to hang extra, view-gated telemetry off the same
+ * trigger so it lines up with the impression and never fires on a preloaded
+ * tab that was never seen.
  */
 export const useWidgetTelemetry = ({
   dispatch,
   widget,
   widgetSize,
+  widgetVariant,
   legacyImpressionTypes,
   legacyUserEventType,
   onImpression,
@@ -59,6 +65,11 @@ export const useWidgetTelemetry = ({
   useEffect(() => {
     sizeRef.current = widgetSize;
   }, [widgetSize]);
+
+  // Set during render, so an impression observed in the same commit that
+  // supplies the variant already reports it.
+  const variantRef = useRef(widgetVariant);
+  variantRef.current = widgetVariant;
 
   // Legacy bridge types are fixed per call site, so capture once at mount;
   // refs keep them out of the recorder callbacks' dependency arrays.
@@ -76,6 +87,9 @@ export const useWidgetTelemetry = ({
     ({ size, rest } = {}) => ({
       widget_name: telemetryName,
       widget_size: size ?? sizeRef.current,
+      ...(variantRef.current !== undefined && {
+        widget_variant: variantRef.current,
+      }),
       ...rest,
     }),
     [telemetryName]
@@ -109,7 +123,7 @@ export const useWidgetTelemetry = ({
       }
       // View-gated hook for extra telemetry that must line up with the
       // impression (see the doc comment). Fires once, with the impression.
-      onImpressionRef.current?.();
+      onImpressionRef.current?.(data);
     },
     [dispatch, buildPayload]
   );
@@ -218,11 +232,20 @@ export const useWidgetTelemetry = ({
     [dispatch, buildPayload]
   );
 
+  const recordReady = useCallback(
+    ({ size } = {}) => {
+      const data = buildPayload({ size, rest: locationRef.current });
+      dispatch(ac.AlsoToMain({ type: at.WIDGETS_READY, data }));
+    },
+    [dispatch, buildPayload]
+  );
+
   return {
     impressionRef,
     recordImpression,
     recordUserAction,
     recordEnabled,
     recordError,
+    recordReady,
   };
 };
