@@ -209,6 +209,21 @@ class RTC_EXPORT DesktopCaptureOptions {
   
   
   
+  
+  
+  
+  
+  bool allow_fallback_for_wgc_window_capturer() const {
+    return allow_fallback_for_wgc_window_capturer_;
+  }
+  void set_allow_fallback_for_wgc_window_capturer(bool allow) {
+    allow_fallback_for_wgc_window_capturer_ = allow;
+  }
+
+  
+  
+  
+  
   bool allow_wgc_capturer_fallback() const {
     return allow_wgc_capturer_fallback_;
   }
@@ -306,6 +321,7 @@ class RTC_EXPORT DesktopCaptureOptions {
 #if defined(RTC_ENABLE_WIN_WGC)
   bool allow_wgc_screen_capturer_ = false;
   bool allow_wgc_window_capturer_ = false;
+  bool allow_fallback_for_wgc_window_capturer_ = false;
   bool allow_wgc_capturer_fallback_ = false;
   bool allow_wgc_zero_hertz_ = false;
   bool wgc_require_border_ = false;
