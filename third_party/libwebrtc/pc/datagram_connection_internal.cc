@@ -320,8 +320,7 @@ void DatagramConnectionInternal::SendSinglePacket(
       IsRtpOrRtcpPacket(packet.payload[0])) {
     
     
-    CopyOnWriteBuffer buffer(packet.payload.data(), packet.payload.size(),
-                             kMaxRtpPacketLen);
+    CopyOnWriteBuffer buffer(packet.payload, kMaxRtpPacketLen);
 
     
     
