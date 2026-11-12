@@ -318,22 +318,22 @@ bool AndroidImageReader::Init() {
 }
 
 void AndroidImageReader::ReleaseResources() {
-  MonitorAutoLock lock(mMonitor);
-
-  if (!mAImageReader) {
+  AImageReader* reader = nullptr;
+  {
+    MonitorAutoLock lock(mMonitor);
+    reader = mAImageReader;
+    mAImageReader = nullptr;
+    
+    mNativeWindow = nullptr;
+  }
+  if (!reader) {
     return;
   }
 
-  AImageReader_setImageListener(mAImageReader, nullptr);
-
-  
-
-  
-  AImageReader_delete(mAImageReader);
-  mAImageReader = nullptr;
   
   
-  mNativeWindow = nullptr;
+  AImageReader_setImageListener(reader, nullptr);
+  AImageReader_delete(reader);
 }
 
 
