@@ -158,6 +158,10 @@ class JsepTransportController final {
   struct TransportState {
     std::optional<SSLRole> dtls_role;
     bool needs_ice_restart = false;
+    
+    
+    absl_nonnull scoped_refptr<DtlsTransport> dtls_transport;
+    std::string transport_name;
   };
 
   
@@ -219,7 +223,17 @@ class JsepTransportController final {
   
   scoped_refptr<DtlsTransport> LookupDtlsTransportByMid_n(
       absl::string_view mid);
+  
+  
+  
+  
+  
   scoped_refptr<DtlsTransport> LookupDtlsTransportByMid(absl::string_view mid);
+  
+  
+  
+  
+  std::optional<TransportState> GetTransportState(absl::string_view mid) const;
   scoped_refptr<SctpTransport> GetSctpTransport(absl::string_view mid) const;
 
   DataChannelTransportInterface* GetDataChannelTransport(

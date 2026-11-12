@@ -113,6 +113,11 @@ class JsepTransportCollection {
   
   void ForEachActiveTransport(FunctionView<void(JsepTransport&)> callback);
 
+  
+  
+  void ForEachMid(FunctionView<void(absl::string_view mid,
+                                    JsepTransport& transport)> callback);
+
   void DestroyAllTransports();
 
   
