@@ -164,7 +164,10 @@ std::string SocketAddress::ToString() const {
 
 std::string SocketAddress::ToSensitiveString() const {
   StringBuilder sb;
-  sb << HostAsSensitiveURIString() << ":" << port();
+  
+  
+  sb.Reserve(hostname_.size() + 6);
+  sb << Sensitive(*this);
   return sb.Release();
 }
 

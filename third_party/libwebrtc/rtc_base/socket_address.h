@@ -15,8 +15,11 @@
 #include <cstdint>
 #include <string>
 
+#include "absl/base/attributes.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "rtc_base/ip_address.h"
+#include "rtc_base/net_helpers.h"
 #include "rtc_base/system/rtc_export.h"
 
 #undef SetPort
@@ -127,6 +130,30 @@ class RTC_EXPORT SocketAddress {
 
   
   
+  
+  
+  class Sensitive {
+   public:
+    explicit Sensitive(
+        const SocketAddress& address ABSL_ATTRIBUTE_LIFETIME_BOUND)
+        : address_(address) {}
+
+    template <typename Sink>
+    friend void AbslStringify(Sink& sink, const Sensitive& sensitive) {
+      sensitive.AppendTo(sink);
+    }
+
+   private:
+    template <typename Sink>
+    void AppendTo(Sink& sink) const {
+      address_.AppendSensitiveTo(sink);
+    }
+
+    const SocketAddress& address_;
+  };
+
+  
+  
   std::string ToSensitiveNameAndAddressString() const;
 
   
@@ -188,6 +215,20 @@ class RTC_EXPORT SocketAddress {
   size_t ToSockAddrStorage(sockaddr_storage* saddr) const;
 
  private:
+  
+  template <typename Sink>
+  void AppendSensitiveTo(Sink& sink) const {
+    
+    if (!literal_ && !hostname_.empty()) {
+      sink.Append(hostname_);
+    } else if (ip_.family() == AF_INET6) {
+      absl::Format(&sink, "[%v]", IPAddress::Sensitive(ip_));
+    } else {
+      AbslStringify(sink, IPAddress::Sensitive(ip_));
+    }
+    absl::Format(&sink, ":%d", port_);
+  }
+
   std::string hostname_;
   IPAddress ip_;
   uint16_t port_;
@@ -201,14 +242,5 @@ SocketAddress EmptySocketAddressWithFamily(int family);
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::EmptySocketAddressWithFamily;
-using ::webrtc::SocketAddress;
-using ::webrtc::SocketAddressFromSockAddrStorage;
-}  
-#endif  
 
 #endif  

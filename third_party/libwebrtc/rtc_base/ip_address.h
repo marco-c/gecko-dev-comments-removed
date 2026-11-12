@@ -11,6 +11,8 @@
 #ifndef RTC_BASE_IP_ADDRESS_H_
 #define RTC_BASE_IP_ADDRESS_H_
 
+#include <array>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <string>
@@ -111,6 +113,26 @@ class RTC_EXPORT IPAddress {
 
   
   std::string ToSensitiveString() const;
+
+  
+  
+  
+  
+  class RTC_EXPORT Sensitive {
+   public:
+    explicit Sensitive(const IPAddress& ip);
+
+    absl::string_view view() const;
+
+    template <typename Sink>
+    friend void AbslStringify(Sink& sink, const Sensitive& sensitive) {
+      sink.Append(sensitive.view());
+    }
+
+   private:
+    std::array<char, INET6_ADDRSTRLEN> buffer_;
+    size_t length_ = 0;
+  };
 
   
   
