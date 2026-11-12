@@ -218,7 +218,6 @@ class RTPSenderVideo : public RTPVideoFrameSenderInterface {
       VideoCodecType codec_type) const;
 
   
-  
   bool IsSframeEncryptionSupported() const;
 
   
