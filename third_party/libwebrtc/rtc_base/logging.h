@@ -50,6 +50,7 @@
 
 #include <errno.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -331,9 +332,14 @@ enum class LogArgType : int8_t {
 
 
 
-template <LogArgType N, typename T>
+
+
+
+
+template <LogArgType N, typename T, size_t kSize = 0>
 struct Val {
   static constexpr LogArgType Type() { return N; }
+  static constexpr size_t SizeHint() { return kSize; }
   T GetVal() const { return val; }
   T val;
 };
@@ -343,41 +349,78 @@ struct Val {
 
 struct ToStringVal {
   static constexpr LogArgType Type() { return LogArgType::kStdString; }
+  
+  static constexpr size_t SizeHint() { return 0; }
   const std::string* GetVal() const { return &val; }
   std::string val;
 };
 
-inline Val<LogArgType::kInt, int> MakeVal(int x) {
+inline Val<LogArgType::kInt, int, 6> MakeVal(int x) {
   return {x};
 }
-inline Val<LogArgType::kLong, long> MakeVal(long x) {
+inline Val<LogArgType::kLong, long, 8> MakeVal(long x) {
   return {x};
 }
-inline Val<LogArgType::kLongLong, long long> MakeVal(long long x) {
+inline Val<LogArgType::kLongLong, long long, 10> MakeVal(long long x) {
   return {x};
 }
-inline Val<LogArgType::kUInt, unsigned int> MakeVal(unsigned int x) {
+inline Val<LogArgType::kUInt, unsigned int, 6> MakeVal(unsigned int x) {
   return {x};
 }
-inline Val<LogArgType::kULong, unsigned long> MakeVal(unsigned long x) {
+inline Val<LogArgType::kULong, unsigned long, 8> MakeVal(unsigned long x) {
   return {x};
 }
-inline Val<LogArgType::kULongLong, unsigned long long> MakeVal(
+inline Val<LogArgType::kULongLong, unsigned long long, 10> MakeVal(
     unsigned long long x) {
   return {x};
 }
 
-inline Val<LogArgType::kDouble, double> MakeVal(double x) {
+inline Val<LogArgType::kDouble, double, 8> MakeVal(double x) {
   return {x};
 }
 
-inline Val<LogArgType::kLongDouble, long double> MakeVal(long double x) {
+inline Val<LogArgType::kLongDouble, long double, 10> MakeVal(long double x) {
   return {x};
 }
 
-inline Val<LogArgType::kCharP, const char*> MakeVal(const char* x) {
+
+
+struct Rank0 {};
+struct Rank1 : Rank0 {};
+struct Rank2 : Rank1 {};
+using RankMax = Rank2;
+
+
+
+template <size_t N>
+inline Val<LogArgType::kCharP, const char*, N - 1> MakeStringVal(
+    const char (&x)[N],
+    Rank2) {
   return {x};
 }
+
+
+
+template <typename T>
+  requires(absl::HasAbslStringify<T>::value)
+ToStringVal MakeStringVal(const T& x, Rank1) {
+  return {absl::StrCat(x)};
+}
+
+
+
+inline Val<LogArgType::kCharP, const char*, 16> MakeStringVal(const char* x,
+                                                              Rank0) {
+  return {x};
+}
+
+
+
+template <typename T>
+inline auto MakeVal(const T& x) -> decltype(MakeStringVal(x, RankMax{})) {
+  return MakeStringVal(x, RankMax{});
+}
+
 inline Val<LogArgType::kStdString, const std::string*> MakeVal(
     const std::string& x) {
   return {&x};
@@ -399,7 +442,7 @@ inline Val<LogArgType::kStdStringView, const std::string_view*> MakeVal(
   return {&x};
 }
 
-inline Val<LogArgType::kVoidP, const void*> MakeVal(const void* x) {
+inline Val<LogArgType::kVoidP, const void*, 16> MakeVal(const void* x) {
   return {x};
 }
 
@@ -429,17 +472,13 @@ inline Val<LogArgType::kLogMetadataTag, LogMetadataTag> MakeVal(
 }
 #endif
 
-template <typename T>
-  requires(absl::HasAbslStringify<T>::value &&
-           !std::is_same_v<std::decay_t<T>, std::string_view>)
-ToStringVal MakeVal(const T& x) {
-  return {absl::StrCat(x)};
-}
-
 #if RTC_LOG_ENABLED()
-void Log(const LogArgType* fmt, ...);
+
+
+
+void Log(size_t size_hint, const LogArgType* fmt, ...);
 #else
-inline void Log(const LogArgType* fmt, ...) {
+inline void Log(size_t size_hint, const LogArgType* fmt, ...) {
   
 }
 #endif
@@ -459,8 +498,12 @@ class LogStreamer<> final {
 
   template <typename... Us>
   RTC_FORCE_INLINE static void Call(const Us&... args) {
+    
+    
+    
+    static constexpr size_t kSizeHint = (Us::SizeHint() + ... + 1);
     static constexpr LogArgType t[] = {Us::Type()..., LogArgType::kEnd};
-    Log(t, args.GetVal()...);
+    Log(kSizeHint, t, args.GetVal()...);
   }
 };
 
@@ -550,6 +593,9 @@ class LogMessage {
   StringBuilder& stream();
   
   
+  void ReserveStream(size_t size);
+  
+  
   
   
   
@@ -627,6 +673,7 @@ class LogMessage {
 
   inline void AddTag(const char* tag) {}
   inline StringBuilder& stream() { return print_stream_; }
+  inline void ReserveStream(size_t size) {}
   inline static int64_t LogStartTime() { return 0; }
   inline static uint32_t WallClockStartTime() { return 0; }
   [[deprecated("Use InitializeLogging instead.")]]
