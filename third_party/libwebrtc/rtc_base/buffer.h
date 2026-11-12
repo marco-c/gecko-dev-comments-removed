@@ -142,6 +142,7 @@ class BufferT {
 
   
   template <typename U = T>
+  explicit
   operator typename std::enable_if<internal::BufferCompat<U, char>::value,
                                    absl::string_view>::type() const {
     return absl::string_view(data<char>(), size());
