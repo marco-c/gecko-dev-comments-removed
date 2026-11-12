@@ -12,6 +12,7 @@ import React, {
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { BaseContext } from "content-src/lib/BaseContext";
+import { CUSTOMIZE_PANEL_SOURCES } from "content-src/lib/constants.mjs";
 // Bug 2034542: these per-widget imports can be removed once the non-Nova render
 // path (@nova-cleanup) is gone and all widgets render via WIDGET_ROW_COMPONENTS.
 import { Lists } from "./Lists/Lists";
@@ -33,7 +34,7 @@ import {
   resolveWidgetDisplaySize,
   resolveWidgetOrder,
   resolveWidgetHasSidebar,
-  resolveWidgetSrc,
+  resolveWidgetFrame,
   resolveSidebarWidget,
   getHideAllTargets,
   PREF_HOME_WIDGETS,
@@ -155,6 +156,7 @@ function Widgets({ widgetIds, placement }) {
   const prefs = useSelector(state => state.Prefs.values);
   const extensionWidgets = useSelector(state => state.ExtensionWidgets);
   const widgets = getWidgets(WIDGET_REGISTRY, extensionWidgets);
+  const framedWidgets = useSelector(state => state.FramedWidgets);
   const weatherData = useSelector(state => state.Weather);
   const { messageData } = useSelector(state => state.Messages);
   const timerType = useSelector(state => state.TimerWidget.timerType);
@@ -269,13 +271,13 @@ function Widgets({ widgetIds, placement }) {
     weatherBase && weatherData?.initialized && isWeatherEnabled;
 
   const weatherSize = resolveWidgetSize(weatherWidget, prefs);
+  const frameById = {};
   const widgetEnabledMap = {};
   for (const widget of widgets) {
-    widgetEnabledMap[widget.id] = isWidgetEnabled(
-      widget,
-      prefs,
-      widgetsEnabled
-    );
+    frameById[widget.id] = resolveWidgetFrame(widget, prefs, framedWidgets);
+    widgetEnabledMap[widget.id] =
+      isWidgetEnabled(widget, prefs, widgetsEnabled) &&
+      frameById[widget.id].state !== "hidden";
   }
   widgetEnabledMap.weather = weatherEnabled;
 
@@ -592,7 +594,7 @@ function Widgets({ widgetIds, placement }) {
 
   function handleManageWidgetsClick(e) {
     e.preventDefault();
-    openWidgetsPanel();
+    openWidgetsPanel(CUSTOMIZE_PANEL_SOURCES.MANAGE_WIDGETS);
   }
 
   function toggleRowExpanded() {
@@ -958,7 +960,7 @@ function Widgets({ widgetIds, placement }) {
                             entry={entry}
                             size={size}
                             displaySize={displaySize}
-                            src={resolveWidgetSrc(entry, prefs)}
+                            src={frameById[id]?.src}
                             widgetEnabledMap={widgetEnabledMap}
                           />
                         )}

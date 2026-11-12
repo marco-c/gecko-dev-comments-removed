@@ -876,7 +876,7 @@ interface GleanImpl {
     carouselNavigate: GleanEventWithExtras<{ direction?: string, newtab_visit_id?: string, section?: string, section_position?: string, slide_index?: string|number }>;
     carouselToggleAutoplay: GleanEventWithExtras<{ newtab_visit_id?: string, paused?: string|boolean, section?: string, section_position?: string }>;
     closed: GleanEventWithExtras<{ newtab_visit_id?: string }>;
-    customizePanelOpen: GleanEventWithExtras<{ newtab_visit_id?: string }>;
+    customizePanelOpen: GleanEventWithExtras<{ newtab_visit_id?: string, source?: string, subpanel?: string }>;
     customizePanelSubpanelOpen: GleanEventWithExtras<{ newtab_visit_id?: string, panel?: string }>;
     dwellTime: GleanTimingDistribution;
     featureHighlightDismiss: GleanEventWithExtras<{ feature?: string, newtab_visit_id?: string }>;
@@ -939,6 +939,7 @@ interface GleanImpl {
     widgetsListsChangeDisplay: GleanEventWithExtras<{ display_status?: string|boolean, newtab_visit_id?: string }>;
     widgetsListsImpression: GleanEventWithExtras<{ newtab_visit_id?: string }>;
     widgetsListsUserEvent: GleanEventWithExtras<{ newtab_visit_id?: string, user_action?: string }>;
+    widgetsReady: GleanEventWithExtras<{ newtab_visit_id?: string, widget_location?: string, widget_name?: string, widget_size?: string, widget_variant?: string }>;
     widgetsTimerChangeDisplay: GleanEventWithExtras<{ display_status?: string|boolean, newtab_visit_id?: string }>;
     widgetsTimerImpression: GleanEventWithExtras<{ newtab_visit_id?: string }>;
     widgetsTimerToggleNotification: GleanEventWithExtras<{ display_status?: string|boolean, newtab_visit_id?: string }>;
