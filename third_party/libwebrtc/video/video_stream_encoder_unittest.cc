@@ -10856,10 +10856,16 @@ TEST(VideoStreamEncoderFrameCadenceTest, UpdatesQualityConvergence) {
       factory.Create(std::move(adapter), &encoder_queue);
 
   
-  VideoEncoder::EncoderInfo info;
-  info.min_qp = kVp8SteadyStateQpThreshold;
-  EXPECT_CALL(factory.GetMockFakeEncoder(), GetEncoderInfo)
-      .WillRepeatedly(Return(info));
+  
+  
+  constexpr int kEncoderMinQp = kVp8SteadyStateQpThreshold + 5;
+  EXPECT_CALL(factory.GetMockFakeEncoder(), GetEncoderInfo).WillRepeatedly([&] {
+    VideoEncoder::EncoderInfo info;
+    if (factory.GetMockFakeEncoder().GetNumInitializations() > 0) {
+      info.min_qp = kEncoderMinQp;
+    }
+    return info;
+  });
 
   
   VideoEncoderConfig video_encoder_config;
@@ -10874,7 +10880,7 @@ TEST(VideoStreamEncoderFrameCadenceTest, UpdatesQualityConvergence) {
   EXPECT_CALL(factory.GetMockFakeEncoder(), EncodeHook)
       .WillRepeatedly([](EncodedImage& encoded_image,
                          scoped_refptr<EncodedImageBuffer> buffer) {
-        encoded_image.qp_ = kVp8SteadyStateQpThreshold + 1;
+        encoded_image.qp_ = kEncoderMinQp + 1;
         CodecSpecificInfo codec_specific;
         codec_specific.codecType = kVideoCodecVP8;
         return codec_specific;
@@ -10892,8 +10898,8 @@ TEST(VideoStreamEncoderFrameCadenceTest, UpdatesQualityConvergence) {
                          scoped_refptr<EncodedImageBuffer> buffer) {
         
         
-        encoded_image.qp_ = kVp8SteadyStateQpThreshold +
-                            (encoded_image.SimulcastIndex() == 0 ? 0 : 1);
+        encoded_image.qp_ =
+            kEncoderMinQp + (encoded_image.SimulcastIndex() == 0 ? 0 : 1);
         CodecSpecificInfo codec_specific;
         codec_specific.codecType = kVideoCodecVP8;
         return codec_specific;
