@@ -285,10 +285,19 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   void SetObserver(RtpSenderObserverInterface* observer) override;
 
  protected:
+  
+  
+  
   void InvalidateCache() {
     RTC_DCHECK_RUN_ON(signaling_thread_);
     cached_parameters_.reset();
+    ++cache_generation_;
   }
+
+  
+  
+  
+  void UpdateCache(RtpParameters parameters);
 
   
   
@@ -361,8 +370,20 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
 
   std::vector<std::string> stream_ids_;
   RtpParameters init_parameters_;
+  
+  
+  
+  
+  
   mutable std::optional<RtpParameters> cached_parameters_
       RTC_GUARDED_BY(signaling_thread_);
+  
+  
+  
+  
+  
+  
+  uint64_t cache_generation_ RTC_GUARDED_BY(signaling_thread_) = 0;
   std::vector<Codec> send_codecs_;
 
   
