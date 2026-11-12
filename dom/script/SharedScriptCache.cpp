@@ -280,7 +280,19 @@ MOZ_DEFINE_MALLOC_SIZE_OF(SharedScriptCacheMallocSizeOf)
 
 SharedScriptCache::SharedScriptCache() = default;
 
-void SharedScriptCache::Init() { RegisterWeakMemoryReporter(this); }
+void SharedScriptCache::Init() {
+  RegisterWeakMemoryReporter(this);
+
+  
+  
+  
+  
+  
+  auto ClearCache = [](const char*, void*) { Clear(); };
+  Preferences::RegisterPrefixCallback(ClearCache, "urlclassifier.");
+  Preferences::RegisterCallback(ClearCache,
+                                "privacy.trackingprotection.enabled");
+}
 
 SharedScriptCache::~SharedScriptCache() {
   UnregisterWeakMemoryReporter(this);

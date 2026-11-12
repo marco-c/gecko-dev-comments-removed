@@ -24,7 +24,6 @@
 
 
 
-#include "mozilla/Preferences.h"
 #include "mozilla/PrincipalHashKey.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPtr.h"
@@ -162,27 +161,7 @@ class SharedSubResourceCache {
  public:
   SharedSubResourceCache(const SharedSubResourceCache&) = delete;
   SharedSubResourceCache(SharedSubResourceCache&&) = delete;
-  SharedSubResourceCache() {
-    
-    
-    
-    
-    
-    auto ClearCache = [](const char* s, void*) {
-      if (!sSingleton) {
-        return;
-      }
-      
-      
-      sSingleton->ClearInProcess(Nothing(), Nothing(), Nothing(), Nothing(),
-                                 Nothing());
-    };
-    Preferences::RegisterPrefixCallback(ClearCache, "urlclassifier.");
-    Preferences::RegisterPrefixCallback(ClearCache,
-                                        "privacy.trackingprotection.");
-  }
-
-  ~SharedSubResourceCache() {}
+  SharedSubResourceCache() = default;
 
   static Derived* Get() {
     static_assert(
