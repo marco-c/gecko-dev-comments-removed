@@ -5,12 +5,12 @@
 #include "FileSystemAccessHandle.h"
 
 #include "FileSystemDatabaseManager.h"
+#include "FileSystemEncryptedFileStreams.h"
 #include "FileSystemParentTypes.h"
 #include "mozilla/dom/FileSystemCipherKeyManager.h"
 #include "mozilla/dom/FileSystemDataManager.h"
 #include "mozilla/dom/FileSystemHelpers.h"
 #include "mozilla/dom/FileSystemLog.h"
-#include "mozilla/dom/quota/EncryptedRandomAccessStream_impl.h"
 #include "mozilla/dom/quota/FileStreams.h"
 #include "mozilla/dom/quota/PersistenceType.h"
 #include "mozilla/dom/quota/QuotaCommon.h"
@@ -170,46 +170,6 @@ bool FileSystemAccessHandle::IsInactive() const {
   return !mRegCount && !mActor && !mControlActor;
 }
 
-namespace {
-
-using EncryptedRandomAccessStream =
-    quota::EncryptedRandomAccessStream<fs::FileSystemCipherStrategy>;
-
-Result<nsCOMPtr<nsIRandomAccessStream>, nsresult>
-CreateEncryptedFileRandomAccessStream(
-    const quota::OriginMetadata& aOriginMetadata,
-    fs::FileSystemCipherKeyManager& aCipherKeyManager,
-    const fs::FileId& aFileId, nsIFile* aFile) {
-  MOZ_ASSERT(aOriginMetadata.mPersistenceType ==
-             quota::PERSISTENCE_TYPE_PRIVATE);
-
-  QM_TRY_UNWRAP(MovingNotNull<nsCOMPtr<nsIRandomAccessStream>> baseStream,
-                CreateFileRandomAccessStream(
-                    quota::PERSISTENCE_TYPE_PRIVATE, aOriginMetadata,
-                    quota::Client::FILESYSTEM, aFile, -1, -1,
-                    nsIFileRandomAccessStream::DEFER_OPEN));
-
-  QM_TRY(MOZ_TO_RESULT(fs::FileSystemCipherStrategy::Init()));
-
-  
-  
-  
-  
-  
-  
-  
-  QM_TRY_INSPECT(const auto& cipherKey,
-                 aCipherKeyManager.Ensure(aFileId.Value()));
-  QM_TRY_UNWRAP(
-      RefPtr<EncryptedRandomAccessStream> stream,
-      EncryptedRandomAccessStream::Create(fs::FileSystemCipherStrategy{},
-                                          std::move(baseStream), cipherKey));
-
-  return nsCOMPtr<nsIRandomAccessStream>(std::move(stream));
-}
-
-}  
-
 RefPtr<FileSystemAccessHandle::InitPromise>
 FileSystemAccessHandle::BeginInit() {
   QM_TRY_UNWRAP(fs::FileId fileId, mDataManager->LockExclusive(mEntryId),
@@ -268,7 +228,7 @@ FileSystemAccessHandle::BeginInit() {
                QM_TRY_UNWRAP(
                    nsCOMPtr<nsIRandomAccessStream> stream,
                    originMetadata.mIsPrivate
-                       ? CreateEncryptedFileRandomAccessStream(
+                       ? fs::CreateEncryptedFileRandomAccessStream(
                              originMetadata, *cipherKeyManager, fileId, file)
                        : CreateFileRandomAccessStream(
                              originMetadata.mPersistenceType, originMetadata,
