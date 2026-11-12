@@ -10,11 +10,12 @@
 
 #include "modules/video_coding/frame_helpers.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
-#include <cstring>
 #include <memory>
 #include <optional>
+#include <span>
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
@@ -97,15 +98,18 @@ std::unique_ptr<EncodedFrame> CombineAndDeleteFrames(
   const EncodedFrame& last_frame = *frames.back();
   std::unique_ptr<EncodedFrame> first_frame = std::move(frames[0]);
   auto encoded_image_buffer = EncodedImageBuffer::Create(total_length);
-  uint8_t* buffer = encoded_image_buffer->data();
-  first_frame->SetSpatialLayerFrameSize(first_frame->SpatialIndex().value_or(0),
-                                        first_frame->size());
-  memcpy(buffer, first_frame->data(), first_frame->size());
-  buffer += first_frame->size();
+  std::span<uint8_t> buffer(*encoded_image_buffer);
+  if (any_spatial_index_defined) {
+    const int first_spatial_index = first_frame->SpatialIndex().value_or(0);
+    
+    
+    first_frame->SetSpatialIndex(last_frame.SpatialIndex().value_or(0));
+    first_frame->SetSpatialLayerFrameSize(first_spatial_index,
+                                          first_frame->size());
+  }
+  std::ranges::copy(*first_frame, buffer.begin());
+  buffer = buffer.subspan(first_frame->size());
 
-  
-  
-  first_frame->SetSpatialIndex(last_frame.SpatialIndex().value_or(0));
   
   
   
@@ -125,10 +129,12 @@ std::unique_ptr<EncodedFrame> CombineAndDeleteFrames(
   for (size_t i = 1; i < frames.size(); ++i) {
     
     std::unique_ptr<EncodedFrame> next_frame = std::move(frames[i]);
-    first_frame->SetSpatialLayerFrameSize(
-        next_frame->SpatialIndex().value_or(0), next_frame->size());
-    memcpy(buffer, next_frame->data(), next_frame->size());
-    buffer += next_frame->size();
+    if (any_spatial_index_defined) {
+      first_frame->SetSpatialLayerFrameSize(
+          next_frame->SpatialIndex().value_or(0), next_frame->size());
+    }
+    std::ranges::copy(*next_frame, buffer.begin());
+    buffer = buffer.subspan(next_frame->size());
   }
   first_frame->SetEncodedData(encoded_image_buffer);
   return first_frame;
