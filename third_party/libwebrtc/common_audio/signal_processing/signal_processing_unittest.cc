@@ -507,6 +507,25 @@ TEST(SplTest, FilterTest) {
                                bStateLow, data_out, bTmp16Low));
 }
 
+TEST(SplTest, FilterMAFastQ12SaturatesAfterOverflow) {
+  const int16_t kCoefficients[] = {32767, 32767, 32767};
+  const int16_t kPositiveInput[] = {32767, 32767, 32767};
+  const int16_t kNegativeInput[] = {-32768, -32768, -32768};
+  int16_t output = 0;
+
+  
+  
+  WebRtcSpl_FilterMAFastQ12(&kPositiveInput[2], &output, kCoefficients,
+                            std::size(kCoefficients), 1);
+  EXPECT_EQ(32767, output);
+
+  
+  
+  WebRtcSpl_FilterMAFastQ12(&kNegativeInput[2], &output, kCoefficients,
+                            std::size(kCoefficients), 1);
+  EXPECT_EQ(-32768, output);
+}
+
 TEST(SplTest, RandTest) {
   const int kVectorSize = 4;
   int16_t BU[] = {3653, 12446, 8525, 30691};
