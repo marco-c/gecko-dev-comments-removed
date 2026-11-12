@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <limits>
 #include <optional>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -363,6 +364,11 @@ class RTC_EXPORT VideoEncoder {
     std::optional<int> encoder_thread_limit;
   };
 
+  enum class ComplexityControlMode {
+    kConstant,  
+    kVariable   
+  };
+
   static VideoCodecVP8 GetDefaultVp8Settings();
   static VideoCodecVP9 GetDefaultVp9Settings();
   static VideoCodecH264 GetDefaultH264Settings();
@@ -433,6 +439,27 @@ class RTC_EXPORT VideoEncoder {
   
   
   virtual void SetRates(const RateControlParameters& parameters) = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void SetComplexity(
+      std::span<const VideoCodecComplexity> complexity_by_spatial_layer,
+      ComplexityControlMode complexity_control_mode) {
+    
+  }
 
   
   
