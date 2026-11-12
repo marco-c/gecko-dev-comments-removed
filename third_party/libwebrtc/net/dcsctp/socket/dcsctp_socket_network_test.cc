@@ -166,7 +166,9 @@ class SctpActor : public DcSctpSocketCallbacks {
     emulated_socket.SetReceiver([this](webrtc::CopyOnWriteBuffer buf) {
       
       
-      thread_->PostTask([this, buf] { this->sctp_socket_.ReceivePacket(buf); });
+      thread_->PostTask([this, buf = std::move(buf)] {
+        this->sctp_socket_.ReceivePacket(buf);
+      });
     });
   }
 
