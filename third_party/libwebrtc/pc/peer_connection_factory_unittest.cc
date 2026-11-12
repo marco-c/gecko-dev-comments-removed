@@ -59,6 +59,8 @@
 #include "p2p/test/fake_port_allocator.h"
 #include "pc/connection_context.h"
 #include "pc/test/fake_audio_capture_module.h"
+#include "pc/test/fake_rtc_certificate_generator.h"
+#include "pc/test/fake_video_track_renderer.h"
 #include "pc/test/fake_video_track_source.h"
 #include "rtc_base/event.h"
 #include "rtc_base/internal/default_socket_server.h"
@@ -74,12 +76,6 @@
 #include "test/gtest.h"
 #include "test/run_loop.h"
 #include "test/testsupport/file_utils.h"
-
-#ifdef WEBRTC_ANDROID
-#include "pc/test/android_test_initializer.h"
-#endif
-#include "pc/test/fake_rtc_certificate_generator.h"
-#include "pc/test/fake_video_track_renderer.h"
 
 namespace webrtc {
 namespace {
@@ -151,9 +147,6 @@ class PeerConnectionFactoryTest : public ::testing::Test {
 
  private:
   void SetUp() override {
-#ifdef WEBRTC_ANDROID
-    InitializeAndroidObjects();
-#endif
     
     
     
@@ -284,10 +277,6 @@ class PeerConnectionFactoryTest : public ::testing::Test {
 
 
 TEST(PeerConnectionFactoryTestInternal, DISABLED_CreatePCUsingInternalModules) {
-#ifdef WEBRTC_ANDROID
-  InitializeAndroidObjects();
-#endif
-
   scoped_refptr<PeerConnectionFactoryInterface> factory(
       CreatePeerConnectionFactory(
           nullptr , nullptr ,
