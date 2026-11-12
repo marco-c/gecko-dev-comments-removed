@@ -274,9 +274,18 @@ void OutstandingData::NackBetweenAckBlocks(
       if (!GetItem(tsn).IsMissIndication(ack_info.highest_tsn_acked)) {
         continue;
       }
-      ack_info.has_packet_loss |=
-          NackItem(now, tsn, false,
-                   !is_in_fast_recovery);
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      ack_info.has_packet_loss |= NackItem(now, tsn, false,
+                                           true);
     }
     prev_block_last_acked = UnwrappedTSN::AddTo(cumulative_tsn_ack, block.end);
   }
