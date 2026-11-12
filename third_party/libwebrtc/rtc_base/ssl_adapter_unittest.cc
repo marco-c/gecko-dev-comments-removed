@@ -10,6 +10,8 @@
 
 #include "rtc_base/ssl_adapter.h"
 
+#include <openssl/err.h>
+
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -131,6 +133,7 @@ class SSLAdapterTestDummy {
   }
 
   void OnSSLAdapterCloseEvent(Socket* socket, int error) {
+    EXPECT_EQ(ERR_peek_error(), 0u);
     
     
     
@@ -294,6 +297,7 @@ class SSLAdapterTestBase : public ::testing::Test {
 
       RTC_LOG(LS_INFO) << "TLS handshake failed.";
     }
+    EXPECT_EQ(ERR_peek_error(), 0u);
   }
 
   void TestTransfer(absl::string_view message) {
@@ -426,6 +430,22 @@ TEST_F(SSLAdapterTestTLS_ECDSA,
   TestHandshake(true);
 }
 
+
+
+TEST_F(SSLAdapterTestTLS_ECDSA, TestTLSConnectFailureDrainsErrorQueue) {
+  auto mock_verifier = std::make_unique<MockCertVerifier>();
+  EXPECT_CALL(*mock_verifier, Verify(_)).WillRepeatedly([](const auto&) {
+    
+    
+    ERR_put_error(ERR_LIB_SSL, 0, ERR_R_INTERNAL_ERROR, __FILE__, __LINE__);
+    return false;
+  });
+  cert_verifier_ = std::move(mock_verifier);
+  SetIgnoreBadCert(false);
+  SetCertVerifier(cert_verifier_.get());
+
+  TestHandshake(false);
+}
 
 TEST_F(SSLAdapterTestTLS_RSA, TestTLSTransfer) {
   TestHandshake(true);
