@@ -752,10 +752,8 @@ class nsIFrame : public nsQueryFrame {
         mClass(aID),
         mMayHaveRoundedCorners(false),
         mHasImageRequest(false),
-        mHasFirstLetterChild(false),
         mParentIsWrapperAnonBox(false),
         mIsWrapperBoxNeedingRestyle(false),
-        mReflowRequestedForCharDataChange(false),
         mForceDescendIntoIfVisible(false),
         mBuiltDisplayList(false),
         mFrameIsModified(false),
@@ -770,9 +768,7 @@ class nsIFrame : public nsQueryFrame {
         mAllDescendantsAreInvisible(false),
         mHasBSizeChange(false),
         mHasPaddingChange(false),
-        mInScrollAnchorChain(false),
-        mHasColumnSpanSiblings(false),
-        mDescendantMayDependOnItsStaticPosition(false) {
+        mInScrollAnchorChain(false) {
     MOZ_ASSERT(mComputedStyle);
     MOZ_ASSERT(mPresContext);
     mozilla::PodZero(&mOverflow);
@@ -5109,7 +5105,9 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  bool HasFirstLetterChild() const { return mHasFirstLetterChild; }
+  bool HasFirstLetterChild() const {
+    return HasAnyStateBits(NS_FRAME_HAS_FIRST_LETTER_CHILD);
+  }
 
   
 
@@ -5374,16 +5372,26 @@ class nsIFrame : public nsQueryFrame {
     mHasPaddingChange = aHasPaddingChange;
   }
 
-  bool HasColumnSpanSiblings() const { return mHasColumnSpanSiblings; }
+  bool HasColumnSpanSiblings() const {
+    return HasAnyStateBits(NS_FRAME_HAS_COLUMN_SPAN_SIBLINGS);
+  }
   void SetHasColumnSpanSiblings(bool aHasColumnSpanSiblings) {
-    mHasColumnSpanSiblings = aHasColumnSpanSiblings;
+    AddOrRemoveStateBits(NS_FRAME_HAS_COLUMN_SPAN_SIBLINGS,
+                         aHasColumnSpanSiblings);
   }
 
+  
+
+
+
+
   bool DescendantMayDependOnItsStaticPosition() const {
-    return mDescendantMayDependOnItsStaticPosition;
+    return HasAnyStateBits(
+        NS_FRAME_DESCENDANT_MAY_DEPEND_ON_ITS_STATIC_POSITION);
   }
   void SetDescendantMayDependOnItsStaticPosition(bool aValue) {
-    mDescendantMayDependOnItsStaticPosition = aValue;
+    AddOrRemoveStateBits(NS_FRAME_DESCENDANT_MAY_DEPEND_ON_ITS_STATIC_POSITION,
+                         aValue);
   }
 
   
@@ -5512,14 +5520,6 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  bool mHasFirstLetterChild : 1;
-
-  
-
-
-
-
-
 
 
 
@@ -5533,23 +5533,6 @@ class nsIFrame : public nsQueryFrame {
 
 
   bool mIsWrapperBoxNeedingRestyle : 1;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  bool mReflowRequestedForCharDataChange : 1;
 
   
 
@@ -5634,27 +5617,6 @@ class nsIFrame : public nsQueryFrame {
 
 
   bool mInScrollAnchorChain : 1;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  bool mHasColumnSpanSiblings : 1;
-
-  
-
-
-
-
-  bool mDescendantMayDependOnItsStaticPosition : 1;
 
  protected:
   

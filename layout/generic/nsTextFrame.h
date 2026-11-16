@@ -927,6 +927,11 @@ class nsTextFrame : public nsIFrame {
   PropertyFlags mPropertyFlags = PropertyFlags(0);
 
   
+  
+  
+  bool mReflowRequestedForCharDataChange = false;
+
+  
 
 
 

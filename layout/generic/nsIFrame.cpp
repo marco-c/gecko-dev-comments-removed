@@ -177,7 +177,12 @@ nsIFrame* nsILineIterator::LineInfo::GetLastFrameOnLine() const {
 }
 
 #ifdef HAVE_64BIT_BUILD
+#  ifdef DEBUG
+
 static_assert(sizeof(nsIFrame) == 120, "nsIFrame should remain small");
+#  else
+static_assert(sizeof(nsIFrame) == 112, "nsIFrame should remain small");
+#  endif
 #else
 static_assert(sizeof(void*) == 4, "Odd build config?");
 
@@ -673,11 +678,9 @@ void nsIFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
                   NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN |
                   NS_FRAME_PART_OF_IBSPLIT |
                   NS_FRAME_MAY_BE_TRANSFORMED |
+                  NS_FRAME_HAS_COLUMN_SPAN_SIBLINGS |
                   NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR));
     
-
-    
-    mHasColumnSpanSiblings = aPrevInFlow->HasColumnSpanSiblings();
 
     
     if (aPrevInFlow->IsAbsoluteContainer()) {
