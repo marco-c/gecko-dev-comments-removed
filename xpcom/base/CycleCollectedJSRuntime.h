@@ -552,10 +552,6 @@ class CycleCollectedJSRuntime {
   
   static CycleCollectedJSRuntime* Get();
 
-  
-  
-  bool IsInGCCallback() const { return mInGCCallback; }
-
   void SetContext(CycleCollectedJSContext* aContext);
 
 #ifdef NIGHTLY_BUILD
@@ -597,8 +593,6 @@ class CycleCollectedJSRuntime {
 
   OOMState mOutOfMemoryState;
   OOMState mLargeAllocationFailureState;
-
-  bool mInGCCallback = false;
 
   
   

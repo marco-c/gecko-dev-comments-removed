@@ -329,25 +329,25 @@ UITimerCallback::Notify(nsITimer* aTimer) {
   if ((gMouseOrKeyboardEventCounter == mPreviousCount) || !aTimer) {
     gMouseOrKeyboardEventCounter = 0;
     gNonSynthesizedMouseOrKeyboardEventCounter = 0;
-    obs->NotifyWhenScriptSafe(nullptr, "user-interaction-inactive", nullptr);
-    obs->NotifyWhenScriptSafe(
-        nullptr, "user-interaction-inactive-non-synthesized", nullptr);
+    obs->NotifyObservers(nullptr, "user-interaction-inactive", nullptr);
+    obs->NotifyObservers(nullptr, "user-interaction-inactive-non-synthesized",
+                         nullptr);
     if (gUserInteractionTimer) {
       gUserInteractionTimer->Cancel();
       NS_RELEASE(gUserInteractionTimer);
     }
   } else {
-    obs->NotifyWhenScriptSafe(nullptr, "user-interaction-active", nullptr);
+    obs->NotifyObservers(nullptr, "user-interaction-active", nullptr);
     
     
     
     if (gNonSynthesizedMouseOrKeyboardEventCounter ==
         mPreviousNonSynthesizedCount) {
-      obs->NotifyWhenScriptSafe(
-          nullptr, "user-interaction-inactive-non-synthesized", nullptr);
+      obs->NotifyObservers(nullptr, "user-interaction-inactive-non-synthesized",
+                           nullptr);
     } else {
-      obs->NotifyWhenScriptSafe(
-          nullptr, "user-interaction-active-non-synthesized", nullptr);
+      obs->NotifyObservers(nullptr, "user-interaction-active-non-synthesized",
+                           nullptr);
     }
     EventStateManager::UpdateUserActivityTimer();
 
