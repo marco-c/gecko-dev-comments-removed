@@ -114,7 +114,7 @@ const BackgroundColor = {
     "--fxview-element-background-hover",
     "--fxviewtabrow-element-background-active",
     "--fxviewtabrow-element-background-hover",
-    "--identity-stroke-color",
+    "--identity-color",
     "--identity-tab-color",
     "--lwt-accent-color",
     "--newtab-background-card",
@@ -323,6 +323,7 @@ const BorderStyle = {
     "none",
     "hidden",
   ],
+  allowedTokens: ["--default-focusring"],
 };
 
 /** @type {PropertyTypeConfig} */
@@ -421,8 +422,12 @@ const Size = {
   allowFunctions: ["max"],
   tokenTypes: ["size", "icon-size"],
   allowUnits: true,
+  allowedTokens: [
+    "--downloads-item-height",
+    "--menu-panel-width-wide",
+    "--panel-and-palette-icon-size",
+  ],
   allowedUnits: ["%", "ch", "em", "vh", "vw"],
-  allowedTokens: ["--downloads-item-height"],
   customFixes: {
     ...createRawValuesObject(["size", "icon-size"]),
     "0.75rem": "var(--size-item-xsmall)",
