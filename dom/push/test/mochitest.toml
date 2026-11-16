@@ -9,7 +9,6 @@ support-files = [
   "error_worker.js",
 ]
 
-
 ["test_data.html"]
 skip-if = [
   "os == 'android'",
@@ -30,11 +29,13 @@ skip-if = [
 ["test_multiple_register.html"]
 skip-if = [
   "os == 'android'",
+  "xorigin", # We block cross origin subscriptions
 ]
 
 ["test_multiple_register_different_scope.html"]
 skip-if = [
   "os == 'android'",
+  "xorigin", # We block cross origin subscriptions
 ]
 
 ["test_multiple_register_during_service_activation.html"]
@@ -44,8 +45,18 @@ skip-if = [
 
 ["test_permission_granted.html"]
 scheme = "https"
+skip-if = [
+  "xorigin", # We block cross origin subscriptions
+]
 
 ["test_permissions.html"]
+skip-if = [
+  "os == 'android'",
+]
+
+["test_pushsubscriptionchange_origin_prefix.html"]
+support-files = ["file_pushsubscriptionchange_origin_prefix.html"]
+scheme = "https"
 skip-if = [
   "os == 'android'",
 ]
@@ -71,14 +82,17 @@ skip-if = [
 ["test_subscription_change.html"]
 skip-if = [
   "os == 'android'",
+  "xorigin", # We block cross origin subscriptions
 ]
 
 ["test_try_registering_offline_disabled.html"]
 skip-if = [
   "os == 'android'",
+  "xorigin", # We block cross origin subscriptions
 ]
 
 ["test_unregister.html"]
 skip-if = [
   "os == 'android'",
+  "xorigin", # We block cross origin subscriptions
 ]
