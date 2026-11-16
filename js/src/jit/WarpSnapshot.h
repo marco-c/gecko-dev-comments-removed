@@ -207,6 +207,7 @@ class WarpGetImport : public WarpOpSnapshot {
 };
 
 
+
 class WarpConstantBinding : public WarpOpSnapshot {
   mozilla::Variant<OffthreadGCPtr<Value>, uint32_t> value_;
 
