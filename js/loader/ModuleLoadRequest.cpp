@@ -71,10 +71,9 @@ nsIGlobalObject* ModuleLoadRequest::GetGlobalObject() {
   return mLoader->GetGlobalObject();
 }
 
-bool ModuleLoadRequest::IsSourcePhaseRequest(JSContext* aCx) const {
-  Rooted<JSObject*> moduleRequest(aCx, mModuleRequestObj);
+bool ModuleLoadRequest::IsSourcePhaseRequest() const {
   
-  return moduleRequest && JS::ModuleRequestIsSourcePhase(aCx, moduleRequest);
+  return mModuleRequestObj && JS::ModuleRequestIsSourcePhase(mModuleRequestObj);
 }
 
 bool ModuleLoadRequest::IsErrored() const {
@@ -111,7 +110,8 @@ void ModuleLoadRequest::ModuleLoaded() {
   
   MOZ_ASSERT(mModuleScript);
   if (!mLoadContext->IsPreload() && mModuleScript->ForPreload()) {
-    mModuleScript->SetForPreload(false);
+    mLoader->MovePreloadedSetToResolvedSet(mModuleScript);
+    MOZ_ASSERT(!mModuleScript->ForPreload());
   }
 }
 
