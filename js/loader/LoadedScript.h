@@ -64,6 +64,10 @@ class ScriptFetchInfo : public nsISupports {
   bool IsForModulePreload() const { return mIsForModulePreload; }
   void SetForModulePreload(bool aValue) { mIsForModulePreload = aValue; }
 
+  bool HasPreloadedResolvedSet() const { return bool(mPreloadedResolvedSet); }
+  JS::loader::ResolvedModuleSet* GetPreloadedResolvedSet();
+  void ReleasePreloadedResolvedSet() { mPreloadedResolvedSet = nullptr; }
+
   bool IsForModuleScript() const { return mKind == ScriptKind::eModule; }
   bool IsForEvent() const { return mKind == ScriptKind::eEvent; }
 
@@ -118,6 +122,10 @@ class ScriptFetchInfo : public nsISupports {
   
   
   nsCOMPtr<nsIURI> mBaseURL;
+
+  
+  
+  mozilla::UniquePtr<JS::loader::ResolvedModuleSet> mPreloadedResolvedSet;
 };
 
 
@@ -802,8 +810,6 @@ class ModuleScript final : public nsISupports {
 
   bool mHadImportMap = false;
 
-  mozilla::UniquePtr<JS::loader::ResolvedModuleSet> mPreloadedResolvedSet;
-
   ~ModuleScript();
 
  public:
@@ -827,16 +833,14 @@ class ModuleScript final : public nsISupports {
   bool ForPreload() const { return mFetchInfo->IsForModulePreload(); }
   bool HadImportMap() const { return mHadImportMap; }
 
+  ScriptFetchInfo* FetchInfo() const { return mFetchInfo; }
+
   
   
   void ResetPreload();
   void Shutdown();
 
   friend void CheckModuleScriptPrivate(LoadedScript*, const Value&);
-
-  bool HasPreloadedResolvedSet() { return !!mPreloadedResolvedSet; }
-  ResolvedModuleSet* GetPreloadedResolvedSet();
-  void ReleasePreloadedResolvedSet() { mPreloadedResolvedSet = nullptr; }
 };
 
 }  

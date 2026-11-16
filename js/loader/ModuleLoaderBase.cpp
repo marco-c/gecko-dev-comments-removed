@@ -849,7 +849,14 @@ void ModuleLoaderBase::OnFetchSucceeded(ModuleLoadRequest* aRequest) {
   
   
   if (aRequest->IsTopLevel() || aRequest->IsDynamicImport()) {
-    StartFetchingModuleDependencies(aRequest);
+    if (aRequest->IsSourcePhaseRequest()) {
+      if (!aRequest->IsCanceled()) {
+        aRequest->SetReady();
+        aRequest->LoadFinished();
+      }
+    } else {
+      StartFetchingModuleDependencies(aRequest);
+    }
   } else {
     MOZ_ASSERT(!aRequest->IsDynamicImport());
     AutoJSAPI jsapi;
@@ -1178,7 +1185,7 @@ void ModuleLoaderBase::AddToPreloadedResolvedSet(
   MOZ_ASSERT(aRootRequest->mModuleScript);
 
   ResolvedModuleSet* set =
-      aRootRequest->mModuleScript->GetPreloadedResolvedSet();
+      aRootRequest->mModuleScript->FetchInfo()->GetPreloadedResolvedSet();
   MOZ_ASSERT(set);
   AddToResolvedSet(set, std::move(aRecord));
 }
@@ -1257,11 +1264,11 @@ void ModuleLoaderBase::MovePreloadedSetToResolvedSet(
   }
 
   ms->SetForPreload(false);
-  if (!ms->HasPreloadedResolvedSet()) {
+  if (!ms->FetchInfo()->HasPreloadedResolvedSet()) {
     return;
   }
 
-  ResolvedModuleSet* set = ms->GetPreloadedResolvedSet();
+  ResolvedModuleSet* set = ms->FetchInfo()->GetPreloadedResolvedSet();
   for (auto iter = set->modIter(); !iter.done(); iter.next()) {
     auto record = std::move(iter.getMutable());
     nsCOMPtr<nsIURI> uri = record->TakeResult();
@@ -1270,7 +1277,7 @@ void ModuleLoaderBase::MovePreloadedSetToResolvedSet(
   }
 
   set->clear();
-  ms->ReleasePreloadedResolvedSet();
+  ms->FetchInfo()->ReleasePreloadedResolvedSet();
 }
 
 
@@ -1318,18 +1325,18 @@ void ModuleLoaderBase::ClearPreloadedModuleGraph(
 
   ms->ResetPreload();
 
-  if (!ms->HasPreloadedResolvedSet()) {
+  if (!ms->FetchInfo()->HasPreloadedResolvedSet()) {
     return;
   }
 
-  ResolvedModuleSet* set = ms->GetPreloadedResolvedSet();
+  ResolvedModuleSet* set = ms->FetchInfo()->GetPreloadedResolvedSet();
   for (auto iter = set->iter(); !iter.done(); iter.next()) {
     nsCOMPtr<nsIURI> uri = iter.get()->TakeResult();
     MOZ_ASSERT(uri);
     ResetPreloadedModule(uri);
   }
   set->clear();
-  ms->ReleasePreloadedResolvedSet();
+  ms->FetchInfo()->ReleasePreloadedResolvedSet();
 }
 
 void ModuleLoaderBase::StartFetchingModuleDependencies(
@@ -1856,6 +1863,25 @@ void ModuleLoaderBase::CancelAndClearDynamicImports() {
   }
 }
 
+static void ReportImportMapParseErrorWhenSafe(
+    JSContext* aCx, nsIGlobalObject* aGlobal,
+    const JS::ExceptionStack& aExnStack) {
+  MOZ_ASSERT(NS_IsMainThread());
+  nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+      "ReportImportMapParseErrorWhenSafe",
+      [global = nsCOMPtr<nsIGlobalObject>(aGlobal),
+       exception = JS::PersistentRooted<JS::Value>(aCx, aExnStack.exception()),
+       stack = JS::PersistentRooted<JSObject*>(aCx, aExnStack.stack())]() {
+        AutoJSAPI jsapi;
+        if (!jsapi.Init(global)) {
+          return;
+        }
+        JS::ExceptionStack exnStack(jsapi.cx(), exception, stack);
+        JS::SetPendingExceptionStack(jsapi.cx(), exnStack);
+        jsapi.ReportException();
+      }));
+}
+
 UniquePtr<ImportMap> ModuleLoaderBase::ParseImportMap(
     ScriptLoadRequest* aRequest) {
   AutoJSAPI jsapi;
@@ -1891,7 +1917,17 @@ UniquePtr<ImportMap> ModuleLoaderBase::ParseImportMap(
   
   
   
-  return ImportMap::ParseString(jsapi.cx(), text, aRequest->BaseURL(), warning);
+  
+  UniquePtr<ImportMap> importMap =
+      ImportMap::ParseString(jsapi.cx(), text, aRequest->BaseURL(), warning);
+  if (!importMap) {
+    JS::ExceptionStack exnStack(jsapi.cx());
+    if (jsapi.HasException() && jsapi.StealExceptionAndStack(&exnStack)) {
+      ReportImportMapParseErrorWhenSafe(jsapi.cx(), GetGlobalObject(),
+                                        exnStack);
+    }
+  }
+  return importMap;
 }
 
 void ModuleLoaderBase::RegisterImportMap(UniquePtr<ImportMap> aImportMap,
