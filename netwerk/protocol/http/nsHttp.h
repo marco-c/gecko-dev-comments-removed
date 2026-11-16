@@ -537,6 +537,9 @@ nsLiteralCString HttpVersionToTelemetryLabel(HttpVersion version);
 nsIHttpChannelInternal::ProxyDNSStrategy GetProxyDNSStrategyHelper(
     const char* aType, uint32_t aFlag);
 
+
+nsIHttpChannelInternal::ProxyType GetProxyTypeHelper(nsIProxyInfo* aProxyInfo);
+
 }  
 }  
 

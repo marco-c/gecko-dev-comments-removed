@@ -526,6 +526,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   Atomic<bool, ReleaseAcquire> mResponseIsComplete{false};
   Atomic<bool, ReleaseAcquire> mClosed{false};
   Atomic<bool, Relaxed> mIsHttp3Used{false};
+  Atomic<bool, Relaxed> mIsTunnelOverHttp3{false};
 
   
   

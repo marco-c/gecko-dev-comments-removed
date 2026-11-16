@@ -441,7 +441,7 @@ void HttpChannelChild::OnStartRequest(
 
   mCacheKey = aArgs.cacheKey();
 
-  StoreIsProxyUsed(aArgs.isProxyUsed());
+  mProxyType = Some(aArgs.proxyType());
 
   
   mRequestHead.SetHeaders(aRequestHeaders);
