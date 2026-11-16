@@ -851,14 +851,6 @@ void GeckoChildProcessHost::InitWindowsGroupID() {
 }
 #endif
 
-bool GeckoChildProcessHost::SyncLaunch(geckoargs::ChildProcessArgs aExtraOpts,
-                                       int aTimeoutMs) {
-  if (!AsyncLaunch(std::move(aExtraOpts))) {
-    return false;
-  }
-  return WaitUntilConnected(aTimeoutMs);
-}
-
 
 
 
@@ -1011,8 +1003,8 @@ void GeckoChildProcessHost::OnProcessLaunchError(const LaunchError ) {
   lock.Notify();
 }
 
-bool GeckoChildProcessHost::WaitUntilConnected(int32_t aTimeoutMs) {
-  AUTO_PROFILER_LABEL("GeckoChildProcessHost::WaitUntilConnected", OTHER);
+bool GeckoChildProcessHost::WaitForProcessHandle(int32_t aTimeoutMs) {
+  AUTO_PROFILER_LABEL("GeckoChildProcessHost::WaitForProcessHandle", OTHER);
 
   
   
@@ -1026,12 +1018,7 @@ bool GeckoChildProcessHost::WaitUntilConnected(int32_t aTimeoutMs) {
 
   
   
-  while (mProcessState != PROCESS_CONNECTED) {
-    
-    if (mProcessState == PROCESS_ERROR) {
-      break;
-    }
-
+  while (mProcessState < PROCESS_CREATED) {
     CVStatus status = lock.Wait(timeout);
     if (status == CVStatus::Timeout) {
       break;
@@ -1043,32 +1030,23 @@ bool GeckoChildProcessHost::WaitUntilConnected(int32_t aTimeoutMs) {
       waitStart = current;
     }
   }
+  MOZ_ASSERT(mProcessState != PROCESS_CREATED || GetChildProcessHandle());
 
-  return mProcessState == PROCESS_CONNECTED;
-}
-
-bool GeckoChildProcessHost::WaitForProcessHandle() {
-  MonitorAutoLock lock(mMonitor);
-  while (mProcessState < PROCESS_CREATED) {
-    lock.Wait();
-  }
-  MOZ_ASSERT(mProcessState == PROCESS_ERROR || GetChildProcessHandle());
-
-  return mProcessState < PROCESS_ERROR;
+  return mProcessState == PROCESS_CREATED;
 }
 
 bool GeckoChildProcessHost::LaunchAndWaitForProcessHandle(
-    geckoargs::ChildProcessArgs aExtraOpts) {
+    geckoargs::ChildProcessArgs aExtraOpts, int32_t aTimeoutMs) {
   if (!AsyncLaunch(std::move(aExtraOpts))) {
     return false;
   }
-  return WaitForProcessHandle();
+  return WaitForProcessHandle(aTimeoutMs);
 }
 
 bool GeckoChildProcessHost::InitializeChannel(
     IPC::Channel::ChannelHandle* aClientHandle) {
   mNodeController = NodeController::GetSingleton();
-  if (!mNodeController->InviteChildProcess(this, aClientHandle, &mInitialPort,
+  if (!mNodeController->InviteChildProcess(aClientHandle, &mInitialPort,
                                            getter_AddRefs(mNodeChannel))) {
     return false;
   }
@@ -1930,13 +1908,6 @@ bool GeckoChildProcessHost::OpenPrivilegedHandle(base::ProcessId aPid) {
   }
 
   return base::OpenPrivilegedProcessHandle(aPid, &mChildProcessHandle);
-}
-
-void GeckoChildProcessHost::OnChannelConnected() {
-  MonitorAutoLock lock(mMonitor);
-  MOZ_ASSERT(mProcessState == PROCESS_CREATED);
-  mProcessState = PROCESS_CONNECTED;
-  lock.Notify();
 }
 
 RefPtr<ProcessHandlePromise> GeckoChildProcessHost::WhenProcessHandleReady() {

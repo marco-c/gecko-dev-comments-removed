@@ -23,7 +23,6 @@
 
 namespace mozilla::ipc {
 
-class GeckoChildProcessHost;
 class NodeController;
 
 
@@ -72,8 +71,7 @@ class NodeChannel final : public IPC::Channel::Listener {
 
   NodeChannel(const NodeName& aName, IPC::Channel* aChannel,
               Listener* aListener,
-              base::ProcessId aPid = base::kInvalidProcessId,
-              GeckoChildProcessHost* aChildProcessHost = nullptr);
+              base::ProcessId aPid = base::kInvalidProcessId);
 
   
   
@@ -166,9 +164,6 @@ class NodeChannel final : public IPC::Channel::Listener {
 #ifdef FUZZING_SNAPSHOT
   std::atomic<bool> mBlockSendRecv = false;
 #endif
-
-  
-  ThreadSafeWeakPtr<mozilla::ipc::GeckoChildProcessHost> mChildProcessHost;
 };
 
 }  

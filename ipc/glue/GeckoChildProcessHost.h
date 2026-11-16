@@ -122,8 +122,11 @@ class GeckoChildProcessHost
   bool AsyncLaunch(
       geckoargs::ChildProcessArgs aExtraOpts = geckoargs::ChildProcessArgs{});
 
-  virtual bool WaitUntilConnected(int32_t aTimeoutMs = 0);
+  bool WaitForProcessHandle(int32_t aTimeoutMs = 0);
 
+  
+  
+  
   
   
   
@@ -137,17 +140,8 @@ class GeckoChildProcessHost
   
   
   bool LaunchAndWaitForProcessHandle(
-      geckoargs::ChildProcessArgs aExtraOpts = geckoargs::ChildProcessArgs());
-  bool WaitForProcessHandle();
-
-  
-  
-  
-  bool SyncLaunch(
       geckoargs::ChildProcessArgs aExtraOpts = geckoargs::ChildProcessArgs(),
-      int32_t timeoutMs = 0);
-
-  virtual void OnChannelConnected();
+      int32_t aTimeoutMs = 0);
 
   
   
@@ -260,11 +254,7 @@ class GeckoChildProcessHost
     
     CHANNEL_INITIALIZED,
     
-    
     PROCESS_CREATED,
-    
-    
-    PROCESS_CONNECTED,
     PROCESS_ERROR
   } mProcessState MOZ_GUARDED_BY(mMonitor);
 
