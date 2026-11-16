@@ -678,6 +678,7 @@ VectorImage::GetFrameAtSize(const IntSize& aSize, uint32_t aWhichFrame,
 
   bool didCache;  
 
+  RefPtr<VectorImage> kungFuDeathGrip(this);
   AutoRestoreSVGState autoRestore(params, mSVGDocumentWrapper,
                                    false);
 
@@ -809,6 +810,7 @@ VectorImage::GetImageProvider(WindowRenderer* aRenderer,
   
   
   RefPtr<ISurfaceProvider> provider;
+  RefPtr<VectorImage> kungFuDeathGrip(this);
   if (blobRecording) {
     provider = MakeRefPtr<BlobSurfaceProvider>(ImageKey(this), surfaceKey,
                                                mSVGDocumentWrapper, aFlags);
@@ -914,6 +916,8 @@ VectorImage::Draw(gfxContext* aContext, const nsIntSize& aSize,
   if (!mIsFullyLoaded) {
     return ImgDrawResult::NOT_READY;
   }
+
+  RefPtr<VectorImage> kungFuDeathGrip(this);
 
   if (mAnimationConsumers == 0 && mHaveAnimations) {
     SendOnUnlockedDraw(aFlags);
@@ -1092,6 +1096,7 @@ VectorImage::RequestRefresh(const TimeStamp& aTime) {
     return;
   }
 
+  RefPtr<VectorImage> kungFuDeathGrip(this);
   EvaluateAnimation();
 
   mSVGDocumentWrapper->TickRefreshDriver();
@@ -1112,6 +1117,7 @@ VectorImage::ResetAnimation() {
     return NS_OK;  
   }
 
+  RefPtr<VectorImage> kungFuDeathGrip(this);
   mSVGDocumentWrapper->ResetAnimation();
 
   return NS_OK;
@@ -1178,6 +1184,7 @@ void VectorImage::MediaFeatureValuesChangedAllDocuments(
     return;
   }
 
+  RefPtr<VectorImage> kungFuDeathGrip(this);
   if (Document* doc = mSVGDocumentWrapper->GetDocument()) {
     if (RefPtr<nsPresContext> presContext = doc->GetPresContext()) {
       presContext->MediaFeatureValuesChanged(
@@ -1548,6 +1555,10 @@ void VectorImage::OnSVGDocumentLoaded() {
              "These flags shouldn't get set until OnSVGDocumentLoaded. "
              "Duplicate calls to OnSVGDocumentLoaded?");
 
+  
+  
+  RefPtr<VectorImage> kungFuDeathGrip(this);
+
   CancelAllListeners();
 
   
@@ -1563,10 +1574,6 @@ void VectorImage::OnSVGDocumentLoaded() {
 
   
   mRenderingObserver = new SVGRootRenderingObserver(mSVGDocumentWrapper, this);
-
-  
-  
-  RefPtr<VectorImage> kungFuDeathGrip(this);
 
   
   if (mProgressTracker) {
