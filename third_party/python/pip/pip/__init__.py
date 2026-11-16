@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-__version__ = "25.2"
+__version__ = "26.3"
+
+
+
+_EAGER_IMPORTS: set[str] = set()
 
 
 def main(args: list[str] | None = None) -> int:
