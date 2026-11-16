@@ -24,7 +24,7 @@ const lazy = XPCOMUtils.declareLazy({
   console: () =>
     console.createInstance({
       maxLogLevelPref: "browser.ml.logLevel",
-      prefix: "GeckoMLEngineChild",
+      logModule: "GeckoMLEngineChild",
     }),
   // Prefs:
   CACHE_TIMEOUT_MS: { pref: "browser.ml.modelCacheTimeout" },
@@ -305,8 +305,9 @@ export class MLEngineChild extends JSProcessActorChild {
    * @param {string} engineId - The ID of the engine to remove.
    * @param {boolean} shutDownIfEmpty - If true, shuts down the engine process if no engines remain.
    * @param {boolean} replacement - Flag indicating whether the engine is being replaced.
+   * @param {boolean} [idle] - Whether the engine is shutting down because it was idle for timeoutMS.
    */
-  async removeEngine(engineId, shutDownIfEmpty, replacement) {
+  async removeEngine(engineId, shutDownIfEmpty, replacement, idle = false) {
     this.#engineDispatchers.delete(engineId);
     this.#enginesPresent.delete(engineId);
 
@@ -315,6 +316,7 @@ export class MLEngineChild extends JSProcessActorChild {
         engineId,
         shutdown: shutDownIfEmpty,
         replacement,
+        idle,
       });
     } catch (error) {
       lazy.console.error("Failed to send MLEngine:Removed", error);
@@ -389,6 +391,13 @@ class EngineDispatcher {
 
   /** @type {number | null} */
   #keepAliveTimeout = null;
+
+  /**
+   * The request ids of the runs in progress.
+   *
+   * @type {Set<number>}
+   */
+  #runningRequests = new Set();
 
   /** @type {Promise<InferenceEngine>} */
   #engine;
@@ -541,9 +550,7 @@ class EngineDispatcher {
 
     this.#engine
       .then(() => {
-        this.#status = "IDLE";
-        // Trigger the keep alive timer.
-        void this.keepAlive();
+        this.#setStatus("IDLE");
       })
       .catch(error => {
         if (
@@ -579,21 +586,41 @@ class EngineDispatcher {
   }
 
   /**
+   * Moves the engine to a new status. A terminating engine only moves to
+   * TERMINATED.
+   *
+   * @param {EngineStatus} status
+   */
+  #setStatus(status) {
+    if (
+      this.#status === "TERMINATED" ||
+      (this.#status === "TERMINATING" && status !== "TERMINATED")
+    ) {
+      return;
+    }
+    this.#status = status;
+    this.#keepAlive();
+  }
+
+  /**
    * The worker will be shutdown automatically after some amount of time of not being used, unless:
    *
    * - timeoutMS is set to -1
+   * - a run is in progress
+   * - the engine is terminating
    */
-  keepAlive() {
+  #keepAlive() {
     if (this.#keepAliveTimeout) {
       // Clear any previous timeout.
       lazy.clearTimeout(this.#keepAliveTimeout);
     }
-    if (this.timeoutMS && this.timeoutMS >= 0) {
+    if (this.#status === "IDLE" && this.timeoutMS > 0) {
       this.#keepAliveTimeout = lazy.setTimeout(
         this.terminate.bind(
           this,
           /* shutDownIfEmpty */ true,
-          /* replacement */ false
+          /* replacement */ false,
+          /* idle */ true
         ),
         this.timeoutMS
       );
@@ -653,11 +680,8 @@ class EngineDispatcher {
             return;
           }
 
-          // Do not run the keepAlive timer until we are certain that the engine loaded,
-          // as the engine shouldn't be killed while it is initializing.
-          this.keepAlive();
-
-          this.#status = "RUNNING";
+          this.#runningRequests.add(requestId);
+          this.#setStatus("RUNNING");
           const engine = await this.#engine;
 
           try {
@@ -695,8 +719,12 @@ class EngineDispatcher {
               error,
               errorDetails: getErrorDetails(error),
             });
+          } finally {
+            this.#runningRequests.delete(requestId);
+            if (!this.#runningRequests.size) {
+              this.#setStatus("IDLE");
+            }
           }
-          this.#status = "IDLE";
           break;
         }
         case "EnginePort:Cancel": {
@@ -724,30 +752,28 @@ class EngineDispatcher {
    *
    * @param {boolean} shutDownIfEmpty - If true, shuts down the engine process if no engines remain.
    * @param {boolean} replacement - Flag indicating whether the engine is being replaced.
+   * @param {boolean} [idle] - Whether the engine is shutting down because it was idle for timeoutMS.
    */
-  async terminate(shutDownIfEmpty, replacement) {
-    if (this.#keepAliveTimeout) {
-      lazy.clearTimeout(this.#keepAliveTimeout);
-      this.#keepAliveTimeout = null;
-    }
+  async terminate(shutDownIfEmpty, replacement, idle = false) {
     if (this.#port) {
       // This call will trigger back an EnginePort:Discard that will close the port
-      this.#port.postMessage({ type: "EnginePort:EngineTerminated" });
+      this.#port.postMessage({ type: "EnginePort:EngineTerminated", idle });
     }
 
-    this.#status = "TERMINATING";
+    this.#setStatus("TERMINATING");
     try {
       const engine = await this.#engine;
       await engine.terminate();
     } catch (error) {
       lazy.console.error("Failed to get the engine", error);
     }
-    this.#status = "TERMINATED";
+    this.#setStatus("TERMINATED");
 
     await this.mlEngineChild.removeEngine(
       this.#engineId,
       shutDownIfEmpty,
-      replacement
+      replacement,
+      idle
     );
   }
 }
