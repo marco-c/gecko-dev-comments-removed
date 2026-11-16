@@ -9694,11 +9694,15 @@ void nsCSSFrameConstructor::WrapFramesInFirstLetterFrame(
         return;
       }
     } else if (IsInlineFrame(frame) && frameType != LayoutFrameType::Br) {
-      nsIFrame* kids = frame->PrincipalChildList().FirstChild();
-      WrapFramesInFirstLetterFrame(aBlockFrame, aBlockContinuation,
-                                   static_cast<nsContainerFrame*>(frame), kids,
-                                   aModifiedParent, aTextFrame, aPrevFrame,
-                                   aLetterFrames, aStopLooking);
+      auto* inlineFrame = static_cast<nsContainerFrame*>(frame);
+      
+      if (inlineFrame->GetChildList(FrameChildListID::Overflow).NotEmpty()) {
+        inlineFrame->DrainSelfOverflowList();
+      }
+      nsIFrame* kids = inlineFrame->PrincipalChildList().FirstChild();
+      WrapFramesInFirstLetterFrame(aBlockFrame, aBlockContinuation, inlineFrame,
+                                   kids, aModifiedParent, aTextFrame,
+                                   aPrevFrame, aLetterFrames, aStopLooking);
       if (*aStopLooking) {
         return;
       }
@@ -9834,6 +9838,9 @@ void nsCSSFrameConstructor::RemoveFloatingFirstLetterFrames(
 void nsCSSFrameConstructor::RemoveFirstLetterFrames(
     PresShell* aPresShell, nsContainerFrame* aFrame,
     nsContainerFrame* aBlockFrame, bool* aStopLooking) {
+  
+  
+  aFrame->DrainSelfOverflowList();
   nsIFrame* prevSibling = nullptr;
   nsIFrame* kid = aFrame->PrincipalChildList().FirstChild();
 
@@ -9913,9 +9920,11 @@ void nsCSSFrameConstructor::RemoveLetterFrames(PresShell* aPresShell,
 
   bool stopLooking = false;
   do {
-    RemoveFloatingFirstLetterFrames(aPresShell, continuation);
+    
+    
     RemoveFirstLetterFrames(aPresShell, continuation, aBlockFrame,
                             &stopLooking);
+    RemoveFloatingFirstLetterFrames(aPresShell, continuation);
     if (stopLooking) {
       break;
     }
@@ -9938,6 +9947,8 @@ void nsCSSFrameConstructor::RecoverLetterFrames(nsContainerFrame* aBlockFrame) {
   do {
     
     continuation->AddStateBits(NS_BLOCK_HAS_FIRST_LETTER_STYLE);
+    
+    continuation->DrainSelfOverflowList();
     WrapFramesInFirstLetterFrame(
         aBlockFrame, continuation, continuation,
         continuation->PrincipalChildList().FirstChild(), &parentFrame,
