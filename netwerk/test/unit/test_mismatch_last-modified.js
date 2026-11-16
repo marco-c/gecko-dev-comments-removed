@@ -108,6 +108,15 @@ ChromeUtils.defineLazyGetter(this, "listener_1", function () {
 function run_test() {
   do_get_profile();
 
+  
+  
+  if (mozinfo.os == "win") {
+    Services.prefs.setBoolPref("browser.cache.disk.enable", false);
+    registerCleanupFunction(() => {
+      Services.prefs.clearUserPref("browser.cache.disk.enable");
+    });
+  }
+
   evict_cache_entries();
 
   httpserver.registerPathHandler("/test1", handler);
