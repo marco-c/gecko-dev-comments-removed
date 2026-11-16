@@ -1,5 +1,9 @@
 add_setup(function () {
   registerCleanupFunction(clearSiteTestData);
+  
+  registerCleanupFunction(() =>
+    Services.obs.notifyObservers(null, "browser:purge-session-history")
+  );
 });
 
 function altSvcCacheKeyIsolated(parsed) {
