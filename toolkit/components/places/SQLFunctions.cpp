@@ -597,6 +597,15 @@ nsCString CalculateFrecencyFunction::BuildFrecencySQL(
       "    place_id = :pageId "
       
       
+      
+      "      AND created_at >= IFNULL(( "
+      "        SELECT visit_date FROM moz_historyvisits "
+      "        WHERE place_id = :pageId AND visit_type NOT IN (7, 8, 9) "
+      "        ORDER BY visit_date DESC "
+      "        LIMIT 1 OFFSET {numSampledVisits} - 1 "
+      "      ) / 1000 - :maxVisitGapSeconds * 1000, 0) "
+      
+      
       "      AND (total_view_time >= :viewTimeSeconds * 1000 "
       "        OR (total_view_time >= :viewTimeIfManyKeypressesSeconds * 1000 "
       "          AND key_presses >= :manyKeypresses)) "
@@ -877,6 +886,15 @@ nsCString CalculateAltFrecencyFunction::BuildFrecencySQL(
       "    moz_places_metadata "
       "  WHERE "
       "    place_id = :pageId "
+      
+      
+      
+      "      AND created_at >= IFNULL(( "
+      "        SELECT visit_date FROM moz_historyvisits "
+      "        WHERE place_id = :pageId "
+      "        ORDER BY visit_date DESC "
+      "        LIMIT 1 OFFSET {numSampledVisits} - 1 "
+      "      ) / 1000 - :maxVisitGapSeconds * 1000, 0) "
       
       
       "      AND (total_view_time >= :viewTimeSeconds * 1000 "
