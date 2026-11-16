@@ -1831,6 +1831,8 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
 
   
   
+  
+  
   template <LookupReason Reason>
   MOZ_ALWAYS_INLINE Slot lookup(const Lookup& aLookup,
                                 HashNumber aKeyHash) const {

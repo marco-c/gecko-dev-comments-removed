@@ -11071,41 +11071,33 @@ template void MacroAssembler::computeHash1MFBT<WeakMapObject::Map>(
     Register hashTable, Register hashCode, Register hash1, Register scratch);
 
 template <typename Table>
-void MacroAssembler::computeHash2MFBT(Register hashTable, Register hashCode,
-                                      Register hash2, Register sizeMask,
-                                      Register scratch) {
+void MacroAssembler::initProbeSequenceMFBT(Register hashTable, Register stride,
+                                           Register sizeMask) {
   
 
   
-  load8ZeroExtend(Address(hashTable, Table::offsetOfHashShift()), sizeMask);
+  
+  
+  load8ZeroExtend(Address(hashTable, Table::offsetOfHashShift()), stride);
+  move32(Imm32(-1), sizeMask);
+  flexibleRshift32(stride, sizeMask);
 
   
-  move32(Imm32(kHashNumberBits), scratch);
-  sub32(sizeMask, scratch);
-
-  
-  move32(hashCode, hash2);
-  flexibleLshift32(scratch, hash2);
-  flexibleRshift32(sizeMask, hash2);
-  or32(Imm32(1), hash2);
-
-  
-  move32(Imm32(1), sizeMask);
-  flexibleLshift32(scratch, sizeMask);
-  sub32(Imm32(1), sizeMask);
+  move32(Imm32(0), stride);
 }
 
-template void MacroAssembler::computeHash2MFBT<WeakMapObject::Map>(
-    Register hashTable, Register hashCode, Register hash2, Register sizeMask,
-    Register scratch);
+template void MacroAssembler::initProbeSequenceMFBT<WeakMapObject::Map>(
+    Register hashTable, Register stride, Register sizeMask);
 
-void MacroAssembler::applyDoubleHashMFBT(Register hash1, Register hash2,
-                                         Register sizeMask) {
+void MacroAssembler::nextProbeMFBT(Register hashIndex, Register stride,
+                                   Register sizeMask) {
   
 
   
-  sub32(hash2, hash1);
-  and32(sizeMask, hash1);
+  
+  add32(Imm32(1), stride);
+  add32(stride, hashIndex);
+  and32(sizeMask, hashIndex);
 }
 
 template <typename Table>
