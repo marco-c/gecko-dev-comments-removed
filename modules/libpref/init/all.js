@@ -3666,6 +3666,14 @@ pref("browser.pageextractor.youtube.timeoutMs", 3000);
 
 
 
+pref("browser.pageextractor.googledocs.enabled", true);
+
+
+
+pref("browser.pageextractor.googledocs.timeoutMs", 5000);
+
+
+
 
 
 
