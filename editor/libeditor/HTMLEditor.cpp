@@ -1815,12 +1815,22 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleTabKeyPressInTable(
     return Err(NS_ERROR_FAILURE);
   }
   
-  cell = GetTableCellElementAt(*tblElement, row, 0);
+  const RefPtr<Element> firstEditableRow = [&]() -> Element* {
+    uint32_t colIndex = 0;
+    while (Element* cellInTheRow = GetMaybeGeneratedTableCellElementAt(
+               *tblElement, row, colIndex++)) {
+      if (HTMLEditUtils::IsSimplyEditableNode(*cellInTheRow)) {
+        MOZ_ASSERT(!cellInTheRow->IsInNativeAnonymousSubtree());
+        return cellInTheRow;
+      }
+    }
+    return nullptr;
+  }();
   
   
   
-  if (cell) {
-    nsresult rv = CollapseSelectionToStartOf(*cell);
+  if (firstEditableRow) {
+    nsresult rv = CollapseSelectionToStartOf(*firstEditableRow);
     if (NS_FAILED(rv)) {
       NS_WARNING("EditorBase::CollapseSelectionToStartOf() failed");
       return Err(NS_ERROR_EDITOR_DESTROYED);
