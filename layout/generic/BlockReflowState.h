@@ -39,7 +39,7 @@ class BlockReflowState {
           mShouldApplyTextBoxTrimStart(false),
           mShouldApplyTextBoxTrimAtBlockEnd(false),
           mShouldApplyTextBoxTrimAtFragmentEnd(false),
-          mShouldApplyLineClampAuto(false),
+          mShouldApplyLineClamp(false),
           mIsCurrentLineAdjacentToBStart(false),
           mShouldTrimInheritedBEndMargins(false) {}
 
@@ -103,7 +103,7 @@ class BlockReflowState {
     
     
     
-    bool mShouldApplyLineClampAuto : 1;
+    bool mShouldApplyLineClamp : 1;
 
     
     

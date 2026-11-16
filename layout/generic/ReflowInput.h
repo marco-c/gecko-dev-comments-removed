@@ -573,7 +573,7 @@ struct ReflowInput : public SizeComputationInput {
     
     
     
-    bool mDimensionsReadyForLineClampAuto : 1;
+    bool mDimensionsReadyForLineClamp : 1;
 
     
     
