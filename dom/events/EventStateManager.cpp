@@ -1663,10 +1663,6 @@ void EventStateManager::LightDismissOpenDialogs(WidgetEvent* aEvent,
   
   
 
-  if (!StaticPrefs::dom_dialog_light_dismiss_enabled()) {
-    return;
-  }
-
   MOZ_ASSERT(aEvent->mMessage == ePointerDown || aEvent->mMessage == ePointerUp,
              "Light dismiss must be called for pointer up/down only");
 
