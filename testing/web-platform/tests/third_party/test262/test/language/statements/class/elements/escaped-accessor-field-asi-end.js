@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  accesso\u0072
+}
+
+var c = new C();
+assert.compareArray(Object.keys(c), ["accessor"]);
+assert.compareArray(Object.keys(C), []);

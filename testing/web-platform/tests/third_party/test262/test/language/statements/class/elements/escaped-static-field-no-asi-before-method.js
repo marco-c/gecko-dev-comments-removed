@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+
+class C {
+  st\u0061tic value() {}
+}
+
+

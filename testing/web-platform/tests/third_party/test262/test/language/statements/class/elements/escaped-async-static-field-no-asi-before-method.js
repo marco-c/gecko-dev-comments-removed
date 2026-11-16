@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+
+class C {
+  static a\u0073ync value() {}
+}
+
+

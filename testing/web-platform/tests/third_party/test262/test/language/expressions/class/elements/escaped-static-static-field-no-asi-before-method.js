@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+
+var C = class {
+  static st\u0061tic value() {}
+}
+
+

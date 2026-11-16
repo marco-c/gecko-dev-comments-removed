@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+
+var C = class {
+  a\u0073ync value() {}
+}
+
+

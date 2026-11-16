@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var C = class {
+  static ge\u0074
+}
+
+var c = new C();
+assert.compareArray(Object.keys(c), []);
+assert.compareArray(Object.keys(C), ["get"]);

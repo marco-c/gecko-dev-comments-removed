@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+
+var C = class {
+  g\u0065t value() {}
+}
+
+
