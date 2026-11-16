@@ -2,15 +2,9 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Iterable
-from contextlib import nullcontext
 from typing import TYPE_CHECKING
 
-from pip._internal.build_env import (
-    BuildIsolationMode,
-    NoOpBuildEnvironment,
-    VenvBuildEnvironment,
-    VirtualBuildEnvironment,
-)
+from pip._internal.build_env import BuildEnvironment
 from pip._internal.distributions.base import AbstractDistribution
 from pip._internal.exceptions import InstallationError
 from pip._internal.metadata import BaseDistribution
@@ -26,7 +20,7 @@ class SourceDistribution(AbstractDistribution):
     """Represents a source distribution.
 
     The preparation step for these needs metadata for the packages to be
-    generated.
+    generated, either using PEP 517 or using the legacy `setup.py egg_info`.
     """
 
     @property
@@ -41,34 +35,31 @@ class SourceDistribution(AbstractDistribution):
     def prepare_distribution_metadata(
         self,
         build_env_installer: BuildEnvironmentInstaller,
-        build_isolation: BuildIsolationMode,
+        build_isolation: bool,
         check_build_deps: bool,
-        allow_editables: bool,
     ) -> None:
         
         self.req.load_pyproject_toml()
-        self._prepare_build_env(build_isolation, build_env_installer)
 
         
-        if build_isolation != "off":
+        should_isolate = self.req.use_pep517 and build_isolation
+        if should_isolate:
             
             
-            self._prepare_build_backend(build_isolation)
+            self._prepare_build_backend(build_env_installer)
             
             
             
             
-            self.req.editable_sanity_check()
-            
-            self._install_build_reqs(
-                build_env_installer, build_isolation, allow_editables=allow_editables
-            )
-        else:
             
             
-            self.req.editable_sanity_check()
+            
+            self.req.isolated_editable_sanity_check()
+            
+            self._install_build_reqs(build_env_installer)
         
-        if check_build_deps:
+        should_check_deps = self.req.use_pep517 and check_build_deps
+        if should_check_deps:
             pyproject_requires = self.req.pyproject_requires
             assert pyproject_requires is not None
             conflicting, missing = self.req.build_env.check_requirements(
@@ -78,34 +69,20 @@ class SourceDistribution(AbstractDistribution):
                 self._raise_conflicts("the backend dependencies", conflicting)
             if missing:
                 self._raise_missing_reqs(missing)
-        self.req.prepare_metadata(allow_editables)
+        self.req.prepare_metadata()
 
-    def _prepare_build_env(
-        self,
-        build_isolation: BuildIsolationMode,
-        build_env_installer: BuildEnvironmentInstaller,
+    def _prepare_build_backend(
+        self, build_env_installer: BuildEnvironmentInstaller
     ) -> None:
-        if build_isolation == "virtual":
-            self.req.build_env = VirtualBuildEnvironment(build_env_installer)
-        elif build_isolation == "venv":
-            self.req.build_env = VenvBuildEnvironment(build_env_installer)
-
-        self.req.configure_backend(self.req.build_env.python_executable)
-
-    def _prepare_build_backend(self, build_isolation: BuildIsolationMode) -> None:
+        
         
         pyproject_requires = self.req.pyproject_requires
         assert pyproject_requires is not None
-        assert not isinstance(self.req.build_env, NoOpBuildEnvironment)
 
-        context = self.req.build_env if build_isolation == "venv" else nullcontext()
-        with context:
-            self.req.build_env.install_requirements(
-                pyproject_requires,
-                "overlay",
-                kind="build dependencies",
-                for_req=self.req,
-            )
+        self.req.build_env = BuildEnvironment(build_env_installer)
+        self.req.build_env.install_requirements(
+            pyproject_requires, "overlay", kind="build dependencies", for_req=self.req
+        )
         conflicting, missing = self.req.build_env.check_requirements(
             self.req.requirements_to_check
         )
@@ -141,17 +118,14 @@ class SourceDistribution(AbstractDistribution):
                 return backend.get_requires_for_build_editable()
 
     def _install_build_reqs(
-        self,
-        build_env_installer: BuildEnvironmentInstaller,
-        build_isolation: BuildIsolationMode,
-        allow_editables: bool,
+        self, build_env_installer: BuildEnvironmentInstaller
     ) -> None:
         
         
         
         if (
             self.req.editable
-            and allow_editables
+            and self.req.permit_editable_wheels
             and self.req.supports_pyproject_editable
         ):
             build_reqs = self._get_build_requires_editable()
@@ -160,11 +134,9 @@ class SourceDistribution(AbstractDistribution):
         conflicting, missing = self.req.build_env.check_requirements(build_reqs)
         if conflicting:
             self._raise_conflicts("the backend dependencies", conflicting)
-        context = self.req.build_env if build_isolation == "venv" else nullcontext()
-        with context:
-            self.req.build_env.install_requirements(
-                missing, "normal", kind="backend dependencies", for_req=self.req
-            )
+        self.req.build_env.install_requirements(
+            missing, "normal", kind="backend dependencies", for_req=self.req
+        )
 
     def _raise_conflicts(
         self, conflicting_with: str, conflicting_reqs: set[tuple[str, str]]

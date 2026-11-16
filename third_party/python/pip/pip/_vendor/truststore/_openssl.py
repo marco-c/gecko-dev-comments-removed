@@ -9,8 +9,6 @@ _CA_FILE_CANDIDATES = [
     
     "/etc/ssl/cert.pem",
     
-    "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem",
-    
     "/etc/pki/tls/cert.pem",
     
     "/etc/ssl/certs/ca-certificates.crt",
@@ -52,7 +50,10 @@ def _capath_contains_certs(capath: str) -> bool:
     """Check whether capath exists and contains certs in the expected format."""
     if not os.path.isdir(capath):
         return False
-    return any(_HASHED_CERT_FILENAME_RE.match(name) for name in os.listdir(capath))
+    for name in os.listdir(capath):
+        if _HASHED_CERT_FILENAME_RE.match(name):
+            return True
+    return False
 
 
 def _verify_peercerts_impl(

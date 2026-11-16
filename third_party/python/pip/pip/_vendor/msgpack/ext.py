@@ -2,8 +2,6 @@ import datetime
 import struct
 from collections import namedtuple
 
-_EPOCH = datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
-
 
 class ExtType(namedtuple("ExtType", "code data")):
     """ExtType represents ext type in msgpack."""
@@ -158,7 +156,8 @@ class Timestamp:
 
         :rtype: `datetime.datetime`
         """
-        return _EPOCH + datetime.timedelta(
+        utc = datetime.timezone.utc
+        return datetime.datetime.fromtimestamp(0, utc) + datetime.timedelta(
             seconds=self.seconds, microseconds=self.nanoseconds // 1000
         )
 
@@ -168,17 +167,4 @@ class Timestamp:
 
         :rtype: Timestamp
         """
-        
-        
-        
-        
-        
-        
-        if dt.tzinfo is None:
-            
-            dt = dt.astimezone()
-        delta = dt - _EPOCH
-        return Timestamp(
-            seconds=delta.days * 86400 + delta.seconds,
-            nanoseconds=delta.microseconds * 1000,
-        )
+        return Timestamp(seconds=int(dt.timestamp()), nanoseconds=dt.microsecond * 1000)

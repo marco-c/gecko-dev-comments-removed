@@ -1,11 +1,7 @@
-"""Utilities for determining application-specific dirs.
-
-Provides convenience functions (e.g. :func:`user_data_dir`, :func:`user_config_path`), a :data:`PlatformDirs` class that
-auto-detects the current platform, and the :class:`~platformdirs.api.PlatformDirsABC` base class.
+"""
+Utilities for determining application-specific dirs.
 
 See <https://github.com/platformdirs/platformdirs> for details and usage.
-
-PYTEST_DONT_REWRITE: Applications may import platformdirs before starting pytest.
 
 """
 
@@ -15,7 +11,7 @@ import os
 import sys
 from typing import TYPE_CHECKING
 
-from .api import PlatformDirsABC, RuntimeDirWarning
+from .api import PlatformDirsABC
 from .version import __version__
 from .version import __version_tuple__ as __version_info__
 
@@ -27,17 +23,12 @@ if sys.platform == "win32":
     from pip._vendor.platformdirs.windows import Windows as _Result
 elif sys.platform == "darwin":
     from pip._vendor.platformdirs.macos import MacOS as _Result
-elif sys.platform == "ios":
-    from pip._vendor.platformdirs.ios import IOS as _Result  
 else:
     from pip._vendor.platformdirs.unix import Unix as _Result
 
 
 def _set_platform_dir_class() -> type[PlatformDirsABC]:
-    
-    if hasattr(sys, "getandroidapilevel") or (
-        os.getenv("ANDROID_DATA") == "/data" and os.getenv("ANDROID_ROOT") == "/system"
-    ):
+    if os.getenv("ANDROID_DATA") == "/data" and os.getenv("ANDROID_ROOT") == "/system":
         if os.getenv("SHELL") or os.getenv("PREFIX"):
             return _Result
 
@@ -59,23 +50,20 @@ else:
 AppDirs = PlatformDirs  
 
 
-def user_data_dir(  
+def user_data_dir(
     appname: str | None = None,
     appauthor: str | Literal[False] | None = None,
     version: str | None = None,
     roaming: bool = False,  
     ensure_exists: bool = False,  
-    use_site_for_root: bool = False,  
 ) -> str:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
+    """
+    :param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
     :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
     :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
     :param roaming: See `roaming <platformdirs.api.PlatformDirsABC.roaming>`.
     :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-    :param use_site_for_root: See `use_site_for_root <platformdirs.api.PlatformDirsABC.use_site_for_root>`.
-
     :returns: data directory tied to the user
-
     """
     return PlatformDirs(
         appname=appname,
@@ -83,7 +71,6 @@ def user_data_dir(
         version=version,
         roaming=roaming,
         ensure_exists=ensure_exists,
-        use_site_for_root=use_site_for_root,
     ).user_data_dir
 
 
@@ -94,14 +81,13 @@ def site_data_dir(
     multipath: bool = False,  
     ensure_exists: bool = False,  
 ) -> str:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
+    """
+    :param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
     :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
     :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
-    :param multipath: See `multipath <platformdirs.api.PlatformDirsABC.multipath>`.
+    :param multipath: See `roaming <platformdirs.api.PlatformDirsABC.multipath>`.
     :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-
     :returns: data directory shared by users
-
     """
     return PlatformDirs(
         appname=appname,
@@ -112,23 +98,20 @@ def site_data_dir(
     ).site_data_dir
 
 
-def user_config_dir(  
+def user_config_dir(
     appname: str | None = None,
     appauthor: str | Literal[False] | None = None,
     version: str | None = None,
     roaming: bool = False,  
     ensure_exists: bool = False,  
-    use_site_for_root: bool = False,  
 ) -> str:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
+    """
+    :param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
     :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
     :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
     :param roaming: See `roaming <platformdirs.api.PlatformDirsABC.roaming>`.
     :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-    :param use_site_for_root: See `use_site_for_root <platformdirs.api.PlatformDirsABC.use_site_for_root>`.
-
     :returns: config directory tied to the user
-
     """
     return PlatformDirs(
         appname=appname,
@@ -136,7 +119,6 @@ def user_config_dir(
         version=version,
         roaming=roaming,
         ensure_exists=ensure_exists,
-        use_site_for_root=use_site_for_root,
     ).user_config_dir
 
 
@@ -147,14 +129,13 @@ def site_config_dir(
     multipath: bool = False,  
     ensure_exists: bool = False,  
 ) -> str:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
+    """
+    :param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
     :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
     :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
-    :param multipath: See `multipath <platformdirs.api.PlatformDirsABC.multipath>`.
+    :param multipath: See `roaming <platformdirs.api.PlatformDirsABC.multipath>`.
     :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-
-    :returns: config directory shared by users
-
+    :returns: config directory shared by the users
     """
     return PlatformDirs(
         appname=appname,
@@ -165,23 +146,20 @@ def site_config_dir(
     ).site_config_dir
 
 
-def user_cache_dir(  
+def user_cache_dir(
     appname: str | None = None,
     appauthor: str | Literal[False] | None = None,
     version: str | None = None,
     opinion: bool = True,  
     ensure_exists: bool = False,  
-    use_site_for_root: bool = False,  
 ) -> str:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
+    """
+    :param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
     :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
     :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
-    :param opinion: See `opinion <platformdirs.api.PlatformDirsABC.opinion>`.
+    :param opinion: See `roaming <platformdirs.api.PlatformDirsABC.opinion>`.
     :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-    :param use_site_for_root: See `use_site_for_root <platformdirs.api.PlatformDirsABC.use_site_for_root>`.
-
     :returns: cache directory tied to the user
-
     """
     return PlatformDirs(
         appname=appname,
@@ -189,56 +167,47 @@ def user_cache_dir(
         version=version,
         opinion=opinion,
         ensure_exists=ensure_exists,
-        use_site_for_root=use_site_for_root,
     ).user_cache_dir
 
 
-def site_cache_dir(  
+def site_cache_dir(
     appname: str | None = None,
     appauthor: str | Literal[False] | None = None,
     version: str | None = None,
     opinion: bool = True,  
     ensure_exists: bool = False,  
-    *,
-    multipath: bool = False,
 ) -> str:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
+    """
+    :param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
     :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
     :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
     :param opinion: See `opinion <platformdirs.api.PlatformDirsABC.opinion>`.
     :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-    :param multipath: See `multipath <platformdirs.api.PlatformDirsABC.multipath>`.
-
-    :returns: cache directory shared by users
-
+    :returns: cache directory tied to the user
     """
     return PlatformDirs(
         appname=appname,
         appauthor=appauthor,
         version=version,
-        multipath=multipath,
         opinion=opinion,
         ensure_exists=ensure_exists,
     ).site_cache_dir
 
 
-def user_state_dir(  
+def user_state_dir(
     appname: str | None = None,
     appauthor: str | Literal[False] | None = None,
     version: str | None = None,
     roaming: bool = False,  
     ensure_exists: bool = False,  
-    use_site_for_root: bool = False,  
 ) -> str:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
+    """
+    :param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
     :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
     :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
     :param roaming: See `roaming <platformdirs.api.PlatformDirsABC.roaming>`.
     :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-    :param use_site_for_root: See `use_site_for_root <platformdirs.api.PlatformDirsABC.use_site_for_root>`.
-
     :returns: state directory tied to the user
-
     """
     return PlatformDirs(
         appname=appname,
@@ -246,87 +215,31 @@ def user_state_dir(
         version=version,
         roaming=roaming,
         ensure_exists=ensure_exists,
-        use_site_for_root=use_site_for_root,
     ).user_state_dir
 
 
-def site_state_dir(
-    appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
-    version: str | None = None,
-    ensure_exists: bool = False,  
-) -> str:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
-    :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
-    :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
-    :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-
-    :returns: state directory shared by users
-
-    """
-    return PlatformDirs(
-        appname=appname,
-        appauthor=appauthor,
-        version=version,
-        ensure_exists=ensure_exists,
-    ).site_state_dir
-
-
-def user_log_dir(  
+def user_log_dir(
     appname: str | None = None,
     appauthor: str | Literal[False] | None = None,
     version: str | None = None,
     opinion: bool = True,  
     ensure_exists: bool = False,  
-    use_site_for_root: bool = False,  
-    *,
-    roaming: bool = False,
 ) -> str:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
+    """
+    :param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
     :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
     :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
-    :param opinion: See `opinion <platformdirs.api.PlatformDirsABC.opinion>`.
+    :param opinion: See `roaming <platformdirs.api.PlatformDirsABC.opinion>`.
     :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-    :param use_site_for_root: See `use_site_for_root <platformdirs.api.PlatformDirsABC.use_site_for_root>`.
-    :param roaming: See `roaming <platformdirs.api.PlatformDirsABC.roaming>`.
-
     :returns: log directory tied to the user
-
     """
     return PlatformDirs(
         appname=appname,
         appauthor=appauthor,
         version=version,
-        roaming=roaming,
         opinion=opinion,
         ensure_exists=ensure_exists,
-        use_site_for_root=use_site_for_root,
     ).user_log_dir
-
-
-def site_log_dir(
-    appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
-    version: str | None = None,
-    opinion: bool = True,  
-    ensure_exists: bool = False,  
-) -> str:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
-    :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
-    :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
-    :param opinion: See `opinion <platformdirs.api.PlatformDirsABC.opinion>`.
-    :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-
-    :returns: log directory shared by users
-
-    """
-    return PlatformDirs(
-        appname=appname,
-        appauthor=appauthor,
-        version=version,
-        opinion=opinion,
-        ensure_exists=ensure_exists,
-    ).site_log_dir
 
 
 def user_documents_dir() -> str:
@@ -359,138 +272,20 @@ def user_desktop_dir() -> str:
     return PlatformDirs().user_desktop_dir
 
 
-def user_projects_dir() -> str:
-    """:returns: projects directory tied to the user"""
-    return PlatformDirs().user_projects_dir
-
-
-def user_publicshare_dir() -> str:
-    """:returns: public share directory tied to the user"""
-    return PlatformDirs().user_publicshare_dir
-
-
-def user_templates_dir() -> str:
-    """:returns: templates directory tied to the user"""
-    return PlatformDirs().user_templates_dir
-
-
-def user_fonts_dir() -> str:
-    """:returns: fonts directory tied to the user"""
-    return PlatformDirs().user_fonts_dir
-
-
-def user_preference_dir(  
-    appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
-    version: str | None = None,
-    *,
-    roaming: bool = False,
-    ensure_exists: bool = False,
-    use_site_for_root: bool = False,
-) -> str:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
-    :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
-    :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
-    :param roaming: See `roaming <platformdirs.api.PlatformDirsABC.roaming>`.
-    :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-    :param use_site_for_root: See `use_site_for_root <platformdirs.api.PlatformDirsABC.use_site_for_root>`.
-
-    :returns: preference directory tied to the user
-
-    """
-    return PlatformDirs(
-        appname=appname,
-        appauthor=appauthor,
-        version=version,
-        roaming=roaming,
-        ensure_exists=ensure_exists,
-        use_site_for_root=use_site_for_root,
-    ).user_preference_dir
-
-
-def user_bin_dir(*, use_site_for_root: bool = False) -> str:
-    """:param use_site_for_root: See `use_site_for_root <platformdirs.api.PlatformDirsABC.use_site_for_root>`.
-
-    :returns: bin directory tied to the user
-
-    """
-    return PlatformDirs(use_site_for_root=use_site_for_root).user_bin_dir
-
-
-def site_bin_dir() -> str:
-    """:returns: bin directory shared by users"""
-    return PlatformDirs().site_bin_dir
-
-
-def user_applications_dir(
-    appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
-    version: str | None = None,
-    *,
-    ensure_exists: bool = False,
-    use_site_for_root: bool = False,
-) -> str:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
-    :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
-    :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
-    :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-    :param use_site_for_root: See `use_site_for_root <platformdirs.api.PlatformDirsABC.use_site_for_root>`.
-
-    :returns: applications directory tied to the user
-
-    """
-    return PlatformDirs(
-        appname=appname,
-        appauthor=appauthor,
-        version=version,
-        ensure_exists=ensure_exists,
-        use_site_for_root=use_site_for_root,
-    ).user_applications_dir
-
-
-def site_applications_dir(
-    multipath: bool = False,  
-    ensure_exists: bool = False,  
-    *,
-    appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
-    version: str | None = None,
-) -> str:
-    """:param multipath: See `multipath <platformdirs.api.PlatformDirsABC.multipath>`.
-    :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-    :param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
-    :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
-    :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
-
-    :returns: applications directory shared by users
-
-    """
-    return PlatformDirs(
-        appname=appname,
-        appauthor=appauthor,
-        version=version,
-        multipath=multipath,
-        ensure_exists=ensure_exists,
-    ).site_applications_dir
-
-
-def user_runtime_dir(  
+def user_runtime_dir(
     appname: str | None = None,
     appauthor: str | Literal[False] | None = None,
     version: str | None = None,
     opinion: bool = True,  
     ensure_exists: bool = False,  
-    use_site_for_root: bool = False,  
 ) -> str:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
+    """
+    :param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
     :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
     :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
     :param opinion: See `opinion <platformdirs.api.PlatformDirsABC.opinion>`.
     :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-    :param use_site_for_root: See `use_site_for_root <platformdirs.api.PlatformDirsABC.use_site_for_root>`.
-
     :returns: runtime directory tied to the user
-
     """
     return PlatformDirs(
         appname=appname,
@@ -498,7 +293,6 @@ def user_runtime_dir(
         version=version,
         opinion=opinion,
         ensure_exists=ensure_exists,
-        use_site_for_root=use_site_for_root,
     ).user_runtime_dir
 
 
@@ -509,14 +303,13 @@ def site_runtime_dir(
     opinion: bool = True,  
     ensure_exists: bool = False,  
 ) -> str:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
+    """
+    :param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
     :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
     :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
     :param opinion: See `opinion <platformdirs.api.PlatformDirsABC.opinion>`.
     :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-
     :returns: runtime directory shared by users
-
     """
     return PlatformDirs(
         appname=appname,
@@ -527,23 +320,20 @@ def site_runtime_dir(
     ).site_runtime_dir
 
 
-def user_data_path(  
+def user_data_path(
     appname: str | None = None,
     appauthor: str | Literal[False] | None = None,
     version: str | None = None,
     roaming: bool = False,  
     ensure_exists: bool = False,  
-    use_site_for_root: bool = False,  
 ) -> Path:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
+    """
+    :param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
     :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
     :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
     :param roaming: See `roaming <platformdirs.api.PlatformDirsABC.roaming>`.
     :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-    :param use_site_for_root: See `use_site_for_root <platformdirs.api.PlatformDirsABC.use_site_for_root>`.
-
     :returns: data path tied to the user
-
     """
     return PlatformDirs(
         appname=appname,
@@ -551,7 +341,6 @@ def user_data_path(
         version=version,
         roaming=roaming,
         ensure_exists=ensure_exists,
-        use_site_for_root=use_site_for_root,
     ).user_data_path
 
 
@@ -562,14 +351,13 @@ def site_data_path(
     multipath: bool = False,  
     ensure_exists: bool = False,  
 ) -> Path:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
+    """
+    :param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
     :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
     :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
     :param multipath: See `multipath <platformdirs.api.PlatformDirsABC.multipath>`.
     :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-
     :returns: data path shared by users
-
     """
     return PlatformDirs(
         appname=appname,
@@ -580,23 +368,20 @@ def site_data_path(
     ).site_data_path
 
 
-def user_config_path(  
+def user_config_path(
     appname: str | None = None,
     appauthor: str | Literal[False] | None = None,
     version: str | None = None,
     roaming: bool = False,  
     ensure_exists: bool = False,  
-    use_site_for_root: bool = False,  
 ) -> Path:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
+    """
+    :param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
     :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
     :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
     :param roaming: See `roaming <platformdirs.api.PlatformDirsABC.roaming>`.
     :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-    :param use_site_for_root: See `use_site_for_root <platformdirs.api.PlatformDirsABC.use_site_for_root>`.
-
     :returns: config path tied to the user
-
     """
     return PlatformDirs(
         appname=appname,
@@ -604,7 +389,6 @@ def user_config_path(
         version=version,
         roaming=roaming,
         ensure_exists=ensure_exists,
-        use_site_for_root=use_site_for_root,
     ).user_config_path
 
 
@@ -615,14 +399,13 @@ def site_config_path(
     multipath: bool = False,  
     ensure_exists: bool = False,  
 ) -> Path:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
+    """
+    :param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
     :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
     :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
-    :param multipath: See `multipath <platformdirs.api.PlatformDirsABC.multipath>`.
+    :param multipath: See `roaming <platformdirs.api.PlatformDirsABC.multipath>`.
     :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-
-    :returns: config path shared by users
-
+    :returns: config path shared by the users
     """
     return PlatformDirs(
         appname=appname,
@@ -633,52 +416,44 @@ def site_config_path(
     ).site_config_path
 
 
-def site_cache_path(  
+def site_cache_path(
     appname: str | None = None,
     appauthor: str | Literal[False] | None = None,
     version: str | None = None,
     opinion: bool = True,  
     ensure_exists: bool = False,  
-    *,
-    multipath: bool = False,
 ) -> Path:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
+    """
+    :param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
     :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
     :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
     :param opinion: See `opinion <platformdirs.api.PlatformDirsABC.opinion>`.
     :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-    :param multipath: See `multipath <platformdirs.api.PlatformDirsABC.multipath>`.
-
-    :returns: cache path shared by users
-
+    :returns: cache directory tied to the user
     """
     return PlatformDirs(
         appname=appname,
         appauthor=appauthor,
         version=version,
-        multipath=multipath,
         opinion=opinion,
         ensure_exists=ensure_exists,
     ).site_cache_path
 
 
-def user_cache_path(  
+def user_cache_path(
     appname: str | None = None,
     appauthor: str | Literal[False] | None = None,
     version: str | None = None,
     opinion: bool = True,  
     ensure_exists: bool = False,  
-    use_site_for_root: bool = False,  
 ) -> Path:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
+    """
+    :param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
     :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
     :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
-    :param opinion: See `opinion <platformdirs.api.PlatformDirsABC.opinion>`.
+    :param opinion: See `roaming <platformdirs.api.PlatformDirsABC.opinion>`.
     :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-    :param use_site_for_root: See `use_site_for_root <platformdirs.api.PlatformDirsABC.use_site_for_root>`.
-
     :returns: cache path tied to the user
-
     """
     return PlatformDirs(
         appname=appname,
@@ -686,27 +461,23 @@ def user_cache_path(
         version=version,
         opinion=opinion,
         ensure_exists=ensure_exists,
-        use_site_for_root=use_site_for_root,
     ).user_cache_path
 
 
-def user_state_path(  
+def user_state_path(
     appname: str | None = None,
     appauthor: str | Literal[False] | None = None,
     version: str | None = None,
     roaming: bool = False,  
     ensure_exists: bool = False,  
-    use_site_for_root: bool = False,  
 ) -> Path:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
+    """
+    :param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
     :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
     :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
     :param roaming: See `roaming <platformdirs.api.PlatformDirsABC.roaming>`.
     :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-    :param use_site_for_root: See `use_site_for_root <platformdirs.api.PlatformDirsABC.use_site_for_root>`.
-
     :returns: state path tied to the user
-
     """
     return PlatformDirs(
         appname=appname,
@@ -714,91 +485,35 @@ def user_state_path(
         version=version,
         roaming=roaming,
         ensure_exists=ensure_exists,
-        use_site_for_root=use_site_for_root,
     ).user_state_path
 
 
-def site_state_path(
-    appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
-    version: str | None = None,
-    ensure_exists: bool = False,  
-) -> Path:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
-    :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
-    :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
-    :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-
-    :returns: state path shared by users
-
-    """
-    return PlatformDirs(
-        appname=appname,
-        appauthor=appauthor,
-        version=version,
-        ensure_exists=ensure_exists,
-    ).site_state_path
-
-
-def user_log_path(  
+def user_log_path(
     appname: str | None = None,
     appauthor: str | Literal[False] | None = None,
     version: str | None = None,
     opinion: bool = True,  
     ensure_exists: bool = False,  
-    use_site_for_root: bool = False,  
-    *,
-    roaming: bool = False,
 ) -> Path:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
+    """
+    :param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
     :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
     :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
-    :param opinion: See `opinion <platformdirs.api.PlatformDirsABC.opinion>`.
+    :param opinion: See `roaming <platformdirs.api.PlatformDirsABC.opinion>`.
     :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-    :param use_site_for_root: See `use_site_for_root <platformdirs.api.PlatformDirsABC.use_site_for_root>`.
-    :param roaming: See `roaming <platformdirs.api.PlatformDirsABC.roaming>`.
-
     :returns: log path tied to the user
-
     """
     return PlatformDirs(
         appname=appname,
         appauthor=appauthor,
         version=version,
-        roaming=roaming,
         opinion=opinion,
         ensure_exists=ensure_exists,
-        use_site_for_root=use_site_for_root,
     ).user_log_path
 
 
-def site_log_path(
-    appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
-    version: str | None = None,
-    opinion: bool = True,  
-    ensure_exists: bool = False,  
-) -> Path:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
-    :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
-    :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
-    :param opinion: See `opinion <platformdirs.api.PlatformDirsABC.opinion>`.
-    :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-
-    :returns: log path shared by users
-
-    """
-    return PlatformDirs(
-        appname=appname,
-        appauthor=appauthor,
-        version=version,
-        opinion=opinion,
-        ensure_exists=ensure_exists,
-    ).site_log_path
-
-
 def user_documents_path() -> Path:
-    """:returns: documents path tied to the user"""
+    """:returns: documents a path tied to the user"""
     return PlatformDirs().user_documents_path
 
 
@@ -827,138 +542,20 @@ def user_desktop_path() -> Path:
     return PlatformDirs().user_desktop_path
 
 
-def user_projects_path() -> Path:
-    """:returns: projects path tied to the user"""
-    return PlatformDirs().user_projects_path
-
-
-def user_publicshare_path() -> Path:
-    """:returns: public share path tied to the user"""
-    return PlatformDirs().user_publicshare_path
-
-
-def user_templates_path() -> Path:
-    """:returns: templates path tied to the user"""
-    return PlatformDirs().user_templates_path
-
-
-def user_fonts_path() -> Path:
-    """:returns: fonts path tied to the user"""
-    return PlatformDirs().user_fonts_path
-
-
-def user_preference_path(  
-    appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
-    version: str | None = None,
-    *,
-    roaming: bool = False,
-    ensure_exists: bool = False,
-    use_site_for_root: bool = False,
-) -> Path:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
-    :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
-    :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
-    :param roaming: See `roaming <platformdirs.api.PlatformDirsABC.roaming>`.
-    :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-    :param use_site_for_root: See `use_site_for_root <platformdirs.api.PlatformDirsABC.use_site_for_root>`.
-
-    :returns: preference path tied to the user
-
-    """
-    return PlatformDirs(
-        appname=appname,
-        appauthor=appauthor,
-        version=version,
-        roaming=roaming,
-        ensure_exists=ensure_exists,
-        use_site_for_root=use_site_for_root,
-    ).user_preference_path
-
-
-def user_bin_path(*, use_site_for_root: bool = False) -> Path:
-    """:param use_site_for_root: See `use_site_for_root <platformdirs.api.PlatformDirsABC.use_site_for_root>`.
-
-    :returns: bin path tied to the user
-
-    """
-    return PlatformDirs(use_site_for_root=use_site_for_root).user_bin_path
-
-
-def site_bin_path() -> Path:
-    """:returns: bin path shared by users"""
-    return PlatformDirs().site_bin_path
-
-
-def user_applications_path(
-    appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
-    version: str | None = None,
-    *,
-    ensure_exists: bool = False,
-    use_site_for_root: bool = False,
-) -> Path:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
-    :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
-    :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
-    :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-    :param use_site_for_root: See `use_site_for_root <platformdirs.api.PlatformDirsABC.use_site_for_root>`.
-
-    :returns: applications path tied to the user
-
-    """
-    return PlatformDirs(
-        appname=appname,
-        appauthor=appauthor,
-        version=version,
-        ensure_exists=ensure_exists,
-        use_site_for_root=use_site_for_root,
-    ).user_applications_path
-
-
-def site_applications_path(
-    multipath: bool = False,  
-    ensure_exists: bool = False,  
-    *,
-    appname: str | None = None,
-    appauthor: str | Literal[False] | None = None,
-    version: str | None = None,
-) -> Path:
-    """:param multipath: See `multipath <platformdirs.api.PlatformDirsABC.multipath>`.
-    :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-    :param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
-    :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
-    :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
-
-    :returns: applications path shared by users
-
-    """
-    return PlatformDirs(
-        appname=appname,
-        appauthor=appauthor,
-        version=version,
-        multipath=multipath,
-        ensure_exists=ensure_exists,
-    ).site_applications_path
-
-
-def user_runtime_path(  
+def user_runtime_path(
     appname: str | None = None,
     appauthor: str | Literal[False] | None = None,
     version: str | None = None,
     opinion: bool = True,  
     ensure_exists: bool = False,  
-    use_site_for_root: bool = False,  
 ) -> Path:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
+    """
+    :param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
     :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
     :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
     :param opinion: See `opinion <platformdirs.api.PlatformDirsABC.opinion>`.
     :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-    :param use_site_for_root: See `use_site_for_root <platformdirs.api.PlatformDirsABC.use_site_for_root>`.
-
     :returns: runtime path tied to the user
-
     """
     return PlatformDirs(
         appname=appname,
@@ -966,7 +563,6 @@ def user_runtime_path(
         version=version,
         opinion=opinion,
         ensure_exists=ensure_exists,
-        use_site_for_root=use_site_for_root,
     ).user_runtime_path
 
 
@@ -977,14 +573,13 @@ def site_runtime_path(
     opinion: bool = True,  
     ensure_exists: bool = False,  
 ) -> Path:
-    """:param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
+    """
+    :param appname: See `appname <platformdirs.api.PlatformDirsABC.appname>`.
     :param appauthor: See `appauthor <platformdirs.api.PlatformDirsABC.appauthor>`.
     :param version: See `version <platformdirs.api.PlatformDirsABC.version>`.
     :param opinion: See `opinion <platformdirs.api.PlatformDirsABC.opinion>`.
     :param ensure_exists: See `ensure_exists <platformdirs.api.PlatformDirsABC.ensure_exists>`.
-
     :returns: runtime path shared by users
-
     """
     return PlatformDirs(
         appname=appname,
@@ -999,29 +594,16 @@ __all__ = [
     "AppDirs",
     "PlatformDirs",
     "PlatformDirsABC",
-    "RuntimeDirWarning",
     "__version__",
     "__version_info__",
-    "site_applications_dir",
-    "site_applications_path",
-    "site_bin_dir",
-    "site_bin_path",
     "site_cache_dir",
     "site_cache_path",
     "site_config_dir",
     "site_config_path",
     "site_data_dir",
     "site_data_path",
-    "site_log_dir",
-    "site_log_path",
     "site_runtime_dir",
     "site_runtime_path",
-    "site_state_dir",
-    "site_state_path",
-    "user_applications_dir",
-    "user_applications_path",
-    "user_bin_dir",
-    "user_bin_path",
     "user_cache_dir",
     "user_cache_path",
     "user_config_dir",
@@ -1034,26 +616,16 @@ __all__ = [
     "user_documents_path",
     "user_downloads_dir",
     "user_downloads_path",
-    "user_fonts_dir",
-    "user_fonts_path",
     "user_log_dir",
     "user_log_path",
     "user_music_dir",
     "user_music_path",
     "user_pictures_dir",
     "user_pictures_path",
-    "user_preference_dir",
-    "user_preference_path",
-    "user_projects_dir",
-    "user_projects_path",
-    "user_publicshare_dir",
-    "user_publicshare_path",
     "user_runtime_dir",
     "user_runtime_path",
     "user_state_dir",
     "user_state_path",
-    "user_templates_dir",
-    "user_templates_path",
     "user_videos_dir",
     "user_videos_path",
 ]

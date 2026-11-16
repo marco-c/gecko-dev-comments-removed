@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import os
 from collections import namedtuple
 from typing import Any
@@ -29,11 +30,13 @@ BuildSystemDetails = namedtuple(
 
 
 def load_pyproject_toml(
-    pyproject_toml: str, setup_py: str, req_name: str
-) -> BuildSystemDetails:
+    use_pep517: bool | None, pyproject_toml: str, setup_py: str, req_name: str
+) -> BuildSystemDetails | None:
     """Load the pyproject.toml file.
 
     Parameters:
+        use_pep517 - Has the user requested PEP 517 processing? None
+                     means the user hasn't explicitly specified.
         pyproject_toml - Location of the project's pyproject.toml file
         setup_py - Location of the project's setup.py file
         req_name - The name of the requirement we're processing (for
@@ -66,7 +69,57 @@ def load_pyproject_toml(
     else:
         build_system = None
 
+    
+    
+    
+    
+    
+    
+    if has_pyproject and not has_setup:
+        if use_pep517 is not None and not use_pep517:
+            raise InstallationError(
+                "Disabling PEP 517 processing is invalid: "
+                "project does not have a setup.py"
+            )
+        use_pep517 = True
+    elif build_system and "build-backend" in build_system:
+        if use_pep517 is not None and not use_pep517:
+            raise InstallationError(
+                "Disabling PEP 517 processing is invalid: "
+                "project specifies a build backend of {} "
+                "in pyproject.toml".format(build_system["build-backend"])
+            )
+        use_pep517 = True
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    elif use_pep517 is None:
+        use_pep517 = (
+            has_pyproject
+            or not importlib.util.find_spec("setuptools")
+            or not importlib.util.find_spec("wheel")
+        )
+
+    
+    assert use_pep517 is not None
+
+    
+    
+    if not use_pep517:
+        return None
+
     if build_system is None:
+        
+        
+        
         
         
         
@@ -76,6 +129,12 @@ def load_pyproject_toml(
             "requires": ["setuptools>=40.8.0"],
             "build-backend": "setuptools.build_meta:__legacy__",
         }
+
+    
+    
+    
+    
+    assert build_system is not None
 
     
     

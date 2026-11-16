@@ -6,7 +6,6 @@ providing credentials in the context of network requests.
 
 from __future__ import annotations
 
-import json
 import logging
 import os
 import shutil
@@ -16,11 +15,12 @@ import typing
 import urllib.parse
 from abc import ABC, abstractmethod
 from functools import cache
-from os.path import commonpath
+from os.path import commonprefix
 from pathlib import Path
 from typing import Any, NamedTuple
 
 from pip._vendor.requests.auth import AuthBase, HTTPBasicAuth
+from pip._vendor.requests.models import Request, Response
 from pip._vendor.requests.utils import get_netrc_auth
 
 from pip._internal.utils.logging import getLogger
@@ -32,10 +32,6 @@ from pip._internal.utils.misc import (
     split_auth_netloc_from_url,
 )
 from pip._internal.vcs.versioncontrol import AuthInfo
-
-if typing.TYPE_CHECKING:
-    from pip._vendor.requests import PreparedRequest
-    from pip._vendor.requests.models import Response
 
 logger = getLogger(__name__)
 
@@ -119,48 +115,34 @@ class KeyRingCliProvider(KeyRingBaseProvider):
         self.keyring = cmd
 
     def get_auth_info(self, url: str, username: str | None) -> AuthInfo | None:
-        return self._get_creds(url, username)
+        
+        
+        if username is not None:
+            password = self._get_password(url, username)
+            if password is not None:
+                return username, password
+        return None
 
     def save_auth_info(self, url: str, username: str, password: str) -> None:
         return self._set_password(url, username, password)
 
-    def _get_creds(self, service_name: str, username: str | None) -> AuthInfo | None:
-        """Mirror the implementation of keyring.get_credential using cli"""
+    def _get_password(self, service_name: str, username: str) -> str | None:
+        """Mirror the implementation of keyring.get_password using cli"""
         if self.keyring is None:
             return None
 
-        cmd = [self.keyring, "--mode=creds", "--output=json", "get", service_name]
-        if username is not None:
-            cmd.append(username)
-
+        cmd = [self.keyring, "get", service_name, username]
         env = os.environ.copy()
         env["PYTHONIOENCODING"] = "utf-8"
-        res = subprocess.run(  
+        res = subprocess.run(
             cmd,
             stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
             env=env,
         )
-
-        
-        
-        errs = res.stderr.decode("utf-8")
-        if (
-            res.returncode == 2
-            and "unrecognized arguments" in errs
-            and "--mode=creds" in errs
-        ):
-            raise RuntimeError(
-                "Keyring util is outdated; must be at least version 25.2.1, "
-                "please upgrade it"
-            )
-
         if res.returncode:
             return None
-
-        data = json.loads(res.stdout.decode("utf-8"))
-        return (data["username"], data["password"])
+        return res.stdout.decode("utf-8").strip(os.linesep)
 
     def _set_password(self, service_name: str, username: str, password: str) -> None:
         """Mirror the implementation of keyring.set_password using cli"""
@@ -340,14 +322,12 @@ class MultiDomainBasicAuth(AuthBase):
 
         candidates.sort(
             reverse=True,
-            key=lambda candidate: len(
-                commonpath(
-                    [
-                        parsed_url.path,
-                        candidate.path,
-                    ]
-                )
-            ),
+            key=lambda candidate: commonprefix(
+                [
+                    parsed_url.path,
+                    candidate.path,
+                ]
+            ).rfind("/"),
         )
 
         return urllib.parse.urlunsplit(candidates[0])
@@ -457,9 +437,8 @@ class MultiDomainBasicAuth(AuthBase):
 
         return url, username, password
 
-    def __call__(self, req: PreparedRequest) -> PreparedRequest:
+    def __call__(self, req: Request) -> Request:
         
-        assert req.url is not None
         url, username, password = self._get_url_and_credentials(req.url)
 
         
@@ -502,17 +481,15 @@ class MultiDomainBasicAuth(AuthBase):
         if resp.status_code != 401:
             return resp
 
+        username, password = None, None
+
         
-        
-        
-        
-        
-        
-        username, password = self._get_new_credentials(
-            resp.url,
-            allow_netrc=False,
-            allow_keyring=self.use_keyring,
-        )
+        if self.use_keyring:
+            username, password = self._get_new_credentials(
+                resp.url,
+                allow_netrc=False,
+                allow_keyring=True,
+            )
 
         
         if not self.prompting and not username and not password:

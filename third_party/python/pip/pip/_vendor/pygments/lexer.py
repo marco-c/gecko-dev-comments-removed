@@ -4,7 +4,7 @@
 
     Base lexer classes.
 
-    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -336,7 +336,7 @@ class include(str):
 
 class _inherit:
     """
-    Indicates that a state should inherit from its superclass.
+    Indicates the a state should inherit from its superclass.
     """
     def __repr__(self):
         return 'inherit'
@@ -446,9 +446,8 @@ def using(_other, **kwargs):
             
             if kwargs:
                 
-                d = dict(lexer.options)
-                d.update(kwargs)
-                lx = lexer.__class__(**d)
+                kwargs.update(lexer.options)
+                lx = lexer.__class__(**kwargs)
             else:
                 lx = lexer
             s = match.start()
@@ -459,9 +458,8 @@ def using(_other, **kwargs):
     else:
         def callback(lexer, match, ctx=None):
             
-            d = dict(lexer.options)
-            d.update(kwargs)
-            lx = _other(**d)
+            kwargs.update(lexer.options)
+            lx = _other(**kwargs)
 
             s = match.start()
             for i, t, v in lx.get_tokens_unprocessed(match.group(), **gt_kwargs):

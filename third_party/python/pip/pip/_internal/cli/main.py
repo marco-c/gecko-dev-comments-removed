@@ -8,6 +8,12 @@ import os
 import sys
 import warnings
 
+from pip._internal.cli.autocompletion import autocomplete
+from pip._internal.cli.main_parser import parse_command
+from pip._internal.commands import create_command
+from pip._internal.exceptions import PipError
+from pip._internal.utils import deprecation
+
 logger = logging.getLogger(__name__)
 
 
@@ -38,27 +44,7 @@ logger = logging.getLogger(__name__)
 
 
 
-def cli(args: list[str] | None = None) -> int:
-    """Run the CLI with imports blocked until process exit after installation."""
-    return _main(args, cli=True)
-
-
 def main(args: list[str] | None = None) -> int:
-    return _main(args, cli=False)
-
-
-def _main(args: list[str] | None, *, cli: bool) -> int:
-    
-    
-    
-    
-    
-    from pip._internal.cli.autocompletion import autocomplete
-    from pip._internal.cli.main_parser import parse_command
-    from pip._internal.commands import create_command
-    from pip._internal.exceptions import PipError
-    from pip._internal.utils import deprecation
-
     if args is None:
         args = sys.argv[1:]
 
@@ -84,14 +70,11 @@ def _main(args: list[str] | None, *, cli: bool) -> int:
 
     
     
-    
     try:
         locale.setlocale(locale.LC_ALL, "")
     except locale.Error as e:
         
         logger.debug("Ignoring error %s when setting locale", e)
-
     command = create_command(cmd_name, isolated=("--isolated" in cmd_args))
-    command._cli = cli
 
     return command.main(cmd_args)

@@ -5,11 +5,12 @@ import os.path
 import pathlib
 import re
 import urllib.parse
+import urllib.request
 from dataclasses import replace
 from typing import Any
 
 from pip._internal.exceptions import BadCommand, InstallationError
-from pip._internal.utils.misc import HiddenText, display_path, hide_url, strtobool
+from pip._internal.utils.misc import HiddenText, display_path, hide_url
 from pip._internal.utils.subprocess import make_command
 from pip._internal.vcs.versioncontrol import (
     AuthInfo,
@@ -280,9 +281,7 @@ class Git(VersionControl):
             flags = ()
         else:
             flags = ("--verbose", "--progress")
-        if self.get_git_version() >= (2, 17) and not strtobool(
-            os.environ.get("PIP_NO_PARTIAL_CLONE_FOR_BROKEN_GIT_SERVER", "no")
-        ):
+        if self.get_git_version() >= (2, 17):
             
             
             
@@ -439,7 +438,7 @@ class Git(VersionControl):
         if os.path.exists(url):
             
             
-            return pathlib.Path(url).as_uri()
+            return pathlib.PurePath(url).as_uri()
         scp_match = SCP_REGEX.match(url)
         if scp_match:
             
@@ -454,7 +453,7 @@ class Git(VersionControl):
         """
         try:
             cls.run_command(
-                ["rev-parse", "-q", "--verify", rev + "^{commit}"],
+                ["rev-parse", "-q", "--verify", "sha^" + rev],
                 cwd=location,
                 log_failed_cmd=False,
             )
@@ -501,8 +500,6 @@ class Git(VersionControl):
         work with a ssh:// scheme (e.g. GitHub). But we need a scheme for
         parsing. Hence we remove it again afterwards and return it as a stub.
         """
-        import urllib.request
-
         
         
         scheme, netloc, path, query, fragment = urlsplit(url)

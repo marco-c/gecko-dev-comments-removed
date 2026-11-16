@@ -20,11 +20,11 @@ from .util import cached_property, get_cache_base, Cache
 
 logger = logging.getLogger(__name__)
 
-cache = None  
+
+cache = None    
 
 
 class ResourceCache(Cache):
-
     def __init__(self, base=None):
         if base is None:
             
@@ -69,7 +69,6 @@ class ResourceCache(Cache):
 
 
 class ResourceBase(object):
-
     def __init__(self, finder, name):
         self.finder = finder
         self.name = name
@@ -81,7 +80,7 @@ class Resource(ResourceBase):
     not normally instantiated by user code, but rather by a
     :class:`ResourceFinder` which manages the resource.
     """
-    is_container = False  
+    is_container = False        
 
     def as_stream(self):
         """
@@ -109,7 +108,7 @@ class Resource(ResourceBase):
 
 
 class ResourceContainer(ResourceBase):
-    is_container = True  
+    is_container = True     
 
     @cached_property
     def resources(self):
@@ -134,33 +133,17 @@ class ResourceFinder(object):
     def _adjust_path(self, path):
         return os.path.realpath(path)
 
-    def _is_in_base(self, path):
-        base = self._adjust_path(self.base)
-        if path == base:
-            return True
-        if not base.endswith(os.sep):
-            base = base + os.sep
-        return path.startswith(base)
-
     def _make_path(self, resource_name):
         
         
-        if isinstance(resource_name, bytes):  
+        if isinstance(resource_name, bytes):    
             sep = b'/'
         else:
             sep = '/'
         parts = resource_name.split(sep)
         parts.insert(0, self.base)
         result = os.path.join(*parts)
-        result = self._adjust_path(result)
-        
-        
-        
-        
-        
-            
-                                   
-        return result
+        return self._adjust_path(result)
 
     def _find(self, path):
         return os.path.exists(path)
@@ -191,10 +174,9 @@ class ResourceFinder(object):
         return os.path.getsize(resource.path)
 
     def get_resources(self, resource):
-
         def allowed(f):
-            return (f != '__pycache__' and not f.endswith(self.skipped_extensions))
-
+            return (f != '__pycache__' and not
+                    f.endswith(self.skipped_extensions))
         return set([f for f in os.listdir(resource.path) if allowed(f)])
 
     def is_container(self, resource):
@@ -227,7 +209,6 @@ class ZipResourceFinder(ResourceFinder):
     """
     Resource finder for resources in .zip files.
     """
-
     def __init__(self, module):
         super(ZipResourceFinder, self).__init__(module)
         archive = self.loader.archive
@@ -286,7 +267,7 @@ class ZipResourceFinder(ResourceFinder):
             if not self.index[i].startswith(path):
                 break
             s = self.index[i][plen:]
-            result.add(s.split(os.sep, 1)[0])  
+            result.add(s.split(os.sep, 1)[0])   
             i += 1
         return result
 
@@ -302,7 +283,10 @@ class ZipResourceFinder(ResourceFinder):
         return result
 
 
-_finder_registry = {type(None): ResourceFinder, zipimport.zipimporter: ZipResourceFinder}
+_finder_registry = {
+    type(None): ResourceFinder,
+    zipimport.zipimporter: ZipResourceFinder
+}
 
 try:
     

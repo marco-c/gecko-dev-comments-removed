@@ -4,6 +4,7 @@ ELF file parser.
 This provides a class ``ELFFile`` that parses an ELF executable in a similar
 interface to ``ZipFile``. Only the read interface is implemented.
 
+Based on: https://gist.github.com/lyssdod/f51579ae8d93c8657a5564aefc2ffbca
 ELF header: https://refspecs.linuxfoundation.org/elf/gabi4+/ch4.eheader.html
 """
 
@@ -34,7 +35,7 @@ class EMachine(enum.IntEnum):
     S390 = 22
     Arm = 40
     X8664 = 62
-    AArch64 = 183
+    AArc64 = 183
 
 
 class ELFFile:
