@@ -2,6 +2,9 @@
 
 
 add_task(async function thumbnails_bg_no_cookies_sent() {
+  registerCleanupFunction(() =>
+    Services.cookies.removeCookiesFromExactHost("mochi.test", "{}")
+  );
   
   let url = bgTestPageURL({ setGreenCookie: true });
 
