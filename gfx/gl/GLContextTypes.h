@@ -31,11 +31,10 @@ enum class CreateContextFlags : uint16_t {
   NO_VALIDATION = 1 << 4,
   PREFER_ROBUSTNESS = 1 << 5,
   HIGH_POWER = 1 << 6,
-  PROVOKING_VERTEX_DONT_CARE = 1 << 7,
-  PREFER_EXACT_VERSION = 1 << 8,
-  PREFER_MULTITHREADED = 1 << 9,
+  PREFER_EXACT_VERSION = 1 << 7,
+  PREFER_MULTITHREADED = 1 << 8,
 
-  FORBID_HARDWARE = 1 << 10,
+  FORBID_HARDWARE = 1 << 9,
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CreateContextFlags)
 
@@ -51,7 +50,7 @@ struct GLContextDesc final : public GLContextCreateDesc {
 
 MOZ_DEFINE_ENUM_CLASS_WITH_BASE(GLVendor, uint8_t,
                                 (Intel, NVIDIA, ATI, Qualcomm, Imagination,
-                                 Nouveau, Vivante, VMware, ARM, Other));
+                                 Nouveau, Vivante, VMware, ARM, AMD, Other));
 
 } 
 } 
