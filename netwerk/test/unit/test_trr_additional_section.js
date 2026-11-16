@@ -73,6 +73,9 @@ add_task(async function test_parse_additional_section() {
   await new TRRDNSListener("else.foo", { expectedAnswer: "2.3.4.5" });
 
   await trrServer.registerDoHAnswers("a.foo", "A", {
+    
+    
+    delay: 100,
     answers: [
       {
         name: "a.foo",
@@ -106,8 +109,6 @@ add_task(async function test_parse_additional_section() {
 
   let req1 = new TRRDNSListener("a.foo", { expectedAnswer: "1.2.3.4" });
 
-  
-  
   
   
   
@@ -310,6 +311,12 @@ add_task(async function test_additional_cached_record_override() {
     "network.trr.uri",
     `https://foo.example.com:${trrServer.port()}/dns-query`
   );
+  
+  
+  Services.prefs.setBoolPref("network.dns.get-ttl", false);
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref("network.dns.get-ttl");
+  });
 
   await new TRRDNSListener("else.foo", { expectedAnswer: "127.0.0.1" });
 
