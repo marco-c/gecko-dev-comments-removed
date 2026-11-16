@@ -6,7 +6,6 @@ package org.mozilla.fenix.helpers
 
 import android.util.Log
 import org.mozilla.fenix.helpers.Constants.TAG
-import org.mozilla.fenix.nimbus.AddressbarFocusMode
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.nimbus.IpProtection
 import org.mozilla.fenix.nimbus.Translations
@@ -15,7 +14,7 @@ object FxNimbusHelper {
     /** Disable the translations prompt after a page that can be translated is loaded. */
     fun disablePageLoadTranslationsPrompt() {
         Log.i(TAG, "disableTranslationsPrompt: Trying to disable the translations prompt")
-        FxNimbus.features.translations.withInitializer { _, _ ->
+        FxNimbus.features.translations.withInitializer { _ ->
             Translations(mainFlowToolbarEnabled = false)
         }
         Log.i(TAG, "disableTranslationsPrompt: Disabled the translations prompt")
@@ -24,7 +23,7 @@ object FxNimbusHelper {
     /** Enable the translations prompt after a page that can be translated is loaded. */
     fun enablePageLoadTranslationsPrompt() {
         Log.i(TAG, "enableTranslationsPrompt: Trying to enable the translations prompt")
-        FxNimbus.features.translations.withInitializer { _, _ ->
+        FxNimbus.features.translations.withInitializer { _ ->
             Translations(mainFlowToolbarEnabled = true)
         }
         Log.i(TAG, "enableTranslationsPrompt: Enabled the translations prompt")
@@ -33,7 +32,7 @@ object FxNimbusHelper {
     /** Disable the IP Protection feature. */
     fun disableIPProtection() {
         Log.i(TAG, "disableIPProtection: Trying to disable the IP Protection feature")
-        FxNimbus.features.ipProtection.withInitializer { _, _ ->
+        FxNimbus.features.ipProtection.withInitializer { _ ->
             IpProtection(enabled = false)
         }
         Log.i(TAG, "disableIPProtection: Disabled the IP Protection feature")
@@ -42,17 +41,9 @@ object FxNimbusHelper {
     /** Enable the IP Protection feature. */
     fun enableIPProtection() {
         Log.i(TAG, "enableIPProtection: Trying to enable the IP Protection feature")
-        FxNimbus.features.ipProtection.withInitializer { _, _ ->
+        FxNimbus.features.ipProtection.withInitializer { _ ->
             IpProtection(enabled = true)
         }
         Log.i(TAG, "enableIPProtection: Enabled the IP Protection feature")
-    }
-
-    fun updateAddressBarFocusModeStatus(enabled: Boolean) {
-        Log.i(TAG, "updateAddressBarFocusModeStatus: Changing status to $enabled")
-        FxNimbus.features.addressbarFocusMode.withInitializer { _, _ ->
-            AddressbarFocusMode(enabled = enabled)
-        }
-        Log.i(TAG, "updateAddressBarFocusModeStatus: Successfully changed status")
     }
 }
