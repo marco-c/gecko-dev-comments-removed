@@ -111,9 +111,6 @@ async function generateURNFromFledgeRawURL(
 
 
 
-
-
-
 async function generateURNFromFledge(
     href, keylist = [], nested_urls = [], resolve_to_config = false,
     ad_with_size = false, requested_size = null, register_beacon = false) {
@@ -223,12 +220,6 @@ function attachContext(object_constructor, html, headers, origin) {
   const object = object_constructor(url);
   return buildRemoteContextForObject(object, uuid, html);
 }
-
-
-
-
-
-
 
 async function attachOpaqueContext(
     generator_api, resolve_to_config, ad_with_size, requested_size,
