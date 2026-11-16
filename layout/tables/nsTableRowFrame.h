@@ -157,6 +157,19 @@ class nsTableRowFrame : public nsContainerFrame {
                           const ReflowInput& aReflowInput, bool aIsTopOfPage,
                           nsTableCellFrame* aCellFrame, nscoord aAvailableBSize,
                           nsReflowStatus& aStatus);
+
+  
+
+
+
+
+
+  void ReflowOrthogonalCellContent(nsPresContext* aPresContext,
+                                   const ReflowInput& aReflowInput,
+                                   nsTableCellFrame* aCellFrame,
+                                   const mozilla::LogicalSize& aAvailSize,
+                                   const nsSize& aContainerSize);
+
   
 
 
@@ -257,10 +270,6 @@ class nsTableRowFrame : public nsContainerFrame {
 
   
 
-  nscoord ComputeCellXOffset(const ReflowInput& aState, nsIFrame* aKidFrame,
-                             const nsMargin& aKidMargin) const;
-  
-
 
 
   void ReflowChildren(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
@@ -296,9 +305,6 @@ class nsTableRowFrame : public nsContainerFrame {
   
   nscoord mBStartBorderWidth = 0;
   nscoord mBEndBorderWidth = 0;
-  nscoord mIEndContBorderWidth = 0;
-  nscoord mBStartContBorderWidth = 0;
-  nscoord mIStartContBorderWidth = 0;
 
   
 

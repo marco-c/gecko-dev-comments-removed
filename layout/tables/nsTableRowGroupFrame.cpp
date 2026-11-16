@@ -457,15 +457,70 @@ void nsTableRowGroupFrame::ReflowChildren(
 
   if (aReflowInput.mReflowInput.mFlags.mSpecialBSizeReflow) {
     DidResizeRows(aDesiredSize);
+    if (ReflowOrthogonalSpanningCells(aPresContext,
+                                      aReflowInput.mReflowInput)) {
+      DidResizeRows(aDesiredSize);
+    }
     if (isPaginated) {
       CacheRowBSizesForPrinting(GetFirstRow(), wm);
     }
   } else if (needToCalcRowBSizes) {
     CalculateRowBSizes(aPresContext, aDesiredSize, aReflowInput.mReflowInput);
+    if (ReflowOrthogonalSpanningCells(aPresContext,
+                                      aReflowInput.mReflowInput)) {
+      DidResizeRows(aDesiredSize);
+    }
     if (!reflowAllKids) {
       InvalidateFrame();
     }
   }
+}
+
+bool nsTableRowGroupFrame::ReflowOrthogonalSpanningCells(
+    nsPresContext* aPresContext, const ReflowInput& aReflowInput) {
+  nsTableFrame* tableFrame = GetTableFrame();
+  const WritingMode wm = aReflowInput.GetWritingMode();
+  const bool borderCollapse = tableFrame->IsBorderCollapse();
+  bool didReflow = false;
+
+  for (nsTableRowFrame* row = GetFirstRow(); row; row = row->GetNextRow()) {
+    Maybe<ReflowInput> rowReflowInput;
+    for (nsTableCellFrame* cell = row->GetFirstCell(); cell;
+         cell = cell->GetNextCell()) {
+      nsIFrame* inner = cell->Inner();
+      if (!inner->GetWritingMode().IsOrthogonalTo(wm) ||
+          tableFrame->GetEffectiveRowSpan(*cell) == 1) {
+        continue;
+      }
+      
+      
+      if (inner->BSize(wm) ==
+          cell->BSize(wm) - cell->GetBorderWidth(wm).BStartEnd(wm)) {
+        continue;
+      }
+      if (!rowReflowInput) {
+        const LogicalSize rowAvailSize(wm, aReflowInput.AvailableISize(),
+                                       NS_UNCONSTRAINEDSIZE);
+        rowReflowInput.emplace(aPresContext, aReflowInput, row, rowAvailSize,
+                               Nothing(),
+                               ReflowInput::InitFlag::CallerWillInit);
+        InitChildReflowInput(aPresContext, borderCollapse, *rowReflowInput);
+      }
+
+      
+      
+      
+      ReflowOutput desiredSize(wm);
+      desiredSize.SetSize(wm, cell->GetDesiredSize());
+
+      row->ReflowOrthogonalCellContent(aPresContext, *rowReflowInput, cell,
+                                       cell->GetLogicalSize(wm),
+                                       row->GetSize());
+      cell->SetDesiredSize(desiredSize);
+      didReflow = true;
+    }
+  }
+  return didReflow;
 }
 
 nsTableRowFrame* nsTableRowGroupFrame::GetFirstRow() const {
@@ -1041,8 +1096,7 @@ void nsTableRowGroupFrame::SplitRowGroup(nsPresContext* aPresContext,
                                          ReflowOutput& aDesiredSize,
                                          const ReflowInput& aReflowInput,
                                          nsTableFrame* aTableFrame,
-                                         nsReflowStatus& aStatus,
-                                         bool aRowForcedPageBreak) {
+                                         nsReflowStatus& aStatus) {
   MOZ_ASSERT(aPresContext->IsPaginated(),
              "SplitRowGroup currently supports only paged media");
 
@@ -1120,7 +1174,7 @@ void nsTableRowGroupFrame::SplitRowGroup(nsPresContext* aPresContext,
                           ReflowChildFlags::NoMoveFrame);
         rowFrame->DidResize(ForceAlignTopForTableCell::Yes);
 
-        if (!aRowForcedPageBreak && !aStatus.IsFullyComplete() &&
+        if (!aStatus.IsFullyComplete() &&
             ShouldAvoidBreakInside(aReflowInput)) {
           aStatus.SetInlineLineBreakBeforeAndReset();
           break;
@@ -1158,7 +1212,7 @@ void nsTableRowGroupFrame::SplitRowGroup(nsPresContext* aPresContext,
           
           
           if (rowMetrics.BSize(wm) > availSize.BSize(wm) ||
-              (aStatus.IsInlineBreakBefore() && !aRowForcedPageBreak)) {
+              aStatus.IsInlineBreakBefore()) {
             
             if (isTopOfPage) {
               
@@ -1193,8 +1247,7 @@ void nsTableRowGroupFrame::SplitRowGroup(nsPresContext* aPresContext,
         NS_ASSERTION(!contRow,
                      "We should not have created a continuation if none of "
                      "this row fits");
-        if (!prevRowFrame ||
-            (!aRowForcedPageBreak && ShouldAvoidBreakInside(aReflowInput))) {
+        if (!prevRowFrame || ShouldAvoidBreakInside(aReflowInput)) {
           aStatus.SetInlineLineBreakBeforeAndReset();
           break;
         }
@@ -1357,8 +1410,8 @@ void nsTableRowGroupFrame::Reflow(nsPresContext* aPresContext,
     const bool savedSpecialBSizeReflow = mutableRIFlags.mSpecialBSizeReflow;
     mutableRIFlags.mSpecialBSizeReflow = false;
 
-    SplitRowGroup(aPresContext, aDesiredSize, aReflowInput, tableFrame, aStatus,
-                  splitDueToPageBreak);
+    SplitRowGroup(aPresContext, aDesiredSize, aReflowInput, tableFrame,
+                  aStatus);
 
     mutableRIFlags.mSpecialBSizeReflow = savedSpecialBSizeReflow;
   }

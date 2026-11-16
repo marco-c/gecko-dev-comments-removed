@@ -308,6 +308,14 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
 
 
 
+  bool ReflowOrthogonalSpanningCells(nsPresContext* aPresContext,
+                                     const ReflowInput& aReflowInput);
+
+  
+
+
+
+
 
   void ReflowChildren(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
                       mozilla::TableRowGroupReflowInput& aReflowInput,
@@ -316,7 +324,7 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
 
   void SplitRowGroup(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
                      const ReflowInput& aReflowInput, nsTableFrame* aTableFrame,
-                     nsReflowStatus& aStatus, bool aRowForcedPageBreak);
+                     nsReflowStatus& aStatus);
 
   void SplitSpanningCells(nsPresContext* aPresContext,
                           const ReflowInput& aReflowInput,
@@ -335,8 +343,6 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
   nsTableRowFrame* CreateContinuingRowFrame(nsIFrame* aRowFrame);
 
   bool IsSimpleRowFrame(nsTableFrame* aTableFrame, nsTableRowFrame* aRowFrame);
-
-  void GetNextRowSibling(nsIFrame** aRowFrame);
 
   void UndoContinuedRow(nsPresContext* aPresContext, nsTableRowFrame* aRow);
 
