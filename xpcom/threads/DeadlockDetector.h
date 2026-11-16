@@ -65,7 +65,6 @@ class DeadlockDetector {
   struct OrderingEntry;
   typedef nsTArray<OrderingEntry*> HashEntryArray;
   typedef typename HashEntryArray::index_type index_type;
-  typedef typename HashEntryArray::size_type size_type;
   static const index_type NoIndex = HashEntryArray::NoIndex;
 
   
@@ -93,6 +92,9 @@ class DeadlockDetector {
     HashEntryArray mOrderedLT;     
     HashEntryArray mExternalRefs;  
     const T* mResource;
+    
+    
+    mutable uint32_t mVisitGen = 0;
   };
 
   
@@ -255,6 +257,7 @@ class DeadlockDetector {
     return 0;
   }
 
+ private:
   
 
 
@@ -263,28 +266,10 @@ class DeadlockDetector {
 
   bool InTransitiveClosure(const OrderingEntry* aStart,
                            const OrderingEntry* aTarget) const {
-    
-    
-    static nsDefaultComparator<const OrderingEntry*, const OrderingEntry*> comp;
-    if (aStart->mOrderedLT.BinaryIndexOf(aTarget, comp) != NoIndex) {
-      return true;
-    }
-
-    index_type i = 0;
-    size_type len = aStart->mOrderedLT.Length();
-    for (auto it = aStart->mOrderedLT.Elements(); i < len; ++i, ++it) {
-      if (InTransitiveClosure(*it, aTarget)) {
-        return true;
-      }
-    }
-    return false;
+    return FindPath(aStart, aTarget, nullptr);
   }
 
   
-
-
-
-
 
 
 
@@ -304,29 +289,64 @@ class DeadlockDetector {
     }
     chain->AppendElement(aStart->mResource);
 
-    NS_ASSERTION(GetDeductionChain_Helper(aStart, aTarget, chain),
+    NS_ASSERTION(FindPath(aStart, aTarget, chain),
                  "GetDeductionChain called when there's no deadlock");
     return chain;
   }
 
   
   
-  bool GetDeductionChain_Helper(const OrderingEntry* aStart,
-                                const OrderingEntry* aTarget,
-                                ResourceAcquisitionArray* aChain) {
-    if (aStart->mOrderedLT.BinaryIndexOf(aTarget) != NoIndex) {
-      aChain->AppendElement(aTarget->mResource);
-      return true;
+  
+  
+  
+  
+  
+  
+  
+  bool FindPath(const OrderingEntry* aStart, const OrderingEntry* aTarget,
+                ResourceAcquisitionArray* aChain) const {
+    
+    
+    struct Frame {
+      const OrderingEntry* mEntry;
+      index_type mNextChild;
+    };
+    
+    
+    uint32_t gen = ++mSearchGen;
+    if (MOZ_UNLIKELY(gen == 0)) {
+      for (const auto& data : mOrdering.Values()) {
+        data->mVisitGen = 0;
+      }
+      gen = mSearchGen = 1;
     }
+    AutoTArray<Frame, 64> frames;
+    frames.AppendElement(Frame{aStart, 0});
+    aStart->mVisitGen = gen;
 
-    index_type i = 0;
-    size_type len = aStart->mOrderedLT.Length();
-    for (auto it = aStart->mOrderedLT.Elements(); i < len; ++i, ++it) {
-      aChain->AppendElement((*it)->mResource);
-      if (GetDeductionChain_Helper(*it, aTarget, aChain)) {
+    while (!frames.IsEmpty()) {
+      Frame& top = frames.LastElement();
+      const OrderingEntry* entry = top.mEntry;
+      if (top.mNextChild == 0 &&
+          entry->mOrderedLT.BinaryIndexOf(aTarget) != NoIndex) {
+        if (aChain) {
+          for (index_type i = 1; i < frames.Length(); ++i) {
+            aChain->AppendElement(frames[i].mEntry->mResource);
+          }
+          aChain->AppendElement(aTarget->mResource);
+        }
         return true;
       }
-      aChain->RemoveLastElement();
+      if (top.mNextChild >= entry->mOrderedLT.Length()) {
+        frames.RemoveLastElement();
+        continue;
+      }
+      const OrderingEntry* child = entry->mOrderedLT[top.mNextChild++];
+      
+      if (child->mVisitGen != gen) {
+        child->mVisitGen = gen;
+        frames.AppendElement(Frame{child, 0});
+      }
     }
     return false;
   }
@@ -343,6 +363,12 @@ class DeadlockDetector {
 
 
   PRLock* mLock;
+
+  
+
+
+
+  mutable uint32_t mSearchGen = 0;
 };
 
 template <typename T>
