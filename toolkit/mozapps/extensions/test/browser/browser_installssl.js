@@ -35,6 +35,9 @@ function test() {
     cos.clearValidityOverride("self-signed.example.com", -1, {});
     cos.clearValidityOverride("untrusted.example.com", -1, {});
     cos.clearValidityOverride("expired.example.com", -1, {});
+    
+    
+    Services.cache2.clear();
 
     if (gPendingInstall) {
       gTests = [];
