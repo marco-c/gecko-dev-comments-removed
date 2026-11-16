@@ -44,44 +44,91 @@ function checkContainerIntersectionRect(entry, expected, description = '') {
 
 
 
+const kWaitIdentifierPrefix = 'container-timing-wait-';
+let wait_count = 0;
+
+function isWaitEntry(entry) {
+  return entry.identifier.startsWith(kWaitIdentifierPrefix);
+}
 
 
-const is_element_timing_available = !!window.PerformanceElementTiming;
 
-function setupElementTimingWait(func, parent) {
-  const finish_observer = new PerformanceObserver((entryList) => {
-    finish_observer.disconnect();
-    requestAnimationFrame(() => {
-      func();
+
+
+
+
+function waitForPendingPaints() {
+  const identifier = kWaitIdentifierPrefix + wait_count++;
+  return new Promise(resolve => {
+    const observer = new PerformanceObserver(entryList => {
+      if (entryList.getEntries().some(e => e.identifier === identifier)) {
+        observer.disconnect();
+        img.remove();
+        resolve();
+      }
     });
+    observer.observe({type: 'container'});
+
+    const img = document.createElement('img');
+    img.src = '/container-timing/resources/square100.png';
+    img.setAttribute('containertiming', identifier);
+    img.setAttribute('containertimingignore', '');
+    
+    
+    
+    
+    img.style.cssText =
+        'position: fixed; right: 0; bottom: 0; width: 1px; height: 1px; pointer-events: none;';
+    document.body.appendChild(img);
   });
-
-  finish_observer.observe({entryTypes: ['element']});
-
-  const finish_img = document.createElement('img');
-  finish_img.src = '/container-timing/resources/square100.png';
-  finish_img.setAttribute('elementtiming', '');
-  parent.appendChild(finish_img);
 }
 
-function setupTimeoutWait(t, func) {
-  t.step_timeout(() => {
-    func();
-  }, 2000);
-}
 
-function setupWait(t, parent, func) {
-  if (is_element_timing_available) {
-    setupElementTimingWait(func, parent);
-  } else {
-    setupTimeoutWait(t, func);
+
+
+
+async function getContainerEntries(t, minNumEntries = 1, timeout = 3000) {
+  const entries = [];
+  let observer;
+  try {
+    await new Promise((resolve, reject) => {
+      observer = new PerformanceObserver(entryList => {
+        entries.push(...entryList.getEntries().filter(e => !isWaitEntry(e)));
+        if (entries.length >= minNumEntries) {
+          resolve();
+        }
+      });
+      observer.observe({type: 'container', buffered: true});
+      if (minNumEntries === 0) {
+        resolve();
+        return;
+      }
+      t.step_timeout(() => {
+        reject(new Error(`${minNumEntries} container entries never arrived`));
+      }, timeout);
+    });
+    await waitForPendingPaints();
+  } finally {
+    observer.disconnect();
   }
+  return entries;
 }
 
-function waitAfterTest(t, parent, func) {
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      setupWait(t, parent, func);
-    });
+
+
+async function getContainerEntriesWithin(t, duration = 1000) {
+  const entries = [];
+  const observer = new PerformanceObserver(entryList => {
+    entries.push(...entryList.getEntries());
   });
+  observer.observe({type: 'container'});
+  await waitWithoutObserving(t, duration);
+  observer.disconnect();
+  return entries;
+}
+
+
+
+function waitWithoutObserving(t, duration = 3000) {
+  return new Promise(resolve => t.step_timeout(resolve, duration));
 }
