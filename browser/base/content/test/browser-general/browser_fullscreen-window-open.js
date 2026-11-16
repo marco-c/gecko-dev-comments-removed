@@ -1,5 +1,3 @@
-
-
 const PREF_DISABLE_OPEN_NEW_WINDOW =
   "browser.link.open_newwindow.disabled_in_fullscreen";
 const PREF_BLOCK_TOPLEVEL_DATA =
@@ -29,14 +27,21 @@ async function test() {
   });
 
   
+  
+  let fullscreenEntered =
+    isOSX && promiseNativeFullscreenTransitionEnd(getAppWindow(newWin));
   newWin.BrowserCommands.fullScreen();
+  await fullscreenEntered;
 
   runNextTest();
 }
 
 registerCleanupFunction(async function () {
   
+  let fullscreenExited =
+    isOSX && promiseNativeFullscreenTransitionEnd(getAppWindow(newWin));
   newWin.BrowserCommands.fullScreen();
+  await fullscreenExited;
 
   await BrowserTestUtils.closeWindow(newWin);
 
@@ -272,6 +277,21 @@ function waitForWindowOpen(aOptions) {
   });
 }
 
+function getAppWindow(aWindow) {
+  return aWindow.docShell.treeOwner
+    .QueryInterface(Ci.nsIInterfaceRequestor)
+    .getInterface(Ci.nsIAppWindow);
+}
+
+
+
+function promiseNativeFullscreenTransitionEnd(appWindow) {
+  return TestUtils.topicObserved(
+    "macos-native-fullscreen-transition-end",
+    subject => subject == appWindow
+  );
+}
+
 function executeWindowOpenInContent(aParam) {
   SpecialPowers.spawn(
     newBrowser.selectedBrowser,
@@ -333,7 +353,21 @@ WindowListener.prototype = {
     Services.wm.removeListener(this);
 
     let domwindow = aXULWindow.docShell.domWindow;
-    let onLoad = () => {
+    let shown, transitionEnd;
+    if (isOSX) {
+      shown = TestUtils.topicObserved(
+        "xul-window-visible",
+        subject => subject == aXULWindow
+      );
+      let onTransitionStart = () => {
+        transitionEnd ??= promiseNativeFullscreenTransitionEnd(aXULWindow).then(
+          () => (transitionEnd = null)
+        );
+      };
+      domwindow.addEventListener("willenterfullscreen", onTransitionStart);
+      domwindow.addEventListener("willexitfullscreen", onTransitionStart);
+    }
+    let onLoad = async () => {
       is(
         domwindow.document.location.href,
         this.test_url,
@@ -345,16 +379,24 @@ WindowListener.prototype = {
 
       domwindow.removeEventListener("load", onLoad, true);
 
-      
       if (isOSX) {
-        setTimeout(() => {
-          domwindow.close();
-          executeSoon(this.callBack_onFinalize);
-        }, 3000);
-      } else {
-        domwindow.close();
-        executeSoon(this.callBack_onFinalize);
+        
+        
+        await shown;
+        while (transitionEnd) {
+          await transitionEnd;
+        }
+        if (domwindow.fullScreen) {
+          
+          
+          let fullscreenExited =
+            promiseNativeFullscreenTransitionEnd(aXULWindow);
+          domwindow.fullScreen = false;
+          await fullscreenExited;
+        }
       }
+      domwindow.close();
+      executeSoon(this.callBack_onFinalize);
     };
     domwindow.addEventListener("load", onLoad, true);
   },
