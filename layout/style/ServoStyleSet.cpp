@@ -879,6 +879,9 @@ bool ServoStyleSet::StyleDocument(ServoTraversalFlags aFlags) {
   
   
   
+  
+  
+  aFlags &= ~ServoTraversalFlags::ForCSSRuleChanges;
   if (GetPresContext()->EffectCompositor()->PreTraverse(aFlags)) {
     DocumentStyleRootIterator iter(mDocument->GetServoRestyleRoot());
     while (Element* root = iter.GetNextStyleRoot()) {

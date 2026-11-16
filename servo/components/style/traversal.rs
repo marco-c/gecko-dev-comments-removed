@@ -12,7 +12,9 @@ use crate::matching::MatchMethods;
 use crate::properties::ComputedValues;
 use crate::selector_parser::PseudoElement;
 use crate::sharing::StyleSharingTarget;
-use crate::style_resolver::{PseudoElementResolution, StyleResolverForElement};
+use crate::style_resolver::{
+    PseudoElementResolution, ResolvedElementStyles, StyleResolverForElement,
+};
 use crate::stylist::RuleInclusion;
 use crate::traversal_flags::TraversalFlags;
 use hashbrown::HashMap;
@@ -158,8 +160,8 @@ pub trait DomTraversal<E: TElement>: Sync {
 
         
         
-        if !should_traverse && data.is_some() {
-            clear_state_after_traversing(root, data.unwrap(), traversal_flags);
+        if !should_traverse && let Some(ref mut data) = data {
+            clear_state_after_traversing(root, data, traversal_flags);
         }
 
         PreTraverseToken(if should_traverse { Some(root) } else { None })
@@ -368,13 +370,13 @@ pub fn recalc_style_at<E, D, F>(
     );
 
     let mut child_restyle_hint = RestyleHint::empty();
-    let mut child_flags = ElementDataFlags::empty();
+    let mut is_animation_restyle = false;
 
     
     if let Some(restyle_kind) = restyle_kind {
         let result = compute_style(context, element, data, restyle_kind);
         child_restyle_hint = result.child_hint;
-        child_flags = result.child_flags;
+        is_animation_restyle = result.animations_changed;
 
         
         
@@ -430,11 +432,12 @@ pub fn recalc_style_at<E, D, F>(
             context,
             element,
             child_restyle_hint,
-            child_flags,
+            is_animation_restyle,
             is_initial_style,
             note_child,
         );
     } else {
+        
         data.before_change_style = None;
     }
 
@@ -450,10 +453,8 @@ fn clear_state_after_traversing<E>(element: E, data: &mut ElementData, flags: Tr
 where
     E: TElement,
 {
-    data.flags.remove(
-        ElementDataFlags::ANCESTOR_ANIMATIONS_CHANGED
-            | ElementDataFlags::RECASCADE_ONLY_FOR_ANCESTOR_ANIMATIONS,
-    );
+    data.flags
+        .remove(ElementDataFlags::ANCESTOR_ANIMATIONS_CHANGED);
     if flags.intersects(TraversalFlags::Forgetful) {
         data.clear_restyle_flags_and_damage();
         unsafe {
@@ -464,23 +465,53 @@ where
 
 
 
+
 fn compute_before_change_style<E>(
     context: &mut StyleContext<E>,
     element: E,
     data: &ElementData,
     hint: RestyleHint,
+    kind: &RestyleKind,
+    new_styles: &ResolvedElementStyles,
 ) -> Option<Arc<ComputedValues>>
 where
     E: TElement,
 {
+    if !data.has_styles() {
+        return None;
+    }
     if !hint.has_animation_hint()
         && !data
             .flags
             .contains(ElementDataFlags::ANCESTOR_ANIMATIONS_CHANGED)
     {
         
+        
         return None;
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let rules_changed_only_for_animations = !matches!(*kind, RestyleKind::MatchAndCascade)
+        && !hint.intersects(RestyleHint::replacements() - RestyleHint::for_animations());
+    if rules_changed_only_for_animations {
+        let parent_has_before_change_style = element.inheritance_parent().is_some_and(|p| {
+            p.borrow_data()
+                .is_some_and(|d| d.before_change_style.is_some())
+        });
+        if !parent_has_before_change_style {
+            return Some(new_styles.primary_style().clone());
+        }
+    }
+
     let mut inputs = ElementCascadeInputs::new_from_element_data(data);
     let replacements = hint & RestyleHint::for_animations();
     if !replacements.is_empty() {
@@ -501,8 +532,7 @@ where
 struct ComputeStyleResult {
     
     child_hint: RestyleHint,
-    
-    child_flags: ElementDataFlags,
+    animations_changed: bool,
 }
 
 
@@ -521,7 +551,6 @@ where
     debug!("compute_style: {:?} (kind={:?})", element, kind);
 
     let hint = data.hint;
-    let animation_only = data.is_animation_only_restyle();
 
     if data.has_styles() {
         data.set_restyled();
@@ -639,20 +668,16 @@ where
         },
     };
 
-    let before_change_style = if data.has_styles() && !animation_only {
-        compute_before_change_style(context, element, data, hint)
-    } else {
-        None
-    };
-    let before_change_style_changed = before_change_style.is_some();
-
+    let before_change_style =
+        compute_before_change_style(context, element, data, hint, &kind, &new_styles);
+    let animations_changed = before_change_style.is_some();
+    let before_change_style = before_change_style.or_else(|| data.styles.primary.clone());
     let mut child_hint = element.finish_restyle(
         context,
         data,
         new_styles,
         important_rules_changed,
         before_change_style,
-        animation_only,
     );
 
     if !element.matches_user_and_content_rules() {
@@ -662,17 +687,9 @@ where
         child_hint |= RestyleHint::RECASCADE_SELF;
     }
 
-    let mut child_flags = ElementDataFlags::empty();
-    if animation_only {
-        child_flags |= ElementDataFlags::ANCESTOR_ANIMATIONS_CHANGED
-            | ElementDataFlags::RECASCADE_ONLY_FOR_ANCESTOR_ANIMATIONS;
-    } else if before_change_style_changed {
-        child_flags |= ElementDataFlags::ANCESTOR_ANIMATIONS_CHANGED;
-    }
-
     ComputeStyleResult {
         child_hint,
-        child_flags,
+        animations_changed,
     }
 }
 
@@ -726,7 +743,7 @@ fn note_children<E, D, F>(
     context: &mut StyleContext<E>,
     element: E,
     child_restyle_hint: RestyleHint,
-    child_flags: ElementDataFlags,
+    is_animation_restyle: bool,
     is_initial_style: bool,
     mut note_child: F,
 ) where
@@ -754,15 +771,10 @@ fn note_children<E, D, F>(
         );
 
         if let Some(ref mut child_data) = child_data {
-            
-            
-            
-            if child_restyle_hint.intersects(RestyleHint::recascade_self()) {
-                let mut flags = child_flags;
-                if child_data.hint.intersects(RestyleHint::RECASCADE_SELF) {
-                    flags.remove(ElementDataFlags::RECASCADE_ONLY_FOR_ANCESTOR_ANIMATIONS);
-                }
-                child_data.flags.insert(flags);
+            if is_animation_restyle {
+                child_data
+                    .flags
+                    .insert(ElementDataFlags::ANCESTOR_ANIMATIONS_CHANGED);
             }
             child_data.hint.insert(child_restyle_hint);
 

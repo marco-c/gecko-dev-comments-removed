@@ -349,10 +349,6 @@ trait PrivateMatchMethods: TElement {
 
     
     
-    
-    
-    
-    
     #[cfg(feature = "gecko")]
     fn process_transitions(
         &self,
@@ -360,6 +356,11 @@ trait PrivateMatchMethods: TElement {
         before_change_style: Option<&Arc<ComputedValues>>,
         new_styles: &mut ResolvedElementStyles,
     ) -> Option<Arc<ComputedValues>> {
+        
+        
+        if before_change_style.is_some_and(|s| Arc::ptr_eq(s, &new_styles.primary.style.0)) {
+            return None;
+        }
         let starting_values =
             self.maybe_resolve_starting_style(context, before_change_style, new_styles);
         let before_change_or_starting = starting_values.as_ref().or(before_change_style);
@@ -944,18 +945,25 @@ pub trait MatchMethods: TElement {
         mut new_styles: ResolvedElementStyles,
         important_rules_changed: bool,
         before_change_style: Option<Arc<ComputedValues>>,
-        animation_only: bool,
     ) -> RestyleHint {
         
+        
+        
+        
+        
+        
+        
+        let animation_only = !data.hint.has_non_animation_invalidations()
+            && before_change_style
+                .as_ref()
+                .is_some_and(|s| Arc::ptr_eq(s, &new_styles.primary.style.0));
         if !animation_only {
             #[cfg(feature = "gecko")]
             self.process_animations(
                 context,
                 &mut new_styles,
                 important_rules_changed,
-                before_change_style
-                    .as_ref()
-                    .or(data.styles.primary.as_ref()),
+                before_change_style.as_ref(),
             );
             #[cfg(feature = "servo")]
             self.process_animations(
@@ -968,16 +976,12 @@ pub trait MatchMethods: TElement {
 
         
         
-        let mut old_styles = data.set_styles(new_styles);
-        if !animation_only {
-            data.before_change_style = before_change_style.or_else(|| old_styles.primary.take());
-        }
-        let old_primary_style = old_styles
-            .primary
-            .as_ref()
-            .or(data.before_change_style.as_ref());
-
+        
+        let old_styles = data.set_styles(new_styles);
         let new_primary_style = data.styles.primary.as_ref().unwrap();
+        data.before_change_style =
+            before_change_style.filter(|s| !Arc::ptr_eq(s, new_primary_style));
+        let old_primary_style = old_styles.primary.as_ref();
 
         let mut child_restyle_hint = RestyleHint::empty();
         let is_root = new_primary_style
