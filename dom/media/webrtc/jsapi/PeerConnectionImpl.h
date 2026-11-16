@@ -38,6 +38,7 @@
 #include "jsep/JsepSession.h"
 #include "jsep/JsepSessionImpl.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/IceServerParser.h"
 #include "mozilla/PeerIdentity.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/PeerConnectionImplBinding.h"  
@@ -398,7 +399,9 @@ class PeerConnectionImpl final
   MOZ_CAN_RUN_SCRIPT_BOUNDARY bool PluginCrash(uint32_t aPluginID,
                                                const nsAString& aPluginName);
 
-  NS_IMETHODIMP SetConfiguration(const RTCConfiguration& aConfiguration);
+  NS_IMETHODIMP SetConfiguration(
+      const RTCConfiguration& aConfiguration,
+      nsTArray<IceServerParser::ParsedIceServer> aParsedIceServers);
   void SetConfiguration(const RTCConfiguration& aConfiguration,
                         ErrorResult& rv);
 
@@ -593,8 +596,8 @@ class PeerConnectionImpl final
       nsTHashMap<nsCStringHashKey, RefPtr<dom::RTCDtlsTransport>>;
 
  private:
-  void ParseIceServers(const nsTArray<dom::RTCIceServer>& aIceServers,
-                       ErrorResult& aRv);
+  nsTArray<IceServerParser::ParsedIceServer> ParseIceServers(
+      const nsTArray<dom::RTCIceServer>& aIceServers, ErrorResult& aRv);
 
   virtual ~PeerConnectionImpl();
   PeerConnectionImpl(const PeerConnectionImpl& rhs);
@@ -799,6 +802,9 @@ class PeerConnectionImpl final
   void FlushIceCtxOperationQueueIfReady();
   void PerformOrEnqueueIceCtxOperation(nsIRunnable* runnable);
   nsresult SetTargetForDefaultLocalAddressLookup();
+  
+  
+  void EnsureTargetForDefaultLocalAddressLookup();
   void EnsureIceGathering(bool aDefaultRouteOnly, bool aObfuscateHostAddresses);
 
   bool GetPrefDefaultAddressOnly() const;
@@ -810,6 +816,10 @@ class PeerConnectionImpl final
 
   
   void EnsureTransports(const JsepSession& aSession);
+
+  
+  
+  void EmptyCandidatePool();
 
   void UpdateRTCDtlsTransports();
   
@@ -938,6 +948,14 @@ class PeerConnectionImpl final
     std::string mUfrag;
   };
   std::map<std::string, std::list<PendingIceCandidate>> mQueriedMDNSHostnames;
+
+  
+  
+  
+  uint8_t mIceCandidatePoolSize = 0;
+  
+  
+  nsTArray<IceServerParser::ParsedIceServer> mParsedIceServers;
 
   MediaEventListener mGatheringStateChangeListener;
   MediaEventListener mConnectionStateChangeListener;

@@ -2572,12 +2572,14 @@ void PeerConnectionImpl::InvalidateLastReturnedParameters() {
   }
 }
 
-void PeerConnectionImpl::ParseIceServers(
+nsTArray<IceServerParser::ParsedIceServer> PeerConnectionImpl::ParseIceServers(
     const nsTArray<dom::RTCIceServer>& aIceServers, ErrorResult& aRv) {
   auto result = IceServerParser::Parse(aIceServers);
   if (result.isErr()) {
     aRv = result.unwrapErr();
+    return {};
   }
+  return result.unwrap();
 }
 
 static JsepRtcpMuxPolicy ToJsepRtcpMuxPolicy(dom::RTCRtcpMuxPolicy aPolicy) {
@@ -2609,16 +2611,18 @@ void PeerConnectionImpl::SetConfiguration(
     return;
   }
 
-  ParseIceServers(aConfiguration.mIceServers, aRv);
+  nsTArray<IceServerParser::ParsedIceServer> parsedIceServers =
+      ParseIceServers(aConfiguration.mIceServers, aRv);
   if (aRv.Failed()) {
     return;
   }
 
-  aRv = SetConfiguration(aConfiguration);
+  aRv = SetConfiguration(aConfiguration, std::move(parsedIceServers));
 }
 
 nsresult PeerConnectionImpl::SetConfiguration(
-    const RTCConfiguration& aConfiguration) {
+    const RTCConfiguration& aConfiguration,
+    nsTArray<IceServerParser::ParsedIceServer> aParsedIceServers) {
   
   
   nsresult rv =
@@ -2668,6 +2672,63 @@ nsresult PeerConnectionImpl::SetConfiguration(
       aConfiguration.mAlwaysNegotiateDataChannels);
   
   StoreConfigurationForAboutWebrtc(aConfiguration);
+
+  const bool iceServersChanged = aParsedIceServers != mParsedIceServers;
+  mParsedIceServers = std::move(aParsedIceServers);
+
+  const uint8_t poolSize = aConfiguration.mIceCandidatePoolSize;
+
+  
+  
+  
+  
+  
+  
+  
+  if (!mBlockedByConnectionAllowlists &&
+      (poolSize != mIceCandidatePoolSize || iceServersChanged) &&
+      mJsepSession->GetLocalDescription(kJsepDescriptionPendingOrCurrent)
+          .empty()) {
+    if (iceServersChanged || poolSize == 0) {
+      
+      
+      
+      EmptyCandidatePool();
+    }
+
+    if (poolSize > 0) {
+      mIceCandidatePoolSize = poolSize;
+      
+      
+      if (!mStunAddrs.Length()) {
+        InitLocalAddrs();
+      }
+      nsCOMPtr<nsIRunnable> runnable(NS_NewRunnableFunction(
+          __func__,
+          [this, self = RefPtr<PeerConnectionImpl>(this), size = poolSize,
+           defaultRouteOnly = GetPrefDefaultAddressOnly(),
+           obfuscate = GetPrefObfuscateHostAddresses()]() {
+            
+            
+            
+            if (!mStunAddrs.Length() && XRE_IsContentProcess()) {
+              CSFLogInfo(LOGTAG,
+                         "SetConfiguration: No STUN addresses returned from "
+                         "parent process, not gathering a candidate pool");
+              return;
+            }
+            
+            
+            
+            EnsureTargetForDefaultLocalAddressLookup();
+            
+            
+            mTransportHandler->SetCandidatePoolSize(size, defaultRouteOnly,
+                                                    obfuscate, mStunAddrs);
+          }));
+      PerformOrEnqueueIceCtxOperation(runnable);
+    }
+  }
 
   return NS_OK;
 }
@@ -3683,6 +3744,29 @@ void PeerConnectionImpl::OnCandidateError(
                                    aErrorInfo.mPort,
                                    ObString(aErrorInfo.mUrl.c_str()), errorCode,
                                    ObString(aErrorInfo.mErrorText.c_str()), rv);
+}
+
+
+
+
+
+
+void PeerConnectionImpl::EmptyCandidatePool() {
+  if (!mIceCandidatePoolSize) {
+    return;
+  }
+
+  mIceCandidatePoolSize = 0;
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIRunnable> runnable(NS_NewRunnableFunction(
+      __func__, [self = RefPtr<PeerConnectionImpl>(this)]() {
+        self->mTransportHandler->EmptyCandidatePool();
+      }));
+  PerformOrEnqueueIceCtxOperation(runnable);
 }
 
 void PeerConnectionImpl::IceGatheringStateChange(
@@ -4801,6 +4885,18 @@ nsresult PeerConnectionImpl::SetTargetForDefaultLocalAddressLookup() {
   return NS_OK;
 }
 
+void PeerConnectionImpl::EnsureTargetForDefaultLocalAddressLookup() {
+  if (mTargetForDefaultLocalAddressLookupIsSet) {
+    return;
+  }
+
+  nsresult rv = SetTargetForDefaultLocalAddressLookup();
+  if (NS_FAILED(rv)) {
+    NS_WARNING("Unable to set target for default local address lookup");
+  }
+  mTargetForDefaultLocalAddressLookupIsSet = true;
+}
+
 void PeerConnectionImpl::EnsureIceGathering(bool aDefaultRouteOnly,
                                             bool aObfuscateHostAddresses) {
   
@@ -4808,13 +4904,7 @@ void PeerConnectionImpl::EnsureIceGathering(bool aDefaultRouteOnly,
     return;
   }
 
-  if (!mTargetForDefaultLocalAddressLookupIsSet) {
-    nsresult rv = SetTargetForDefaultLocalAddressLookup();
-    if (NS_FAILED(rv)) {
-      NS_WARNING("Unable to set target for default local address lookup");
-    }
-    mTargetForDefaultLocalAddressLookupIsSet = true;
-  }
+  EnsureTargetForDefaultLocalAddressLookup();
 
   
   
@@ -4824,11 +4914,15 @@ void PeerConnectionImpl::EnsureIceGathering(bool aDefaultRouteOnly,
   if (!mStunAddrs.Length() && XRE_IsContentProcess()) {
     CSFLogInfo(LOGTAG, "%s: No STUN addresses returned from parent process",
                __FUNCTION__);
+    EmptyCandidatePool();
     return;
   }
 
   mTransportHandler->StartIceGathering(aDefaultRouteOnly,
                                        aObfuscateHostAddresses, mStunAddrs);
+  
+  
+  EmptyCandidatePool();
 }
 
 already_AddRefed<dom::RTCRtpTransceiver> PeerConnectionImpl::CreateTransceiver(

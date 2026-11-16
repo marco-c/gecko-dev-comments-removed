@@ -149,6 +149,24 @@ class MediaTransportHandler {
                                  
                                  const nsTArray<NrIceStunAddr>& aStunAddrs) = 0;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void SetCandidatePoolSize(
+      uint8_t aSize, bool aDefaultRouteOnly, bool aObfuscateHostAddresses,
+      const nsTArray<NrIceStunAddr>& aStunAddrs) = 0;
+
+  
+  
+  
+  virtual void EmptyCandidatePool() = 0;
+
   virtual void ActivateTransport(
       const std::string& aTransportId, const std::string& aLocalUfrag,
       const std::string& aLocalPwd, size_t aComponentCount,
