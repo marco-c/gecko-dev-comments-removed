@@ -1056,6 +1056,11 @@ FFmpegVideoDecoder<LIBAV_VER>::InitHWDecoderIfAllowed() {
 
 FFmpegVideoDecoder<LIBAV_VER>::~FFmpegVideoDecoder() {
 #ifdef MOZ_WIDGET_ANDROID
+  if (mAndroidImageReader) {
+    
+    
+    mAndroidImageReader->Shutdown();
+  }
   
   
   
@@ -2681,6 +2686,10 @@ void FFmpegVideoDecoder<LIBAV_VER>::ProcessShutdown() {
 #ifdef MOZ_WIDGET_ANDROID
   mShouldResumeDrain = false;
   ReleaseFramesMediaCodec();
+  if (mAndroidImageReader) {
+    mAndroidImageReader->Shutdown();
+    mAndroidImageReader = nullptr;
+  }
   if (mMediaCodecDeviceContext) {
     mLib->av_buffer_unref(&mMediaCodecDeviceContext);
   }

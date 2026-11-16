@@ -264,6 +264,21 @@ AndroidImageReader::~AndroidImageReader() {
   ReleaseResources();
 }
 
+void AndroidImageReader::Shutdown() {
+  RefPtr<AndroidImageWrapper> image;
+  {
+    MonitorAutoLock lock(mMonitor);
+    mShuttingDown = true;
+    
+    
+    
+    image.swap(mCurrentImage);
+    mMonitor.NotifyAll();
+  }
+  
+  
+}
+
 bool AndroidImageReader::Init() {
   MonitorAutoLock lock(mMonitor);
 
@@ -513,18 +528,21 @@ bool AndroidImageReader::DoUpdateTexImage(const MonitorAutoLock& aProofOfLock,
                                           AndroidMediaCodecFrameId aFrameId) {
   MOZ_ASSERT(static_cast<int32_t>(mAcquiredImageCount) <= mMaxImageCount);
 
-  if (mCurrentFrameId == aFrameId) {
+  if (mShuttingDown || mCurrentFrameId == aFrameId) {
     return false;
   }
 
   
   const TimeDuration pendingTimeout = TimeDuration::FromMilliseconds(20);
-  while (mIsPendingNextImage) {
+  while (mIsPendingNextImage && !mShuttingDown) {
     CVStatus status = mMonitor.Wait(pendingTimeout);
     if (status == CVStatus::Timeout) {
       gfxCriticalNoteOnce << "Pending next image wait timeout";
       return false;
     }
+  }
+  if (mShuttingDown) {
+    return false;
   }
   MOZ_ASSERT(!mIsPendingNextImage);
 
@@ -554,7 +572,7 @@ bool AndroidImageReader::DoUpdateTexImage(const MonitorAutoLock& aProofOfLock,
       }
     }
 
-    while (mWaitingFrameAvailable) {
+    while (mWaitingFrameAvailable && !mShuttingDown) {
       const TimeDuration remaining = deadline - TimeStamp::Now();
       if (remaining <= TimeDuration()) {
         gfxCriticalNoteOnce << "UpdateTexImage wait timeout";
@@ -563,6 +581,10 @@ bool AndroidImageReader::DoUpdateTexImage(const MonitorAutoLock& aProofOfLock,
         break;
       }
       mMonitor.Wait(remaining);
+    }
+
+    if (mShuttingDown) {
+      return false;
     }
 
     

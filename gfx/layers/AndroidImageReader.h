@@ -131,6 +131,11 @@ class AndroidImageReader final
 
   explicit AndroidImageReader();
 
+  
+  
+  
+  void Shutdown();
+
   bool UpdateTexImage(AndroidMediaCodecFrameId aFrameId, gl::GLContext* aGL,
                       GLuint aTexture, AndroidImageWrapper** aImage);
 
@@ -189,6 +194,7 @@ class AndroidImageReader final
   Maybe<AndroidMediaCodecFrameId> mPendingFrameId MOZ_GUARDED_BY(mMonitor);
   bool mWaitingFrameAvailable MOZ_GUARDED_BY(mMonitor) = false;
   bool mIsPendingNextImage MOZ_GUARDED_BY(mMonitor) = false;
+  bool mShuttingDown MOZ_GUARDED_BY(mMonitor) = false;
 
   mozilla::Atomic<int32_t> mAcquiredImageCount{0};
 
