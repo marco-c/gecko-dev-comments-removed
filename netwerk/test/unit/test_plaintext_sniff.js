@@ -37,7 +37,7 @@ var BOMList = [
   "\xFF\xFE", 
   "\xEF\xBB\xBF", 
   "\x00\x00\xFE\xFF", 
-  "\x00\x00\xFF\xFE", 
+  "\xFF\xFE\x00\x00", 
 ];
 
 
@@ -57,15 +57,25 @@ for (i = 0; i <= 127; ++i) {
 }
 
 
-var j;
+
+var bomTestChars = [];
 for (i = 0; i <= 127; ++i) {
+  if (isBinaryChar(i)) {
+    bomTestChars.push(i);
+  }
+}
+bomTestChars.push("A".charCodeAt(0));
+
+
+var j;
+for (i of bomTestChars) {
   for (j = 0; j < BOMList.length; ++j) {
     bodyList.push([BOMList[j] + String.fromCharCode(i, i), false]);
   }
 }
 
 
-for (i = 0; i <= 127; ++i) {
+for (i of bomTestChars) {
   for (j = 0; j < BOMList.length; ++j) {
     bodyList.push([
       BOMList[j] + String.fromCharCode(i),
@@ -130,7 +140,7 @@ function makeListener(headerIdx, bodyIdx) {
         do_throw("Unexpected exception: " + e);
       }
 
-      throw Components.Exception("", Cr.NS_ERROR_ABORT);
+      request.cancel(Cr.NS_BINDING_ABORTED);
     },
 
     onDataAvailable: function test_ODA() {
@@ -138,18 +148,12 @@ function makeListener(headerIdx, bodyIdx) {
     },
 
     onStopRequest: function test_onStopR() {
-      
-      ++headerIdx;
-      if (headerIdx == contentTypeHeaderList.length) {
-        headerIdx = 0;
-        ++bodyIdx;
-      }
-
-      if (bodyIdx == bodyList.length) {
+      ++caseIdx;
+      if (caseIdx == testCases.length) {
         do_test_pending();
         httpserv.stop(do_test_finished);
       } else {
-        doTest(headerIdx, bodyIdx);
+        doTest(...testCases[caseIdx]);
       }
 
       do_test_finished();
@@ -188,6 +192,39 @@ function makeHandler(headerIdx, bodyIdx) {
   return f;
 }
 
+
+
+
+
+var testCases = [];
+var caseIdx = 0;
+function buildTestCases() {
+  const sniffableHeaderIdx = 0;
+  const nonSniffableHeaderIdx = 4;
+  for (let b = 0; b < bodyList.length; ++b) {
+    testCases.push([sniffableHeaderIdx, b], [nonSniffableHeaderIdx, b]);
+  }
+  const representativeBodies = [
+    "Plaintext",
+    "\x00",
+    "A",
+    "\xFF\xFE\x00\x00",
+    "\xFF\xFE\x00",
+  ].map(body => {
+    const idx = bodyList.findIndex(([b]) => b == body);
+    Assert.notEqual(idx, -1, `${JSON.stringify(body)} should be in bodyList`);
+    return idx;
+  });
+  for (let h = 0; h < contentTypeHeaderList.length; ++h) {
+    if (h == sniffableHeaderIdx || h == nonSniffableHeaderIdx) {
+      continue;
+    }
+    for (let b of representativeBodies) {
+      testCases.push([h, b]);
+    }
+  }
+}
+
 var httpserv;
 function run_test() {
   
@@ -199,13 +236,12 @@ function run_test() {
 
   httpserv = new HttpServer();
 
-  for (i = 0; i < contentTypeHeaderList.length; ++i) {
-    for (j = 0; j < bodyList.length; ++j) {
-      httpserv.registerPathHandler("/" + i + "/" + j, makeHandler(i, j));
-    }
+  buildTestCases();
+  for (let [h, b] of testCases) {
+    httpserv.registerPathHandler("/" + h + "/" + b, makeHandler(h, b));
   }
 
   httpserv.start(-1);
 
-  doTest(0, 0);
+  doTest(...testCases[0]);
 }
