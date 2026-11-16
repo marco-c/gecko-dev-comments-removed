@@ -54,6 +54,8 @@ class ConnectionAllowlists final {
   }
 
   bool ShouldLoad(nsIURI* aURI, nsILoadInfo* aLoadInfo) const;
+
+  bool ShouldBlockConnection(nsIURI* aURI, uint64_t aInnerWindowID) const;
   bool ShouldBlockRedirect(nsIURI* aOriginalURI, nsILoadInfo* aLoadInfo) const;
   bool ShouldBlockWebRTC(nsPIDOMWindowInner* aWindow) const;
 
@@ -107,16 +109,18 @@ class ConnectionAllowlists final {
     WebRTC mWebRTC = WebRTC::Block;
   };
 
-  bool ShouldBlockURL(nsIURI* aURI, nsILoadInfo* aLoadInfo) const;
+  bool ShouldBlockURL(nsIURI* aURI, uint64_t aInnerWindowID,
+                      bool aReportToConsole) const;
 
   using Resource = Variant<nsIURI*, nsCString>;
 
   
   
   
-  static void ReportBlockedRequest(nsIURI* aURI, nsILoadInfo* aLoadInfo,
+  
+  static void ReportBlockedRequest(nsIURI* aURI, uint64_t aInnerWindowID,
                                    const Allowlist& aAllowlist,
-                                   bool aIsRedirect);
+                                   bool aReportToConsole, bool aIsRedirect);
 
   static void ReportViolation(const Resource& aResource,
                               nsPIDOMWindowInner* aWindow,

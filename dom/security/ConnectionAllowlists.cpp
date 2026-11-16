@@ -229,7 +229,14 @@ bool ConnectionAllowlists::ShouldLoad(nsIURI* aURI,
       break;
   }
 
-  return !ShouldBlockURL(uri, aLoadInfo);
+  const bool reportToConsole =
+      !nsContentUtils::IsPreloadType(aLoadInfo->InternalContentPolicyType());
+  return !ShouldBlockURL(uri, aLoadInfo->GetInnerWindowID(), reportToConsole);
+}
+
+bool ConnectionAllowlists::ShouldBlockConnection(
+    nsIURI* aURI, uint64_t aInnerWindowID) const {
+  return ShouldBlockURL(aURI, aInnerWindowID,  true);
 }
 
 
@@ -271,8 +278,8 @@ bool ConnectionAllowlists::MatchURL(nsIURI* aURI,
 }
 
 
-bool ConnectionAllowlists::ShouldBlockURL(nsIURI* aURI,
-                                          nsILoadInfo* aLoadInfo) const {
+bool ConnectionAllowlists::ShouldBlockURL(nsIURI* aURI, uint64_t aInnerWindowID,
+                                          bool aReportToConsole) const {
   
   for (const Maybe<Allowlist>& allowlist :
        {std::cref(mEnforcement), std::cref(mReportOnly)}) {
@@ -287,7 +294,8 @@ bool ConnectionAllowlists::ShouldBlockURL(nsIURI* aURI,
 
     
     
-    ReportBlockedRequest(aURI, aLoadInfo, *allowlist,  false);
+    ReportBlockedRequest(aURI, aInnerWindowID, *allowlist, aReportToConsole,
+                          false);
 
     
     if (allowlist->mDisposition == Disposition::Enforce) {
@@ -319,7 +327,10 @@ bool ConnectionAllowlists::ShouldBlockRedirect(nsIURI* aOriginalURI,
 
     
     
-    ReportBlockedRequest(aOriginalURI, aLoadInfo, *allowlist,
+    const bool reportToConsole =
+        !nsContentUtils::IsPreloadType(aLoadInfo->InternalContentPolicyType());
+    ReportBlockedRequest(aOriginalURI, aLoadInfo->GetInnerWindowID(),
+                         *allowlist, reportToConsole,
                           true);
 
     
@@ -370,20 +381,19 @@ bool ConnectionAllowlists::ShouldBlockWebRTC(
 
 
 void ConnectionAllowlists::ReportBlockedRequest(nsIURI* aURI,
-                                                nsILoadInfo* aLoadInfo,
+                                                uint64_t aInnerWindowID,
                                                 const Allowlist& aAllowlist,
+                                                bool aReportToConsole,
                                                 bool aIsRedirect) {
-  
   Resource resource{aURI};
-  if (!nsContentUtils::IsPreloadType(aLoadInfo->InternalContentPolicyType())) {
-    ReportToConsole(resource, aLoadInfo->GetInnerWindowID(), aAllowlist,
-                    aIsRedirect);
+  if (aReportToConsole) {
+    ReportToConsole(resource, aInnerWindowID, aAllowlist, aIsRedirect);
   }
 
   
   
   nsCOMPtr<nsPIDOMWindowInner> window =
-      nsGlobalWindowInner::GetInnerWindowWithId(aLoadInfo->GetInnerWindowID());
+      nsGlobalWindowInner::GetInnerWindowWithId(aInnerWindowID);
   ReportViolation(resource, window, aAllowlist);
 }
 
