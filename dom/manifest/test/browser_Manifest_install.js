@@ -43,6 +43,14 @@ add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["dom.security.https_first", false]],
   });
+  registerCleanupFunction(async () => {
+    const manifest = Manifests.manifestObjs.get(manifestUrl);
+    delete Manifests._store.data.scopes[manifest.scope];
+    await manifest._store.finalize();
+    Manifests.manifestObjs.delete(manifestUrl);
+    await IOUtils.remove(manifest.path);
+    await Manifests._store._save();
+  });
 });
 
 add_task(async function () {
@@ -61,7 +69,8 @@ add_task(async function () {
     await tmpManifest.install();
 
     
-    await tmpManifest._store._save();
+    
+    await tmpManifest._store.finalize();
     await IOUtils.move(tmpManifest.path, manifestMD5Path);
 
     let exists = await IOUtils.exists(tmpManifest.path);
