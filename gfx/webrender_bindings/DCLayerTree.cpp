@@ -2397,7 +2397,14 @@ bool DCSurfaceVideo::CalculateSwapChainSize(gfx::Matrix& aTransform) {
                       !contentIsHDR && monitorIsHDR && driverSupportsAutoHDR &&
                       powerIsCharging && !mVpAutoHDRFailed;
 
-  bool useHDR = gfx::gfxVars::WebRenderOverlayHDR() && contentIsHDR;
+  const bool contentIsHLG =
+      mRenderTextureHost->AsRenderDXGITextureHost()->GetTransferFunction() ==
+      gfx::TransferFunction::HLG;
+  
+  
+  
+  bool useHDR = gfx::gfxVars::WebRenderOverlayHDR() && contentIsHDR &&
+                (monitorIsHDR || !contentIsHLG);
   
   
   
