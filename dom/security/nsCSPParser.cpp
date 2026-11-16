@@ -351,6 +351,8 @@ bool nsCSPParser::subHost() {
 }
 
 
+
+
 nsCSPHostSrc* nsCSPParser::host() {
   CSPPARSERLOG(("nsCSPParser::host, mCurToken: %s, mCurValue: %s",
                 NS_ConvertUTF16toUTF8(mCurToken).get(),
@@ -402,6 +404,13 @@ nsCSPHostSrc* nsCSPParser::host() {
   
   return new nsCSPHostSrc(mCurValue);
 }
+
+
+
+
+
+
+
 
 
 
@@ -475,6 +484,7 @@ nsCSPBaseSrc* nsCSPParser::keywordSource() {
 
   return nullptr;
 }
+
 
 
 nsCSPHostSrc* nsCSPParser::hostSource() {
@@ -723,6 +733,12 @@ void nsCSPParser::logWarningForIgnoringNoneKeywordToConsole() {
 
 
 
+
+
+
+
+
+
 void nsCSPParser::sourceList(nsTArray<nsCSPBaseSrc*>& outSrcs) {
   bool isNone = false;
 
@@ -737,6 +753,7 @@ void nsCSPParser::sourceList(nsTArray<nsCSPBaseSrc*>& outSrcs) {
                   NS_ConvertUTF16toUTF8(mCurToken).get(),
                   NS_ConvertUTF16toUTF8(mCurValue).get()));
 
+    
     
     
     
