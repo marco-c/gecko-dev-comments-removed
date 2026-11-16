@@ -12,6 +12,7 @@ import android.util.Log.INFO
 import androidx.annotation.OpenForTesting
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.UserManagerCompat
 import androidx.emoji2.text.DefaultEmojiCompatConfig
 import androidx.emoji2.text.EmojiCompat
 import androidx.lifecycle.ProcessLifecycleOwner
@@ -24,11 +25,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.browser.state.action.SearchAction
+import mozilla.components.concept.engine.preferences.Branch
 import mozilla.components.support.AppServicesInitializer
 import mozilla.components.support.AppServicesInitializer.Config as AppServiceConfig
 import mozilla.components.support.base.facts.register
 import mozilla.components.support.base.log.Log
+import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.log.sink.AndroidLogSink
 import mozilla.components.support.ktx.android.content.isMainProcess
 import mozilla.components.support.locale.LocaleManager
@@ -124,6 +128,8 @@ open class FocusApplication : Application(), Provider {
 
             ProcessLifecycleOwner.get().lifecycle.addObserver(lockObserver)
 
+            enableBrowserPdfToolbar()
+
             applicationScope.launch {
                 // Initialize EmojiCompat manually.
                 initializeEmojiCompat()
@@ -143,12 +149,10 @@ open class FocusApplication : Application(), Provider {
     }
 
     override fun onConfigurationChanged(config: android.content.res.Configuration) {
-        applicationContext.resources.configuration.uiMode = config.uiMode
-
         if (isMainProcess()) {
             super.onConfigurationChanged(config)
             // Update locale on main process
-            LocaleManager.updateResources(this)
+            LocaleManager.onAttachBaseContext(this)
         } else {
             super.onConfigurationChanged(config)
         }
@@ -157,7 +161,7 @@ open class FocusApplication : Application(), Provider {
     override fun attachBaseContext(base: Context) {
         // Sets the locale information. Other threads do not have locale aware needs
         if (base.isMainProcess()) {
-            val localeAwareContext = LocaleManager.updateResources(base)
+            val localeAwareContext = LocaleManager.onAttachBaseContext(base)
             super.attachBaseContext(localeAwareContext)
         } else {
             super.attachBaseContext(base)
@@ -348,6 +352,31 @@ open class FocusApplication : Application(), Provider {
         )
     }
 
+    /**
+     * Focus has no native PDF controls right now, so it keeps the browser PDF toolbar for downloading PDFs. Bug 2092688
+     * tracks the long-term solution in Focus.
+     */
+    @OptIn(ExperimentalAndroidComponentsApi::class)
+    private fun enableBrowserPdfToolbar() {
+        // When pdfjs.enableAndroidEditing is true, the PDF viewer expects that the app will provide PDF controls.
+        // When it is false, the PDF viewer provides the controls on screen.
+        components.engine.setBrowserPref(
+            pref = "pdfjs.enableAndroidEditing",
+            value = false,
+            branch = Branch.DEFAULT,
+            onSuccess = {},
+            onError = { Logger.warn("Could not enable the browser PDF toolbar.", it) },
+        )
+    }
+
     override val workManagerConfiguration
-        get() = Builder().setMinimumLoggingLevel(INFO).build()
+        get() =
+            Builder()
+                .setMinimumLoggingLevel(INFO)
+                .setInitializationExceptionHandler { throwable ->
+                    if (UserManagerCompat.isUserUnlocked(this)) {
+                        throw throwable
+                    }
+                }
+                .build()
 }
