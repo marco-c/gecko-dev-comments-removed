@@ -73,6 +73,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   SessionStore:
     "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs",
   // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
+  SharingUtils: "moz-src:///browser/components/sharing/SharingUtils.sys.mjs",
+  // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
   Spotlight: "resource:///modules/asrouter/Spotlight.sys.mjs",
   // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
   TaskbarTabs: "moz-src:///browser/components/taskbartabs/TaskbarTabs.sys.mjs",
@@ -427,6 +429,7 @@ export const SpecialMessageActions = {
       "browser.migrate.content-modal.about-welcome-behavior",
       "browser.migrate.content-modal.import-all.enabled",
       "browser.migrate.preferences-entrypoint.enabled",
+      "browser.ml.chat.provider",
       "browser.shell.checkDefaultBrowser",
       "browser.shell.setDefaultGuidanceNotifications",
       "browser.startup.homepage",
@@ -465,6 +468,9 @@ export const SpecialMessageActions = {
       "browser.startup.couldRestoreSession.count",
     ];
 
+    // Prefs that keep the first non-default value written to them, rewrites ignored.
+    const writeOncePrefs = ["termsofuse.firstAcceptedDate"];
+
     // allowedPrefs above is the in-tree baseline. It can be extended off-train
     // via Remote Settings, but not for onImpression prefs, which stay
     // deliberately restricted to prefs reviewed in-tree, and not for the prefs
@@ -493,6 +499,12 @@ export const SpecialMessageActions = {
       !pref.name.startsWith("messaging-system-action.")
     ) {
       pref.name = `messaging-system-action.${pref.name}`;
+    }
+    if (
+      writeOncePrefs.includes(pref.name) &&
+      Services.prefs.prefHasUserValue(pref.name)
+    ) {
+      return;
     }
     // If pref has no value, reset it, otherwise set it to desired value
     switch (typeof pref.value) {
@@ -922,6 +934,17 @@ export const SpecialMessageActions = {
           }
         );
         break;
+      case "SHOW_QR_CODE": {
+        const { gBrowser } = window.top;
+        await lazy.SharingUtils.showQRCodePanel(
+          window.top,
+          gBrowser.getTabForBrowser(browser)
+            ? browser
+            : gBrowser.selectedBrowser,
+          Services.urlFormatter.formatURL(action.data.args)
+        );
+        break;
+      }
       case "OPEN_ABOUT_PAGE": {
         let aboutPageURL = new URL(`about:${action.data.args}`);
         if (!ALLOWED_ABOUT_PAGES.has(aboutPageURL.pathname)) {
@@ -955,6 +978,27 @@ export const SpecialMessageActions = {
           }
         );
         break;
+      case "OPEN_SUPPORT_PAGE": {
+        let baseURL = new URL(
+          Services.urlFormatter.formatURLPref("app.support.baseURL")
+        );
+        let supportPageURL = new URL(action.data.args, baseURL);
+        // The page must resolve to a URL under the support base URL.
+        if (
+          supportPageURL.origin !== baseURL.origin ||
+          !supportPageURL.pathname.startsWith(baseURL.pathname)
+        ) {
+          throw new Error(
+            `SpecialMessageActions: OPEN_SUPPORT_PAGE disallows ${action.data.args}`
+          );
+        }
+        window.openLinkIn(supportPageURL.href, action.data.where || "current", {
+          private: false,
+          triggeringPrincipal:
+            Services.scriptSecurityManager.createNullPrincipal({}),
+        });
+        break;
+      }
       case "OPEN_APPLICATIONS_MENU":
         lazy.UITour.showMenu(window, action.data.args);
         break;
