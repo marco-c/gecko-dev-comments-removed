@@ -253,6 +253,9 @@ APZEventResult InputQueue::ReceiveTouchInput(
         
         
 
+        
+        
+        
         if (!block->HasTouchSwipeInfo()) {
           result.mSwipableDirectionsForTouch = Nothing();
           block->SetTouchSwipableDirectionsCallback(
