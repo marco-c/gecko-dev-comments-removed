@@ -1695,8 +1695,7 @@ class ActivePS {
   
   static nsTArray<mozilla::JSSourceEntry> GatherJSSources(PSLockRef aLock) {
     nsTArray<mozilla::JSSourceEntry> jsSourceEntries;
-    bool gatherSourceText =
-        ProfilerFeature::HasJSSources(ActivePS::Features(aLock));
+    bool gatherSourceText = ActivePS::FeatureJS(aLock);
 
     ThreadRegistry::LockedRegistry lockedRegistry;
     ActivePS::ProfiledThreadList threads =
