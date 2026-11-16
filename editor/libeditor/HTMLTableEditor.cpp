@@ -2111,10 +2111,9 @@ nsresult HTMLEditor::DeleteSelectedTableRowsWithTransaction(
         startRowIndex++;
       }
       
-      
-      if (!GetMaybeGeneratedTableCellElementAt(*table, startRowIndex,
-                                               startColIndex)) {
-        break;
+      cell = GetTableCellElementAt(*table, startRowIndex, startColIndex);
+      if (!cell) {
+        return NS_OK;
       }
     }
     return NS_OK;
@@ -4056,17 +4055,15 @@ NS_IMETHODIMP HTMLEditor::GetCellAt(Element* aTableElement, int32_t aRowIndex,
     }
   }
 
-  RefPtr<Element> cellElement = GetMaybeGeneratedTableCellElementAt(
-      *tableElement, aRowIndex, aColumnIndex);
-  
-  if (cellElement && !cellElement->IsInNativeAnonymousSubtree()) {
-    cellElement.forget(aCellElement);
-  }
+  RefPtr<Element> cellElement =
+      GetTableCellElementAt(*tableElement, aRowIndex, aColumnIndex);
+  cellElement.forget(aCellElement);
   return NS_OK;
 }
 
-Element* HTMLEditor::GetMaybeGeneratedTableCellElementAt(
-    Element& aTableElement, int32_t aRowIndex, int32_t aColumnIndex) const {
+Element* HTMLEditor::GetTableCellElementAt(Element& aTableElement,
+                                           int32_t aRowIndex,
+                                           int32_t aColumnIndex) const {
   
   
   
@@ -4076,8 +4073,8 @@ Element* HTMLEditor::GetMaybeGeneratedTableCellElementAt(
     NS_WARNING("There was no table layout information");
     return nullptr;
   }
-  return Element::FromNodeOrNull(
-      tableFrame->GetCellAt(aRowIndex, aColumnIndex));
+  nsIContent* cell = tableFrame->GetCellAt(aRowIndex, aColumnIndex);
+  return Element::FromNodeOrNull(cell);
 }
 
 
@@ -4286,9 +4283,8 @@ void HTMLEditor::SetSelectionAfterTableEdit(Element* aTable, int32_t aRow,
   RefPtr<Element> cell;
   bool done = false;
   do {
-    cell = GetMaybeGeneratedTableCellElementAt(*aTable, aRow, aCol);
-    if (cell && HTMLEditUtils::IsSimplyEditableNode(*cell)) {
-      MOZ_ASSERT(!cell->IsInNativeAnonymousSubtree());
+    cell = GetTableCellElementAt(*aTable, aRow, aCol);
+    if (cell) {
       if (aSelected) {
         
         DebugOnly<nsresult> rv = SelectContentInternal(*cell);

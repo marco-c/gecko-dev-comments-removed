@@ -275,16 +275,7 @@ nsresult HTMLEditor::SetInlinePropertiesAsSubAction(
     return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
   }
 
-  
-  
-  
-  
-  
-  AutoClonedSelectionRangeArray selectionRanges(SelectionRef());
-  selectionRanges.EnsureOnlyEditableRanges(aEditingHost);
-  selectionRanges.RemoveCollapsedRanges(
-      AutoClonedRangeArray::PreservePrimaryRangeIfAllRangesCollapsed::No);
-  if (selectionRanges.IsCollapsed()) {
+  if (SelectionRef().IsCollapsed()) {
     
     
     mPendingStylesToApplyToNewContent->PreserveStyles(aStylesToSet);
@@ -319,6 +310,7 @@ nsresult HTMLEditor::SetInlinePropertiesAsSubAction(
   
   AutoTransactionsConserveSelection dontChangeMySelection(*this);
 
+  AutoClonedSelectionRangeArray selectionRanges(SelectionRef());
   nsresult rv = SetInlinePropertiesAroundRanges(selectionRanges, aStylesToSet,
                                                 aEditingHost);
   if (NS_FAILED(rv)) {
@@ -3428,16 +3420,7 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                        "EditorBase::CommitComposition() failed, but ignored");
 
-  
-  
-  
-  
-  
-  AutoClonedSelectionRangeArray selectionRanges(SelectionRef());
-  selectionRanges.EnsureOnlyEditableRanges(aEditingHost);
-  selectionRanges.RemoveCollapsedRanges(
-      AutoClonedRangeArray::PreservePrimaryRangeIfAllRangesCollapsed::No);
-  if (selectionRanges.IsCollapsed()) {
+  if (SelectionRef().IsCollapsed()) {
     
     
     mPendingStylesToApplyToNewContent->ClearStyles(aStylesToRemove);
@@ -3473,6 +3456,7 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
   
   AutoTransactionsConserveSelection dontChangeMySelection(*this);
 
+  AutoClonedSelectionRangeArray selectionRanges(SelectionRef());
   for (const EditorInlineStyle& styleToRemove : aStylesToRemove) {
     
     
