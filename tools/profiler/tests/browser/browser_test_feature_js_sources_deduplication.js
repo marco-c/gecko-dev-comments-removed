@@ -16,7 +16,7 @@ add_task(async function test_js_sources_deduplication() {
       return Services.appinfo.processID;
     });
 
-    await ProfilerTestUtils.startProfiler({ features: ["js"] });
+    await ProfilerTestUtils.startProfiler({ features: ["js", "jssources"] });
 
     
     

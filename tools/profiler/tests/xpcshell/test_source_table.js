@@ -5,13 +5,14 @@
 
 
 
+
 add_task(async function test_source_table() {
   Assert.ok(
     !Services.profiler.IsActive(),
     "The profiler is not currently active"
   );
 
-  info("Start profiler with 'js' feature");
+  info("Start profiler with 'js' feature but without the 'jssources' feature");
   await ProfilerTestUtils.startProfiler({
     entries: 1000000,
     interval: 1,
