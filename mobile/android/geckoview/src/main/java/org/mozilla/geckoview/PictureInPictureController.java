@@ -32,8 +32,14 @@ public class PictureInPictureController {
     private final GeckoSession mSession;
     private final Handler mHandler;
 
+    private enum KeepActiveState {
+      NOT_KEEPING_ACTIVE,
+      KEEPING_ACTIVE,
+      KEEPING_ACTIVE_WITH_DEACTIVATION_DEFERRED,
+    }
+
     
-    private boolean mKeepActive;
+    private KeepActiveState mKeepActiveState = KeepActiveState.NOT_KEEPING_ACTIVE;
 
      SessionPictureInPicture(final @NonNull GeckoSession session) {
       mSession = session;
@@ -81,14 +87,33 @@ public class PictureInPictureController {
 
 
 
+
+
+
     @UiThread
-    public void setKeepActive(final boolean keepActive) {
+    public boolean setKeepActive(final boolean keepActive) {
       ThreadUtils.assertOnUiThread();
-      mKeepActive = keepActive;
+      final boolean wasDeactivationDeferred =
+          mKeepActiveState == KeepActiveState.KEEPING_ACTIVE_WITH_DEACTIVATION_DEFERRED;
+      if (!keepActive) {
+        mKeepActiveState = KeepActiveState.NOT_KEEPING_ACTIVE;
+      } else if (mKeepActiveState == KeepActiveState.NOT_KEEPING_ACTIVE) {
+        mKeepActiveState = KeepActiveState.KEEPING_ACTIVE;
+      }
+      return wasDeactivationDeferred;
     }
 
      boolean keepsActive() {
-      return mKeepActive;
+      return mKeepActiveState != KeepActiveState.NOT_KEEPING_ACTIVE;
+    }
+
+     void setDeactivationDeferred(final boolean deferred) {
+      if (mKeepActiveState != KeepActiveState.NOT_KEEPING_ACTIVE) {
+        mKeepActiveState =
+            deferred
+                ? KeepActiveState.KEEPING_ACTIVE_WITH_DEACTIVATION_DEFERRED
+                : KeepActiveState.KEEPING_ACTIVE;
+      }
     }
 
     

@@ -13,15 +13,26 @@ exclude: true
 
 ⚠️  breaking change and deprecation notices
 
+## v162
+- [`setKeepActive`][162.1] now returns whether a `GeckoView` skipped deactivating the session while it was kept active. ([bug 2075323]({{bugzilla}}2075323))
+
+[162.1]: {{javadoc_uri}}/PictureInPictureController.SessionPictureInPicture.html#setKeepActive(boolean)
+
 ## v161
 - Added [`Autocomplete.CreditCard.securityCode`][161.1] and
     [`Autocomplete.CreditCard.Builder.securityCode`][161.2] so the credit card security code (CVV)
     can be passed to and from the [`Autocomplete.StorageDelegate`][161.3].
     ([bug 2085419]({{bugzilla}}2085419))
+- Added [`GeckoRuntimeSettings.Builder.proguardUuid`][161.4] and
+    [`GeckoRuntimeSettings.getProguardUuid`][161.5] to set the UUID of the embedding app's
+    R8/ProGuard mapping file. It is recorded as `meta.proguardUuid` in Gecko profiles.
+    ([bug 2064150]({{bugzilla}}2064150))
 
 [161.1]: {{javadoc_uri}}/Autocomplete.CreditCard.html#securityCode
 [161.2]: {{javadoc_uri}}/Autocomplete.CreditCard.Builder.html#securityCode(java.lang.String)
 [161.3]: {{javadoc_uri}}/Autocomplete.StorageDelegate.html
+[161.4]: {{javadoc_uri}}/GeckoRuntimeSettings.Builder.html#proguardUuid(java.lang.String)
+[161.5]: {{javadoc_uri}}/GeckoRuntimeSettings.html#getProguardUuid()
 
 ## v160
 - The `content-disposition` header of the [`WebResponse`][65.15] passed to
@@ -2118,4 +2129,4 @@ to allow adding gecko profiler markers.
 [65.24]: {{javadoc_uri}}/CrashReporter.html#sendCrashReport(android.content.Context,android.os.Bundle,java.lang.String)
 [65.25]: {{javadoc_uri}}/GeckoResult.html
 
-[api-version]: a809882635db0fb0b68e64032644b99dba25772b
+[api-version]: ccde81d0e432477362400f6aa77d50cfbb310242

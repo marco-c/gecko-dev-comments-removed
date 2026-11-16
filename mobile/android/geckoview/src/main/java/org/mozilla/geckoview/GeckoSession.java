@@ -2939,8 +2939,10 @@ public class GeckoSession {
   @OptIn(markerClass = ExperimentalGeckoViewApi.class)
    void maybeSetActive(final boolean active) {
     if (!active && mPictureInPicture.keepsActive()) {
+      mPictureInPicture.setDeactivationDeferred(true);
       return;
     }
+    mPictureInPicture.setDeactivationDeferred(false);
     setActive(active);
   }
 
