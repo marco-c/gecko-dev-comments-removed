@@ -57,7 +57,7 @@ add_task(async function run_test() {
 
   
   await do_crash(
-    function () {
+    async function () {
       
       crashReporter.annotateCrashReport("TestKey", "TestValue");
       crashReporter.annotateCrashReport(
@@ -74,7 +74,7 @@ add_task(async function run_test() {
       let { TelemetryController } = ChromeUtils.importESModule(
         "resource://gre/modules/TelemetryController.sys.mjs"
       );
-      TelemetryController.testSetup();
+      await TelemetryController.testSetup();
     },
     function (mdump, extra) {
       Assert.ok("StartupTime" in extra, "StartupTime annotation is present");
@@ -114,7 +114,7 @@ add_task(async function run_test() {
   );
 
   await do_crash(
-    function () {
+    async function () {
       
       
       Services.prefs.setBoolPref("termsofuse.bypassNotification", true);
@@ -149,7 +149,7 @@ add_task(async function run_test() {
         "resource://gre/modules/TelemetrySend.sys.mjs"
       );
       TelemetrySend.setTestModeEnabled(true);
-      TelemetryController.testSetup();
+      await TelemetryController.testSetup();
     },
     function (mdump, extra) {
       Assert.ok(
@@ -183,7 +183,7 @@ add_task(async function run_test() {
   );
 
   await do_crash(
-    function () {
+    async function () {
       
       Services.prefs.setBoolPref(
         "datareporting.policy.dataSubmissionPolicyBypassNotification",
@@ -203,7 +203,7 @@ add_task(async function run_test() {
         "resource://gre/modules/TelemetrySend.sys.mjs"
       );
       TelemetrySend.setTestModeEnabled(true);
-      TelemetryController.testSetup();
+      await TelemetryController.testSetup();
     },
     function (mdump, extra) {
       Assert.ok(
@@ -222,7 +222,7 @@ add_task(async function run_test() {
   );
 
   await do_crash(
-    function () {
+    async function () {
       
       
       Services.prefs.setBoolPref(
@@ -242,7 +242,7 @@ add_task(async function run_test() {
         "resource://gre/modules/TelemetrySend.sys.mjs"
       );
       TelemetrySend.setTestModeEnabled(true);
-      TelemetryController.testSetup();
+      await TelemetryController.testSetup();
     },
     function (mdump, extra) {
       Assert.ok(
