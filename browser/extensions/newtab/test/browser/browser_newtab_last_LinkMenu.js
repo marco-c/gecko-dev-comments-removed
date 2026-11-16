@@ -88,15 +88,9 @@ add_task(async function test_newtab_last_LinkMenu() {
 
   
   
-  const novaEnabled = Services.prefs.getBoolPref(
-    "browser.newtabpage.activity-stream.nova.enabled",
-    false
-  );
   
-  
-  
-  const topSitesWidth = novaEnabled ? 900 : 600;
-  const storiesWidth = novaEnabled ? 740 : 600;
+  const topSitesWidth = 900;
+  const storiesWidth = 740;
 
   await setSize(topSitesWidth, 450);
 

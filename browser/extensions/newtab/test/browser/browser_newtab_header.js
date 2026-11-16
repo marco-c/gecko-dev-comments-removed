@@ -9,6 +9,15 @@
 
 
 test_newtab({
+  async before({ pushPrefs }) {
+    await pushPrefs(
+      [
+        "browser.newtabpage.activity-stream.discoverystream.config",
+        JSON.stringify({ collapsible: true, enabled: true }),
+      ],
+      ["browser.newtabpage.activity-stream.feeds.system.topstories", true]
+    );
+  },
   test: async function test_render_customizeMenu() {
     
     await ContentTaskUtils.waitForCondition(
@@ -46,8 +55,9 @@ test_newtab({
       "Pocket section should not be collapsed on load"
     );
 
+    
     let pocketHeader = content.document.querySelector(
-      "section[data-section-id='topstories'] .section-title"
+      "section[data-section-id='topstories'] .ds-header"
     );
     ok(
       pocketHeader && !pocketHeader.style.visibility,

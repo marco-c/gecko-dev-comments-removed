@@ -15,27 +15,13 @@ async function before({ pushPrefs }) {
       }),
     ]
   );
-  
-  
-  
-  return {
-    novaEnabled: Services.prefs.getBoolPref(
-      "browser.newtabpage.activity-stream.nova.enabled",
-      false
-    ),
-  };
 }
 
 test_newtab({
   before,
-  test: async function test_render_hardcoded_topsites({ novaEnabled }) {
-    
-    
-    const selector = novaEnabled
-      ? "section[data-section-id='topsites']"
-      : ".ds-top-sites";
+  test: async function test_render_hardcoded_topsites() {
     const topSites = await ContentTaskUtils.waitForCondition(() =>
-      content.document.querySelector(selector)
+      content.document.querySelector("section[data-section-id='topsites']")
     );
     ok(topSites, "Got the top sites section");
   },

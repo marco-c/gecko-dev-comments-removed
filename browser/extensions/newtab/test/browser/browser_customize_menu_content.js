@@ -156,19 +156,13 @@ test_newtab({
 test_newtab({
   async before({ pushPrefs }) {
     
-    const novaEnabled = Services.prefs.getBoolPref(
-      "browser.newtabpage.activity-stream.nova.enabled",
-      false
-    );
-
-    
     
     sinon.stub(WeatherFeed.prototype, "MerinoClient").returns({
       fetchWeatherReport: () => Promise.resolve(WEATHER_SUGGESTION),
       fetchHourlyForecasts: () => Promise.resolve([]),
     });
 
-    const prefs = [
+    await pushPrefs(
       ["browser.newtabpage.activity-stream.system.showWeather", true],
       ["browser.newtabpage.activity-stream.widgets.system.enabled", true],
       ["browser.newtabpage.activity-stream.widgets.enabled", true],
@@ -177,33 +171,15 @@ test_newtab({
         true,
       ],
       ["browser.newtabpage.activity-stream.widgets.weather.enabled", false],
-      ["browser.newtabpage.activity-stream.widgets.weather.size", "small"],
-    ];
-
-    
-    if (!novaEnabled) {
-      prefs.push(["browser.newtabpage.activity-stream.showWeather", false]);
-    }
-
-    await pushPrefs(...prefs);
+      ["browser.newtabpage.activity-stream.widgets.weather.size", "small"]
+    );
   },
   test: async function test_render_customizeMenuWeather() {
-    
-    const novaEnabled = Services.prefs.getBoolPref(
-      "browser.newtabpage.activity-stream.nova.enabled",
-      false
-    );
+    const WEATHER_PREF =
+      "browser.newtabpage.activity-stream.widgets.weather.enabled";
 
-    
-    const WEATHER_PREF = novaEnabled
-      ? "browser.newtabpage.activity-stream.widgets.weather.enabled"
-      : "browser.newtabpage.activity-stream.showWeather";
-
-    
     function getWeatherWidget() {
-      return novaEnabled
-        ? content.document.querySelector(".weather-widget")
-        : content.document.querySelector(".weather");
+      return content.document.querySelector(".weather-widget");
     }
 
     await ContentTaskUtils.waitForCondition(
@@ -227,21 +203,16 @@ test_newtab({
       "Customize Menu should have finished opening"
     );
 
-    
-    if (novaEnabled) {
-      await ContentTaskUtils.waitForCondition(
-        () =>
-          content.document.querySelector(
-            "#widgets-management-panel moz-box-button"
-          ),
-        "Widgets management button should be present"
-      );
-      Cu.waiveXrays(
+    await ContentTaskUtils.waitForCondition(
+      () =>
         content.document.querySelector(
           "#widgets-management-panel moz-box-button"
-        )
-      ).click();
-    }
+        ),
+      "Widgets management button should be present"
+    );
+    Cu.waiveXrays(
+      content.document.querySelector("#widgets-management-panel moz-box-button")
+    ).click();
 
     
     
@@ -272,10 +243,6 @@ test_newtab({
   },
   async after() {
     sinon.restore();
-    
-    Services.prefs.clearUserPref(
-      "browser.newtabpage.activity-stream.showWeather"
-    );
     Services.prefs.clearUserPref(
       "browser.newtabpage.activity-stream.system.showWeather"
     );

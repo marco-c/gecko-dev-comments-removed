@@ -167,33 +167,6 @@ test_newtab({
 test_newtab({
   async before({ pushPrefs }) {
     
-    await pushPrefs(...spacesPrefs("spaces-buttons-bottom"), [
-      "browser.newtabpage.activity-stream.nova.enabled",
-      false,
-    ]);
-  },
-
-  test: async function test_spaces_does_nothing_without_nova() {
-    
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".outer-wrapper"),
-      "Wait for the page to render"
-    );
-
-    ok(
-      !content.document.querySelector(".spaces-container"),
-      "No spaces container without Nova"
-    );
-    ok(
-      !content.document.querySelector('[role="tablist"]'),
-      "No unstyled tablist is left on the page"
-    );
-  },
-});
-
-test_newtab({
-  async before({ pushPrefs }) {
-    
     await pushPrefs(...spacesPrefs("nova-full-width"));
   },
 
