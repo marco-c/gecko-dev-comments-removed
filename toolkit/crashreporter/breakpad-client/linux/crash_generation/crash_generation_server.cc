@@ -352,7 +352,18 @@ CrashGenerationServer::ClientEvent(short revents)
 
     if (remote_minidump_writer_endpoint) {
       
-      minidump_writer_set_remote_unix_stream(writer, remote_minidump_writer_endpoint.release());
+      int writer_endpoint =
+          fcntl(remote_minidump_writer_endpoint.get(), F_DUPFD_CLOEXEC, 0);
+      if (writer_endpoint == -1) {
+        char err_msg[256];
+        snprintf(err_msg, sizeof(err_msg),
+                 "dup() of the remote executor endpoint failed, fetching client"
+                 "annotation will likely error out. Errno %d.\n",
+                 errno);
+        logger::write(err_msg, strlen(err_msg));
+        writer_endpoint = remote_minidump_writer_endpoint.release();
+      }
+      minidump_writer_set_remote_unix_stream(writer, writer_endpoint);
     }
 
     res = minidump_writer_dump(writer, extra_data);
@@ -367,6 +378,9 @@ CrashGenerationServer::ClientEvent(short revents)
 
   ClientInfo info(crashing_pid, this, extra_data);
   extra_data = nullptr; 
+#if defined(MOZ_OXIDIZED_BREAKPAD)
+  info.set_remote_executor_fd(remote_minidump_writer_endpoint.get());
+#endif
 
   if (dump_callback_) {
     dump_callback_(dump_context_, info, minidump_filename);
