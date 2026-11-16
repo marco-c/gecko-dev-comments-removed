@@ -29,6 +29,7 @@ async function withWidget(aProperties, aTask) {
   } finally {
     CustomizableUI.destroyWidget(id);
     CustomizableUI.removeWidgetFromArea(id);
+    CustomizableUI.getTestOnlyInternalProp("gSeenWidgets").delete(id);
   }
 }
 
