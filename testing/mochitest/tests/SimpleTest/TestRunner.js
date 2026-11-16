@@ -105,7 +105,9 @@ var TestRunner = {};
 TestRunner.logEnabled = false;
 TestRunner._currentTest = 0;
 TestRunner._lastTestFinished = -1;
+TestRunner._loopIsRestarting = false;
 TestRunner.currentTestURL = "";
+TestRunner.originalTestURL = "";
 TestRunner._urls = [];
 TestRunner._lastAssertionCount = 0;
 TestRunner._expectedMinAsserts = 0;
@@ -259,7 +261,7 @@ TestRunner.requestLongerTimeout = function (factor) {
 
 
 TestRunner.repeat = 0;
-TestRunner._currentTestRepeats = 0;
+TestRunner._currentLoop = 1;
 
 TestRunner.expectAssertions = function (min, max) {
   if (typeof max == "undefined") {
@@ -502,6 +504,7 @@ TestRunner.dumpPrefContext = function () {
 TestRunner.runTests = function () {
   TestRunner.structuredLogger.info("SimpleTest START");
   TestRunner.dumpPrefContext();
+  TestRunner.originalTestURL = $("current-test").innerHTML;
 
   SpecialPowers.registerProcessCrashObservers();
 
@@ -521,6 +524,26 @@ TestRunner.runTests = function () {
     TestRunner._checkForHangs();
     TestRunner.runNextTest();
   });
+};
+
+
+
+
+
+TestRunner.resetTests = function (listURLs) {
+  TestRunner._currentTest = 0;
+  
+  $("current-test").innerHTML = TestRunner.originalTestURL;
+  if (TestRunner.logEnabled) {
+    TestRunner.structuredLogger.info(
+      "SimpleTest START Loop " + TestRunner._currentLoop
+    );
+  }
+
+  TestRunner._urls = listURLs;
+  $("testframe").src = "";
+  TestRunner._checkForHangs();
+  TestRunner.runNextTest();
 };
 
 TestRunner.getNextUrl = function () {
@@ -614,11 +637,36 @@ async function _runNextTest() {
         TestRunner.slowestTestURL
     );
 
-    SpecialPowers.unregisterProcessCrashObservers();
-    TestRunner.structuredLogger.info("SimpleTest FINISHED");
+    
+    
+    if (TestRunner.repeat === 0) {
+      SpecialPowers.unregisterProcessCrashObservers();
+      TestRunner.structuredLogger.info("SimpleTest FINISHED");
+    }
 
-    if (TestRunner.onComplete) {
+    if (TestRunner.repeat === 0 && TestRunner.onComplete) {
       TestRunner.onComplete();
+    }
+
+    if (
+      TestRunner._currentLoop <= TestRunner.repeat &&
+      !TestRunner._haltTests
+    ) {
+      TestRunner._currentLoop++;
+      TestRunner.resetTests(TestRunner._urls);
+      TestRunner._loopIsRestarting = true;
+    } else {
+      
+      if (TestRunner.logEnabled) {
+        TestRunner.structuredLogger.info(
+          "TEST-INFO | Ran " + TestRunner._currentLoop + " Loops"
+        );
+        TestRunner.structuredLogger.info("SimpleTest FINISHED");
+      }
+
+      if (TestRunner.onComplete) {
+        TestRunner.onComplete();
+      }
     }
     TestRunner.generateFailureList();
   }
@@ -640,7 +688,10 @@ TestRunner.testFinished = function (tests) {
 
   
   
-  if (TestRunner._currentTest == TestRunner._lastTestFinished) {
+  if (
+    TestRunner._currentTest == TestRunner._lastTestFinished &&
+    !TestRunner._loopIsRestarting
+  ) {
     record(false, false, "called finish() multiple times");
     TestRunner.structuredLogger.testEnd(
       TestRunner.currentTestURL,
@@ -654,6 +705,7 @@ TestRunner.testFinished = function (tests) {
 
   SpecialPowers.requestDumpCoverageCounters().then(() => {
     TestRunner._lastTestFinished = TestRunner._currentTest;
+    TestRunner._loopIsRestarting = false;
 
     
     
@@ -989,16 +1041,7 @@ TestRunner.testUnloaded = function (result, runtime) {
 };
 
 TestRunner.doNextTest = function () {
-  if (
-    TestRunner._currentTestRepeats < TestRunner.repeat &&
-    !TestRunner._haltTests
-  ) {
-    TestRunner._currentTestRepeats++;
-    TestRunner._lastTestFinished = -1;
-  } else {
-    TestRunner._currentTestRepeats = 0;
-    TestRunner._currentTest++;
-  }
+  TestRunner._currentTest++;
   if (TestRunner.runSlower) {
     setTimeout(TestRunner.runNextTest, 1000);
   } else {
