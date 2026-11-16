@@ -1805,7 +1805,7 @@ bool SavedStacks::checkForEvalInFramePrev(
       LiveSavedFrameCache::FramePtr::create(cx, iter);
   MOZ_ASSERT(maybeTarget);
 
-  LiveSavedFrameCache::FramePtr target = *maybeTarget;
+  const LiveSavedFrameCache::FramePtr& target = *maybeTarget;
 
   
   
