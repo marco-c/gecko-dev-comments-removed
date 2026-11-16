@@ -112,81 +112,35 @@
 
 
 
+
+
+
+
+
   static FT_Error
   read_uint32var( FT_Byte**  p,
                   FT_Byte*   limit,
                   FT_UInt32* value )
   {
-    FT_Byte    b0;
-    FT_UInt32  result;
+    FT_Byte*   b   = *p;
+    FT_UInt32  val = 0;
+    FT_UInt32  m   = 1;  
 
 
-    if ( *p >= limit )
-      return FT_THROW( Invalid_Table );
-
-    b0 = *(*p)++;
-
-    
-    if ( b0 < 0x80 )
+    do
     {
-      *value = b0;
-      return FT_Err_Ok;
-    }
-
-    
-    if ( b0 < 0xC0 )
-    {
-      if ( *p >= limit )
+      if ( b >= limit )
         return FT_THROW( Invalid_Table );
-      result = ( ( b0 - 0x80 ) << 8 ) |
-                 *(*p)++;
-      *value = result;
-      return FT_Err_Ok;
-    }
 
-    
-    if ( b0 < 0xE0 )
-    {
-      if ( *p + 1 >= limit )
-        return FT_THROW( Invalid_Table );
-      result = ( ( b0 - 0xC0 ) << 16 ) |
-               ( (*p)[0]       << 8  ) |
-                 (*p)[1];
-      *p += 2;
-      *value = result;
-      return FT_Err_Ok;
-    }
+      val = ( val << 8 ) | *b++;
+      m <<= 7;
 
-    
-    if ( b0 < 0xF0 )
-    {
-      if ( *p + 2 >= limit )
-        return FT_THROW( Invalid_Table );
-      result = ( ( b0 - 0xE0 ) << 24 ) |
-               ( (*p)[0]       << 16 ) |
-               ( (*p)[1]       << 8  ) |
-                 (*p)[2];
-      *p += 3;
-      *value = result;
-      return FT_Err_Ok;
-    }
+    } while ( val & m );
 
-    
-    if ( b0 == 0xF0 )
-    {
-      if ( *p + 3 >= limit )
-        return FT_THROW( Invalid_Table );
-      result = ( (*p)[0] << 24 ) |
-               ( (*p)[1] << 16 ) |
-               ( (*p)[2] << 8  ) |
-                 (*p)[3];
-      *p += 4;
-      *value = result;
-      return FT_Err_Ok;
-    }
+    *value = val & ( m - 1 );  
+    *p     = b;
 
-    
-    return FT_THROW( Invalid_Table );
+    return FT_Err_Ok;
   }
 
 
@@ -1580,7 +1534,9 @@
     
 
     
-    if ( num_deltas != 0 && region_count > FT_UINT_MAX / num_deltas )
+    
+    if ( num_deltas   > 0x10001U                 &&
+         region_count > FT_UINT_MAX / num_deltas )
     {
       if ( accumulators != stack_accumulators )
         FT_FREE( accumulators );
