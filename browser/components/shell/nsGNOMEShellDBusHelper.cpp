@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "nsGNOMEShellSearchProvider.h"
 
 #include "RemoteUtils.h"
@@ -366,7 +363,7 @@ static void DBusLaunchWithAllResults(
   }
 
   
-  if (!childCount) {
+  if (urlListElements == 1) {
     urlList[urlListElements++] = strdup("--search");
     urlList[urlListElements++] = strdup(aSearchResult->GetSearchTerm().get());
   }
