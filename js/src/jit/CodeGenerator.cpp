@@ -14074,7 +14074,6 @@ static void CopyStringChars(MacroAssembler& masm, Register to, Register from,
         masm.bind(&next);
       } else if (charsPerWidth == maximumLength) {
         copyCharacters(width);
-        masm.sub32(Imm32(charsPerWidth), len);
       }
     }
 
@@ -14118,7 +14117,6 @@ static void CopyStringChars(MacroAssembler& masm, Register to, Register from,
       
       for (size_t i = loopCount; i > 0; i--) {
         copyCharacters(ptrWidth);
-        masm.sub32(Imm32(charsPerPtr), len);
 
         
         if (i != 1) {
