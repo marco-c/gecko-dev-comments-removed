@@ -12,9 +12,16 @@ const CONTENT_AREA_CONTEXT_MENU = "contentAreaContextMenu";
 const TAB_CONTEXT_MENU = "tabContextMenu";
 const TOOL_CONTEXT_MENU = "sidebar-context-menu";
 
-registerCleanupFunction(() => {
+
+SidebarTestUtils.restoreStateAtCleanup(window);
+
+registerCleanupFunction(async () => {
+  await SpecialPowers.flushPrefEnv();
   Services.prefs.clearUserPref("sidebar.new-sidebar.has-used");
   Services.prefs.clearUserPref("browser.engagement.sidebar-button.has-used");
+  Services.prefs.clearUserPref(
+    "browser.toolbarbuttons.introduced.sidebar-button"
+  );
 });
 
 
@@ -27,34 +34,56 @@ async function openContextMenu({ menuId, browser }) {
     throw new Error(`Context menu with ${menuId} not found`);
   }
 
-  const promise = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
+  const promise = BrowserTestUtils.waitForEvent(
+    contextMenu,
+    "popupshown",
+    false,
+    event => event.target == contextMenu
+  );
 
-  if (menuId === TAB_CONTEXT_MENU) {
-    EventUtils.synthesizeMouseAtCenter(
-      tab,
-      { type: "contextmenu", button: 2 },
-      win
-    );
-  } else if (menuId === TOOL_CONTEXT_MENU) {
-    const { sidebarMain } = SidebarController;
-    const aichatEl = sidebarMain.shadowRoot.querySelector(
-      'moz-button[view="viewGenaiChatSidebar"]'
-    );
+  const synthesizeContextMenu = () => {
+    if (menuId === TAB_CONTEXT_MENU) {
+      EventUtils.synthesizeMouseAtCenter(
+        tab,
+        { type: "contextmenu", button: 2 },
+        win
+      );
+    } else if (menuId === TOOL_CONTEXT_MENU) {
+      const { sidebarMain } = SidebarController;
+      const aichatEl = sidebarMain.shadowRoot.querySelector(
+        'moz-button[view="viewGenaiChatSidebar"]'
+      );
 
-    EventUtils.synthesizeMouseAtCenter(
-      aichatEl,
-      { type: "contextmenu", button: 2 },
-      aichatEl.documentGlobal
-    );
-  } else {
-    BrowserTestUtils.synthesizeMouse(
-      null,
-      0,
-      0,
-      { type: "contextmenu" },
-      browser
-    );
-  }
+      EventUtils.synthesizeMouseAtCenter(
+        aichatEl,
+        { type: "contextmenu", button: 2 },
+        aichatEl.documentGlobal
+      );
+    } else {
+      BrowserTestUtils.synthesizeMouse(
+        "body",
+        2,
+        2,
+        { type: "contextmenu", button: 2 },
+        browser
+      );
+    }
+  };
+
+  
+  
+  await TestUtils.waitForCondition(
+    () => {
+      if (contextMenu.state != "closed") {
+        return true;
+      }
+      synthesizeContextMenu();
+      return false;
+    },
+    `${menuId} started opening`,
+    1000,
+    20
+  );
   await promise;
 }
 
@@ -108,9 +137,6 @@ function assertContextMenuStubResult(stub) {
     "badge dismissed"
   );
 }
-
-
-SidebarTestUtils.restoreStateAtCleanup(window);
 
 
 
@@ -281,16 +307,16 @@ add_task(async function test_tab_menu_has_label_and_separator() {
     browser: gBrowser.selectedTab.linkedBrowser,
   });
 
-  let menu;
-  await TestUtils.waitForCondition(() => {
-    menu = document.getElementById("context_askChat");
-    return menu && !menu.hidden && !menu.disabled;
-  }, "Menu should be visible");
+  const menu = document.getElementById("context_askChat");
+  await TestUtils.waitForCondition(
+    () => !menu.hidden && !menu.disabled && menu.label === "Ask an AI Chatbot",
+    "Menu should be visible with localized label"
+  );
 
-  Assert.ok(
-    menu.label === "Ask an AI Chatbot" &&
-      menu.nextSibling.localName === "menuseparator",
-    "Chatbot menu from tab menu has label and menusepartor"
+  Assert.equal(
+    menu.nextSibling.localName,
+    "menuseparator",
+    "Chatbot menu from tab menu has menuseparator"
   );
 
   await hideContextMenu(TAB_CONTEXT_MENU);
@@ -504,10 +530,17 @@ add_task(async function test_toggle_new_badge() {
 
 add_task(async function test_click_summarize_button() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.ml.chat.page.footerBadge", true]],
+    set: [
+      ["browser.ml.chat.provider", "http://localhost:8080"],
+      ["browser.ml.chat.sidebar", true],
+      ["browser.ml.chat.page", true],
+      ["browser.ml.chat.page.footerBadge", true],
+    ],
   });
+  await SidebarController.show("viewGenaiChatSidebar");
 
-  const { document } = SidebarController.browser.contentWindow;
+  const { browserPromise, document } = SidebarController.browser.contentWindow;
+  await browserPromise;
   const summarizeButton = document.getElementById("summarize-button");
 
   const sandbox = sinon.createSandbox();
