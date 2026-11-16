@@ -1262,7 +1262,11 @@ class MOZ_RAII LineClampLineIterator {
         mEnteredLastFrameToExit(aFrame == aLastFrameToExit),
         mRootMaxBSize(aRootMaxBSize),
         mCurrentFrameOffset{aFrame->LinesBegin() == mEnd ? nullptr : aFrame,
-                            aFrame->LinesBegin(), 0, 0, CollapsingMargin()} {
+                            aFrame->LinesBegin(),
+                            0,
+                            0,
+                            0,
+                            CollapsingMargin()} {
     if (mCurrentFrameOffset.mCurrentLine != mEnd &&
         !mCurrentFrameOffset.mCurrentLine->IsInline()) {
       Advance();
@@ -1276,8 +1280,19 @@ class MOZ_RAII LineClampLineIterator {
                                       : nullptr;
   }
   nsBlockFrame* GetCurrentFrame() { return mCurrentFrameOffset.mFrame; }
-  nscoord GetCurrentFrameBOffset() const {
-    return mCurrentFrameOffset.mConsumedBSize;
+  
+  
+  
+  
+  nscoord GetUsedBSize() const {
+    return mCurrentFrameOffset.mCurrentBlockBStart +
+           mCurrentFrameOffset.mAccumulatedBEndBP;
+  }
+  nscoord GetCurrentFrameBStart() const {
+    return mCurrentFrameOffset.mCurrentBlockBStart;
+  }
+  nscoord GetAccumulatedBEndBP() const {
+    return mCurrentFrameOffset.mAccumulatedBEndBP;
   }
   nscoord GetBEndMargins() const {
     return mCurrentFrameOffset.mCollapsedMargins +
@@ -1316,9 +1331,9 @@ class MOZ_RAII LineClampLineIterator {
         "Don't call Next() when the iterator is at the end");
     nsLineBox* line = GetCurrentLine();
     if (!mRootMaxBSize || !line->IsEmpty() || line->BSize() != 0) {
-      mPreviousBoundary = Boundary{GetCurrentFrame(), line,
-                                   line->BEnd() + GetCurrentFrameBOffset(),
-                                   GetDescendantBEndMargins()};
+      mPreviousBoundary =
+          Boundary{GetCurrentFrame(), line, line->BEnd() + GetUsedBSize(),
+                   GetDescendantBEndMargins()};
       mLastPassedBlock = nullptr;
     }
     ++mCurrentFrameOffset.mCurrentLine;
@@ -1350,8 +1365,7 @@ class MOZ_RAII LineClampLineIterator {
     
     
     const nscoord bOffsetWithoutFrameBEndBP =
-        GetCurrentFrameBOffset() -
-        aFrame->GetLogicalUsedBorderAndPadding(mWm).BEnd(mWm);
+        GetUsedBSize() - aFrame->GetLogicalUsedBorderAndPadding(mWm).BEnd(mWm);
     const nscoord frameBEnd =
         NSCoordSaturatingAdd(bOffsetWithoutFrameBEndBP, aFrame->BSize());
     if (!mRootMaxBSize) {
@@ -1399,10 +1413,11 @@ class MOZ_RAII LineClampLineIterator {
     nsBlockFrame::LineIterator mCurrentLine;
 
     
+    nscoord mCurrentBlockBStart;
+
     
     
-    
-    nscoord mConsumedBSize;
+    nscoord mAccumulatedBEndBP;
 
     
     
@@ -1453,8 +1468,9 @@ class MOZ_RAII LineClampLineIterator {
 
           
           
-          mCurrentFrameOffset.mConsumedBSize +=
-              child->BStart(mCurrentFrameOffset.mFrame->GetSize()) +
+          mCurrentFrameOffset.mCurrentBlockBStart +=
+              child->BStart(mCurrentFrameOffset.mFrame->GetSize());
+          mCurrentFrameOffset.mAccumulatedBEndBP +=
               child->GetLogicalUsedBorderAndPadding(mWm).BEnd(mWm);
 
           mCurrentFrameOffset.mCurrentCollapsingMargin.Include(
@@ -2654,7 +2670,7 @@ Maybe<nsBlockFrame::LineClampTarget> nsBlockFrame::FindLineClampAutoTarget(
     }
 
     
-    const nscoord edge = line->BEnd() + iter.GetCurrentFrameBOffset();
+    const nscoord edge = line->BEnd() + iter.GetUsedBSize();
     if (edge + iter.GetBEndMargins() > rootMaxBSize) {
       return previousTarget();
     }
