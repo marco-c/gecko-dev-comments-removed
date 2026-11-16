@@ -774,7 +774,7 @@ class nsBlockFrame : public nsContainerFrame {
   Maybe<LineClampTarget> FindLineClampAutoTarget(
       const ReflowInput& aReflowInput, nsBlockFrame* aLineClampRoot);
   Maybe<LineClampTarget> FindLineClampNumberedTarget(
-      nscoord aCollapsingBEndMargin, nsBlockFrame* aLineClampRoot) const;
+      nsBlockFrame* aLineClampRoot) const;
   void ApplyLineClamp(LineClampTarget aLineClampTarget,
                       nsBlockFrame* aLineClampRoot);
   
@@ -782,6 +782,14 @@ class nsBlockFrame : public nsContainerFrame {
       Maybe<nsBlockFrame::LineClampTarget> aLineClampAutoTarget,
       Maybe<nsBlockFrame::LineClampTarget> aLineClampNumberedTarget,
       nsBlockFrame* aLineClampRoot);
+
+  
+  NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(LineClampDescendantMaxBSize, nscoord);
+  Maybe<nscoord> GetLineClampDescendantMaxBSize() const {
+    bool found = false;
+    const nscoord maxBSize = GetProperty(LineClampDescendantMaxBSize(), &found);
+    return found ? mozilla::Some(maxBSize) : Nothing();
+  }
 
   struct LineClampAutoInfo {
     Maybe<nscoord> lineClampRootMaxHeight = Nothing();
@@ -1240,6 +1248,7 @@ class nsBlockFrame : public nsContainerFrame {
   nsLineList mLines;
 
   friend class mozilla::BlockReflowState;
+  friend class LineClampLineIterator;
   friend class nsBlockInFlowLineIterator;
 
 #ifdef DEBUG
