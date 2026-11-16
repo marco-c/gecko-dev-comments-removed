@@ -1108,12 +1108,6 @@ void NativeLayerWayland::SetColorProperties(
 
   if (surface->IsHDRSurface()) {
     mSurface->SetHDRMetadata(params, surfaceTransferFunction,
-                             
-                             
-                             
-                             
-                             
-                              nullptr,
                              surface->GetHDRMetadata());
   }
 
