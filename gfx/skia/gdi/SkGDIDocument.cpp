@@ -72,8 +72,6 @@ constexpr size_t kMaxGlyphsPerCall = 4096;
 
 constexpr SkScalar kTextLogicalScale = 32;
 
-constexpr SkScalar kStrokeLogicalScale = 32;
-
 LONG to_gdi(SkScalar v) { return (LONG)SkScalarRoundToInt(SkTPin(v, -kMaxCoord, kMaxCoord)); }
 
 int fill_mode(const SkPath& path) {
@@ -959,10 +957,11 @@ private:
         
         
         
+        
+        
         const SkScalar scale =
                 std::max({SkScalarAbs(ctm.getScaleX()), SkScalarAbs(ctm.getSkewX()),
-                          SkScalarAbs(ctm.getSkewY()), SkScalarAbs(ctm.getScaleY())}) *
-                kStrokeLogicalScale;
+                          SkScalarAbs(ctm.getSkewY()), SkScalarAbs(ctm.getScaleY())});
         const SkScalar width = paint.getStrokeWidth() * scale;
         if (!SkIsFinite(scale, width) || scale <= 0 || width > kMaxCoord) {
             return false;
