@@ -401,6 +401,11 @@ bool NameOpEmitter::emitAssignment() {
       break;
     case NameLocation::Kind::FrameSlot: {
       JSOp op = JSOp::SetLocal;
+
+      
+      MOZ_ASSERT_IF(loc_.isSynthetic() || loc_.isPrivateMethod(),
+                    isInitialize());
+
       
       
       if (loc_.isLexical() || loc_.isPrivateMethod() || loc_.isSynthetic()) {
@@ -434,6 +439,11 @@ bool NameOpEmitter::emitAssignment() {
     }
     case NameLocation::Kind::EnvironmentCoordinate: {
       JSOp op = JSOp::SetAliasedVar;
+
+      
+      MOZ_ASSERT_IF(loc_.isSynthetic() || loc_.isPrivateMethod(),
+                    isInitialize());
+
       
       
       if (loc_.isLexical() || loc_.isPrivateMethod() || loc_.isSynthetic()) {

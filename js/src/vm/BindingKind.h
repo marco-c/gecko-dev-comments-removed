@@ -29,6 +29,9 @@ enum class BindingKind : uint8_t {
   
   
   
+  
+  
+  
   Synthetic,
 
   
@@ -86,8 +89,6 @@ class BindingLocation {
   }
 
   bool operator==(const BindingLocation& other) const = default;
-
-  bool operator!=(const BindingLocation& other) const = default;
 
   Kind kind() const { return kind_; }
 
