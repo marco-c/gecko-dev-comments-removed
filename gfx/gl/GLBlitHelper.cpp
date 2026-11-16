@@ -972,7 +972,7 @@ bool GLBlitHelper::BlitSdToFramebuffer(const layers::SurfaceDescriptor& asd,
             fencesHolderMap->GetWriteFence(sd.fencesHolderId().ref());
         RefPtr<layers::GpuFence> gpuFence =
             fence ? fence->AsGpuFence() : nullptr;
-        if (gpuFence && gpuFence->ServerWait(mGL, TimeDuration::Forever())) {
+        if (gpuFence && !gpuFence->ServerWait(mGL, TimeDuration::Forever())) {
           return false;
         }
       }
@@ -1727,23 +1727,13 @@ bool GLBlitHelper::Blit(DMABufSurface* surface, const gfx::IntRect& destRect,
 
   const char* fragSample = nullptr;
   auto fragConvert = kFragConvert_None;
-  
-  
-  
-  
-  
-  const auto srcFormat = surface->GetFormat();
-  const bool srcIsBGRA = srcFormat == gfx::SurfaceFormat::B8G8R8A8 ||
-                         srcFormat == gfx::SurfaceFormat::B8G8R8X8;
   const bool dstIsBGRA = aDestFormat == gfx::SurfaceFormat::B8G8R8A8 ||
                          aDestFormat == gfx::SurfaceFormat::B8G8R8X8;
-  const bool swapRB = srcIsBGRA != dstIsBGRA;
   switch (pixelFormat) {
     case DMABufSurface::SURFACE_RGBA:
       fragSample = kFragSample_OnePlane;
-      if (swapRB) {
-        fragConvert = kFragConvert_BGR;
-      }
+      
+      
       break;
     case DMABufSurface::SURFACE_YUV:
       if (surface->GetTextureCount() == 2) {
@@ -1756,8 +1746,11 @@ bool GLBlitHelper::Blit(DMABufSurface* surface, const gfx::IntRect& destRect,
         return false;
       }
       pYuvArgs = &yuvArgs;
+      
+      
+      
       fragConvert =
-          swapRB ? kFragConvert_ColorMatrixBGR : kFragConvert_ColorMatrix;
+          dstIsBGRA ? kFragConvert_ColorMatrixBGR : kFragConvert_ColorMatrix;
       break;
     default:
       return false;
