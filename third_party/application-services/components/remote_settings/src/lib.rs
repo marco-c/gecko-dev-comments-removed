@@ -20,9 +20,15 @@ pub mod telemetry;
 pub(crate) mod jexl_filter;
 mod macros;
 
+#[cfg(feature = "glean-sym")]
+mod glean_metrics {
+    include!(concat!(env!("OUT_DIR"), "/glean_metrics.rs"));
+}
+
 pub use client::{Attachment, RemoteSettingsRecord, RsJsonObject};
 pub use config::{BaseUrl, RemoteSettingsConfig, RemoteSettingsServer};
 pub use context::RemoteSettingsContext;
+use error::warn;
 pub use error::{trace, ApiResult, RemoteSettingsError, Result};
 pub use telemetry::{RemoteSettingsTelemetry, SyncStatus, UptakeEventExtras};
 
@@ -98,8 +104,12 @@ impl RemoteSettingsService {
 impl RemoteSettingsService {
     
     
-    
     pub fn set_telemetry(&self, telemetry: Arc<dyn RemoteSettingsTelemetry>) {
+        if cfg!(feature = "glean-sym") {
+            
+            warn!("set_telemetry() ignored: metrics are recorded directly with glean-sym");
+            return;
+        }
         self.internal
             .set_telemetry(RemoteSettingsTelemetryWrapper::new(telemetry));
     }

@@ -2,16 +2,14 @@
 
 
 
-use crate::schema::TypeQuery;
-use crate::{
-    intermediate_representation::{FeatureDef, ObjectDef, PropDef, TypeRef},
-    schema::Sha256Hasher,
-};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
+use std::hash::{Hash, Hasher};
+
 use serde_json::Value;
-use std::{
-    collections::{BTreeMap, BTreeSet, HashSet},
-    hash::{Hash, Hasher},
-};
+
+use crate::intermediate_representation::{FeatureDef, ObjectDef, PropDef, TypeRef};
+use crate::schema::Sha256Hasher;
+use crate::schema::TypeQuery;
 
 pub(crate) struct DefaultsHasher<'a> {
     object_defs: &'a BTreeMap<String, ObjectDef>,

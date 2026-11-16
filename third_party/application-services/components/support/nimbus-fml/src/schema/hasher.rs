@@ -2,14 +2,13 @@
 
 
 
+use std::collections::{BTreeMap, HashSet};
+use std::hash::{Hash, Hasher};
+
 use sha2::{Digest, Sha256};
 
 use crate::intermediate_representation::{
     EnumDef, FeatureDef, ObjectDef, PropDef, TypeRef, VariantDef,
-};
-use std::{
-    collections::{BTreeMap, HashSet},
-    hash::{Hash, Hasher},
 };
 
 use super::TypeQuery;

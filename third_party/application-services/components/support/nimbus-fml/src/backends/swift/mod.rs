@@ -2,11 +2,11 @@
 
 
 
-use crate::error::{FMLError, Result};
-use crate::frontend::AboutBlock;
 use askama::Template;
 
 use crate::command_line::commands::GenerateStructCmd;
+use crate::error::{FMLError, Result};
+use crate::frontend::AboutBlock;
 use crate::intermediate_representation::FeatureManifest;
 
 mod gen_structs;
@@ -29,7 +29,7 @@ pub(crate) fn generate_struct(manifest: &FeatureManifest, cmd: &GenerateStructCm
             "about".to_string(),
             format!(
                 "The `about` block is missing a valid `ios` or `swift` entry: {}",
-                &cmd.manifest
+                cmd.manifest
             ),
         ));
     }
@@ -60,7 +60,7 @@ pub(crate) fn generate_struct(manifest: &FeatureManifest, cmd: &GenerateStructCm
 ))]
 pub mod test {
     use crate::util::{join, pkg_dir, sdk_dir};
-    use anyhow::{bail, Context, Result};
+    use anyhow::{Context, Result, bail};
     use std::{
         ffi::OsString,
         path::{Path, PathBuf},

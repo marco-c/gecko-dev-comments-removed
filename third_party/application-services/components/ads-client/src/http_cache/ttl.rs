@@ -8,7 +8,7 @@ use std::time::Duration;
 
 
 
-pub const MAX_TTL: Duration = Duration::from_secs(7 * 24 * 60 * 60);
+pub(super) const MAX_TTL: Duration = Duration::from_secs(7 * 24 * 60 * 60);
 
 
 
@@ -17,11 +17,12 @@ pub const MAX_TTL: Duration = Duration::from_secs(7 * 24 * 60 * 60);
 
 
 
-pub struct EffectiveTtl {
+pub(super) struct EffectiveTtl {
     
     pub explicit: Option<Duration>,
     
-    pub server_max_age: Option<Duration>,
+    
+    pub server: Option<Duration>,
     
     pub default: Duration,
 }
@@ -33,11 +34,8 @@ impl EffectiveTtl {
     
     
     
-    pub fn resolve(&self) -> Duration {
-        let chosen = self
-            .explicit
-            .or(self.server_max_age)
-            .unwrap_or(self.default);
+    pub(super) fn resolve(&self) -> Duration {
+        let chosen = self.explicit.or(self.server).unwrap_or(self.default);
         chosen.min(MAX_TTL)
     }
 }
@@ -47,56 +45,56 @@ mod tests {
     use super::*;
 
     #[test]
-    fn explicit_overrides_server_max_age_and_default() {
+    fn explicit_overrides_server_and_default() {
         let ttl = EffectiveTtl {
             default: Duration::from_secs(300),
             explicit: Some(Duration::from_secs(60)),
-            server_max_age: Some(Duration::from_secs(3600)),
+            server: Some(Duration::from_secs(3600)),
         }
         .resolve();
         assert_eq!(ttl, Duration::from_secs(60));
     }
 
     #[test]
-    fn falls_back_to_server_max_age_when_no_explicit() {
+    fn falls_back_to_server_when_no_explicit() {
         let ttl = EffectiveTtl {
             default: Duration::from_secs(300),
             explicit: None,
-            server_max_age: Some(Duration::from_secs(3600)),
+            server: Some(Duration::from_secs(3600)),
         }
         .resolve();
         assert_eq!(ttl, Duration::from_secs(3600));
     }
 
     #[test]
-    fn falls_back_to_default_when_no_explicit_and_no_server_max_age() {
+    fn falls_back_to_default_when_no_explicit_and_no_server() {
         let ttl = EffectiveTtl {
             default: Duration::from_secs(300),
             explicit: None,
-            server_max_age: None,
+            server: None,
         }
         .resolve();
         assert_eq!(ttl, Duration::from_secs(300));
     }
 
     #[test]
-    fn zero_server_max_age_yields_zero() {
+    fn zero_server_ttl_yields_zero() {
         
         let ttl = EffectiveTtl {
             default: Duration::from_secs(300),
             explicit: None,
-            server_max_age: Some(Duration::ZERO),
+            server: Some(Duration::ZERO),
         }
         .resolve();
         assert_eq!(ttl, Duration::ZERO);
     }
 
     #[test]
-    fn server_max_age_is_capped_at_max_ttl() {
+    fn server_ttl_is_capped_at_max_ttl() {
         let ttl = EffectiveTtl {
             default: Duration::from_secs(300),
             explicit: None,
-            server_max_age: Some(Duration::from_secs(365 * 24 * 60 * 60)),
+            server: Some(Duration::from_secs(365 * 24 * 60 * 60)),
         }
         .resolve();
         assert_eq!(ttl, MAX_TTL);
@@ -107,7 +105,7 @@ mod tests {
         let ttl = EffectiveTtl {
             default: Duration::from_secs(300),
             explicit: Some(Duration::from_secs(30 * 24 * 60 * 60)),
-            server_max_age: None,
+            server: None,
         }
         .resolve();
         assert_eq!(ttl, MAX_TTL);
@@ -118,7 +116,7 @@ mod tests {
         let ttl = EffectiveTtl {
             default: Duration::from_secs(30 * 24 * 60 * 60),
             explicit: None,
-            server_max_age: None,
+            server: None,
         }
         .resolve();
         assert_eq!(ttl, MAX_TTL);

@@ -2,17 +2,16 @@
 
 
 
-use askama::Template;
 use std::fmt::Display;
 
+use askama::Template;
+
+use crate::backends::swift::gen_structs::common::{self, code_type};
+use crate::backends::swift::gen_structs::filters;
 use crate::backends::{
     CodeDeclaration, CodeOracle, CodeType, LiteralRenderer, TypeIdentifier, VariablesType,
 };
 use crate::intermediate_representation::{FeatureManifest, Literal, ObjectDef};
-
-use super::filters;
-
-use super::common::{self, code_type};
 
 pub struct ObjectCodeType {
     id: String,

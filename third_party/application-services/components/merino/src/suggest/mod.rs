@@ -9,12 +9,14 @@ mod schema;
 mod tests;
 
 use error_support::handle_error;
+use parking_lot::Mutex;
 use url::Url;
+use uuid::Uuid;
+
+use crate::DEFAULT_BASE_HOST;
 
 pub use error::{ApiResult, Error, MerinoSuggestApiError, Result};
 pub use schema::{SuggestConfig, SuggestOptions};
-
-const DEFAULT_BASE_HOST: &str = "https://merino.services.mozilla.com";
 
 
 
@@ -28,6 +30,26 @@ pub struct SuggestClient {
 
 struct SuggestClientInner<T: http::HttpClientTrait> {
     http_client: T,
+    session: Mutex<Option<SearchSession>>,
+}
+
+
+
+
+
+
+struct SearchSession {
+    id: String,
+    sequence_number: u32,
+}
+
+impl SearchSession {
+    fn new() -> Self {
+        Self {
+            id: Uuid::new_v4().to_string(),
+            sequence_number: 0,
+        }
+    }
 }
 
 #[derive(Default)]
@@ -91,12 +113,25 @@ impl SuggestClient {
 
         Ok(response.map(|r| r.text().to_string()))
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn reset_session(&self) {
+        self.inner.reset_session();
+    }
 }
 
 impl SuggestClientInner<http::HttpClient> {
     pub fn new() -> Result<Self> {
         Ok(Self {
             http_client: http::HttpClient,
+            session: Mutex::new(None),
         })
     }
 }
@@ -116,6 +151,7 @@ impl<T: http::HttpClientTrait> SuggestClientInner<T> {
             .client_variants
             .filter(|v| !v.is_empty())
             .map(|v| v.join(","));
+        let (session_id, sequence_number) = self.advance_session();
         self.http_client.make_suggest_request(
             query,
             http::SuggestQueryParams {
@@ -127,9 +163,28 @@ impl<T: http::HttpClientTrait> SuggestClientInner<T> {
                 client_variants: client_variants.as_deref(),
                 request_type: options.request_type.as_deref(),
                 accept_language: options.accept_language.as_deref(),
+                session_id: Some(session_id.as_str()),
+                sequence_number: Some(sequence_number),
             },
             endpoint_url.clone(),
         )
+    }
+
+    pub fn reset_session(&self) {
+        *self.session.lock() = None;
+    }
+
+    
+    
+    
+    
+    
+    fn advance_session(&self) -> (String, u32) {
+        let mut session = self.session.lock();
+        let session = session.get_or_insert_with(SearchSession::new);
+        let params = (session.id.clone(), session.sequence_number);
+        session.sequence_number += 1;
+        params
     }
 }
 
@@ -138,6 +193,7 @@ impl<T: http::HttpClientTrait> SuggestClientInner<T> {
     pub fn new_with_client(client: T) -> Self {
         Self {
             http_client: client,
+            session: Mutex::new(None),
         }
     }
 }

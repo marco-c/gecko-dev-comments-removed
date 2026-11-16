@@ -2,6 +2,8 @@
 
 
 
+use std::path::PathBuf;
+
 use clap::{Args, Parser, Subcommand, ValueEnum};
 
 use crate::intermediate_representation::TargetLanguage;
@@ -132,24 +134,8 @@ pub struct Lint {
     pub loader_info: LoaderInfo,
 
     
-    #[arg(long, value_name = "LINT")]
-    pub allow: Vec<String>,
-
-    
-    #[arg(long, value_name = "LINT")]
-    pub deny: Vec<String>,
-
-    
-    #[arg(long)]
-    pub error_on_warning: bool,
-
-    
-    #[arg(long)]
-    pub include_imports: bool,
-
-    
-    #[arg(long)]
-    pub json: bool,
+    #[arg(long, value_name = "PATH")]
+    pub code_review_json: Option<PathBuf>,
 
     
     #[arg(long)]

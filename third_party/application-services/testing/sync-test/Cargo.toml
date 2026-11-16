@@ -7,7 +7,7 @@ license = "MPL-2.0"
 
 [dependencies]
 viaduct = { path = "../../components/viaduct" }
-viaduct-hyper = { path = "../../components/support/viaduct-hyper" }
+viaduct-backend-rust = { path = "../../components/support/viaduct-backend-rust" }
 autofill = { path = "../../components/autofill" }
 logins = { path = "../../components/logins" }
 sync15 = { path = "../../components/sync15" }
@@ -23,7 +23,7 @@ log = "0.4"
 anyhow = "1.0"
 rand = "0.8"
 lazy_static = "1.4"
-clap = { version = "4.5.39", default-features = false, features = ["std", "derive"] }
+clap = { version = "4.5.39", default-features = false, features = ["std", "derive", "help", "usage", "error-context"] }
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"

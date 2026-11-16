@@ -4,12 +4,12 @@
 
 use std::fmt::Display;
 
-use super::{filters, object::object_literal};
-use crate::{
-    backends::{CodeDeclaration, CodeOracle, LiteralRenderer, TypeIdentifier},
-    intermediate_representation::{ImportedModule, Literal, TypeFinder},
-};
 use askama::Template;
+
+use crate::backends::swift::gen_structs::filters;
+use crate::backends::swift::gen_structs::object::object_literal;
+use crate::backends::{CodeDeclaration, CodeOracle, LiteralRenderer, TypeIdentifier};
+use crate::intermediate_representation::{ImportedModule, Literal, TypeFinder};
 
 #[derive(Template)]
 #[template(

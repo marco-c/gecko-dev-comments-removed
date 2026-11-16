@@ -2,9 +2,11 @@
 
 
 
-use crate::{cli::ExperimentListFilterArgs, output::info::ExperimentInfo};
 use anyhow::Result;
 use serde_json::Value;
+
+use crate::cli::ExperimentListFilterArgs;
+use crate::output::info::ExperimentInfo;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct ExperimentListFilter {
