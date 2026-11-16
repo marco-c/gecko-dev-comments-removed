@@ -2733,6 +2733,11 @@ pub(super) fn encode_render_pass(
                 )
                 .map_pass_err(pass_scope)?;
         }
+
+        
+        
+        
+        unsafe { transit.encode_deferred_multi_draws() };
     }
 
     encoder.close_and_swap().map_pass_err(pass_scope)?;

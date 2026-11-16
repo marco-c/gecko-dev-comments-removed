@@ -24,6 +24,8 @@ mod adapter;
 mod command;
 mod conv;
 mod device;
+mod icb;
+mod icb_probe;
 mod library_from_metallib;
 mod surface;
 mod time;
@@ -43,16 +45,15 @@ use objc2::{
     rc::{autoreleasepool, Retained},
     runtime::ProtocolObject,
 };
-use objc2_foundation::ns_string;
+use objc2_foundation::{ns_string, NSString};
 use objc2_metal::{
     MTLAccelerationStructure, MTLAccelerationStructureCommandEncoder, MTLArgumentBuffersTier,
-    MTLBlitCommandEncoder, MTLBuffer, MTLCommandBuffer, MTLCommandBufferStatus, MTLCommandQueue,
-    MTLComputeCommandEncoder, MTLComputePipelineState, MTLCounterSampleBuffer, MTLCullMode,
-    MTLDepthClipMode, MTLDepthStencilState, MTLDevice, MTLDrawable, MTLIndexType,
-    MTLLanguageVersion, MTLLibrary, MTLPrimitiveType, MTLReadWriteTextureTier,
-    MTLRenderCommandEncoder, MTLRenderPipelineState, MTLRenderStages, MTLResource,
-    MTLResourceUsage, MTLSamplerState, MTLSharedEvent, MTLSize, MTLTexture, MTLTextureType,
-    MTLTriangleFillMode, MTLWinding,
+    MTLBlitCommandEncoder, MTLBuffer, MTLCommandBuffer, MTLCommandQueue, MTLComputeCommandEncoder,
+    MTLComputePipelineState, MTLCounterSampleBuffer, MTLCullMode, MTLDepthClipMode,
+    MTLDepthStencilState, MTLDevice, MTLDrawable, MTLIndexType, MTLLanguageVersion, MTLLibrary,
+    MTLPrimitiveType, MTLReadWriteTextureTier, MTLRenderCommandEncoder, MTLRenderPipelineState,
+    MTLRenderStages, MTLResource, MTLResourceUsage, MTLSamplerState, MTLSharedEvent, MTLSize,
+    MTLTexture, MTLTextureType, MTLTriangleFillMode, MTLWinding,
 };
 use objc2_quartz_core::CAMetalLayer;
 use wgpu_sync::{atomic, Condvar, Mutex, OnceCell, RwLock};
@@ -319,7 +320,6 @@ struct CapabilitiesQuery {
     supports_cooperative_matrix: bool,
     int64: bool,
     int64_atomics_min_max: bool,
-    int64_atomics: bool,
     float_atomics: bool,
     mesh_shaders: bool,
     max_task_workgroup_count: u32,
@@ -331,6 +331,12 @@ struct CapabilitiesQuery {
     supports_raytracing: bool,
     shader_per_vertex: bool,
     supports_multisample_array: bool,
+    
+    
+    indirect_command_buffers_rendering: bool,
+    indirect_command_buffers_mesh: bool,
+    
+    indirect_command_buffers_optimize: bool,
     supports_debug_printf: bool,
     texture_component_swizzle: bool,
 }
@@ -344,6 +350,12 @@ struct PrivateCapabilities {
     timestamp_query_support: TimestampQuerySupport,
     supports_memoryless_storage: bool,
     mesh_shaders: bool,
+    
+    
+    indirect_command_buffers_rendering: bool,
+    indirect_command_buffers_mesh: bool,
+    
+    indirect_command_buffers_optimize: bool,
     supports_debug_printf: bool,
     texture_component_swizzle: bool,
 }
@@ -352,7 +364,7 @@ struct PrivateCapabilities {
 struct PrivateTextureFormatCapabilities {
     read_write_texture_tier: MTLReadWriteTextureTier,
     sample_count_mask: crate::TextureFormatCapabilities,
-    int64_atomics: bool,
+    int64_atomics_min_max: bool,
     msaa_desktop: bool,
     msaa_apple3: bool,
     msaa_apple7: bool,
@@ -403,6 +415,7 @@ struct AdapterShared {
     private_texture_format_caps: PrivateTextureFormatCapabilities,
     settings: Settings,
     presentation_timer: time::PresentationTimer,
+    instance_flags: wgt::InstanceFlags,
     use_debug_printf: atomic::AtomicBool,
 }
 
@@ -413,8 +426,15 @@ impl AdapterShared {
     fn new(
         device: Retained<ProtocolObject<dyn MTLDevice>>,
         capabilities_query: &CapabilitiesQuery,
+        instance_flags: wgt::InstanceFlags,
     ) -> Self {
-        let private_caps = capabilities_query.private_capabilities();
+        let mut private_caps = capabilities_query.private_capabilities();
+        
+        
+        if instance_flags.contains(wgt::InstanceFlags::STRICT_WEBGPU_COMPLIANCE) {
+            private_caps.indirect_command_buffers_rendering = false;
+            private_caps.indirect_command_buffers_mesh = false;
+        }
         let private_texture_format_caps = capabilities_query.private_texture_format_capabilities();
         log::debug!("{private_caps:#?}");
         log::debug!("{private_texture_format_caps:#?}");
@@ -426,8 +446,20 @@ impl AdapterShared {
             device,
             settings: Settings::default(),
             presentation_timer: time::PresentationTimer::new(),
+            instance_flags,
             use_debug_printf: atomic::AtomicBool::new(false),
         }
+    }
+
+    
+    
+    
+    
+    fn hal_label(&self, label: &str) -> Option<Retained<NSString>> {
+        (!self
+            .instance_flags
+            .contains(wgt::InstanceFlags::DISCARD_HAL_LABELS))
+        .then(|| NSString::from_str(label))
     }
 
     fn expose(
@@ -437,9 +469,9 @@ impl AdapterShared {
         autoreleasepool(|_| {
             let name = device.name().to_string();
             let capabilities_query = CapabilitiesQuery::new(&device);
-            let shared = AdapterShared::new(device, &capabilities_query);
-            let features = capabilities_query.features();
+            let shared = AdapterShared::new(device, &capabilities_query, instance_flags);
             let capabilities = capabilities_query.capabilities(instance_flags);
+            let features = capabilities_query.features(&capabilities);
             crate::ExposedAdapter {
                 info: wgt::AdapterInfo {
                     name,
@@ -472,6 +504,10 @@ static_assertions::assert_impl_all!(Adapter: Send, Sync);
 pub struct Queue {
     shared: Arc<QueueShared>,
     timestamp_period: f32,
+    
+    
+    
+    icb: Option<Arc<icb::IcbContext>>,
 }
 
 #[cfg(send_sync)]
@@ -491,6 +527,7 @@ impl Queue {
                 relay: OnceCell::new(),
             }),
             timestamp_period,
+            icb: None,
         }
     }
 
@@ -642,6 +679,9 @@ pub struct Device {
     features: wgt::Features,
     counters: Arc<wgt::HalCounters>,
     limits: wgt::Limits,
+    
+    
+    icb: Option<Arc<icb::IcbContext>>,
 }
 
 #[derive(Debug)]
@@ -692,6 +732,9 @@ impl crate::Queue for Queue {
         _surface_textures: &[&SurfaceTexture],
         (signal_fence, signal_value): (&Fence, crate::FenceValue),
     ) -> Result<(), crate::DeviceError> {
+        if let Some(ref icb) = self.icb {
+            icb.release_idle();
+        }
         autoreleasepool(|_| {
             
             
@@ -745,7 +788,9 @@ impl crate::Queue for Queue {
             let extra_command_buffer = {
                 let fence_sync = Arc::clone(&signal_fence.sync);
                 let block = block2::RcBlock::new(move |_cmd_buf| {
-                    *fence_sync.0.lock() = signal_value;
+                    let mut value = fence_sync.0.lock();
+                    *value = (*value).max(signal_value);
+                    drop(value);
                     fence_sync.1.notify_all();
                 });
 
@@ -762,12 +807,6 @@ impl crate::Queue for Queue {
                 };
                 raw.setLabel(Some(ns_string!("(wgpu internal) Signal")));
                 unsafe { raw.addCompletedHandler(block2::RcBlock::as_ptr(&block)) };
-
-                signal_fence.maintain();
-                signal_fence
-                    .pending_command_buffers
-                    .write()
-                    .push((signal_value, raw.clone()));
 
                 if let Some(shared_event) = &signal_fence.shared_event {
                     raw.encodeSignalEvent_value(shared_event.as_ref(), signal_value);
@@ -866,7 +905,9 @@ impl Buffer {
 
 #[derive(Debug)]
 pub struct Texture {
+    
     raw: Retained<ProtocolObject<dyn MTLTexture>>,
+    plane1: Option<Retained<ProtocolObject<dyn MTLTexture>>>,
     format: wgt::TextureFormat,
     raw_type: MTLTextureType,
     array_layers: u32,
@@ -879,8 +920,30 @@ pub struct Texture {
 }
 
 impl Texture {
+    
     pub fn raw_handle(&self) -> &ProtocolObject<dyn MTLTexture> {
+        if self.plane1.is_some() {
+            panic!("raw_handle called on a multi-plane texture");
+        }
+
         &self.raw
+    }
+
+    
+    pub fn raw_plane(
+        &self,
+        aspect: crate::FormatAspects,
+    ) -> &Retained<ProtocolObject<dyn MTLTexture>> {
+        match aspect {
+            crate::FormatAspects::PLANE_1 => self
+                .plane1
+                .as_ref()
+                .expect("plane_texture(PLANE_1) called on a single-plane texture"),
+            crate::FormatAspects::PLANE_2 => {
+                panic!("plane_texture(PLANE_2) called and 3-plane textures are unsupported")
+            }
+            _ => &self.raw,
+        }
     }
 }
 
@@ -1213,6 +1276,10 @@ impl PipelineStageInfo {
 #[derive(Debug)]
 pub struct RenderPipeline {
     raw: Retained<ProtocolObject<dyn MTLRenderPipelineState>>,
+    
+    
+    
+    icb_raw: Option<Retained<ProtocolObject<dyn MTLRenderPipelineState>>>,
     vs_info: Option<PipelineStageInfo>,
     fs_info: Option<PipelineStageInfo>,
     ts_info: Option<PipelineStageInfo>,
@@ -1265,15 +1332,8 @@ unsafe impl Sync for QuerySet {}
 #[derive(Debug)]
 pub struct Fence {
     sync: Arc<(wgpu_sync::CondvarMutex<crate::FenceValue>, Condvar)>,
-    
-    pending_command_buffers: RwLock<Vec<PendingCommandBuffer>>,
     shared_event: Option<Retained<ProtocolObject<dyn MTLSharedEvent>>>,
 }
-
-type PendingCommandBuffer = (
-    crate::FenceValue,
-    Retained<ProtocolObject<dyn MTLCommandBuffer>>,
-);
 
 impl crate::DynFence for Fence {}
 
@@ -1282,24 +1342,7 @@ unsafe impl Sync for Fence {}
 
 impl Fence {
     fn get_latest(&self) -> crate::FenceValue {
-        let mut max_value = *self.sync.0.lock();
-        let pending_command_buffers = self.pending_command_buffers.read();
-        for &(value, ref cmd_buf) in pending_command_buffers.iter() {
-            match cmd_buf.status() {
-                MTLCommandBufferStatus::Completed | MTLCommandBufferStatus::Error => {
-                    max_value = value;
-                }
-                _ => {}
-            }
-        }
-        max_value
-    }
-
-    fn maintain(&self) {
-        let latest = self.get_latest();
-        self.pending_command_buffers
-            .write()
-            .retain(|&(value, _)| value > latest);
+        *self.sync.0.lock()
     }
 
     pub fn raw_shared_event(&self) -> Option<&ProtocolObject<dyn MTLSharedEvent>> {
@@ -1317,6 +1360,7 @@ struct IndexState {
 #[derive(Default)]
 struct Temp {
     binding_sizes: Vec<u32>,
+    icb_argument_encoders: icb::IcbArgumentEncoderCache,
 }
 
 
@@ -1327,6 +1371,8 @@ struct CommandState {
         Option<Retained<ProtocolObject<dyn MTLAccelerationStructureCommandEncoder>>>,
     render: Option<Retained<ProtocolObject<dyn MTLRenderCommandEncoder>>>,
     compute: Option<Retained<ProtocolObject<dyn MTLComputeCommandEncoder>>>,
+    render_pipeline: Option<Retained<ProtocolObject<dyn MTLRenderPipelineState>>>,
+    render_pipeline_icb: Option<Retained<ProtocolObject<dyn MTLRenderPipelineState>>>,
     raw_primitive_type: MTLPrimitiveType,
     index: Option<IndexState>,
     stage_infos: MultiStageData<PipelineStageInfo>,
@@ -1372,6 +1418,18 @@ pub struct CommandEncoder {
     state: CommandState,
     temp: Temp,
     counters: Arc<wgt::HalCounters>,
+    
+    
+    
+    
+    deferred_multi_draws: Vec<icb::IcbGenerationRequest>,
+    
+    
+    
+    
+    deferred_multi_draw_resources: Vec<icb::IcbExecutionResources>,
+    
+    icb: Option<Arc<icb::IcbContext>>,
 }
 
 impl fmt::Debug for CommandEncoder {
@@ -1389,6 +1447,9 @@ unsafe impl Sync for CommandEncoder {}
 pub struct CommandBuffer {
     raw: Retained<ProtocolObject<dyn MTLCommandBuffer>>,
     queue_shared: Arc<QueueShared>,
+    
+    
+    _icb_resources: Vec<icb::IcbExecutionResources>,
 }
 
 impl crate::DynCommandBuffer for CommandBuffer {}

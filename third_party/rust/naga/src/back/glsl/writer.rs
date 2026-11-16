@@ -534,6 +534,7 @@ impl<'a, W: Write> Writer<'a, W> {
             | TypeInner::Sampler { .. }
             | TypeInner::AccelerationStructure { .. }
             | TypeInner::RayQuery { .. }
+            | TypeInner::HitObject
             | TypeInner::BindingArray { .. }
             | TypeInner::CooperativeMatrix { .. } => {
                 return Err(Error::Custom(format!("Unable to write type {inner:?}")))
@@ -2281,7 +2282,7 @@ impl<'a, W: Write> Writer<'a, W> {
                 writeln!(self.out, ");")?;
             }
             Statement::CooperativeStore { .. } => unimplemented!(),
-            Statement::RayPipelineFunction(_) => unimplemented!(),
+            Statement::RayPipelineFunction(_) | Statement::HitObject { .. } => unimplemented!(),
             Statement::DebugPrintf { .. } => unimplemented!(),
         }
 
@@ -2776,25 +2777,8 @@ impl<'a, W: Write> Writer<'a, W> {
                                 write!(self.out, "textureSize(")?;
                                 self.write_expr(image, ctx)?;
                                 if let Some(expr) = level {
-                                    let cast_to_int = matches!(
-                                        *ctx.resolve_type(expr, &self.module.types),
-                                        TypeInner::Scalar(crate::Scalar {
-                                            kind: crate::ScalarKind::Uint,
-                                            ..
-                                        })
-                                    );
-
                                     write!(self.out, ", ")?;
-
-                                    if cast_to_int {
-                                        write!(self.out, "int(")?;
-                                    }
-
-                                    self.write_expr(expr, ctx)?;
-
-                                    if cast_to_int {
-                                        write!(self.out, ")")?;
-                                    }
+                                    self.write_expr_as_int(expr, ctx)?;
                                 } else if !multi {
                                     
                                     
@@ -3759,91 +3743,65 @@ impl<'a, W: Write> Writer<'a, W> {
                 }
             }
             
-            
-            
-            Expression::As {
-                expr,
-                kind: target_kind,
-                convert,
-            } => {
+            Expression::As { expr, target } => {
                 let inner = ctx.resolve_type(expr, &self.module.types);
-                match convert {
-                    Some(width) => {
-                        
-                        let scalar = glsl_scalar(crate::Scalar {
-                            kind: target_kind,
-                            width,
-                        })?;
-                        match *inner {
-                            TypeInner::Matrix { columns, rows, .. } => write!(
-                                self.out,
-                                "{}mat{}x{}",
-                                scalar.prefix, columns as u8, rows as u8
-                            )?,
-                            TypeInner::Vector { size, .. } => {
-                                write!(self.out, "{}vec{}", scalar.prefix, size as u8)?
-                            }
-                            _ => write!(self.out, "{}", scalar.full)?,
-                        }
-
-                        write!(self.out, "(")?;
-                        self.write_expr(expr, ctx)?;
-                        write!(self.out, ")")?
+                
+                let scalar = glsl_scalar(target)?;
+                match *inner {
+                    TypeInner::Matrix { columns, rows, .. } => write!(
+                        self.out,
+                        "{}mat{}x{}",
+                        scalar.prefix, columns as u8, rows as u8
+                    )?,
+                    TypeInner::Vector { size, .. } => {
+                        write!(self.out, "{}vec{}", scalar.prefix, size as u8)?
                     }
-                    None => {
-                        use crate::ScalarKind as Sk;
-
-                        let target_vector_type = match *inner {
-                            TypeInner::Vector { size, scalar } => Some(TypeInner::Vector {
-                                size,
-                                scalar: crate::Scalar {
-                                    kind: target_kind,
-                                    width: scalar.width,
-                                },
-                            }),
-                            _ => None,
-                        };
-
-                        let source_kind = inner.scalar_kind().unwrap();
-
-                        match (source_kind, target_kind, target_vector_type) {
-                            
-                            (Sk::Sint, Sk::Sint, _)
-                            | (Sk::Uint, Sk::Uint, _)
-                            | (Sk::Float, Sk::Float, _)
-                            | (Sk::Bool, Sk::Bool, _) => {
-                                self.write_expr(expr, ctx)?;
-                                return Ok(());
-                            }
-
-                            
-                            (Sk::Float, Sk::Sint, _) => write!(self.out, "floatBitsToInt")?,
-                            (Sk::Float, Sk::Uint, _) => write!(self.out, "floatBitsToUint")?,
-                            (Sk::Sint, Sk::Float, _) => write!(self.out, "intBitsToFloat")?,
-                            (Sk::Uint, Sk::Float, _) => write!(self.out, "uintBitsToFloat")?,
-
-                            
-                            (_, _, Some(vector)) => {
-                                self.write_value_type(&vector)?;
-                            }
-
-                            
-                            (Sk::Uint | Sk::Bool, Sk::Sint, None) => write!(self.out, "int")?,
-                            (Sk::Sint | Sk::Bool, Sk::Uint, None) => write!(self.out, "uint")?,
-                            (Sk::Bool, Sk::Float, None) => write!(self.out, "float")?,
-                            (Sk::Sint | Sk::Uint | Sk::Float, Sk::Bool, None) => {
-                                write!(self.out, "bool")?
-                            }
-
-                            (Sk::AbstractInt | Sk::AbstractFloat, _, _)
-                            | (_, Sk::AbstractInt | Sk::AbstractFloat, _) => unreachable!(),
-                        };
-
-                        write!(self.out, "(")?;
-                        self.write_expr(expr, ctx)?;
-                        write!(self.out, ")")?;
-                    }
+                    _ => write!(self.out, "{}", scalar.full)?,
                 }
+
+                write!(self.out, "(")?;
+                self.write_expr(expr, ctx)?;
+                write!(self.out, ")")?
+            }
+            
+            
+            Expression::Bitcast { expr, ty } => {
+                use crate::ScalarKind as Sk;
+
+                let inner = ctx.resolve_type(expr, &self.module.types);
+                let target = &self.module.types[ty].inner;
+
+                if inner == target {
+                    return self.write_expr(expr, ctx);
+                }
+
+                let unsupported =
+                    || Error::Custom(format!("GLSL cannot bitcast from {inner:?} to {target:?}"));
+                let (Some((src_size, src)), Some((dst_size, dst))) = (
+                    inner.vector_size_and_scalar(),
+                    target.vector_size_and_scalar(),
+                ) else {
+                    return Err(unsupported());
+                };
+                if src_size != dst_size {
+                    return Err(unsupported());
+                }
+
+                match (src.kind, dst.kind) {
+                    (Sk::Float, Sk::Sint) if src.width == 4 => write!(self.out, "floatBitsToInt")?,
+                    (Sk::Float, Sk::Uint) if src.width == 4 => write!(self.out, "floatBitsToUint")?,
+                    (Sk::Sint, Sk::Float) if src.width == 4 => write!(self.out, "intBitsToFloat")?,
+                    (Sk::Uint, Sk::Float) if src.width == 4 => write!(self.out, "uintBitsToFloat")?,
+                    
+                    (Sk::Uint, Sk::Sint) | (Sk::Sint, Sk::Uint) => {
+                        self.write_value_type(target)?;
+                    }
+                    _ => return Err(unsupported()),
+                };
+
+                write!(self.out, "(")?;
+                self.write_expr(expr, ctx)?;
+                write!(self.out, ")")?;
             }
             
             Expression::CallResult(_)
@@ -3861,8 +3819,39 @@ impl<'a, W: Write> Writer<'a, W> {
             
             Expression::RayQueryGetIntersection { .. }
             | Expression::RayQueryVertexPositions { .. }
+            | Expression::HitObjectQuery { .. }
             | Expression::CooperativeLoad { .. }
             | Expression::CooperativeMultiplyAdd { .. } => unreachable!(),
+        }
+
+        Ok(())
+    }
+
+    
+    
+    
+    
+    fn write_expr_as_int(
+        &mut self,
+        expr: Handle<crate::Expression>,
+        ctx: &back::FunctionCtx,
+    ) -> BackendResult {
+        let cast_to_int = matches!(
+            *ctx.resolve_type(expr, &self.module.types),
+            TypeInner::Scalar(crate::Scalar {
+                kind: crate::ScalarKind::Uint,
+                ..
+            })
+        );
+
+        if cast_to_int {
+            write!(self.out, "int(")?;
+        }
+
+        self.write_expr(expr, ctx)?;
+
+        if cast_to_int {
+            write!(self.out, ")")?;
         }
 
         Ok(())
@@ -3884,7 +3873,7 @@ impl<'a, W: Write> Writer<'a, W> {
             CLAMPED_LOD_SUFFIX
         )?;
         
-        self.write_expr(level_expr, ctx)?;
+        self.write_expr_as_int(level_expr, ctx)?;
         
         
         write!(self.out, ", 0, textureQueryLevels(")?;
@@ -4224,7 +4213,7 @@ impl<'a, W: Write> Writer<'a, W> {
             if let Some(level_expr) = level {
                 
                 write!(self.out, ", ")?;
-                self.write_expr(level_expr, ctx)?;
+                self.write_expr_as_int(level_expr, ctx)?;
             }
             
             write!(self.out, ")")?;
@@ -4294,7 +4283,7 @@ impl<'a, W: Write> Writer<'a, W> {
             
             if let Some(sample_expr) = sample {
                 write!(self.out, ", clamp(")?;
-                self.write_expr(sample_expr, ctx)?;
+                self.write_expr_as_int(sample_expr, ctx)?;
                 
                 write!(self.out, ", 0, textureSamples(")?;
                 self.write_expr(image, ctx)?;
@@ -4304,27 +4293,9 @@ impl<'a, W: Write> Writer<'a, W> {
             }
         } else if let Some(sample_or_level) = sample.or(level) {
             
-            let cast_to_int = matches!(
-                *ctx.resolve_type(sample_or_level, &self.module.types),
-                TypeInner::Scalar(crate::Scalar {
-                    kind: crate::ScalarKind::Uint,
-                    ..
-                })
-            );
-
-            
             
             write!(self.out, ", ")?;
-
-            if cast_to_int {
-                write!(self.out, "int(")?;
-            }
-
-            self.write_expr(sample_or_level, ctx)?;
-
-            if cast_to_int {
-                write!(self.out, ")")?;
-            }
+            self.write_expr_as_int(sample_or_level, ctx)?;
         }
 
         

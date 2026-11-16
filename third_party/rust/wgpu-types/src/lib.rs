@@ -218,6 +218,7 @@ pub type DynamicOffset = u32;
 
 
 
+
 #[doc = link_to_wgpu_docs!(["`copy_buffer_to_texture()`"]: "struct.Queue.html#method.copy_buffer_to_texture")]
 #[doc = link_to_wgpu_docs!(["`copy_texture_to_buffer()`"]: "struct.Queue.html#method.copy_texture_to_buffer")]
 #[doc = link_to_wgpu_docs!(["Qwt"]: "struct.Queue.html#method.write_texture")]

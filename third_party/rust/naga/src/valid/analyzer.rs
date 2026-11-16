@@ -400,6 +400,14 @@ impl FunctionInfo {
     }
 
     
+    fn add_reorder_hint_refs(&mut self, hint: Option<crate::ReorderHint>) {
+        if let Some(crate::ReorderHint { hint, bits }) = hint {
+            let _ = self.add_ref(hint);
+            let _ = self.add_ref(bits);
+        }
+    }
+
+    
     
     
     
@@ -804,7 +812,7 @@ impl FunctionInfo {
                     requirements: UniformityRequirements::empty(),
                 }
             }
-            E::As { expr, .. } => Uniformity {
+            E::As { expr, .. } | E::Bitcast { expr, .. } => Uniformity {
                 non_uniform_result: self.add_ref(expr),
                 requirements: UniformityRequirements::empty(),
             },
@@ -844,6 +852,13 @@ impl FunctionInfo {
                 committed: _,
             } => Uniformity {
                 non_uniform_result: self.add_ref(query),
+                requirements: UniformityRequirements::empty(),
+            },
+            E::HitObjectQuery {
+                hit_object,
+                query: _,
+            } => Uniformity {
+                non_uniform_result: self.add_ref(hit_object),
                 requirements: UniformityRequirements::empty(),
             },
             E::CooperativeLoad { ref data, .. } => Uniformity {
@@ -1204,6 +1219,41 @@ impl FunctionInfo {
                             let _ = self.add_ref(acceleration_structure);
                             let _ = self.add_ref(descriptor);
                             let _ = self.add_ref(payload);
+                        }
+                        crate::RayPipelineFunction::ReorderThread { hint, bits } => {
+                            let _ = self.add_ref(hint);
+                            let _ = self.add_ref(bits);
+                        }
+                    }
+                    FunctionUniformity::new()
+                }
+                S::HitObject {
+                    hit_object,
+                    ref fun,
+                } => {
+                    let _ = self.add_ref(hit_object);
+                    match *fun {
+                        crate::HitObjectFunction::TraceRay {
+                            acceleration_structure,
+                            descriptor,
+                            payload,
+                        } => {
+                            let _ = self.add_ref(acceleration_structure);
+                            let _ = self.add_ref(descriptor);
+                            let _ = self.add_ref(payload);
+                        }
+                        crate::HitObjectFunction::RecordMiss { descriptor } => {
+                            let _ = self.add_ref(descriptor);
+                        }
+                        crate::HitObjectFunction::RecordFromQuery { query } => {
+                            let _ = self.add_ref(query);
+                        }
+                        crate::HitObjectFunction::RecordEmpty => {}
+                        crate::HitObjectFunction::ExecuteShader { payload } => {
+                            let _ = self.add_ref(payload);
+                        }
+                        crate::HitObjectFunction::Reorder { hint } => {
+                            self.add_reorder_hint_refs(hint);
                         }
                     }
                     FunctionUniformity::new()

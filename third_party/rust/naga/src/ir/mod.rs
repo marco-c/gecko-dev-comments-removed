@@ -232,6 +232,8 @@
 
 
 
+
+
 mod block;
 
 use alloc::{boxed::Box, string::String, vec::Vec};
@@ -992,6 +994,30 @@ pub enum TypeInner {
 
     
     RayQuery { vertex_return: bool },
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    HitObject,
 
     
     
@@ -1836,14 +1862,28 @@ pub enum Expression {
         arg3: Option<Handle<Expression>>,
     },
     
+    
+    
+    
+    
+    
     As {
         
         expr: Handle<Expression>,
         
-        kind: ScalarKind,
+        target: Scalar,
+    },
+    
+    
+    
+    
+    
+    
+    Bitcast {
         
+        expr: Handle<Expression>,
         
-        convert: Option<Bytes>,
+        ty: Handle<Type>,
     },
     
     CallResult(Handle<Function>),
@@ -1904,6 +1944,27 @@ pub enum Expression {
     RayQueryGetIntersection {
         query: Handle<Expression>,
         committed: bool,
+    },
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    HitObjectQuery {
+        
+        hit_object: Handle<Expression>,
+
+        
+        query: HitObjectQuery,
     },
 
     
@@ -2349,6 +2410,20 @@ pub enum Statement {
     
     RayPipelineFunction(RayPipelineFunction),
     
+    HitObject {
+        
+        
+        
+        
+        
+        
+        
+        hit_object: Handle<Expression>,
+
+        
+        fun: HitObjectFunction,
+    },
+    
     SubgroupBallot {
         
         
@@ -2791,6 +2866,178 @@ pub enum RayPipelineFunction {
         
         
     },
+
+    
+    
+    
+    
+    
+    
+    ReorderThread {
+        
+        
+        
+        hint: Handle<Expression>,
+
+        
+        
+        
+        
+        bits: Handle<Expression>,
+    },
+}
+
+
+
+
+
+#[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub enum HitObjectFunction {
+    
+    
+    TraceRay {
+        
+        
+        
+        
+        
+        acceleration_structure: Handle<Expression>,
+
+        #[allow(rustdoc::private_intra_doc_links)]
+        
+        
+        
+        
+        
+        descriptor: Handle<Expression>,
+
+        
+        payload: Handle<Expression>,
+    },
+
+    
+    
+    
+    
+    RecordMiss {
+        #[allow(rustdoc::private_intra_doc_links)]
+        
+        
+        
+        
+        
+        descriptor: Handle<Expression>,
+    },
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    RecordFromQuery {
+        
+        
+        
+        
+        
+        
+        query: Handle<Expression>,
+    },
+
+    
+    
+    
+    
+    
+    
+    RecordEmpty,
+
+    
+    ExecuteShader {
+        
+        payload: Handle<Expression>,
+    },
+
+    
+    
+    
+    
+    
+    
+    Reorder {
+        
+        hint: Option<ReorderHint>,
+    },
+}
+
+
+#[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub struct ReorderHint {
+    
+    
+    
+    pub hint: Handle<Expression>,
+
+    
+    
+    
+    
+    pub bits: Handle<Expression>,
+}
+
+
+
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub enum HitObjectQuery {
+    
+    
+    
+    IsEmpty,
+
+    
+    
+    
+    IsHit,
+
+    
+    
+    
+    IsMiss,
+
+    #[allow(rustdoc::private_intra_doc_links)]
+    
+    
+    
+    
+    
+    Intersection,
 }
 
 

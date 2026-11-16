@@ -983,6 +983,36 @@ impl crate::Module {
     
     
     
+    
+    pub fn uses_invocation_reorder(&self) -> bool {
+        if self
+            .types
+            .iter()
+            .any(|(_, ty)| matches!(ty.inner, crate::TypeInner::HitObject))
+        {
+            return true;
+        }
+
+        
+        
+        let functions = self.functions.iter().map(|(_, f)| f);
+        let entry_points = self.entry_points.iter().map(|ep| &ep.function);
+        functions.chain(entry_points).any(|func| {
+            any_statement(&func.body, &mut |stmt| {
+                matches!(
+                    *stmt,
+                    crate::Statement::RayPipelineFunction(
+                        crate::RayPipelineFunction::ReorderThread { .. },
+                    )
+                )
+            })
+        })
+    }
+
+    
+    
+    
+    
     pub fn uses_debug_printf(&self) -> bool {
         let functions = self.functions.iter().map(|(_, f)| f);
         let entry_points = self.entry_points.iter().map(|ep| &ep.function);
@@ -998,7 +1028,10 @@ impl crate::Module {
         
         let mut uses_ray_tracing = self.special_types.ray_desc.is_some();
 
-        uses.queries |= self.special_types.ray_intersection.is_some();
+        
+        
+        
+        
 
         for (_, &crate::Type { ref inner, .. }) in self.types.iter() {
             
@@ -1007,6 +1040,8 @@ impl crate::Module {
                     uses_ray_tracing = true;
                 }
                 crate::TypeInner::RayQuery { .. } => uses.queries = true,
+                
+                crate::TypeInner::HitObject => uses.pipelines = true,
                 _ => {}
             }
         }

@@ -2054,11 +2054,12 @@ impl BlockContext<'_> {
             | crate::Expression::RayQueryProceedResult
             | crate::Expression::SubgroupBallotResult
             | crate::Expression::SubgroupOperationResult { .. } => self.cached[expr_handle],
-            crate::Expression::As {
-                expr,
-                kind,
-                convert,
-            } => self.write_as_expression(expr, convert, kind, block, result_type_id)?,
+            crate::Expression::As { expr, target } => {
+                self.write_as_expression(expr, target, block, result_type_id)?
+            }
+            crate::Expression::Bitcast { expr, ty } => {
+                self.write_bitcast_expression(expr, ty, block, result_type_id)
+            }
             crate::Expression::ImageLoad {
                 image,
                 coordinate,
@@ -2212,6 +2213,9 @@ impl BlockContext<'_> {
                 ));
                 id
             }
+            crate::Expression::HitObjectQuery { hit_object, query } => {
+                self.write_hit_object_query(hit_object, query, block)?
+            }
             crate::Expression::RayQueryVertexPositions { query, committed } => {
                 self.writer.require_any(
                     "RayQueryVertexPositions",
@@ -2290,16 +2294,47 @@ impl BlockContext<'_> {
 
     
     
+    
+    fn write_bitcast_expression(
+        &mut self,
+        expr: Handle<crate::Expression>,
+        ty: Handle<crate::Type>,
+        block: &mut Block,
+        result_type_id: u32,
+    ) -> Word {
+        let expr_id = self.cached[expr];
+
+        
+        
+        let source_inner = self.fun_info[expr].ty.inner_with(&self.ir_module.types);
+        if *source_inner == self.ir_module.types[ty].inner {
+            return expr_id;
+        }
+
+        let id = self.gen_id();
+        block.body.push(Instruction::unary(
+            spirv::Op::Bitcast,
+            result_type_id,
+            id,
+            expr_id,
+        ));
+        id
+    }
+
+    
+    
     fn write_as_expression(
         &mut self,
         expr: Handle<crate::Expression>,
-        convert: Option<u8>,
-        kind: crate::ScalarKind,
-
+        target: crate::Scalar,
         block: &mut Block,
         result_type_id: u32,
     ) -> Result<u32, Error> {
         use crate::ScalarKind as Sk;
+        let crate::Scalar {
+            kind,
+            width: dst_width,
+        } = target;
         let expr_id = self.cached[expr];
         let ty = self.fun_info[expr].ty.inner_with(&self.ir_module.types);
 
@@ -2313,12 +2348,7 @@ impl BlockContext<'_> {
             scalar,
         } = *ty
         {
-            let Some(convert) = convert else {
-                
-                return Ok(expr_id);
-            };
-
-            if convert == scalar.width {
+            if dst_width == scalar.width {
                 
                 return Ok(expr_id);
             }
@@ -2341,7 +2371,7 @@ impl BlockContext<'_> {
                     size: rows,
                     scalar: crate::Scalar {
                         kind,
-                        width: convert,
+                        width: dst_width,
                     },
                 })));
 
@@ -2393,19 +2423,15 @@ impl BlockContext<'_> {
             Binary(spirv::Op, Word, Word),
             Ternary(spirv::Op, Word, Word, Word),
         }
-        let cast = match (src_scalar.kind, kind, convert) {
+        let cast = match (src_scalar.kind, kind, dst_width) {
             
             
-            (src_kind, kind, convert)
-                if src_kind == kind
-                    && convert.filter(|&width| width != src_scalar.width).is_none() =>
-            {
+            (src_kind, kind, dst_width) if src_kind == kind && dst_width == src_scalar.width => {
                 Cast::Identity(expr_id)
             }
             (Sk::Bool, Sk::Bool, _) => Cast::Unary(spirv::Op::CopyObject, expr_id),
-            (_, _, None) => Cast::Unary(spirv::Op::Bitcast, expr_id),
             
-            (_, Sk::Bool, Some(_)) => {
+            (_, Sk::Bool, _) => {
                 let op = match src_scalar.kind {
                     Sk::Sint | Sk::Uint => spirv::Op::INotEqual,
                     Sk::Float => spirv::Op::FUnordNotEqual,
@@ -2431,7 +2457,7 @@ impl BlockContext<'_> {
                 Cast::Binary(op, expr_id, zero_id)
             }
             
-            (Sk::Bool, _, Some(dst_width)) => {
+            (Sk::Bool, _, dst_width) => {
                 let dst_scalar = crate::Scalar {
                     kind,
                     width: dst_width,
@@ -2472,7 +2498,7 @@ impl BlockContext<'_> {
             
             
             
-            (Sk::Float, Sk::Sint | Sk::Uint, Some(width)) => {
+            (Sk::Float, Sk::Sint | Sk::Uint, width) => {
                 let dst_scalar = crate::Scalar { kind, width };
                 let (min, max) =
                     crate::proc::min_max_float_representable_by(src_scalar, dst_scalar);
@@ -2512,23 +2538,24 @@ impl BlockContext<'_> {
                 };
                 Cast::Unary(op, clamp_id)
             }
-            (Sk::Float, Sk::Float, Some(dst_width)) if src_scalar.width != dst_width => {
+            (Sk::Float, Sk::Float, dst_width) if src_scalar.width != dst_width => {
                 Cast::Unary(spirv::Op::FConvert, expr_id)
             }
-            (Sk::Sint, Sk::Float, Some(_)) => Cast::Unary(spirv::Op::ConvertSToF, expr_id),
-            (Sk::Sint, Sk::Sint, Some(dst_width)) if src_scalar.width != dst_width => {
+            (Sk::Sint, Sk::Float, _) => Cast::Unary(spirv::Op::ConvertSToF, expr_id),
+            (Sk::Sint, Sk::Sint, dst_width) if src_scalar.width != dst_width => {
                 Cast::Unary(spirv::Op::SConvert, expr_id)
             }
-            (Sk::Uint, Sk::Float, Some(_)) => Cast::Unary(spirv::Op::ConvertUToF, expr_id),
-            (Sk::Uint, Sk::Uint, Some(dst_width)) if src_scalar.width != dst_width => {
+            (Sk::Uint, Sk::Float, _) => Cast::Unary(spirv::Op::ConvertUToF, expr_id),
+            (Sk::Uint, Sk::Uint, dst_width) if src_scalar.width != dst_width => {
                 Cast::Unary(spirv::Op::UConvert, expr_id)
             }
-            (Sk::Uint, Sk::Sint, Some(dst_width)) if src_scalar.width != dst_width => {
+            (Sk::Uint, Sk::Sint, dst_width) if src_scalar.width != dst_width => {
                 Cast::Unary(spirv::Op::SConvert, expr_id)
             }
-            (Sk::Sint, Sk::Uint, Some(dst_width)) if src_scalar.width != dst_width => {
+            (Sk::Sint, Sk::Uint, dst_width) if src_scalar.width != dst_width => {
                 Cast::Unary(spirv::Op::UConvert, expr_id)
             }
+            
             
             _ => Cast::Unary(spirv::Op::Bitcast, expr_id),
         };
@@ -4277,7 +4304,13 @@ impl BlockContext<'_> {
                     };
                 }
                 Statement::RayPipelineFunction(ref fun) => {
-                    self.write_ray_tracing_pipeline_function(fun, &mut block);
+                    self.write_ray_tracing_pipeline_function(fun, &mut block)?;
+                }
+                Statement::HitObject {
+                    hit_object,
+                    ref fun,
+                } => {
+                    self.write_hit_object_function(hit_object, fun, &mut block)?;
                 }
                 Statement::DebugPrintf {
                     ref format,

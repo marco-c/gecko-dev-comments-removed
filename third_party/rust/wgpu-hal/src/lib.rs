@@ -1781,12 +1781,20 @@ pub trait CommandEncoder: WasmNotSendSync + fmt::Debug {
         first_instance: u32,
         instance_count: u32,
     );
+    
+    
+    
+    
     unsafe fn draw_indirect(
         &mut self,
         buffer: &<Self::A as Api>::Buffer,
         offset: wgt::BufferAddress,
         draw_count: u32,
     );
+    
+    
+    
+    
     unsafe fn draw_indexed_indirect(
         &mut self,
         buffer: &<Self::A as Api>::Buffer,
@@ -1815,6 +1823,10 @@ pub trait CommandEncoder: WasmNotSendSync + fmt::Debug {
         group_count_y: u32,
         group_count_z: u32,
     );
+    
+    
+    
+    
     unsafe fn draw_mesh_tasks_indirect(
         &mut self,
         buffer: &<Self::A as Api>::Buffer,
@@ -1829,6 +1841,39 @@ pub trait CommandEncoder: WasmNotSendSync + fmt::Debug {
         count_offset: wgt::BufferAddress,
         max_count: u32,
     );
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    unsafe fn encode_deferred_multi_draws(&mut self) {}
 
     
 

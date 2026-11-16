@@ -152,12 +152,17 @@ impl crate::Adapter for super::Adapter {
                 1.0
             };
 
+            let counters = Arc::<wgt::HalCounters>::default();
+            let icb =
+                super::icb::IcbContext::new(&self.shared, Arc::clone(&counters)).map(Arc::new);
+
             Ok(crate::OpenDevice {
                 device: super::Device {
                     shared: Arc::clone(&self.shared),
                     features,
-                    counters: Default::default(),
+                    counters,
                     limits: limits.clone(),
+                    icb: icb.clone(),
                 },
                 queue: super::Queue {
                     shared: Arc::new(QueueShared {
@@ -168,6 +173,7 @@ impl crate::Adapter for super::Adapter {
                         relay: OnceCell::new(),
                     }),
                     timestamp_period,
+                    icb,
                 },
             })
         })
@@ -219,11 +225,12 @@ impl crate::Adapter for super::Adapter {
             Tfc::empty()
         };
 
-        let image_64_atomic_if = if pc.int64_atomics {
-            Tfc::STORAGE_ATOMIC
-        } else {
-            Tfc::empty()
-        };
+        let image_64_atomic_if =
+            if pc.int64_atomics_min_max && msl_version >= MTLLanguageVersion::Version3_1 {
+                Tfc::STORAGE_ATOMIC
+            } else {
+                Tfc::empty()
+            };
 
         
         let all_caps = Tfc::SAMPLED_LINEAR
@@ -377,8 +384,13 @@ impl crate::Adapter for super::Adapter {
                 }
                 flags
             }
-            Tf::NV12 => return Tfc::empty(),
-            Tf::P010 => return Tfc::empty(),
+            Tf::NV12 | Tf::P010 => {
+                return Tfc::COLOR_ATTACHMENT
+                    | Tfc::COLOR_ATTACHMENT_BLEND
+                    | Tfc::SAMPLED_LINEAR
+                    | Tfc::COPY_SRC
+                    | Tfc::COPY_DST
+            }
             Tf::Rgb9e5Ufloat => {
                 if pc.msaa_apple3 {
                     all_caps
@@ -622,11 +634,25 @@ const BGR10A2_ALL: &[MTLFeatureSet] = &[
 ];
 
 
+
+
+
+
+
+
+
+
+
 const INDIRECT_DRAW_DISPATCH_SUPPORT: &[MTLFeatureSet] = &[
     MTLFeatureSet::iOS_GPUFamily3_v1,
     MTLFeatureSet::tvOS_GPUFamily2_v1,
     MTLFeatureSet::macOS_GPUFamily1_v1,
 ];
+
+
+
+
+
 
 
 
@@ -748,15 +774,6 @@ impl super::CapabilitiesQuery {
         let argument_buffers = available!(macos = 10.13, ios = 11.0, tvos = 11.0, visionos = 1.0)
             .then(|| device.argumentBuffersSupport());
 
-        let is_virtual = device.name().to_string().to_lowercase().contains("virtual");
-
-        let mesh_shaders = family_check
-                && (device.supportsFamily(MTLGPUFamily::Metal3)
-                    || device.supportsFamily(MTLGPUFamily::Apple7)
-                    || device.supportsFamily(MTLGPUFamily::Mac2))
-                    
-                && !is_virtual;
-
         let msl_version = if available!(macos = 26.0, ios = 26.0, tvos = 26.0, visionos = 26.0) {
             MTLLanguageVersion::Version4_0
         } else if available!(macos = 15.0, ios = 18.0, tvos = 18.0, visionos = 2.0) {
@@ -783,6 +800,71 @@ impl super::CapabilitiesQuery {
             MTLLanguageVersion::Version1_0
         };
 
+        let is_virtual = device.name().to_string().to_lowercase().contains("virtual");
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let indirect_command_buffers_rendering = !is_virtual
+            && available!(
+                macos = 10.15,
+                ios = 13.0,
+                tvos = 13.0,
+                watchos = 6.0,
+                visionos = 1.0
+            )
+            && device_class_responds_to(
+                device,
+                sel!(newIndirectCommandBufferWithDescriptor:maxCommandCount:options:),
+            );
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let indirect_command_buffers_mesh = indirect_command_buffers_rendering
+            && os_type == super::OsType::Macos
+            && available!(macos = 26.0)
+            && device.supportsFamily(MTLGPUFamily::Apple9);
+        
+        
+        
+        
+        let indirect_command_buffers_optimize =
+            !(family_check && device.supportsFamily(MTLGPUFamily::Apple4));
+
+        let mesh_shaders = family_check
+                && (device.supportsFamily(MTLGPUFamily::Metal3)
+                    || device.supportsFamily(MTLGPUFamily::Apple7)
+                    || device.supportsFamily(MTLGPUFamily::Mac2))
+                    
+                && !is_virtual;
+
         Self {
             msl_version,
             
@@ -801,6 +883,9 @@ impl super::CapabilitiesQuery {
             sampler_clamp_to_border: Self::supports_any(device, SAMPLER_CLAMP_TO_BORDER_SUPPORT),
             indirect_draw_dispatch: Self::supports_any(device, INDIRECT_DRAW_DISPATCH_SUPPORT)
                 || cfg!(target_abi = "sim"),
+            indirect_command_buffers_rendering,
+            indirect_command_buffers_mesh,
+            indirect_command_buffers_optimize,
             base_vertex_first_instance_drawing: Self::supports_any(
                 device,
                 BASE_VERTEX_FIRST_INSTANCE_SUPPORT,
@@ -1142,7 +1227,6 @@ impl super::CapabilitiesQuery {
                 && (device.supportsFamily(MTLGPUFamily::Apple9)
                     || (device.supportsFamily(MTLGPUFamily::Apple8)
                         && device.supportsFamily(MTLGPUFamily::Mac2))),
-            int64_atomics: family_check && device.supportsFamily(MTLGPUFamily::Apple9),
             
             float_atomics: family_check
                 && (metal3
@@ -1242,7 +1326,7 @@ impl super::CapabilitiesQuery {
         }
     }
 
-    pub fn features(&self) -> wgt::Features {
+    pub fn features(&self, capabilities: &crate::Capabilities) -> wgt::Features {
         use wgt::Features as F;
 
         let mut features = F::empty()
@@ -1261,6 +1345,9 @@ impl super::CapabilitiesQuery {
             | F::SHADER_I16
             | F::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES
             | F::TEXTURE_FORMAT_16BIT_NORM
+            | F::TEXTURE_FORMAT_NV12
+            | F::TEXTURE_FORMAT_P010
+            | F::UNRESTRICTED_BYTES_PER_ROW
             | F::VERTEX_WRITABLE_STORAGE;
 
         features.set(F::TEXTURE_COMPONENT_SWIZZLE, self.texture_component_swizzle);
@@ -1284,6 +1371,10 @@ impl super::CapabilitiesQuery {
         features.set(
             F::DUAL_SOURCE_BLENDING,
             self.msl_version >= MTLLanguageVersion::Version1_2 && self.dual_source_blending,
+        );
+        features.set(
+            F::SHADER_EARLY_DEPTH_TEST,
+            MTLLanguageVersion::Version1_2 <= self.msl_version,
         );
         features.set(F::TEXTURE_COMPRESSION_ASTC, self.format_astc);
         features.set(F::TEXTURE_COMPRESSION_ASTC_HDR, self.format_astc_hdr);
@@ -1335,7 +1426,7 @@ impl super::CapabilitiesQuery {
         );
         features.set(
             F::TEXTURE_INT64_ATOMIC,
-            self.int64_atomics && self.msl_version >= MTLLanguageVersion::Version3_1,
+            self.int64_atomics_min_max && self.msl_version >= MTLLanguageVersion::Version3_1,
         );
         features.set(
             F::TEXTURE_ATOMIC,
@@ -1391,6 +1482,14 @@ impl super::CapabilitiesQuery {
 
         features.set(F::MULTISAMPLE_ARRAY, self.supports_multisample_array);
         features.set(F::DEBUG_PRINTF, self.supports_debug_printf);
+
+        features.set(
+            F::CORE_FEATURES_AND_LIMITS,
+            crate::auxil::supports_core_features_and_limits(
+                &capabilities.limits,
+                &capabilities.downlevel,
+            ),
+        );
 
         features
     }
@@ -1632,6 +1731,9 @@ impl super::CapabilitiesQuery {
             timestamp_query_support: self.timestamp_query_support,
             supports_memoryless_storage: self.supports_memoryless_storage,
             mesh_shaders: self.mesh_shaders,
+            indirect_command_buffers_rendering: self.indirect_command_buffers_rendering,
+            indirect_command_buffers_mesh: self.indirect_command_buffers_mesh,
+            indirect_command_buffers_optimize: self.indirect_command_buffers_optimize,
             supports_debug_printf: self.supports_debug_printf,
             texture_component_swizzle: self.texture_component_swizzle,
         }
@@ -1641,7 +1743,7 @@ impl super::CapabilitiesQuery {
         super::PrivateTextureFormatCapabilities {
             read_write_texture_tier: self.read_write_texture_tier,
             sample_count_mask: self.sample_count_mask,
-            int64_atomics: self.int64_atomics,
+            int64_atomics_min_max: self.int64_atomics_min_max,
             msaa_desktop: self.msaa_desktop,
             msaa_apple3: self.msaa_apple3,
             msaa_apple7: self.msaa_apple7,

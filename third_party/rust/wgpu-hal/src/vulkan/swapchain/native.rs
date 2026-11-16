@@ -282,7 +282,12 @@ impl Surface for NativeSurface {
         
         
         
-        let fence = if cfg!(target_os = "windows") {
+        
+        let fence = if cfg!(target_os = "windows")
+            && matches!(
+                config.present_mode,
+                wgt::PresentMode::Fifo | wgt::PresentMode::FifoRelaxed
+            ) {
             let raw = unsafe {
                 device
                     .shared

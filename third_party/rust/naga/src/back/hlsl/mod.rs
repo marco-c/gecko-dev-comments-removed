@@ -143,8 +143,21 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 mod conv;
 mod help;
+mod immediates;
 mod keywords;
 mod mesh_shader;
 mod ray;
@@ -654,6 +667,9 @@ pub struct PipelineOptions {
     
     
     pub entry_point: Option<(ir::ShaderStage, String)>,
+
+    
+    pub multisampled: bool,
 }
 
 #[derive(Error, Debug)]
@@ -691,6 +707,7 @@ enum WrappedType {
     UnaryOp(help::WrappedUnaryOp),
     BinaryOp(help::WrappedBinaryOp),
     Cast(help::WrappedCast),
+    Bitcast(help::WrappedBitcast),
 }
 
 #[derive(Default)]
@@ -754,6 +771,8 @@ pub struct Writer<'a, W> {
     
     entry_point_io: crate::FastHashMap<usize, writer::EntryPointInterface>,
     
+    early_depth_test: Option<crate::EarlyDepthTest>,
+    
     named_expressions: crate::NamedExpressions,
     wrapped: Wrapped,
     written_committed_intersection: bool,
@@ -782,6 +801,13 @@ pub struct Writer<'a, W> {
 
     function_task_payload_var:
         crate::FastHashMap<Handle<crate::Function>, Handle<crate::GlobalVariable>>,
+
+    
+    
+    
+    
+    
+    immediate_raw_names: crate::FastHashMap<Handle<crate::GlobalVariable>, String>,
 }
 
 pub fn supported_capabilities() -> crate::valid::Capabilities {
@@ -798,7 +824,7 @@ pub fn supported_capabilities() -> crate::valid::Capabilities {
         
         | Caps::STORAGE_TEXTURE_16BIT_NORM_FORMATS
         | Caps::MULTIVIEW
-        
+        | Caps::EARLY_DEPTH_TEST
         | Caps::MULTISAMPLED_SHADING
         | Caps::RAY_QUERY
         | Caps::DUAL_SOURCE_BLENDING

@@ -1000,9 +1000,11 @@ impl super::Validator {
                                 Capabilities::ACCELERATION_STRUCTURE_BINDING_ARRAY,
                             ));
                         }
-                        crate::TypeInner::RayQuery { .. } => {
+                        crate::TypeInner::RayQuery { .. } | crate::TypeInner::HitObject => {
                             
-                            unreachable!("binding arrays of ray queries are not supported");
+                            unreachable!(
+                                "binding arrays of ray queries or hit objects are not supported"
+                            );
                         }
                         _ => {
                             
@@ -1016,6 +1018,12 @@ impl super::Validator {
             _ => var.ty,
         };
         let type_info = &self.types[inner_ty.index()];
+
+        
+        
+        if matches!(gctx.types[inner_ty].inner, crate::TypeInner::HitObject) {
+            return Err(GlobalVariableError::InvalidType(var.space));
+        }
 
         let (required_type_flags, is_resource) = match var.space {
             crate::AddressSpace::Function => {
@@ -1080,9 +1088,11 @@ impl super::Validator {
                         }
                         _ => {}
                     },
+                    crate::TypeInner::RayQuery { .. } => {
+                        return Err(GlobalVariableError::InvalidBinding);
+                    }
                     crate::TypeInner::Sampler { .. }
-                    | crate::TypeInner::AccelerationStructure { .. }
-                    | crate::TypeInner::RayQuery { .. } => {}
+                    | crate::TypeInner::AccelerationStructure { .. } => {}
                     _ => {
                         return Err(GlobalVariableError::InvalidType(var.space));
                     }

@@ -541,6 +541,7 @@ enum LocalType {
     },
     AccelerationStructure,
     RayQuery,
+    HitObject,
 }
 
 
@@ -594,12 +595,20 @@ enum LookupRayQueryFunction {
     Terminate,
 }
 
-
 #[derive(Debug, PartialEq, Clone, Hash, Eq)]
 enum LookupRaytracingFunction {
     TraceRay {
         payload: Handle<crate::GlobalVariable>,
     },
+    HitObjectTraceRay {
+        payload: Handle<crate::GlobalVariable>,
+    },
+    HitObjectRecordMiss,
+    HitObjectRecordFromQuery,
+    HitObjectExecuteShader {
+        payload: Handle<crate::GlobalVariable>,
+    },
+    HitObjectGetIntersection,
 }
 
 #[derive(Debug)]
@@ -980,6 +989,10 @@ pub struct Writer {
 
     
     
+    hit_object_attribute_var: Option<Word>,
+
+    
+    
     io_f16_polyfills: f16_polyfill::F16IoPolyfill,
 
     
@@ -1222,6 +1235,7 @@ pub fn supported_capabilities() -> crate::valid::Capabilities {
         | Caps::COOPERATIVE_MATRIX
         | Caps::PER_VERTEX
         | Caps::RAY_TRACING_PIPELINE
+        | Caps::RAY_TRACING_INVOCATION_REORDER
         | Caps::DRAW_INDEX
         | Caps::MEMORY_DECORATION_COHERENT
         | Caps::MEMORY_DECORATION_VOLATILE
