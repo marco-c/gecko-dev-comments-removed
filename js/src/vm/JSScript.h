@@ -2122,6 +2122,14 @@ class JSScript : public js::BaseScript {
 
   size_t funLength() const { return immutableScriptData()->funLength; }
 
+  void cacheForEval() {
+    MOZ_ASSERT(isForEval());
+    
+    
+    
+    clearFlag(MutableFlags::HasRunOnce);
+  }
+
   
 
 

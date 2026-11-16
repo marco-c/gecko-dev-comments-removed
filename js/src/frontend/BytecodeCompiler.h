@@ -175,14 +175,11 @@ extern JSScript* CompileGlobalScriptWithExtraBindings(
 
 
 
-
-
 extern JSScript* CompileEvalScript(JSContext* cx,
                                    const JS::ReadOnlyCompileOptions& options,
                                    JS::SourceText<char16_t>& srcBuf,
                                    JS::Handle<js::Scope*> enclosingScope,
-                                   JS::Handle<JSObject*> enclosingEnv,
-                                   bool* isReusable = nullptr);
+                                   JS::Handle<JSObject*> enclosingEnv);
 
 
 ModuleObject* CompileModule(JSContext* cx, FrontendContext* fc,
