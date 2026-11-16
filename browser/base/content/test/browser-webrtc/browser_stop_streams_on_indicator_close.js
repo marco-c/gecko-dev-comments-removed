@@ -184,8 +184,12 @@ add_task(async function test_close_indicator_with_global_toggles() {
   );
 
   
-  let streams = webrtcUI.getActiveStreams(true, true, true, true);
-  Assert.equal(streams.length, 0, "Should have found no active streams");
+  
+  
+  await TestUtils.waitForCondition(
+    () => !webrtcUI.getActiveStreams(true, true, true, true).length,
+    "Should have found no active streams"
+  );
 
   
   let { state: camState } = SitePermissions.getForPrincipal(
