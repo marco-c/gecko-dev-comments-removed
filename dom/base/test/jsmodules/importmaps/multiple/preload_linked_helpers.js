@@ -32,3 +32,15 @@ function addImportMap(imports) {
   s.textContent = JSON.stringify({ imports });
   document.head.appendChild(s);
 }
+
+
+
+function addModule(href) {
+  return new Promise(resolve => {
+    const s = document.createElement("script");
+    s.type = "module";
+    s.src = href;
+    s.onload = s.onerror = resolve;
+    document.body.appendChild(s);
+  });
+}
