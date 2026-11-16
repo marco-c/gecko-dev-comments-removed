@@ -1238,6 +1238,21 @@ void nsIFrame::RemoveDisplayItemDataForDeletion() {
     delete userDataTable;
   }
 
+  
+  
+  
+  if (!IsFrameModified() && !HasOverrideDirtyRegion() &&
+      DisplayItems().IsEmpty()) {
+#ifdef DEBUG
+    if (auto* builder = nsLayoutUtils::GetRetainedDisplayListBuilder(this)) {
+      MOZ_ASSERT(builder->Data()->GetFlags(this).isEmpty(),
+                 "Frame has retained display list data without being modified "
+                 "or having an override dirty region");
+    }
+#endif
+    return;
+  }
+
   auto* builder = nsLayoutUtils::GetRetainedDisplayListBuilder(this);
   if (!builder) {
     MOZ_ASSERT(DisplayItems().IsEmpty());
