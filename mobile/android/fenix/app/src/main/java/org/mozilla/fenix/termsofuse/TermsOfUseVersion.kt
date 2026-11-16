@@ -4,12 +4,15 @@
 
 package org.mozilla.fenix.termsofuse
 
-/**
- * The current version of the Terms of Use.
- */
+/** The current version of the Terms of Use. */
 const val TOU_VERSION = 5
 
 /**
- * The timestamp of the latest Terms of Use published date.
+ * The timestamps of the Terms of Use published dates. The most recent one that has passed is considered the current
+ * published date, so a future date can be added ahead of time. Dates older than the most recent date can be safely
+ * removed.
  */
-const val TOU_TIME_IN_MILLIS = 1765929600000 // December 17th, 2025 00:00 UTC
+val TOU_PUBLISHED_TIMES_IN_MILLIS =
+    listOf(
+        1797292800000, // December 15th, 2026 00:00 UTC
+    )
