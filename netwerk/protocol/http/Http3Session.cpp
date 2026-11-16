@@ -3286,17 +3286,22 @@ void Http3Session::SendDatagram(Http3WebTransportSession* aSession,
   
   
   
-  if (aTrackingId && NS_SUCCEEDED(rv) && belowHighWaterMark) {
+  
+  
+  
+  if (aTrackingId && NS_SUCCEEDED(rv)) {
     aSession->OnOutgoingDatagramOutCome(
         aTrackingId, WebTransportSessionEventListener::DatagramOutcome::SENT);
   }
 
-  
   if (aTrackingId && NS_FAILED(rv)) {
     WebTransportSessionEventListener::DatagramOutcome outcome;
     if (rv == NS_ERROR_NOT_AVAILABLE) {
       outcome = WebTransportSessionEventListener::DatagramOutcome::
           DROPPED_TOO_MUCH_DATA;
+    } else if (rv == NS_BASE_STREAM_WOULD_BLOCK) {
+      outcome =
+          WebTransportSessionEventListener::DatagramOutcome::DROPPED_QUEUE_FULL;
     } else {
       outcome = WebTransportSessionEventListener::DatagramOutcome::UNKNOWN;
     }

@@ -2740,6 +2740,7 @@ pub extern "C" fn neqo_http3conn_webtransport_send_datagram(
         SendGroupId::new(send_group_id),
         send_order,
     ) {
+        Ok(DatagramQueueOutcome::Rejected) => NS_BASE_STREAM_WOULD_BLOCK,
         Ok(outcome) => {
             
             
