@@ -912,6 +912,19 @@ void ExtensionProtocolHandler::NewSimpleChannel(
       [](nsIStreamListener* listener, nsIChannel* simpleChannel,
          ExtensionStreamGetter* getter) -> RequestOrReason {
         return getter->GetAsync(listener, simpleChannel);
+      },
+      [](bool async, nsIChannel* simpleChannel,
+         ExtensionStreamGetter* getter) -> InputStreamOrReason {
+        
+        
+        
+        
+
+        if (!async) {
+          LOG("Synchronous open may fall back to spinning event loop.");
+        }
+
+        return Err(NS_ERROR_NOT_IMPLEMENTED);
       });
 
   SetContentType(aURI, channel);
@@ -925,6 +938,10 @@ void ExtensionProtocolHandler::NewSimpleChannel(nsIURI* aURI,
                                                 nsILoadInfo* aLoadinfo,
                                                 nsIChannel* aChannel,
                                                 nsIChannel** aRetVal) {
+  
+  
+  
+
   nsCOMPtr<nsIChannel> channel = NS_NewSimpleChannel(
       aURI, aLoadinfo, aChannel,
       [](nsIStreamListener* listener, nsIChannel* simpleChannel,
@@ -936,6 +953,24 @@ void ExtensionProtocolHandler::NewSimpleChannel(nsIURI* aURI,
         }
         nsCOMPtr<nsIRequest> request(origChannel);
         return RequestOrCancelable(WrapNotNull(request));
+      },
+      [](bool async, nsIChannel* simpleChannel,
+         nsIChannel* origChannel) -> InputStreamOrReason {
+        if (async) {
+          return Err(NS_ERROR_NOT_IMPLEMENTED);
+        }
+
+        
+        
+        
+        
+
+        
+        LOG("[JARChannel %p] Synchronous open of cached JAR.", origChannel);
+
+        nsCOMPtr<nsIInputStream> stream;
+        MOZ_TRY(origChannel->Open(getter_AddRefs(stream)));
+        return stream;
       });
 
   SetContentType(aURI, channel);
@@ -946,6 +981,8 @@ void ExtensionProtocolHandler::SubstituteRemoteFileChannel(
     nsIURI* aURI, nsILoadInfo* aLoadinfo, nsACString& aResolvedFileSpec,
     nsIChannel** aRetVal) {
   MOZ_ASSERT(IsNeckoChild());
+
+  LOG("Will read via parent: %s", PromiseFlatCString(aResolvedFileSpec).get());
 
   RefPtr<ExtensionStreamGetter> streamGetter =
       new ExtensionStreamGetter(aURI, aLoadinfo);
@@ -999,6 +1036,7 @@ Result<Ok, nsresult> ExtensionProtocolHandler::SubstituteRemoteJarChannel(
   }
 
   if (isCached) {
+    
     
     
     

@@ -143,6 +143,16 @@ let fooExperimentFiles = {
 };
 
 async function testFooExperiment() {
+  
+  
+  
+  let microtaskRan = false;
+  queueMicrotask(() => {
+    microtaskRan = true;
+  });
+
+  
+
   browser.test.assertEq(
     "object",
     typeof browser.experiments,
@@ -173,11 +183,20 @@ async function testFooExperiment() {
     "foo.child()"
   );
 
+  
+  
+  
+  
+  
+  browser.test.assertFalse(microtaskRan, "Microtask should not have run yet");
+
   browser.test.assertEq(
     "parent",
     await browser.experiments.foo.parent(),
     "await foo.parent()"
   );
+
+  browser.test.assertTrue(microtaskRan, "Microtask has run after await");
 }
 
 async function testFooFailExperiment() {
@@ -272,8 +291,16 @@ add_task(async function test_bundled_experiments() {
 });
 
 add_task(async function test_unbundled_experiments() {
-  async function background() {
+  async function background(useRemoteWebExtensions) {
     await testFooExperiment();
+
+    
+    let microtaskRan = false;
+    queueMicrotask(() => {
+      microtaskRan = true;
+    });
+
+    
 
     browser.test.assertEq(
       "object",
@@ -299,6 +326,21 @@ add_task(async function test_unbundled_experiments() {
       "crunk.child()"
     );
 
+    
+    
+    
+    
+    if (useRemoteWebExtensions) {
+      
+      
+      browser.test.assertTrue(microtaskRan, "Spun event loop ran microtask");
+    } else {
+      
+      
+      
+      browser.test.assertFalse(microtaskRan, "Event loop not spun in parent");
+    }
+
     browser.test.assertEq(
       "crunk-parent",
       await browser.experiments.crunk.parent(),
@@ -319,7 +361,7 @@ add_task(async function test_unbundled_experiments() {
 
     background: `
       ${testFooExperiment}
-      (${background})();
+      (${background})(${WebExtensionPolicy.useRemoteWebExtensions});
     `,
 
     files: fooExperimentFiles,
