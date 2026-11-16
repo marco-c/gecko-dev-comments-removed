@@ -895,7 +895,14 @@ void ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
   
   
   
-  if (dependsOnCBBSize && mCBReflowInput) {
+  
+  
+  
+  
+  
+  
+  if (dependsOnCBBSize && mCBReflowInput &&
+      !mFrame->IsAbsolutelyPositioned(mStyleDisplay)) {
     const ReflowInput* rs = this;
     bool hitCBReflowInput = false;
     do {
