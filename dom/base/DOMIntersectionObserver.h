@@ -12,6 +12,7 @@
 #include "mozilla/Variant.h"
 #include "mozilla/dom/DOMRect.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/ECMACollections.h"
 #include "mozilla/dom/IntersectionObserverBinding.h"
 #include "mozilla/dom/NodeOwnedObjectList.h"
 #include "nsDOMNavigationTiming.h"
@@ -220,15 +221,10 @@ class DOMIntersectionObserver final
   
   
   
-  nsTArray<Element*> mObservationTargets;
-
-  
-  
-  
-  
   
   enum ObservationState : int32_t { Uninitialized = -2, NotIntersecting = -1 };
-  nsTHashMap<Element*, int32_t> mObservationTargetMap;
+  
+  ECMAMap<Element*, int32_t> mObservationTargets;
 
   nsTArray<RefPtr<DOMIntersectionObserverEntry>> mQueuedEntries;
   bool mConnected = false;
