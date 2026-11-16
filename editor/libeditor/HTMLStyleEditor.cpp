@@ -275,7 +275,16 @@ nsresult HTMLEditor::SetInlinePropertiesAsSubAction(
     return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
   }
 
-  if (SelectionRef().IsCollapsed()) {
+  
+  
+  
+  
+  
+  AutoClonedSelectionRangeArray selectionRanges(SelectionRef());
+  selectionRanges.EnsureOnlyEditableRanges(aEditingHost);
+  selectionRanges.RemoveCollapsedRanges(
+      AutoClonedRangeArray::PreservePrimaryRangeIfAllRangesCollapsed::No);
+  if (selectionRanges.IsCollapsed()) {
     
     
     mPendingStylesToApplyToNewContent->PreserveStyles(aStylesToSet);
@@ -310,7 +319,6 @@ nsresult HTMLEditor::SetInlinePropertiesAsSubAction(
   
   AutoTransactionsConserveSelection dontChangeMySelection(*this);
 
-  AutoClonedSelectionRangeArray selectionRanges(SelectionRef());
   nsresult rv = SetInlinePropertiesAroundRanges(selectionRanges, aStylesToSet,
                                                 aEditingHost);
   if (NS_FAILED(rv)) {
@@ -3412,7 +3420,7 @@ void HTMLEditor::AppendInlineStyleAndRelatedStyle(
 
 nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
     const nsTArray<EditorInlineStyle>& aStylesToRemove,
-    const Element& ) {
+    const Element& aEditingHost) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(!aStylesToRemove.IsEmpty());
 
@@ -3420,7 +3428,16 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                        "EditorBase::CommitComposition() failed, but ignored");
 
-  if (SelectionRef().IsCollapsed()) {
+  
+  
+  
+  
+  
+  AutoClonedSelectionRangeArray selectionRanges(SelectionRef());
+  selectionRanges.EnsureOnlyEditableRanges(aEditingHost);
+  selectionRanges.RemoveCollapsedRanges(
+      AutoClonedRangeArray::PreservePrimaryRangeIfAllRangesCollapsed::No);
+  if (selectionRanges.IsCollapsed()) {
     
     
     mPendingStylesToApplyToNewContent->ClearStyles(aStylesToRemove);
@@ -3456,7 +3473,6 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
   
   AutoTransactionsConserveSelection dontChangeMySelection(*this);
 
-  AutoClonedSelectionRangeArray selectionRanges(SelectionRef());
   for (const EditorInlineStyle& styleToRemove : aStylesToRemove) {
     
     
