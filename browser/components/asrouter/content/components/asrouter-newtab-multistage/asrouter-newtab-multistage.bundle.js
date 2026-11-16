@@ -1935,6 +1935,7 @@ const CTAParagraph = props => {
     handleAction(event);
     event.preventDefault();
   }, [handleAction]);
+  const keyPressedRef = external_React_default().useRef(false);
   return external_React_default().createElement("h2", {
     className: `cta-paragraph ${content?.info_tile ? "info-tile" : ""}`,
     style: {
@@ -1951,7 +1952,15 @@ const CTAParagraph = props => {
   }, content.text.string_name && typeof handleAction === "function" ? external_React_default().createElement("span", {
     "data-l10n-id": content.text.string_id,
     onClick: onClick,
-    onKeyUp: event => ["Enter", " "].includes(event.key) ? onClick(event) : null,
+    onKeyDown: event => {
+      keyPressedRef.current = ["Enter", " "].includes(event.key);
+    },
+    onKeyUp: event => {
+      if (keyPressedRef.current && ["Enter", " "].includes(event.key)) {
+        onClick(event);
+      }
+      keyPressedRef.current = false;
+    },
     value: "cta_paragraph"
   }, " ", external_React_default().createElement("a", {
     "data-l10n-name": content.text.string_name,
@@ -5229,7 +5238,24 @@ class ProtonScreen extends (external_React_default()).PureComponent {
     }
     return external_React_default().createElement((external_React_default()).Fragment, null, elements);
   }
-  renderRTAMOIcon(addonType, themeScreenshots, addonIconURL) {
+  renderRTAMOIcon(position, addonType, themeScreenshots, addonIconURL) {
+    if (position === "center-large") {
+      return external_React_default().createElement("div", {
+        className: "rtamo-icon-wrapper"
+      }, external_React_default().createElement("div", {
+        className: "rtamo-icon"
+      }, external_React_default().createElement("img", {
+        className: `${addonType?.includes("theme") ? "rtamo-theme-icon" : "brand-logo"}`,
+        src: addonType?.includes("theme") ? themeScreenshots[0].url : addonIconURL,
+        loading: MultiStageUtils.getLoadingStrategyFor(addonIconURL),
+        alt: "",
+        role: "presentation"
+      })), external_React_default().createElement("div", {
+        className: "logo-separator"
+      }), external_React_default().createElement("div", {
+        className: "rtamo-logo"
+      }, this.renderPicture({})));
+    }
     return external_React_default().createElement("div", {
       className: "rtamo-icon"
     }, external_React_default().createElement("img", {
@@ -5362,11 +5388,11 @@ class ProtonScreen extends (external_React_default()).PureComponent {
         paddingInline: content.split_content_padding_inline ? content.split_content_padding_inline : null,
         justifyContent: screenStyleJustifyContent
       }
-    }, isCenterLargeFullscreen ? secondaryCTATop : null, isCenterPosition && this.hasAnimatedContent(content) ? this.renderAnimationPlayPauseButton() : null, content.logo && !content.fullscreen ? this.renderPicture(content.logo) : null, isRtamo && !content.fullscreen ? this.renderRTAMOIcon(addonType, this.props.themeScreenshots, this.props.addonIconURL) : null, external_React_default().createElement("div", {
+    }, isCenterLargeFullscreen ? secondaryCTATop : null, isCenterPosition && this.hasAnimatedContent(content) ? this.renderAnimationPlayPauseButton() : null, content.logo && !content.fullscreen ? this.renderPicture(content.logo) : null, isRtamo && !content.fullscreen ? this.renderRTAMOIcon(content.position, addonType, this.props.themeScreenshots, this.props.addonIconURL) : null, external_React_default().createElement("div", {
       className: "main-content-inner",
       id: "mainContentInner",
       style: combinedStyles
-    }, content.logo && content.fullscreen ? this.renderPicture(content.logo) : null, isRtamo && content.fullscreen ? this.renderRTAMOIcon(addonType, this.props.themeScreenshots, this.props.addonIconURL) : null, content.title || content.subtitle ? external_React_default().createElement("div", {
+    }, content.logo && content.fullscreen ? this.renderPicture(content.logo) : null, isRtamo && content.fullscreen ? this.renderRTAMOIcon(content.position, addonType, this.props.themeScreenshots, this.props.addonIconURL) : null, content.title || content.subtitle ? external_React_default().createElement("div", {
       id: "multi-stage-message-welcome-text",
       className: `welcome-text ${content.title_style || ""}`
     }, content.title ? this.renderTitle(content) : null, content.layout === "last-card" ? this.renderLastCardImage(content) : null, content.subtitle ? external_React_default().createElement(Localized, {
@@ -6993,6 +7019,7 @@ function MultistageWithDismiss({
     message_id: config.id,
     transitions: transitions,
     backdrop: config.backdrop,
+    ariaRole: "dialog",
     startScreen: 0,
     updateHistory: false
   }));
@@ -7009,17 +7036,83 @@ window.mountMultistageMessage = function mountMultistageMessage(container, props
   const {
     messageData,
     handleDismiss,
-    handleBlock
+    handleBlock,
+    handleClose
   } = props;
   const config = messageData.content;
   const impressionListeners = new AbortController();
+  
+  
+  
+  
+  const completionStatus = {};
+  let currentScreenId = null;
+  let dismissSent = false;
+  const sendTelemetry = data => window.ASRouterMessage({
+    type: "AS_ROUTER_TELEMETRY_USER_EVENT",
+    data: {
+      ...data,
+      action: "newtab_message_user_event"
+    }
+  });
+  const trackCards = (screens, shownScreens) => {
+    const shownIds = new Set(shownScreens.map(({
+      id
+    }) => id));
+    for (const {
+      id,
+      content
+    } of screens) {
+      if (!shownIds.has(id)) {
+        delete completionStatus[id];
+      } else if (content?.primary_button) {
+        completionStatus[id] ??= "expired";
+      }
+    }
+  };
+  const trackTelemetry = data => {
+    if (data.event === "IMPRESSION") {
+      currentScreenId = data.event_context?.screen_id ?? null;
+    } else if (data.event === "CLICK_BUTTON" && currentScreenId in completionStatus) {
+      if (data.event_context?.source === "primary_button") {
+        completionStatus[currentScreenId] = "completed";
+      } else if (data.event_context?.source === "secondary_button") {
+        completionStatus[currentScreenId] = "skipped";
+      }
+    }
+  };
+  const sendDismissTelemetry = () => {
+    if (dismissSent) {
+      return;
+    }
+    dismissSent = true;
+    const completionCount = Object.values(completionStatus).filter(cardStatus => cardStatus === "completed").length;
+    sendTelemetry({
+      event: "DISMISS",
+      event_context: {
+        source: "newtab",
+        page: "about:newtab",
+        reason: completionCount ? "engaged" : "not_engaged",
+        completion_status: completionStatus,
+        completion_count: completionCount
+      },
+      message_id: messageData.id
+    });
+  };
   const awHandlers = {
-    AWEvaluateScreenTargeting: screens => window.ASRouterMessage({
-      type: "AW_EVALUATE_SCREEN_TARGETING",
-      data: screens
-    }),
+    AWEvaluateScreenTargeting: async screens => {
+      const filtered = await window.ASRouterMessage({
+        type: "AW_EVALUATE_SCREEN_TARGETING",
+        data: screens
+      });
+      trackCards(screens, filtered ?? screens);
+      return filtered;
+    },
     AWGetFeatureConfig: () => config,
-    AWFinish: () => handleDismiss(),
+    AWFinish: () => {
+      sendDismissTelemetry();
+      handleClose();
+    },
     AWSendToParent: (handlerName, data) => window.ASRouterMessage({
       type: "USER_ACTION",
       data
@@ -7031,17 +7124,11 @@ window.mountMultistageMessage = function mountMultistageMessage(container, props
       });
     },
     AWSendEventTelemetry: data => {
-      const sendTelemetry = () => window.ASRouterMessage({
-        type: "AS_ROUTER_TELEMETRY_USER_EVENT",
-        data: {
-          ...data,
-          action: "newtab_message_user_event"
-        }
-      });
+      trackTelemetry(data);
       if (data.event !== "IMPRESSION" || document.visibilityState === "visible") {
-        sendTelemetry();
+        sendTelemetry(data);
       } else {
-        document.addEventListener("visibilitychange", sendTelemetry, {
+        document.addEventListener("visibilitychange", () => sendTelemetry(data), {
           once: true,
           signal: impressionListeners.signal
         });
