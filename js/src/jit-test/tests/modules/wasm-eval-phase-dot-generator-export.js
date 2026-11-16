@@ -1,0 +1,13 @@
+
+
+
+
+
+import { ".generator" as gen } from "exports-dot-generator.wasm";
+import * as ns from "exports-dot-generator.wasm";
+
+assertEq(gen(), 42);
+assertEq(ns[".generator"], gen);
+
+const dyn = await import("exports-dot-generator.wasm");
+assertEq(dyn[".generator"](), 42);
