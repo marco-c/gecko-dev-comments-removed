@@ -1982,6 +1982,8 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
 
     
     
+    
+    
     mPreloads.RemoveElementsBy(
         [this, multiImportMapsEnabled](const PreloadInfo& info) {
           if (!info.mRequest->IsModuleRequest()) {
@@ -1990,7 +1992,7 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
 
           info.mRequest->Cancel();
           if (multiImportMapsEnabled) {
-            mModuleLoader->ClearPreloadedModuleGraph(
+            mModuleLoader->ResetPreloadedModuleGraph(
                 info.mRequest->AsModuleRequest());
           }
 
@@ -2169,7 +2171,9 @@ ScriptLoadRequest* ScriptLoader::LookupPreloadRequest(
     
     
     if (request->IsModuleRequest()) {
-      mModuleLoader->MovePreloadedSetToResolvedSet(request->AsModuleRequest());
+      if (ModuleScript* ms = request->AsModuleRequest()->mModuleScript) {
+        mModuleLoader->MovePreloadedSetToResolvedSet(ms);
+      }
     }
   }
 

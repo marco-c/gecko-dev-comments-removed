@@ -390,9 +390,17 @@ class ModuleLoaderBase : public nsISupports {
 
   ResolvedModuleSet* GetResolvedModuleSet();
 
-  void MovePreloadedSetToResolvedSet(ModuleLoadRequest* aRootRequest);
+  
+  
+  
+  void MovePreloadedSetToResolvedSet(ModuleScript* aModuleScript);
 
-  void ClearPreloadedModuleGraph(ModuleLoadRequest* aRootRequest);
+  
+  
+  
+  
+  
+  void ResetPreloadedModuleGraph(ModuleLoadRequest* aRootRequest);
 
   
   bool IsModuleFetched(const ModuleMapKey& key) const;
@@ -491,6 +499,10 @@ class ModuleLoaderBase : public nsISupports {
 
   void ResetPreloadFlag(nsIURI* aURI);
   void ResetPreloadedModule(nsIURI* aURI);
+
+  
+  
+  void MigratePreloadedResolvedSet(ScriptFetchInfo* aFetchInfo);
 
  protected:
   void SetModuleFetchStarted(ModuleLoadRequest* aRequest);

@@ -20,6 +20,7 @@
 #include "nsContentUtils.h"
 #include "nsICacheInfoChannel.h"  
 #include "nsNetUtil.h"            
+#include "nsTHashSet.h"
 #include "ScriptLoaderInterface.h"
 #include "ScriptLoadRequest.h"
 #include "xpcpublic.h"
@@ -1213,6 +1214,9 @@ void ModuleLoaderBase::AddToResolvedModuleSet(
   }
 
   
+  nsCOMPtr<nsIURI> _ = aRecord->TakeResult();
+
+  
   
   
   if (!aHostDefined.isUndefined()) {
@@ -1223,8 +1227,6 @@ void ModuleLoaderBase::AddToResolvedModuleSet(
     }
   }
 
-  
-  nsCOMPtr<nsIURI> _ = aRecord->TakeResult();
   AddToGlobalResolvedSet(std::move(aRecord));
 }
 
@@ -1246,38 +1248,110 @@ void ModuleLoaderBase::ResetPreloadFlag(nsIURI* aURI) {
   ms->SetForPreload(false);
 }
 
+void ModuleLoaderBase::MigratePreloadedResolvedSet(
+    ScriptFetchInfo* aFetchInfo) {
+  MOZ_ASSERT(aFetchInfo);
+
+  if (!aFetchInfo->HasPreloadedResolvedSet()) {
+    return;
+  }
+
+  ResolvedModuleSet* set = aFetchInfo->GetPreloadedResolvedSet();
+  for (auto iter = set->modIter(); !iter.done(); iter.next()) {
+    AddToGlobalResolvedSet(std::move(iter.getMutable()));
+  }
+  aFetchInfo->ReleasePreloadedResolvedSet();
+}
+
+static ScriptFetchInfo* GetModuleFetchInfo(JSObject* aModule) {
+  JS::Value priv = JS::GetModulePrivate(aModule);
+  MOZ_ASSERT(!priv.isUndefined());
+  return static_cast<ScriptFetchInfo*>(priv.toPrivate());
+}
 
 
+
+
+
+static void GetPreloadedModuleGraph(JSContext* aCx,
+                                    JS::Handle<JSObject*> aModuleRecord,
+                                    JS::MutableHandleObjectVector aResult) {
+  js::AutoEnterOOMUnsafeRegion oomUnsafe;
+
+  nsTHashSet<ScriptFetchInfo*> visited;
+  if (JS::IsCyclicModule(aModuleRecord)) {
+    visited.Insert(GetModuleFetchInfo(aModuleRecord));
+  }
+
+  JS::RootedObjectVector worklist(aCx);
+  if (!JS::GetLoadedModules(aCx, aModuleRecord, &worklist)) {
+    oomUnsafe.crash("GetPreloadedModuleGraph");
+  }
+
+  JS::RootedObjectVector children(aCx);
+  JS::Rooted<JSObject*> module(aCx);
+  while (!worklist.empty()) {
+    module = worklist.back();
+    worklist.popBack();
+
+    if (!JS::IsCyclicModule(module)) {
+      continue;
+    }
+
+    ScriptFetchInfo* fetchInfo = GetModuleFetchInfo(module);
+    if (!fetchInfo->IsForModulePreload() ||
+        !visited.EnsureInserted(fetchInfo)) {
+      continue;
+    }
+
+    if (!aResult.append(module) ||
+        !JS::GetLoadedModules(aCx, module, &children) ||
+        !worklist.appendAll(children)) {
+      oomUnsafe.crash("GetPreloadedModuleGraph");
+    }
+  }
+}
+
+static void ClearModulePreloadFlag(ScriptFetchInfo* aFetchInfo,
+                                   JSObject* aModuleRecord) {
+  MOZ_ASSERT(aFetchInfo->IsForModulePreload());
+  aFetchInfo->SetForModulePreload(false);
+#ifdef DEBUG
+  if (aModuleRecord) {
+    JS::SetModulePreload(aModuleRecord, false);
+  }
+#endif
+}
 
 void ModuleLoaderBase::MovePreloadedSetToResolvedSet(
-    ModuleLoadRequest* aRootRequest) {
-  LOG(("ScriptLoadRequest (%p): MovePreloadedSetToResolvedSet", aRootRequest));
-  MOZ_ASSERT(ImportMap::IsMultipleImportMapsSupported());
-  MOZ_ASSERT(aRootRequest);
+    ModuleScript* aModuleScript) {
+  MOZ_ASSERT(aModuleScript);
 
+  ScriptFetchInfo* fetchInfo = aModuleScript->FetchInfo();
   
-  MOZ_ASSERT(!aRootRequest->mLoadContext->IsPreload());
+  if (fetchInfo->IsForModulePreload()) {
+    ClearModulePreloadFlag(fetchInfo, aModuleScript->ModuleRecord());
+  }
+  MigratePreloadedResolvedSet(fetchInfo);
 
-  ModuleScript* ms = aRootRequest->mModuleScript;
-  if (!ms) {
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(mGlobalObject)) {
+    return;
+  }
+  JSContext* cx = jsapi.cx();
+  JS::Rooted<JSObject*> moduleRecord(cx, aModuleScript->ModuleRecord());
+  if (!moduleRecord) {
     return;
   }
 
-  ms->SetForPreload(false);
-  if (!ms->FetchInfo()->HasPreloadedResolvedSet()) {
-    return;
-  }
+  JS::RootedObjectVector modules(cx);
+  GetPreloadedModuleGraph(cx, moduleRecord, &modules);
 
-  ResolvedModuleSet* set = ms->FetchInfo()->GetPreloadedResolvedSet();
-  for (auto iter = set->modIter(); !iter.done(); iter.next()) {
-    auto record = std::move(iter.getMutable());
-    nsCOMPtr<nsIURI> uri = record->TakeResult();
-    ResetPreloadFlag(uri);
-    AddToGlobalResolvedSet(std::move(record));
+  for (JSObject* module : modules) {
+    ScriptFetchInfo* moduleFetchInfo = GetModuleFetchInfo(module);
+    ClearModulePreloadFlag(moduleFetchInfo, module);
+    MigratePreloadedResolvedSet(moduleFetchInfo);
   }
-
-  set->clear();
-  ms->FetchInfo()->ReleasePreloadedResolvedSet();
 }
 
 
@@ -1302,14 +1376,12 @@ void ModuleLoaderBase::ResetPreloadedModule(nsIURI* aURI) {
   ms->ResetPreload();
 }
 
-
-
-void ModuleLoaderBase::ClearPreloadedModuleGraph(
+void ModuleLoaderBase::ResetPreloadedModuleGraph(
     ModuleLoadRequest* aRootRequest) {
   MOZ_ASSERT(ImportMap::IsMultipleImportMapsSupported());
   MOZ_ASSERT(aRootRequest);
   MOZ_ASSERT(aRootRequest->mLoadContext->IsPreload());
-  LOG(("ScriptLoadRequest (%p): ClearPreloadedModuleGraph", aRootRequest));
+  LOG(("ScriptLoadRequest (%p): ResetPreloadedModuleGraph", aRootRequest));
 
   ModuleScript* ms = aRootRequest->mModuleScript;
   if (!ms) {
@@ -1323,20 +1395,26 @@ void ModuleLoaderBase::ClearPreloadedModuleGraph(
     return;
   }
 
-  ms->ResetPreload();
+  if (ms->ModuleRecord()) {
+    AutoJSAPI jsapi;
+    if (jsapi.Init(mGlobalObject)) {
+      JSContext* cx = jsapi.cx();
+      JS::Rooted<JSObject*> moduleRecord(cx, ms->ModuleRecord());
+      JS::RootedObjectVector modules(cx);
+      GetPreloadedModuleGraph(cx, moduleRecord, &modules);
 
-  if (!ms->FetchInfo()->HasPreloadedResolvedSet()) {
-    return;
+      
+      
+      
+      for (JSObject* module : modules) {
+        JS::ResetPreloadedModule(module);
+        GetModuleFetchInfo(module)->ReleasePreloadedResolvedSet();
+      }
+    }
   }
 
-  ResolvedModuleSet* set = ms->FetchInfo()->GetPreloadedResolvedSet();
-  for (auto iter = set->iter(); !iter.done(); iter.next()) {
-    nsCOMPtr<nsIURI> uri = iter.get()->TakeResult();
-    MOZ_ASSERT(uri);
-    ResetPreloadedModule(uri);
-  }
-  set->clear();
   ms->FetchInfo()->ReleasePreloadedResolvedSet();
+  ms->ResetPreload();
 }
 
 void ModuleLoaderBase::StartFetchingModuleDependencies(

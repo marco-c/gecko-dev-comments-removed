@@ -952,7 +952,10 @@ ModuleObject* js::GetImportedModule(
   
   
   auto record = referrer->loadedModules().lookup(moduleRequest);
-  MOZ_ASSERT(record);
+
+  
+  
+  MOZ_RELEASE_ASSERT(record);
 
   
   
