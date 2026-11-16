@@ -324,10 +324,8 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   void GetType(nsAString& aType);
   void GetHref(nsAString& aHref, ErrorResult& aRv);
-  
-  already_AddRefed<StyleSheet> GetParentStyleSheet() const {
-    return do_AddRef(GetParentSheet());
-  }
+  already_AddRefed<nsINode> GetOwnerNodeForBindings() const;
+  already_AddRefed<StyleSheet> GetParentStyleSheet() const;
   void GetTitle(nsAString& aTitle);
   dom::MediaList* Media();
   bool Disabled() const { return bool(mState & State::Disabled); }
@@ -536,9 +534,6 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   void RuleRemoved(css::Rule&);
 
   
-  void StyleSheetCloned(StyleSheet&);
-
-  
   
   
   void ApplicableStateChanged(bool aApplicable);
@@ -558,9 +553,6 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   void UnlinkInner();
   
   void TraverseInner(nsCycleCollectionTraversalCallback&);
-
-  
-  static bool RuleHasPendingChildSheet(css::Rule* aRule);
 
   StyleSheet* mParentSheet;  
 
