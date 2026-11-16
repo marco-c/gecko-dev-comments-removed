@@ -4,6 +4,7 @@
 
 
 
+
 async function write_N_datagrams(writer, n) {
   const encoder = new TextEncoder();
   const sentTokens = [];
@@ -115,3 +116,27 @@ promise_test(async t => {
   assert_greater_than(received.length, N,
     'A server-initiated burst should not be reduced to one queueful');
 }, 'Server-initiated datagram bursts are not reduced to incomingMaxBufferedDatagrams');
+
+promise_test(async t => {
+  const wt = new WebTransport(webtransport_url('echo.py'));
+  wt.closed.catch(() => {});
+  t.add_cleanup(() => wt.close());
+  await wt.ready;
+
+  
+  
+  
+  
+  const burst = 2000;
+  const size = 1000;
+  const writer = wt.datagrams.createWritable().getWriter();
+
+  const writes = [];
+  for (let i = 0; i < burst; i++) {
+    await writer.ready;
+    writes.push(writer.write(new Uint8Array(size).fill(i & 0xff)));
+  }
+  await Promise.all(writes);
+  await writer.ready;
+  await writer.write(new Uint8Array([0]));
+}, 'Every write() of a datagram burst that overruns the outgoing queue settles');
