@@ -1451,6 +1451,34 @@ bool nsIWidget::MayTriggerSwipe(const MultiTouchInput& aInput) {
   }
 }
 
+
+
+void nsIWidget::HandleTouchInputForSwipe(const MultiTouchInput& aInput,
+                                         const APZEventResult& aResult) {
+  if (aResult.GetStatus() == nsEventStatus_eConsumeNoDefault) {
+    const bool wasTracking =
+        mTouchSwipeState.phase == TouchSwipeState::Phase::Tracking;
+    mTouchSwipeState.ChangePhaseForConsumedTouchInput();
+    
+    
+    if (wasTracking &&
+        mTouchSwipeState.phase != TouchSwipeState::Phase::Tracking) {
+      MOZ_ASSERT(mSwipeTracker,
+                 "mSwipeTracker must exist when the phase is Tracking.");
+      mSwipeTracker->CancelSwipe(aInput.mTimeStamp);
+      mSwipeTracker->Destroy();
+      mSwipeTracker = nullptr;
+    }
+    return;
+  }
+
+  if (mTouchSwipeState.phase == TouchSwipeState::Phase::Tracking) {
+    HandleTouchInputAsSwipe(aInput);
+  } else {
+    MayStartSwipeForTouchInput(aInput, aResult);
+  }
+}
+
 void nsIWidget::DispatchTouchInput(MultiTouchInput& aInput) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aInput.mInputSource ==
@@ -1477,20 +1505,7 @@ void nsIWidget::DispatchTouchInput(MultiTouchInput& aInput) {
         APZEventResult result = mAPZC->Bridge()->ReceiveInputEvent(aInput);
         if (result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
           if (touchSwipeEnabled) {
-            const bool wasTracking =
-                mTouchSwipeState.phase == TouchSwipeState::Phase::Tracking;
-            mTouchSwipeState.ChangePhaseForConsumedTouchInput();
-            
-            
-            if (wasTracking &&
-                mTouchSwipeState.phase != TouchSwipeState::Phase::Tracking) {
-              MOZ_ASSERT(
-                  mSwipeTracker,
-                  "mSwipeTracker must exist when the phase is Tracking.");
-              mSwipeTracker->CancelSwipe(aInput.mTimeStamp);
-              mSwipeTracker->Destroy();
-              mSwipeTracker = nullptr;
-            }
+            HandleTouchInputForSwipe(aInput, result);
           }
           return;
         }
@@ -1517,11 +1532,7 @@ void nsIWidget::DispatchTouchInput(MultiTouchInput& aInput) {
                   : aInput.mType == MultiTouchInput::MULTITOUCH_START &&
                         count == 1;
           if (!ignoreForSwipe) {
-            if (mTouchSwipeState.phase == TouchSwipeState::Phase::Tracking) {
-              HandleTouchInputAsSwipe(aInput);
-            } else {
-              MayStartSwipeForTouchInput(aInput, result);
-            }
+            HandleTouchInputForSwipe(aInput, result);
           }
         }
 
