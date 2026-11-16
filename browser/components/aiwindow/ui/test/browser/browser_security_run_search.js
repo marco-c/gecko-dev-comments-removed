@@ -402,13 +402,6 @@ add_task(async function test_run_search_generated_query_path() {
   });
 
   
-  
-  await mockEngineManager.respondTo({
-    purpose: "convo-starters-sidebar",
-    response: "A suggested conversation starter.",
-  });
-
-  
   Assert.equal(
     conversation.securityProperties.untrustedInput,
     false,
