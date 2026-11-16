@@ -352,6 +352,7 @@ class MacroAssemblerRiscv64 : public Assembler {
   void CompareIsNanF64(Register rd, FPURegister cmp1, FPURegister cmp2);
 
   BufferOffset ma_call(ImmPtr dest);
+  BufferOffset ma_call(Register rd, void* target, Register scratch);
 
   BufferOffset ma_jump(ImmPtr dest);
 
@@ -720,15 +721,10 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
   }
 
   void branch(JitCode* c) {
-    
-    
-    AutoForbidPoolsAndNops afp(this, 7);
-
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
-    BufferOffset bo = ma_liPatchable(scratch, ImmPtr(c->raw()));
+    BufferOffset bo = ma_call(zero, c->raw(), scratch);
     addPendingJump(bo, ImmPtr(c->raw()), RelocationKind::JITCODE);
-    jr(scratch);
   }
   void branch(const Register reg) { jr(reg); }
   BufferOffset ret() {
@@ -817,7 +813,7 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
 
   static size_t ToggledCallSize(uint8_t* code) {
     
-    return 7 * kInstrSize;
+    return 3 * kInstrSize;
   }
 
   CodeOffset pushWithPatch(ImmWord imm) {

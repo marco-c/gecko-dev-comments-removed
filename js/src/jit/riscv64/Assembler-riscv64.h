@@ -184,6 +184,16 @@ class Assembler : public AssemblerShared,
     }
   }
 
+  
+  
+  
+  js::Vector<RelativePatch, 8, SystemAllocPolicy> pcRelativePatches_;
+
+  void addPcRelativePatch(BufferOffset src, void* target) {
+    enoughMemory_ &= pcRelativePatches_.append(
+        RelativePatch(src, target, RelocationKind::HARDCODED));
+  }
+
   void addLongJump(BufferOffset src, BufferOffset dst) {
     CodeLabel cl;
     cl.patchAt()->bind(src.getOffset());
