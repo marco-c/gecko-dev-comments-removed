@@ -158,13 +158,18 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
 
   RefPtr<CreateDecoderPromise> AsyncCreateDecoder(
       const CreateDecoderParams& aParams) override {
-    RefPtr<MediaDataDecoder> decoder;
     if (aParams.IsAudio()) {
-      decoder = CreateAudioDecoder(aParams);
-    } else if (aParams.IsVideo()) {
-      decoder = CreateVideoDecoder(aParams);
+      return CreateDecoderPromiseFrom(CreateAudioDecoder(aParams), aParams);
     }
-    return CreateDecoderPromiseFrom(decoder.forget(), aParams);
+    if (!aParams.IsVideo()) {
+      return CreateDecoderPromiseFrom(nullptr, aParams);
+    }
+    RefPtr<FFmpegVideoDecoder<V>> decoder = CreateVideoDecoder(aParams);
+    if (!decoder) {
+      return CreateDecoderPromiseFrom(nullptr, aParams);
+    }
+
+    return decoder->InitHWDecoderIfAllowed();
   }
 
   media::DecodeSupportSet SupportsMimeType(
@@ -386,7 +391,7 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
   }
 
  private:
-  already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
+  already_AddRefed<FFmpegVideoDecoder<V>> CreateVideoDecoder(
       const CreateDecoderParams& aParams) {
     if (Supports(SupportDecoderParams(aParams), nullptr).isEmpty()) {
       return nullptr;
@@ -403,7 +408,7 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
       return nullptr;
     }
 #endif
-    auto decoder = MakeRefPtr<FFmpegVideoDecoder<V>>(
+    return MakeAndAddRef<FFmpegVideoDecoder<V>>(
         mLib, aParams.VideoConfig(), aParams.mKnowsCompositor,
         aParams.mImageContainer,
         aParams.mOptions.contains(CreateDecoderParams::Option::LowLatency),
@@ -412,20 +417,6 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
         aParams.mOptions.contains(
             CreateDecoderParams::Option::Output8BitPerChannel),
         aParams.mTrackingId, aParams.mCDM);
-
-    
-    
-    
-    
-    
-    
-    if (XRE_IsGPUProcess() && !decoder->IsHardwareAccelerated()) {
-      MOZ_LOG_FMT(sPDMLog, LogLevel::Debug,
-                  "FFmpeg video decoder can't perform hw decoding, abort!");
-      (void)decoder->Shutdown();
-      decoder = nullptr;
-    }
-    return decoder.forget();
   }
 
   already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
