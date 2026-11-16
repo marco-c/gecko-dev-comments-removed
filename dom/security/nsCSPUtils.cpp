@@ -986,8 +986,9 @@ void nsCSPNonceSrc::toString(nsAString& outStr) const {
 
 
 
-nsCSPHashSrc::nsCSPHashSrc(const nsAString& aAlgo, const nsAString& aHash)
-    : mAlgorithm(aAlgo), mHash(aHash) {
+nsCSPHashSrcBase::nsCSPHashSrcBase(const nsAString& aAlgorithm,
+                                   const nsAString& aHash)
+    : mAlgorithm(aAlgorithm), mHash(aHash) {
   
   
   ToLowerCase(mAlgorithm);
@@ -1005,7 +1006,17 @@ nsCSPHashSrc::nsCSPHashSrc(const nsAString& aAlgo, const nsAString& aHash)
   }
 }
 
-nsCSPHashSrc::~nsCSPHashSrc() = default;
+nsCSPHashSrcBase::~nsCSPHashSrcBase() = default;
+
+void nsCSPHashSrcBase::toString(nsAString& outStr) const {
+  outStr.AppendLiteral("'");
+  outStr.Append(mAlgorithm);
+  outStr.AppendLiteral("-");
+  outStr.Append(mHash);
+  outStr.AppendLiteral("'");
+}
+
+
 
 bool nsCSPHashSrc::allows(enum CSPKeyword aKeyword,
                           const nsAString& aContentOrNonce) const {
@@ -1039,14 +1050,6 @@ bool nsCSPHashSrc::allows(enum CSPKeyword aKeyword,
 
 bool nsCSPHashSrc::visit(nsCSPSrcVisitor* aVisitor) const {
   return aVisitor->visitHashSrc(*this);
-}
-
-void nsCSPHashSrc::toString(nsAString& outStr) const {
-  outStr.AppendLiteral("'");
-  outStr.Append(mAlgorithm);
-  outStr.AppendLiteral("-");
-  outStr.Append(mHash);
-  outStr.AppendLiteral("'");
 }
 
 
