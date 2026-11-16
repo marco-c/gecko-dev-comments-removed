@@ -13,7 +13,18 @@ add_task(async function run_test() {
   let { TelemetryController } = ChromeUtils.importESModule(
     "resource://gre/modules/TelemetryController.sys.mjs"
   );
-  TelemetryController.testSetup();
+  try {
+    await TelemetryController.testSetup();
+  } catch (ex) {
+    
+    
+    
+    dump(
+      "INFO | test_content_annotation.js | TelemetryController.testSetup() threw an exception (" +
+        ex +
+        ").\n"
+    );
+  }
 
   
   await do_content_crash(
