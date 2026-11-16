@@ -33,6 +33,7 @@
 #include "nsPresContext.h"
 #include "nsString.h"
 #include "nsStyleUtil.h"
+#include "nsSubDocumentFrame.h"
 
 namespace mozilla::dom {
 
@@ -601,6 +602,37 @@ const wr::ImageKey* ViewTransition::GetImageKeyForCapturedFrame(
   }
   VT_LOG(" > new image is %s", ToString(el->mNewSnapshotKey._0).c_str());
   return &el->mNewSnapshotKey._0;
+}
+
+nsRect ViewTransition::SubdocumentSnapshotRect() const {
+  MOZ_ASSERT(mSubdocumentSnapshot);
+  return mSubdocumentSnapshot->mSnapshotRect;
+}
+
+nsRect ViewTransition::ClipSubdocumentSnapshotRect(const nsRect& aRect) {
+  MOZ_ASSERT(mSubdocumentSnapshot);
+  nsRect& rect = mSubdocumentSnapshot->mSnapshotRect;
+  rect = rect.Intersect(aRect);
+  return rect;
+}
+
+const wr::ImageKey* ViewTransition::GetOrCreateSubdocumentSnapshotKey(
+    layers::RenderRootStateManager* aManager,
+    wr::IpcResourceUpdateQueue& aResources) {
+  MOZ_ASSERT(mCapturingSubdocumentSnapshot);
+  if (!mSubdocumentSnapshot || !aManager->WrBridge()) {
+    return nullptr;
+  }
+  mSubdocumentSnapshot->EnsureKey(aManager, aResources);
+  return &mSubdocumentSnapshot->mImageKey;
+}
+
+const wr::ImageKey* ViewTransition::ReadSubdocumentSnapshotKey() {
+  if (!mSubdocumentSnapshot || mSubdocumentSnapshot->mImageKey == kNoKey) {
+    return nullptr;
+  }
+  mSubdocumentSnapshot->mUsed = true;
+  return &mSubdocumentSnapshot->mImageKey;
 }
 
 nsIGlobalObject* ViewTransition::GetParentObject() const {
@@ -1266,6 +1298,7 @@ void ViewTransition::Activate() {
   
   
   mDocument->SetRenderingSuppressedForViewTransitions(false);
+  ReleaseSubdocumentSnapshot();
 
   
   
@@ -1727,6 +1760,59 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureNewState() {
   return result;
 }
 
+static nsSubDocumentFrame* InProcessEmbedderFrame(const Document& aDocument) {
+  PresShell* ps = aDocument.GetPresShell();
+  return ps ? ps->GetInProcessEmbedderFrame() : nullptr;
+}
+
+
+
+
+
+void ViewTransition::CaptureSubdocumentSnapshotIfNeeded() {
+  MOZ_ASSERT(!mSubdocumentSnapshot);
+  nsSubDocumentFrame* embedder = InProcessEmbedderFrame(*mDocument);
+  if (!embedder) {
+    return;
+  }
+  nsIFrame* displayRoot = nsLayoutUtils::GetDisplayRootFrame(embedder);
+  RefPtr<PresShell> ps = displayRoot->PresShell();
+  RefPtr widget = ps->GetRootWidget();
+  if (!widget) {
+    return;
+  }
+  RefPtr<WindowRenderer> renderer = widget->GetWindowRenderer();
+  if (!renderer || !renderer->AsWebRender()) {
+    return;
+  }
+  mSubdocumentSnapshot = std::make_unique<OldSnapshotData>();
+  mSubdocumentSnapshot->mSnapshotRect = embedder->GetDestRect();
+  embedder->InvalidateFrame();
+  {
+    AutoRestore guard{mCapturingSubdocumentSnapshot};
+    mCapturingSubdocumentSnapshot = true;
+    VT_LOG(
+        "ViewTransition::CaptureSubdocumentSnapshotIfNeeded(), requesting "
+        "composite");
+    ps->PaintAndRequestComposite(displayRoot, renderer,
+                                 PaintFlags::PaintCompositeOffscreen);
+  }
+  
+  if (nsIFrame* embedderAfterPaint = InProcessEmbedderFrame(*mDocument)) {
+    embedderAfterPaint->InvalidateFrame();
+  }
+}
+
+void ViewTransition::ReleaseSubdocumentSnapshot() {
+  if (!mSubdocumentSnapshot) {
+    return;
+  }
+  mSubdocumentSnapshot = nullptr;
+  if (nsIFrame* embedder = InProcessEmbedderFrame(*mDocument)) {
+    embedder->InvalidateFrame();
+  }
+}
+
 
 void ViewTransition::Setup() {
   AUTO_PROFILER_FLOW_MARKER("ViewTransition::Setup", LAYOUT,
@@ -1738,6 +1824,8 @@ void ViewTransition::Setup() {
     
     return SkipTransition(*skipReason);
   }
+
+  CaptureSubdocumentSnapshotIfNeeded();
 
   
   mDocument->SetRenderingSuppressedForViewTransitions(true);
@@ -2012,6 +2100,7 @@ void ViewTransition::SkipTransition(
 
   
   mDocument->SetRenderingSuppressedForViewTransitions(false);
+  ReleaseSubdocumentSnapshot();
 
   
   
@@ -2282,7 +2371,7 @@ void ViewTransition::UpdateActiveRectForCapturedFrame(
 
   
   
-  if (capSize.width < vvpSize.width && capSize.height < vvpSize.height) {
+  if (capSize.width <= vvpSize.width && capSize.height <= vvpSize.height) {
     return;
   }
 
