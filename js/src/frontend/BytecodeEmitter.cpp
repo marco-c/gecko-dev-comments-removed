@@ -9986,7 +9986,7 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
         return false;
       }
       NameOpEmitter noe(this, privateName->atom(),
-                        NameOpEmitter::Kind::SimpleAssignment);
+                        NameOpEmitter::Kind::Initialize);
 
       
       
