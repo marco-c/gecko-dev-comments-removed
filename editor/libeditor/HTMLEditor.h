@@ -3233,11 +3233,28 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] inline Element* GetTableCellElementAt(
+
+
+  [[nodiscard]] inline Element* GetMaybeGeneratedTableCellElementAt(
       Element& aTableElement, const CellIndexes& aCellIndexes) const;
-  [[nodiscard]] Element* GetTableCellElementAt(Element& aTableElement,
-                                               int32_t aRowIndex,
-                                               int32_t aColumnIndex) const;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] Element* GetMaybeGeneratedTableCellElementAt(
+      Element& aTableElement, int32_t aRowIndex, int32_t aColumnIndex) const;
 
   
 

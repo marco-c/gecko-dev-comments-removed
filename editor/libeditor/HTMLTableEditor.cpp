@@ -2111,9 +2111,10 @@ nsresult HTMLEditor::DeleteSelectedTableRowsWithTransaction(
         startRowIndex++;
       }
       
-      cell = GetTableCellElementAt(*table, startRowIndex, startColIndex);
-      if (!cell) {
-        return NS_OK;
+      
+      if (!GetMaybeGeneratedTableCellElementAt(*table, startRowIndex,
+                                               startColIndex)) {
+        break;
       }
     }
     return NS_OK;
@@ -4055,15 +4056,17 @@ NS_IMETHODIMP HTMLEditor::GetCellAt(Element* aTableElement, int32_t aRowIndex,
     }
   }
 
-  RefPtr<Element> cellElement =
-      GetTableCellElementAt(*tableElement, aRowIndex, aColumnIndex);
-  cellElement.forget(aCellElement);
+  RefPtr<Element> cellElement = GetMaybeGeneratedTableCellElementAt(
+      *tableElement, aRowIndex, aColumnIndex);
+  
+  if (cellElement && !cellElement->IsInNativeAnonymousSubtree()) {
+    cellElement.forget(aCellElement);
+  }
   return NS_OK;
 }
 
-Element* HTMLEditor::GetTableCellElementAt(Element& aTableElement,
-                                           int32_t aRowIndex,
-                                           int32_t aColumnIndex) const {
+Element* HTMLEditor::GetMaybeGeneratedTableCellElementAt(
+    Element& aTableElement, int32_t aRowIndex, int32_t aColumnIndex) const {
   
   
   
@@ -4073,8 +4076,8 @@ Element* HTMLEditor::GetTableCellElementAt(Element& aTableElement,
     NS_WARNING("There was no table layout information");
     return nullptr;
   }
-  nsIContent* cell = tableFrame->GetCellAt(aRowIndex, aColumnIndex);
-  return Element::FromNodeOrNull(cell);
+  return Element::FromNodeOrNull(
+      tableFrame->GetCellAt(aRowIndex, aColumnIndex));
 }
 
 
@@ -4283,8 +4286,9 @@ void HTMLEditor::SetSelectionAfterTableEdit(Element* aTable, int32_t aRow,
   RefPtr<Element> cell;
   bool done = false;
   do {
-    cell = GetTableCellElementAt(*aTable, aRow, aCol);
-    if (cell) {
+    cell = GetMaybeGeneratedTableCellElementAt(*aTable, aRow, aCol);
+    if (cell && HTMLEditUtils::IsSimplyEditableNode(*cell)) {
+      MOZ_ASSERT(!cell->IsInNativeAnonymousSubtree());
       if (aSelected) {
         
         DebugOnly<nsresult> rv = SelectContentInternal(*cell);
