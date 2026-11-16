@@ -16,6 +16,7 @@
 #include "RecordingTypes.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "nsISupportsImpl.h"
 #include "nsTHashMap.h"
 #include "nsTHashSet.h"
@@ -355,9 +356,17 @@ class DrawEventRecorderMemory : public DrawEventRecorderPrivate {
 
   void WipeRecording();
   bool Finish() override;
+
+  
+
+
+
+
+  void UseDeterministicReferenceIds();
   void FlushItem(IntRect) override;
 
   MemStream mOutputStream;
+  UniquePtr<ReferenceIdMap> mReferenceIds;
   
 
 
