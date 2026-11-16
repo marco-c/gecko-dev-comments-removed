@@ -336,9 +336,12 @@ bool GPUProcessHost::FillMacSandboxInfo(MacSandboxInfo& aInfo) {
   if (!aInfo.shouldLog && PR_GetEnv("MOZ_SANDBOX_GPU_LOGGING")) {
     aInfo.shouldLog = true;
   }
+  
+  
   aInfo.hasWindowServer =
-      ProcessIsX86_64() && (!gfxVars::AllowMetalAngleWebGL() ||
-                            StaticPrefs::webgl_disable_angle_AtStartup());
+      ProcessIsX86_64() &&
+      (!gfxVars::UseWebRenderANGLE() || !gfxVars::AllowMetalAngleWebGL() ||
+       StaticPrefs::webgl_disable_angle_AtStartup());
   aInfo.type = MacSandboxType::MacSandboxType_GPU;
   return true;
 }
