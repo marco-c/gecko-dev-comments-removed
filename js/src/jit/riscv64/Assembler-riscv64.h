@@ -223,9 +223,11 @@ class Assembler : public AssemblerShared,
 
   void finish() {
     MOZ_ASSERT(!isFinished);
+    flush();
     isFinished = true;
   }
 
+  void flush() { m_buffer.flushPool(); }
   void flushBuffer() { m_buffer.flushPool(); }
 
   void enterNoPool(size_t maxInst, size_t maxNewDeadlines = 0) {
@@ -238,7 +240,11 @@ class Assembler : public AssemblerShared,
 
   bool swapBuffer(wasm::Bytes& bytes);
   
+  
   size_t size() const;
+  
+  
+  size_t readableSize() const;
   
   size_t bytesNeeded() const;
   
@@ -508,6 +514,10 @@ class Assembler : public AssemblerShared,
   
   
   BufferOffset li_ptr(Register rd, int64_t imm);
+
+  static constexpr bool IsLiPtrImmediate(int64_t imm) {
+    return imm == (imm << 16) >> 16;
+  }
 
   void SignExtendByte(Register rd, Register rs) {
     if (HasZbbExtension()) {

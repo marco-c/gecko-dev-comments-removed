@@ -141,9 +141,9 @@ struct ImmPtrParts {
 };
 
 static constexpr auto ToImmPtrParts(int64_t imm) {
-  MOZ_ASSERT((imm & 0xffff'0000'0000'0000ll) == 0, "pointers are 48 bits");
+  MOZ_ASSERT(Assembler::IsLiPtrImmediate(imm));
 
-  int64_t high_31 = (imm >> 17) & 0x7fffffff;  
+  int64_t high_31 = imm >> 17;  
 
   return ImmPtrParts{
       .high_20 = int32_t((high_31 + 0x800) >> 12),
@@ -237,7 +237,7 @@ class LiPtr {
     
     imm |= int64_t(at(5)->Imm12Value());
 
-    MOZ_ASSERT((imm & 0xffff'0000'0000'0000ll) == 0, "pointers are 48 bits");
+    MOZ_ASSERT(Assembler::IsLiPtrImmediate(imm));
     return static_cast<uintptr_t>(imm);
   }
 
@@ -246,6 +246,7 @@ class LiPtr {
 
   void update(uintptr_t value) {
     MOZ_ASSERT(isValid());
+    MOZ_RELEASE_ASSERT(Assembler::IsLiPtrImmediate(value));
 
     auto [high_20, low_12, b11, a6] = ToImmPtrParts(value);
 
@@ -332,7 +333,6 @@ BufferOffset Assembler::li_ptr(Register rd, int64_t imm) {
   AutoForbidPoolsAndNops afp(this, 6);
   BufferOffset offset = nextOffset();
 
-  
   
   
   DEBUG_PRINTF("li_ptr(%d, %" PRIx64 " <%" PRId64 ">)\n", ToNumber(rd), imm,

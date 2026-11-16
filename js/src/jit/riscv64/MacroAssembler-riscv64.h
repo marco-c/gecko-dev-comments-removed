@@ -10,6 +10,7 @@
 
 #include "mozilla/Maybe.h"
 
+#include <bit>
 #include <type_traits>
 
 #include "jit/MoveResolver.h"
@@ -87,6 +88,19 @@ struct ImmShiftedTag : public ImmWord {
   }
 };
 
+
+
+
+
+
+
+
+struct ImmNegatedShiftedTag : public ImmWord {
+  explicit ImmNegatedShiftedTag(JSValueType type)
+      : ImmWord(
+            -uintptr_t(JSValueShiftedTag(JSVAL_TYPE_TO_SHIFTED_TAG(type)))) {}
+};
+
 struct ImmTag : public Imm32 {
   explicit ImmTag(JSValueTag mask) : Imm32(int32_t(mask)) {}
 };
@@ -99,6 +113,16 @@ struct ImmTagSignExt : public Imm32 {
   }
 
   explicit ImmTagSignExt(JSValueTag mask) : Imm32(signExtend(mask)) {}
+};
+
+
+
+
+struct ImmTagUpperWord : public Imm32 {
+  static_assert(JSVAL_TAG_SHIFT - 32 >= 12, "lui loads the shifted tag");
+
+  explicit ImmTagUpperWord(JSValueTag tag)
+      : Imm32(int32_t(tag << (JSVAL_TAG_SHIFT - 32))) {}
 };
 
 class MacroAssemblerRiscv64 : public Assembler {
@@ -171,7 +195,12 @@ class MacroAssemblerRiscv64 : public Assembler {
   BufferOffset ma_liPatchable(Register dest, ImmPtr imm) {
     return li_ptr(dest, uintptr_t(imm.value));
   }
+  
+  
   BufferOffset ma_liPatchable(Register dest, ImmWord imm) {
+    if (IsLiPtrImmediate(imm.value)) {
+      return li_ptr(dest, imm.value);
+    }
     return li_constant(dest, imm.value);
   }
   void ma_li(Register dest, ImmGCPtr ptr);
@@ -352,6 +381,11 @@ class MacroAssemblerRiscv64 : public Assembler {
   Address computeScaledAddress(
       const BaseIndex& address, UseScratchRegisterScope& temps,
       wasm::ZeroExtendIndex zeroExtend = wasm::ZeroExtendIndex::No);
+
+  
+  
+  
+  Address computeAbsoluteAddress(AbsoluteAddress address, Register scratch);
 
  private:
   bool UseShortBranch(Label* L, JumpKind jumpKind, OffsetSize bits,
@@ -878,8 +912,8 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
     MOZ_ASSERT(scratch != src);
-    mov(ImmShiftedTag(type), scratch);
-    xor_(dest, src, scratch);
+    mov(ImmNegatedShiftedTag(type), scratch);
+    add(dest, src, scratch);
   }
 
   void unboxGCThingForGCBarrier(const Address& src, Register dest) {
@@ -909,13 +943,33 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
     Register scratch = temps.Acquire();
     MOZ_ASSERT(scratch != dest);
     loadPtr(src, dest);
-    movePtr(ImmWord(JS::detail::ValueGCThingPayloadChunkMask), scratch);
-    and_(dest, dest, scratch);
+    andValueGCThingPayloadChunkMask(dest, scratch, dest);
   }
   void getGCThingValueChunk(const ValueOperand& src, Register dest) {
     MOZ_ASSERT(src.valueReg() != dest);
-    movePtr(ImmWord(JS::detail::ValueGCThingPayloadChunkMask), dest);
-    and_(dest, dest, src.valueReg());
+    andValueGCThingPayloadChunkMask(src.valueReg(), dest, dest);
+  }
+  
+  
+  void andValueGCThingPayloadChunkMask(Register src, Register temp,
+                                       Register dest) {
+    MOZ_ASSERT(temp != src);
+    if (HasZbbExtension()) {
+      
+      
+      
+      
+      
+      constexpr uint64_t NotMask = ~JS::detail::ValueGCThingPayloadChunkMask;
+      constexpr int64_t Rotated = int64_t(std::rotr(NotMask, gc::ChunkShift));
+      static_assert(Rotated == int32_t(Rotated) && (Rotated & 0xfff) == 0,
+                    "lui loads the rotated complement of the mask");
+      movePtr(ImmWord(NotMask), temp);
+      andn(dest, src, temp);
+      return;
+    }
+    movePtr(ImmWord(JS::detail::ValueGCThingPayloadChunkMask), temp);
+    and_(dest, src, temp);
   }
 
   void unboxInt32(const ValueOperand& operand, Register dest);
@@ -999,10 +1053,36 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
     return scratch;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  template <typename T>
+  void branchTestTagUpperWord(Condition cond, const T& address, JSValueTag tag,
+                              Label* label) {
+    T upperWord = address;
+    upperWord.offset += int32_t(sizeof(uint32_t));
+    UseScratchRegisterScope temps(this);
+    Register scratch = temps.Acquire();
+    load32(upperWord, scratch);
+    ma_b(scratch, ImmTagUpperWord(tag), label, cond, ShortJump);
+  }
+
   void loadInt32OrDouble(const Address& src, FloatRegister dest);
   void loadInt32OrDouble(const BaseIndex& src, FloatRegister dest);
   void loadConstantDouble(double dp, FloatRegister dest);
   void loadConstantFloat32(float f, FloatRegister dest);
+
+  void canonicalizeDoubleNaN(FloatRegister reg) {
+    static_assert(JS::detail::CanonicalizedNaNBits == 0x7ff8'0000'0000'0000,
+                  "the canonical NaN of RISC-V is JS::GenericNaN()");
+    fmin_d(reg, reg, reg);
+  }
+  void canonicalizeFloatNaN(FloatRegister reg) { fmin_s(reg, reg, reg); }
 
   void testNullSet(Condition cond, const ValueOperand& value, Register dest);
 
