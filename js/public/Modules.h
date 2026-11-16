@@ -15,6 +15,7 @@
 #include "js/ColumnNumber.h"    
 #include "js/CompileOptions.h"  
 #include "js/RootingAPI.h"      
+#include "js/TypeDecls.h"       
 #include "js/Value.h"           
 #include "js/Vector.h"          
 
@@ -234,15 +235,8 @@ extern JS_PUBLIC_API JSObject* CompileWasmModule(
 
 
 
-extern JS_PUBLIC_API JSObject* CompileWasmModuleAsSource(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    js::Vector<uint8_t, 0, js::MallocAllocPolicy>& srcBuf);
 
-
-
-
-
-extern JS_PUBLIC_API JSObject* CreateWasmSourcePhaseModule(
+extern JS_PUBLIC_API JSObject* CreateWasmModule(
     JSContext* cx, Handle<JSObject*> wasmModuleObject);
 
 
@@ -283,6 +277,14 @@ extern JS_PUBLIC_API void SetModulePreload(JSObject* module, bool isPreload);
 
 
 extern JS_PUBLIC_API void ResetPreloadedModule(JSObject* module);
+
+
+
+
+
+extern JS_PUBLIC_API bool GetLoadedModules(JSContext* cx,
+                                           Handle<JSObject*> moduleRecord,
+                                           MutableHandleObjectVector result);
 
 
 
@@ -357,7 +359,7 @@ GetModuleRequestType(JSContext* cx, Handle<JSObject*> moduleRequestArg);
 
 
 extern JS_PUBLIC_API bool ModuleRequestIsSourcePhase(
-    JSContext* cx, Handle<JSObject*> moduleRequestArg);
+    JSObject* moduleRequestArg);
 
 
 
