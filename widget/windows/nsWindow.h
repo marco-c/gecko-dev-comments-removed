@@ -302,7 +302,8 @@ class nsWindow final : public nsIWidget {
       bool aIsContextMenuKey, int16_t aButton, uint16_t aInputSource,
       WinPointerInfo* aPointerInfo = nullptr,
       IsNonclient aIgnoreAPZ = IsNonclient::No,
-      mozilla::Maybe<LayoutDeviceIntPoint> aMovement = mozilla::Nothing());
+      mozilla::Maybe<LayoutDeviceIntPoint> aMovement = mozilla::Nothing(),
+      const mozilla::WidgetMouseEventCommand& aCommand = {});
   void DispatchPendingEvents();
   MOZ_CAN_RUN_SCRIPT void DispatchCustomEvent(const nsString& eventName);
 
@@ -446,6 +447,12 @@ class nsWindow final : public nsIWidget {
     return sIsUsingRawInputForMouseMove;
   }
 
+  
+  
+  
+  bool DispatchPendingMouseUpEvent(
+      const mozilla::WidgetMouseEventCommand& aCommand);
+
  private:
   using TimeStamp = mozilla::TimeStamp;
   using TimeDuration = mozilla::TimeDuration;
@@ -520,6 +527,15 @@ class nsWindow final : public nsIWidget {
 
   void WindowUsesOMTC() override;
   void RegisterTouchWindow() override;
+
+  
+  struct PendingMouseUpEventData {
+    int16_t mButton;
+    uint16_t mInputSource;
+    WPARAM mWParam;
+    LPARAM mLParam;
+  };
+  mozilla::Maybe<PendingMouseUpEventData> mPendingMouseUpEvent;
 
   
 
