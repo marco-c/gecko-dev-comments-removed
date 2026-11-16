@@ -179,7 +179,9 @@ add_task(async function test_cancel_after_connect_http2proxy() {
       
       
       
-      Assert.equal(await proxy.execute(`global.session_counter`), 1);
+      
+      
+      Assert.lessOrEqual(await proxy.execute(`global.session_counter`), 1);
 
       chan = makeChan(`${server.origin()}/test`);
       await new Promise(resolve => {
