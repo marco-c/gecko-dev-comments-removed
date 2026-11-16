@@ -942,15 +942,26 @@ bool js::WasmModuleExecute(JSContext* cx, Handle<ModuleObject*> record) {
   
 
   
-  Rooted<WasmModuleObject*> module(
+  Rooted<WasmModuleObject*> moduleObject(
       cx, &record->moduleSource()->as<WasmModuleObject>());
 
   
-  Rooted<ImportValues> imports(cx);
+  const wasm::Module& module = moduleObject->module();
 
+  
+  
+  
+
+  
+  
+  
+  
   BuiltinModuleInstances builtinInstances(cx);
-  const ModuleMetadata& importModuleMeta = module->module().moduleMeta();
-  const CodeMetadata& importCodeMeta = module->module().codeMeta();
+
+  
+  Rooted<ImportValues> imports(cx);
+  const ModuleMetadata& importModuleMeta = module.moduleMeta();
+  const CodeMetadata& importCodeMeta = module.codeMeta();
   uint32_t funcIndex = 0;
   uint32_t tableIndex = 0;
   uint32_t memoryIndex = 0;
@@ -996,6 +1007,9 @@ bool js::WasmModuleExecute(JSContext* cx, Handle<ModuleObject*> record) {
 
     
     
+    
+    
+    
     Maybe<BuiltinModuleId> builtinModule = ImportMatchesBuiltinModule(
         imp, importCodeMeta.features().builtinModules);
     if (builtinModule) {
@@ -1005,18 +1019,18 @@ bool js::WasmModuleExecute(JSContext* cx, Handle<ModuleObject*> record) {
       
 
       
-      
-      
       RootedValue importFieldValue(cx);
       if (!GetBuiltinImportValue(cx, imp, *builtinModule, importModuleMeta,
                                  importCodeMeta, nullptr, builtinInstances,
                                  &importFieldValue)) {
         return false;
       }
+      
       if (!AppendImportValue(cx, imp, importTypeIndex, importCodeMeta,
                              importFieldValue, imports.address())) {
         return false;
       }
+      
       continue;
     }
 
@@ -1092,9 +1106,14 @@ bool js::WasmModuleExecute(JSContext* cx, Handle<ModuleObject*> record) {
       MOZ_ASSERT(resolvedModule->moduleSource()->is<WasmModuleObject>());
 
       
+      
+
+      
+      
       Rooted<WasmModuleObject*> module(
           cx, &resolvedModule->moduleSource()->as<WasmModuleObject>());
 
+      
       
       
       Rooted<JSObject*> instanceExports(
@@ -1185,6 +1204,8 @@ bool js::WasmModuleExecute(JSContext* cx, Handle<ModuleObject*> record) {
 
   
   
+  
+  
   RootedObject proto(
       cx, GlobalObject::getOrCreatePrototype(cx, JSProto_WasmInstance));
   if (!proto) {
@@ -1192,8 +1213,7 @@ bool js::WasmModuleExecute(JSContext* cx, Handle<ModuleObject*> record) {
   }
 
   Rooted<WasmInstanceObject*> instanceObject(cx);
-  if (!module->module().instantiate(cx, imports.get(), proto,
-                                    &instanceObject)) {
+  if (!module.instantiate(cx, imports.get(), proto, &instanceObject)) {
     return false;
   }
 
@@ -1202,7 +1222,7 @@ bool js::WasmModuleExecute(JSContext* cx, Handle<ModuleObject*> record) {
 
   Rooted<JSObject*> exportsObject(cx, &instanceObject->exportsObj());
 
-  const ModuleMetadata& moduleMeta = module->module().moduleMeta();
+  const ModuleMetadata& moduleMeta = module.moduleMeta();
 
   RootedValueVector exportValues(cx);
   if (!exportValues.reserve(moduleMeta.exports.length())) {
@@ -1223,13 +1243,16 @@ bool js::WasmModuleExecute(JSContext* cx, Handle<ModuleObject*> record) {
     RootedValue value(cx);
 
     
-    if (exp.kind() == DefinitionKind::Global) {
-      RootedValue externVal(cx);
-      if (!GetProperty(cx, exportsObject, exportsObject, exportId,
-                       &externVal)) {
-        return false;
-      }
+    RootedValue externVal(cx);
+    if (!GetProperty(cx, exportsObject, exportsObject, exportId, &externVal)) {
+      return false;
+    }
 
+    
+    MOZ_ASSERT(!externVal.isUndefined());
+
+    
+    if (exp.kind() == DefinitionKind::Global) {
       
       MOZ_ASSERT(externVal.isObject() &&
                  externVal.toObject().is<WasmGlobalObject>());
@@ -1239,10 +1262,17 @@ bool js::WasmModuleExecute(JSContext* cx, Handle<ModuleObject*> record) {
           cx, &externVal.toObject().as<WasmGlobalObject>());
 
       
+      
       RootedVal globalValue(cx, globalObject->val().get());
 
       
-      if (globalObject->type().isExposable()) {
+      if (!globalObject->type().isExposable()) {
+        
+        
+        
+        value.setMagic(JS_UNINITIALIZED_LEXICAL);
+      } else {
+        
         
         
         
@@ -1258,20 +1288,12 @@ bool js::WasmModuleExecute(JSContext* cx, Handle<ModuleObject*> record) {
         
         
         
-      } else {
-        
-        
-        
-        
-        value.setMagic(JS_UNINITIALIZED_LEXICAL);
       }
     } else {
       
       
       
-      if (!GetProperty(cx, exportsObject, exportsObject, exportId, &value)) {
-        return false;
-      }
+      value = externVal;
     }
 
     exportValues.infallibleAppend(value);
