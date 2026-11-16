@@ -18,6 +18,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/TouchSwipeState.h"
 #include "mozilla/TypedEnumBits.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/Matrix.h"
@@ -2442,107 +2443,7 @@ class nsIWidget : public nsSupportsWeakReference {
   PopupType mPopupType;
   SizeConstraints mSizeConstraints;
   bool mHasRemoteContent;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  struct TouchSwipeState {
-    
-    mozilla::Maybe<ScreenIntPoint> previousTouchPoint;
-    mozilla::SideBits swipableDirections = mozilla::SideBits::eLeftRight;
-    enum class Phase {
-      
-      Idle,
-      
-      
-      Pending,
-      
-      Tracking,
-      
-      
-      Rejected
-    };
-    Phase phase = Phase::Idle;
-    
-    
-    
-    mozilla::layers::TouchCounter touchCounter;
-
-    void AssertCountConsistency() const {
-      const mozilla::DebugOnly<uint32_t> count =
-          touchCounter.GetActiveTouchCount();
-      MOZ_ASSERT((phase == TouchSwipeState::Phase::Idle && count == 0) ||
-                 (phase == TouchSwipeState::Phase::Pending && count == 1) ||
-                 (phase == TouchSwipeState::Phase::Tracking && count == 1) ||
-                 (phase == TouchSwipeState::Phase::Rejected && count > 0));
-    }
-
-    void Start(mozilla::SideBits aSwipableDirections,
-               const ScreenIntPoint& aTouchPoint) {
-      MOZ_ASSERT(phase == Phase::Idle &&
-                     swipableDirections == mozilla::SideBits::eLeftRight,
-                 "This is the start point of touch swipe-to-nav. "
-                 "TouchSwipeState should have an initial state");
-      swipableDirections &= aSwipableDirections;
-      phase = Phase::Pending;
-      previousTouchPoint = mozilla::Some(aTouchPoint);
-    }
-
-    void Reset() { *this = TouchSwipeState{}; }
-
-    ScreenIntPoint GetDelta(const ScreenIntPoint& point) {
-      MOZ_ASSERT(previousTouchPoint.isSome());
-      return point - *previousTouchPoint;
-    }
-
-    
-    
-    
-    
-    
-    
-    void ChangePhaseForConsumedTouchInput() {
-      const auto count = touchCounter.GetActiveTouchCount();
-      switch (phase) {
-        case TouchSwipeState::Phase::Idle:
-          if (count > 0) {
-            
-            
-            phase = TouchSwipeState::Phase::Rejected;
-          }
-          return;
-        case TouchSwipeState::Phase::Pending:
-        case TouchSwipeState::Phase::Tracking:
-          if (count == 0) {
-            Reset();
-          } else if (count > 1) {
-            phase = TouchSwipeState::Phase::Rejected;
-          }
-          return;
-        case TouchSwipeState::Phase::Rejected:
-          if (count == 0) {
-            Reset();
-          }
-          return;
-      }
-    }
-  };
-  TouchSwipeState mTouchSwipeState;
+  mozilla::TouchSwipeState mTouchSwipeState;
 
   struct FullscreenSavedState {
     DesktopRect windowRect;
