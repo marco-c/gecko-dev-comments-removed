@@ -127,10 +127,29 @@ add_task(async function testBrowseButtonOpensPickedPDF() {
     false,
     url => url === fileURL
   );
-  const pickerShown = promisePickerShown();
+  MockFilePicker.showCallback = async () => {
+    MockFilePicker.showCallback = null;
+    
+    
+    try {
+      await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+        let animations;
+        while ((animations = content.document.getAnimations()).length) {
+          
+          await Promise.allSettled(animations.map(a => a.finished));
+        }
+        await new Promise(resolve =>
+          content.requestAnimationFrame(() =>
+            content.requestAnimationFrame(resolve)
+          )
+        );
+      });
+    } catch (e) {
+      ok(false, `Waiting for about:pdf animations failed: ${e}`);
+    }
+  };
   
   await clickInAboutPDF(tab, "#browse-files");
-  await pickerShown;
   await navigated;
 
   is(
