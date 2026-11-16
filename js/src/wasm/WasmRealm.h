@@ -66,6 +66,11 @@ class Realm {
   void ensureProfilingLabels(bool profilingEnabled);
 
   
+  
+
+  void resetPretenuredAllocSites();
+
+  
 
   void addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
                               size_t* realmTables);

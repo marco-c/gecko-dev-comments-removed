@@ -13,6 +13,7 @@
 #include "jit/BaselineJIT.h"
 #include "jit/Invalidation.h"
 #include "js/Prefs.h"
+#include "vm/Realm.h"
 
 #include "gc/Marking-inl.h"
 #include "gc/PrivateIterators-inl.h"
