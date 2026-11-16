@@ -74,40 +74,28 @@ impl VarFunction {
         context: &mut SubstitutionReplacementContext<'a, '_, '_, '_>,
     ) -> Option<Substitution<'a>> {
         let registration = context.stylist.get_custom_property_registration(name);
-        match context.substitution_functions.get_var(registration, name) {
-            None => None,
+        let v = context.substitution_functions.get_var(registration, name)?;
+        let Some(u) = v.as_universal() else {
             
             
+            return Some(Substitution::from_value(v.to_variable_value(), v.attr_tainted));
+        };
+        if !u.has_references() {
             
-            
-            
-            Some(v) => match v.as_universal() {
-                Some(u) if u.has_references() => {
-                    if context.seen.contains(name) {
-                        
-                        
-                        None
-                    } else {
-                        context.seen.push(name.clone());
-                        let result =
-                            context.substitute_variable_value(u,  None);
-                        context.seen.pop();
-                        match result {
-                            Ok(mut substitution) => {
-                                substitution.attr_tainted |= v.attr_tainted;
-                                Some(substitution)
-                            },
-                            
-                            Err(()) => None,
-                        }
-                    }
-                },
-                _ => Some(Substitution::from_value(
-                    v.to_variable_value(),
-                    v.attr_tainted,
-                )),
-            },
+            return Some(Substitution::from_borrowed_value(u, v.attr_tainted));
         }
+        if context.seen.contains(name) {
+            
+            
+            return None;
+        }
+        context.seen.push(name.clone());
+        let result =
+            context.substitute_variable_value(u,  None);
+        context.seen.pop();
+        let mut substitution = result.ok()?;
+        substitution.attr_tainted |= v.attr_tainted;
+        return Some(substitution);
     }
 
     

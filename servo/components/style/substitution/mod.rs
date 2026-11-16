@@ -711,6 +711,16 @@ impl<'a> Substitution<'a> {
     }
 
     
+    pub fn from_borrowed_value(v: &'a VariableValue, attr_tainted: bool) -> Self {
+        Substitution {
+            css: Cow::Borrowed(&v.css),
+            first_token_type: v.first_token_type,
+            last_token_type: v.last_token_type,
+            attr_tainted,
+        }
+    }
+
+    
     pub fn into_value(
         self,
         url_data: &UrlExtraData,
