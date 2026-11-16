@@ -27,6 +27,7 @@ impl From<FeatureManifest> for ManifestFrontEnd {
             channels,
             includes: Default::default(),
             imports: Default::default(),
+            no_lint: Default::default(),
             features,
             legacy_types: None,
             types: Types { enums, objects },
@@ -142,6 +143,7 @@ impl From<PropDef> for FieldBody {
 impl From<PropDef> for FeatureFieldBody {
     fn from(value: PropDef) -> Self {
         Self {
+            pref_key: value.pref_key.clone(),
             gecko_pref: value.gecko_pref.clone(),
             string_alias: value.string_alias.as_ref().map(TypeRef::to_string),
             field: value.into(),

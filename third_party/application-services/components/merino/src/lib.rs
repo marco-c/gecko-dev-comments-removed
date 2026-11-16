@@ -18,15 +18,7 @@
 
 
 
-
-
-
-
 pub mod curated_recommendations;
 pub mod suggest;
-pub mod widgets;
-
-
-pub(crate) const DEFAULT_BASE_HOST: &str = "https://merino.services.mozilla.com";
 pub use curated_recommendations::{CuratedRecommendationLocale, CuratedRecommendationsApiError};
 uniffi::setup_scaffolding!("merino");

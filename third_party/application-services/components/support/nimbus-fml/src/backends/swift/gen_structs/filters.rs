@@ -1,11 +1,10 @@
 
 
 
-
+use super::{common, ConcreteCodeOracle};
 use std::borrow::Borrow;
 use std::fmt::{self, Display};
 
-use crate::backends::swift::gen_structs::{ConcreteCodeOracle, common};
 use crate::backends::{CodeOracle, LiteralRenderer, TypeIdentifier};
 use crate::intermediate_representation::Literal;
 
@@ -109,7 +108,7 @@ pub fn comment<T>(txt: T, _: &dyn askama::Values, spaces: &str) -> Result<String
 where
     T: fmt::Display,
 {
-    use textwrap::{Options, fill};
+    use textwrap::{fill, Options};
 
     let indent1 = "/// ".to_string();
     let indent2 = format!("{} /// ", spaces);
@@ -340,16 +339,8 @@ mod json_tests {
 
         
         assert_eq!(
-            run_to_json(
-                p,
-                TypeRef::EnumMap(
-                    Box::new(TypeRef::Enum("Name".to_string())),
-                    Box::new(TypeRef::List(Box::new(TypeRef::BundleImage)))
-                )
-            ),
-            format!(
-                "prop.mapEntriesNotNull({{ $0.rawValue }}, {{ $0.map {{ $0.encodableImageName }} }})"
-            )
+            run_to_json(p, TypeRef::EnumMap(Box::new(TypeRef::Enum("Name".to_string())), Box::new(TypeRef::List(Box::new(TypeRef::BundleImage))))),
+            format!("prop.mapEntriesNotNull({{ $0.rawValue }}, {{ $0.map {{ $0.encodableImageName }} }})")
         );
         Ok(())
     }

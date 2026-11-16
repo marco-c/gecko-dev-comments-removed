@@ -7,10 +7,12 @@ use std::fmt::Display;
 
 use serde::{Deserialize, Serialize};
 
-use crate::command_line::commands::GenerateExperimenterManifestCmd;
-use crate::error::{FMLError, Result};
-use crate::intermediate_representation::{
-    FeatureDef, FeatureManifest, GeckoPrefDef, PropDef, TargetLanguage, TypeRef,
+use crate::{
+    command_line::commands::GenerateExperimenterManifestCmd,
+    error::{FMLError, Result},
+    intermediate_representation::{
+        FeatureDef, FeatureManifest, GeckoPrefDef, PropDef, TargetLanguage, TypeRef,
+    },
 };
 
 pub(crate) type ExperimenterManifest = BTreeMap<String, ExperimenterFeature>;

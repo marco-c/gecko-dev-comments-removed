@@ -2,7 +2,7 @@
 
 
 
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use percent_encoding::{AsciiSet, CONTROLS};
 
 use crate::protocol::StartAppProtocol;

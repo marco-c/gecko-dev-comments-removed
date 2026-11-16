@@ -2,9 +2,11 @@
 
 
 
-use std::ffi::{OsStr, OsString};
-use std::path::Path;
-use std::vec;
+use std::{
+    ffi::{OsStr, OsString},
+    path::Path,
+    vec,
+};
 
 use anyhow::Result;
 use nimbus_fml::command_line::do_main;

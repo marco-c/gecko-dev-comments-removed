@@ -2,85 +2,50 @@
 
 
 
-use chrono::{DateTime, Utc};
-#[cfg(test)]
-use std::{sync::Arc, time::Duration};
-
-
-
-#[derive(Clone, Default)]
-pub(crate) struct Clock(Source);
-
-#[derive(Clone, Default)]
-enum Source {
-    #[default]
-    System,
+pub trait Clock: Send + Sync + 'static {
     #[cfg(test)]
-    Mock(MockClock),
+    fn advance(&self, secs: i64);
+    fn now_epoch_seconds(&self) -> i64;
 }
 
-impl Clock {
-    pub(crate) fn now(&self) -> DateTime<Utc> {
-        match &self.0 {
-            Source::System => Utc::now(),
-            #[cfg(test)]
-            Source::Mock(mock) => mock.now(),
+pub struct CacheClock;
+
+impl Clock for CacheClock {
+    #[cfg(test)]
+    fn advance(&self, _secs: i64) {
+        panic!(
+            "
+        You cannot advance a non-test clock.
+        Be sure to build the cache or store with the test clock for time-dependent tests.
+    "
+        )
+    }
+    fn now_epoch_seconds(&self) -> i64 {
+        chrono::Utc::now().timestamp()
+    }
+}
+
+#[cfg(test)]
+pub struct TestClock {
+    now: std::sync::atomic::AtomicI64,
+}
+
+#[cfg(test)]
+impl TestClock {
+    pub fn new(start: i64) -> Self {
+        Self {
+            now: std::sync::atomic::AtomicI64::new(start),
         }
     }
 }
 
 #[cfg(test)]
-impl From<MockClock> for Clock {
-    fn from(mock: MockClock) -> Self {
-        Self(Source::Mock(mock))
+impl Clock for TestClock {
+    fn advance(&self, secs: i64) {
+        self.now
+            .fetch_add(secs, std::sync::atomic::Ordering::Relaxed);
     }
-}
-
-
-
-
-#[cfg(test)]
-#[derive(Clone)]
-pub(crate) struct MockClock(Arc<parking_lot::Mutex<DateTime<Utc>>>);
-
-#[cfg(test)]
-impl MockClock {
-    pub(crate) fn new() -> Self {
-        use chrono::SubsecRound;
-
-        Self(Arc::new(parking_lot::Mutex::new(
-            Utc::now().trunc_subsecs(0),
-        )))
-    }
-
-    pub(crate) fn advance(&self, by: Duration) {
-        *self.0.lock() += by;
-    }
-
-    pub(crate) fn now(&self) -> DateTime<Utc> {
-        *self.0.lock()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn mock_moves_only_when_advanced() {
-        let mock = MockClock::new();
-        let start = mock.now();
-        assert_eq!(mock.now(), start);
-
-        mock.advance(Duration::from_secs(90));
-        assert_eq!(mock.now(), start + Duration::from_secs(90));
-    }
-
-    #[test]
-    fn clock_follows_the_mock_it_was_given() {
-        let mock = MockClock::new();
-        let clock = Clock::from(mock.clone());
-        mock.advance(Duration::from_secs(5));
-        assert_eq!(clock.now(), mock.now());
+    fn now_epoch_seconds(&self) -> i64 {
+        self.now.load(std::sync::atomic::Ordering::Relaxed)
     }
 }

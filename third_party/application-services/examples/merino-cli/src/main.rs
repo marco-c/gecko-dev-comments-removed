@@ -11,7 +11,6 @@ use merino::curated_recommendations::models::request::{
 };
 use merino::curated_recommendations::CuratedRecommendationsClient;
 use merino::suggest::{SuggestClient, SuggestConfig, SuggestOptions};
-use merino::widgets::wrexham::{WrexhamClient, WrexhamConfig, WrexhamMatchesOptions};
 use viaduct::{configure_ohttp_channel, OhttpConfig};
 
 #[derive(Debug, Parser)]
@@ -86,23 +85,6 @@ enum Commands {
         #[arg(long)]
         accept_language: Option<String>,
     },
-    
-    Wrexham {
-        #[command(subcommand)]
-        endpoint: WrexhamCommand,
-    },
-}
-
-#[derive(Debug, Subcommand)]
-enum WrexhamCommand {
-    
-    Matches {
-        
-        #[arg(long)]
-        limit: Option<u32>,
-    },
-    
-    Standings,
 }
 
 fn main() -> Result<()> {
@@ -171,19 +153,6 @@ fn main() -> Result<()> {
                 }
                 None => println!("No suggestions available (204 No Content)"),
             }
-        }
-        Commands::Wrexham { endpoint } => {
-            let client = WrexhamClient::new(WrexhamConfig {
-                base_host: cli.base_host,
-            })?;
-            let response = match endpoint {
-                WrexhamCommand::Matches { limit } => {
-                    client.get_matches(WrexhamMatchesOptions { limit })?
-                }
-                WrexhamCommand::Standings => client.get_standings()?,
-            };
-            let json: serde_json::Value = serde_json::from_str(&response)?;
-            println!("{}", serde_json::to_string_pretty(&json)?);
         }
     }
 

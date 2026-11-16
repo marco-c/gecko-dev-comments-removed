@@ -2,16 +2,16 @@
 
 
 
+pub use crate::editing::FmlEditorError;
+use crate::{
+    editing::{CursorPosition, ErrorConverter},
+    error::{ClientError, FMLError, Result},
+    intermediate_representation::{FeatureDef, FeatureExample, FeatureManifest},
+    FmlClient, JsonObject,
+};
 use serde_json::Value;
-
 use std::sync::Arc;
 use url::Url;
-
-pub use crate::editing::FmlEditorError;
-use crate::editing::{CursorPosition, ErrorConverter};
-use crate::error::{ClientError, FMLError, Result};
-use crate::intermediate_representation::{FeatureDef, FeatureExample, FeatureManifest};
-use crate::{FmlClient, JsonObject};
 
 impl FmlClient {
     pub fn get_feature_inspector(&self, id: String) -> Option<Arc<FmlFeatureInspector>> {

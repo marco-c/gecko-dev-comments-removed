@@ -1,10 +1,8 @@
 
 
 
-
-use std::fmt::Display;
-
 use heck::{ToLowerCamelCase, ToUpperCamelCase};
+use std::fmt::Display;
 
 
 pub fn class_name(nm: &dyn Display) -> String {

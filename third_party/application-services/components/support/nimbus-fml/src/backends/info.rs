@@ -6,10 +6,12 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use serde::Serialize;
 
-use crate::error::{FMLError, Result};
-use crate::frontend::FeatureMetadata;
-use crate::intermediate_representation::{FeatureDef, FeatureManifest};
-use crate::util::loaders::FilePath;
+use crate::{
+    error::{FMLError, Result},
+    frontend::FeatureMetadata,
+    intermediate_representation::{FeatureDef, FeatureManifest},
+    util::loaders::FilePath,
+};
 
 #[derive(Serialize, Debug)]
 pub(crate) struct ManifestInfo {

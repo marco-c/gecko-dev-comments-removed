@@ -4,30 +4,37 @@
 
 
 
+
+
 use std::collections::{BTreeMap, HashSet};
 
+use super::{
+    enum_path, feature_path, is_boolean, object_path, variable_path, LintInfo, Linter, RawFinding,
+};
 use crate::intermediate_representation::{
     EnumDef, FeatureDef, FeatureManifest, ObjectDef, PropDef, TypeRef,
 };
-use crate::lints::{
-    LintInfo, Linter, UnreportedIssue, define_lints, enum_path, feature_path, object_path,
-    variable_path,
-};
 
 define_lints! {
-    NO_VARIABLES: Design =
+    NO_VARIABLES: Design, Warning =
         "Features should have something an experiment can change.",
         "An experiment on a feature with no variables can only enrol users; it can't change what they see. Add at least a boolean `enabled` variable.";
-    TOO_MANY_VARIABLES: Design =
+    MISSING_ENABLED_VARIABLE: Design, Warning =
+        "Features should be able to be switched off remotely.",
+        "Features should be able to be switched off without shipping new code. Add `enabled: { type: Boolean }`, default it to the behaviour that ships today, and check it before using the rest of the feature.";
+    TOO_MANY_VARIABLES: Design, Warning =
         "Features with a lot of variables are hard to configure correctly.",
         "Every variable is something an experiment owner has to understand. Consider splitting the feature up, or grouping related variables into objects.";
-    DEEP_NESTING: Design =
+    STRINGLY_TYPED: Design, Warning =
+        "Values with a fixed set of options should be enums, not strings.",
+        "Declare an enum and use that as the type: Experimenter can then offer the options and reject anything else, instead of passing a typo through to the app. A `Map<String, String>` can't be checked at all; consider an object for the values, or a `StringAlias` for the keys.";
+    DEEP_NESTING: Design, Warning =
         "Deeply nested configuration is hard to write by hand.",
         "Experiment owners write these values out as JSON by hand. Consider flattening the value, or adding an `examples` block showing a complete one.";
-    TRIVIAL_ENUM: Design =
+    TRIVIAL_ENUM: Design, Warning =
         "An enum should offer a choice.",
         "An enum that can only take one value can't be varied by an experiment. Add the other variants, or use a boolean.";
-    UNUSED_TYPE: Design =
+    UNUSED_TYPE: Design, Warning =
         "Objects and enums should be used by at least one feature.",
         "Unused types are still generated into Kotlin and Swift, and still have to be maintained. Delete it, or use it.";
 }
@@ -35,39 +42,56 @@ define_lints! {
 const MAX_VARIABLES: usize = 25;
 
 
-
-
 const MAX_NESTING_DEPTH: usize = 3;
 
 
-pub(crate) struct DesignLints;
+const ENUMERABLE_SUFFIXES: &[&str] = &[
+    "alignment",
+    "behavior",
+    "behaviour",
+    "direction",
+    "kind",
+    "layout",
+    "mode",
+    "placement",
+    "position",
+    "state",
+    "strategy",
+    "style",
+    "theme",
+    "treatment",
+    "type",
+    "variant",
+];
 
-impl Linter for DesignLints {
+pub(crate) struct Design;
+
+impl Linter for Design {
     fn lints(&self) -> &'static [&'static LintInfo] {
         LINTS
     }
 
-    fn lint_feature(
+    fn check_feature(
         &self,
         feature: &FeatureDef,
         manifest: &FeatureManifest,
-        out: &mut Vec<UnreportedIssue>,
+        out: &mut Vec<RawFinding>,
     ) {
-        lint_feature(feature, manifest, out);
+        check_feature(feature, manifest, out);
     }
 
-    fn lint_enum(&self, enum_def: &EnumDef, out: &mut Vec<UnreportedIssue>) {
-        lint_enum(enum_def, out);
+    fn check_enum(&self, enum_def: &EnumDef, out: &mut Vec<RawFinding>) {
+        check_enum(enum_def, out);
     }
 
-    fn lint_manifest(&self, manifest: &FeatureManifest, out: &mut Vec<UnreportedIssue>) {
-        lint_manifest(manifest, out);
+    fn check_manifest(&self, manifest: &FeatureManifest, out: &mut Vec<RawFinding>) {
+        check_manifest(manifest, out);
     }
 }
 
-fn lint_feature(feature: &FeatureDef, manifest: &FeatureManifest, out: &mut Vec<UnreportedIssue>) {
+fn check_feature(feature: &FeatureDef, manifest: &FeatureManifest, out: &mut Vec<RawFinding>) {
     if feature.props.is_empty() {
-        out.push(UnreportedIssue::new(
+        out.push(RawFinding::new(
             &NO_VARIABLES,
             feature_path(feature),
             "This feature has no variables",
@@ -76,8 +100,16 @@ fn lint_feature(feature: &FeatureDef, manifest: &FeatureManifest, out: &mut Vec<
         return;
     }
 
+    if !feature.props.iter().any(is_enabled_variable) {
+        out.push(RawFinding::new(
+            &MISSING_ENABLED_VARIABLE,
+            feature_path(feature),
+            "This feature has no boolean `enabled` variable",
+        ));
+    }
+
     if feature.props.len() > MAX_VARIABLES {
-        out.push(UnreportedIssue::new(
+        out.push(RawFinding::new(
             &TOO_MANY_VARIABLES,
             feature_path(feature),
             format!(
@@ -88,13 +120,14 @@ fn lint_feature(feature: &FeatureDef, manifest: &FeatureManifest, out: &mut Vec<
     }
 
     for prop in &feature.props {
-        lint_feature_nesting(feature, prop, &manifest.obj_defs, out);
+        check_stringly_typed(feature, prop, out);
+        check_nesting(feature, prop, &manifest.obj_defs, out);
     }
 }
 
-fn lint_enum(enum_def: &EnumDef, out: &mut Vec<UnreportedIssue>) {
+fn check_enum(enum_def: &EnumDef, out: &mut Vec<RawFinding>) {
     if enum_def.variants.len() < 2 {
-        out.push(UnreportedIssue::new(
+        out.push(RawFinding::new(
             &TRIVIAL_ENUM,
             enum_path(enum_def),
             format!(
@@ -110,7 +143,8 @@ fn lint_enum(enum_def: &EnumDef, out: &mut Vec<UnreportedIssue>) {
     }
 }
 
-fn lint_manifest(manifest: &FeatureManifest, out: &mut Vec<UnreportedIssue>) {
+fn check_manifest(manifest: &FeatureManifest, out: &mut Vec<RawFinding>) {
+    
     if manifest.feature_defs.is_empty() {
         return;
     }
@@ -124,7 +158,7 @@ fn lint_manifest(manifest: &FeatureManifest, out: &mut Vec<UnreportedIssue>) {
 
     for object in manifest.iter_object_defs() {
         if !used.contains(&TypeRef::Object(object.name.clone())) {
-            out.push(UnreportedIssue::new(
+            out.push(RawFinding::new(
                 &UNUSED_TYPE,
                 object_path(object),
                 "No feature in this manifest uses this object",
@@ -134,7 +168,7 @@ fn lint_manifest(manifest: &FeatureManifest, out: &mut Vec<UnreportedIssue>) {
 
     for enum_def in manifest.iter_enum_defs() {
         if !used.contains(&TypeRef::Enum(enum_def.name.clone())) {
-            out.push(UnreportedIssue::new(
+            out.push(RawFinding::new(
                 &UNUSED_TYPE,
                 enum_path(enum_def),
                 "No feature in this manifest uses this enum",
@@ -142,6 +176,7 @@ fn lint_manifest(manifest: &FeatureManifest, out: &mut Vec<UnreportedIssue>) {
         }
     }
 }
+
 
 
 fn mark_used(typ: &TypeRef, objects: &BTreeMap<String, ObjectDef>, used: &mut HashSet<TypeRef>) {
@@ -168,16 +203,73 @@ fn mark_used(typ: &TypeRef, objects: &BTreeMap<String, ObjectDef>, used: &mut Ha
     }
 }
 
-fn lint_feature_nesting(
+fn is_enabled_variable(prop: &PropDef) -> bool {
+    is_boolean(&prop.typ) && (prop.name == "enabled" || prop.name.ends_with("-enabled"))
+}
+
+fn check_stringly_typed(feature: &FeatureDef, prop: &PropDef, out: &mut Vec<RawFinding>) {
+    
+    if prop.string_alias.is_some() {
+        return;
+    }
+
+    if let TypeRef::StringMap(values) = &prop.typ {
+        if matches!(**values, TypeRef::String) {
+            out.push(RawFinding::new(
+                &STRINGLY_TYPED,
+                variable_path(feature, prop),
+                format!(
+                    "`{}` is a `Map<String, String>`, so neither its keys nor its values can be checked",
+                    prop.name
+                ),
+            ));
+            return;
+        }
+    }
+
+    if !is_string(&prop.typ) {
+        return;
+    }
+
+    let suffix = prop
+        .name
+        .rsplit('-')
+        .next()
+        .map(str::to_ascii_lowercase)
+        .unwrap_or_default();
+    
+    let singular = suffix.strip_suffix('s').unwrap_or(&suffix);
+
+    if ENUMERABLE_SUFFIXES.contains(&singular) {
+        out.push(RawFinding::new(
+            &STRINGLY_TYPED,
+            variable_path(feature, prop),
+            format!(
+                "`{}` is a `{}`, but its name suggests it is one of a fixed set of values",
+                prop.name, prop.typ
+            ),
+        ));
+    }
+}
+
+fn is_string(typ: &TypeRef) -> bool {
+    match typ {
+        TypeRef::String => true,
+        TypeRef::Option(inner) | TypeRef::List(inner) => is_string(inner),
+        _ => false,
+    }
+}
+
+fn check_nesting(
     feature: &FeatureDef,
     prop: &PropDef,
     objects: &BTreeMap<String, ObjectDef>,
-    out: &mut Vec<UnreportedIssue>,
+    out: &mut Vec<RawFinding>,
 ) {
     let mut visiting = HashSet::new();
-    let depth = 1 + compute_type_depth(&prop.typ, objects, &mut visiting);
+    let depth = 1 + type_depth(&prop.typ, objects, &mut visiting);
     if depth > MAX_NESTING_DEPTH {
-        out.push(UnreportedIssue::new(
+        out.push(RawFinding::new(
             &DEEP_NESTING,
             variable_path(feature, prop),
             format!(
@@ -189,16 +281,16 @@ fn lint_feature_nesting(
 }
 
 
-fn compute_type_depth(
+fn type_depth(
     typ: &TypeRef,
     objects: &BTreeMap<String, ObjectDef>,
     visiting: &mut HashSet<String>,
 ) -> usize {
     match typ {
         TypeRef::Option(inner) | TypeRef::List(inner) | TypeRef::StringMap(inner) => {
-            compute_type_depth(inner, objects, visiting)
+            type_depth(inner, objects, visiting)
         }
-        TypeRef::EnumMap(_, values) => compute_type_depth(values, objects, visiting),
+        TypeRef::EnumMap(_, values) => type_depth(values, objects, visiting),
         TypeRef::Object(name) => {
             if !visiting.insert(name.clone()) {
                 
@@ -209,7 +301,7 @@ fn compute_type_depth(
                 .map(|o| {
                     o.props
                         .iter()
-                        .map(|p| compute_type_depth(&p.typ, objects, visiting))
+                        .map(|p| type_depth(&p.typ, objects, visiting))
                         .max()
                         .unwrap_or_default()
                 })
@@ -240,14 +332,39 @@ mod unit_tests {
 
     fn lints_with(feature: &FeatureDef, manifest: &FeatureManifest) -> Vec<&'static str> {
         let mut out = Vec::new();
-        lint_feature(feature, manifest, &mut out);
+        check_feature(feature, manifest, &mut out);
         out.iter().map(|f| f.lint.name).collect()
     }
 
     #[test]
     fn test_no_variables() {
-        let issues = lints(&feature(Default::default()));
-        assert_eq!(issues, vec!["NO_VARIABLES"]);
+        let findings = lints(&feature(Default::default()));
+        assert_eq!(findings, vec!["NO_VARIABLES"]);
+    }
+
+    #[test]
+    fn test_missing_enabled_variable() {
+        assert!(lints(&feature(vec![prop("max-rows", &TypeRef::Int)]))
+            .contains(&"MISSING_ENABLED_VARIABLE"));
+
+        for name in ["enabled", "sync-enabled"] {
+            assert!(
+                !lints(&feature(vec![prop(name, &TypeRef::Boolean)]))
+                    .contains(&"MISSING_ENABLED_VARIABLE"),
+                "{name} should count as an enabled variable"
+            );
+        }
+
+        
+        assert!(!lints(&feature(vec![prop(
+            "enabled",
+            &TypeRef::Option(Box::new(TypeRef::Boolean))
+        )]))
+        .contains(&"MISSING_ENABLED_VARIABLE"));
+
+        
+        assert!(lints(&feature(vec![prop("enabled", &TypeRef::String)]))
+            .contains(&"MISSING_ENABLED_VARIABLE"));
     }
 
     #[test]
@@ -256,6 +373,46 @@ mod unit_tests {
             .map(|i| prop(&format!("variable-{i}"), &TypeRef::Int))
             .collect();
         assert!(lints(&feature(props)).contains(&"TOO_MANY_VARIABLES"));
+    }
+
+    #[test]
+    fn test_stringly_typed() {
+        assert!(
+            lints(&feature(vec![prop("button-style", &TypeRef::String)]))
+                .contains(&"STRINGLY_TYPED")
+        );
+        assert!(lints(&feature(vec![prop(
+            "supported-modes",
+            &TypeRef::List(Box::new(TypeRef::String))
+        )]))
+        .contains(&"STRINGLY_TYPED"));
+        assert!(lints(&feature(vec![prop(
+            "overrides",
+            &TypeRef::StringMap(Box::new(TypeRef::String))
+        )]))
+        .contains(&"STRINGLY_TYPED"));
+
+        
+        assert!(!lints(&feature(vec![prop(
+            "button-style",
+            &TypeRef::Enum("ButtonStyle".to_string())
+        )]))
+        .contains(&"STRINGLY_TYPED"));
+
+        
+        let aliased = PropDef::with_string_alias(
+            "player-type",
+            &TypeRef::String,
+            &json!(null),
+            &TypeRef::StringAlias("PlayerType".to_string()),
+        );
+        assert!(!lints(&feature(vec![aliased])).contains(&"STRINGLY_TYPED"));
+
+        
+        assert!(
+            !lints(&feature(vec![prop("button-label", &TypeRef::String)]))
+                .contains(&"STRINGLY_TYPED")
+        );
     }
 
     #[test]
@@ -298,14 +455,14 @@ mod unit_tests {
     #[test]
     fn test_trivial_enum() {
         let mut out = Vec::new();
-        lint_enum(&EnumDef::new("OnlyOne", &["only"]), &mut out);
+        check_enum(&EnumDef::new("OnlyOne", &["only"]), &mut out);
         assert_eq!(
             out.iter().map(|f| f.lint.name).collect::<Vec<_>>(),
             vec!["TRIVIAL_ENUM"]
         );
 
         let mut out = Vec::new();
-        lint_enum(&EnumDef::new("TwoOfThem", &["this", "that"]), &mut out);
+        check_enum(&EnumDef::new("TwoOfThem", &["this", "that"]), &mut out);
         assert!(out.is_empty());
     }
 
@@ -326,7 +483,7 @@ mod unit_tests {
         manifest.add_feature(feature(vec![prop("used", &used)]));
 
         let mut out = Vec::new();
-        lint_manifest(&manifest, &mut out);
+        check_manifest(&manifest, &mut out);
         let paths: Vec<_> = out.iter().map(|f| f.location.subject.as_str()).collect();
         assert_eq!(paths, vec!["object `Unused`", "enum `UnusedStyle`"]);
     }
@@ -348,7 +505,7 @@ mod unit_tests {
         )]));
 
         let mut out = Vec::new();
-        lint_manifest(&manifest, &mut out);
+        check_manifest(&manifest, &mut out);
         assert_eq!(
             out.iter()
                 .map(|f| f.location.subject.as_str())
@@ -368,7 +525,7 @@ mod unit_tests {
         };
 
         let mut out = Vec::new();
-        lint_manifest(&manifest, &mut out);
+        check_manifest(&manifest, &mut out);
         assert!(out.is_empty());
     }
 }

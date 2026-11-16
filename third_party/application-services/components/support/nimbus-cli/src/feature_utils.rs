@@ -2,14 +2,16 @@
 
 
 
-use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::{
+    path::{Path, PathBuf},
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use anyhow::Result;
 use heck::ToKebabCase;
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 
-use crate::{NimbusApp, value_utils};
+use crate::{value_utils, NimbusApp};
 
 pub(crate) fn create_experiment(
     app: &NimbusApp,

@@ -4,11 +4,10 @@
 
 use std::collections::BTreeMap;
 
-use serde_json::json;
-
 use crate::intermediate_representation::{
     EnumDef, FeatureDef, FeatureManifest, ModuleId, ObjectDef, PropDef, TypeRef, VariantDef,
 };
+use serde_json::json;
 
 pub(crate) fn get_simple_homescreen_feature() -> FeatureManifest {
     FeatureManifest {

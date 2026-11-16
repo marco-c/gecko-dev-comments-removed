@@ -6,9 +6,7 @@ use std::collections::BTreeSet;
 
 use url::Url;
 
-use crate::FmlClient;
-use crate::frontend::DocumentationLink;
-use crate::intermediate_representation::FeatureDef;
+use crate::{frontend::DocumentationLink, intermediate_representation::FeatureDef, FmlClient};
 
 #[derive(Debug, PartialEq, Default)]
 pub struct FmlFeatureDescriptor {

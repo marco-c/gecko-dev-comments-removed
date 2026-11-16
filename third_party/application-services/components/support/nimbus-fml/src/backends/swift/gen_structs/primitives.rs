@@ -4,7 +4,7 @@
 
 use std::fmt::Display;
 
-use crate::backends::swift::gen_structs::common::{self, code_type};
+use super::common::{self, code_type};
 use crate::backends::{CodeOracle, CodeType, LiteralRenderer, VariablesType};
 use crate::intermediate_representation::Literal;
 

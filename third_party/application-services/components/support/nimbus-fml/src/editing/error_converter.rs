@@ -2,17 +2,15 @@
 
 
 
-use std::collections::{BTreeMap, BTreeSet};
-
-use serde_json::Value;
-
+use super::{values_finder::ValuesFinder, ErrorKind, FeatureValidationError};
 #[cfg(feature = "client-lib")]
-use crate::editing::{CorrectionCandidate, FmlEditorError};
-use crate::editing::{ErrorKind, FeatureValidationError, values_finder::ValuesFinder};
+use super::{CorrectionCandidate, FmlEditorError};
 use crate::{
     error::FMLError,
     intermediate_representation::{EnumDef, FeatureDef, ObjectDef},
 };
+use serde_json::Value;
+use std::collections::{BTreeMap, BTreeSet};
 
 #[allow(dead_code)]
 pub(crate) struct ErrorConverter<'a> {
