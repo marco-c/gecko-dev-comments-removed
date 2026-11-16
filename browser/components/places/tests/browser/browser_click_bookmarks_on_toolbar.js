@@ -2,7 +2,7 @@
 
 
 
-const PREF_LOAD_BOOKMARKS_IN_TABS = "browser.tabs.loadBookmarksInTabs";
+const PREF_LOAD_UI_LINK_IN_TAB = "browser.tabs.loadUILinkInTab";
 const EXAMPLE_PAGE = "https://example.com/";
 const TEST_PAGES = [
   "about:mozilla",
@@ -120,7 +120,7 @@ add_task(async function middleclick() {
 
 add_task(async function clickWithPrefSet() {
   await SpecialPowers.pushPrefEnv({
-    set: [[PREF_LOAD_BOOKMARKS_IN_TABS, true]],
+    set: [[PREF_LOAD_UI_LINK_IN_TAB, true]],
   });
 
   let promise = waitForNewTab(TEST_PAGES[0], false);
@@ -145,7 +145,7 @@ add_task(async function clickWithPrefSet() {
 
 add_task(async function openInSameTabWithPrefSet() {
   await SpecialPowers.pushPrefEnv({
-    set: [[PREF_LOAD_BOOKMARKS_IN_TABS, true]],
+    set: [[PREF_LOAD_UI_LINK_IN_TAB, true]],
   });
 
   let placesContext = document.getElementById("placesContext");
@@ -173,7 +173,7 @@ add_task(async function openInSameTabWithPrefSet() {
 
 add_task(async function quickContextMenu() {
   await SpecialPowers.pushPrefEnv({
-    set: [[PREF_LOAD_BOOKMARKS_IN_TABS, true]],
+    set: [[PREF_LOAD_UI_LINK_IN_TAB, true]],
   });
 
   let tabPromise = BrowserTestUtils.waitForNewTab(gBrowser, TEST_PAGES[0]);

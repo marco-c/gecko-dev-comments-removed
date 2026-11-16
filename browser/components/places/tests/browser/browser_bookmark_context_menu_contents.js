@@ -123,6 +123,16 @@ let OptionItemExists = (elementId, doc = document) => {
   );
 };
 
+let OptionItemIsHidden = (elementId, doc = document) => {
+  let optionItem = doc.getElementById(elementId);
+
+  Assert.ok(optionItem, `Context menu contains the menuitem ${elementId}`);
+  Assert.ok(
+    !BrowserTestUtils.isVisible(optionItem),
+    `Context menu option ${elementId} is hidden`
+  );
+};
+
 let OptionsMatchExpected = (contextMenu, expectedOptionItems) => {
   let idList = [];
   for (let elem of contextMenu.children) {
@@ -156,13 +166,11 @@ let checkContextMenu = async (cbfunc, optionItems, doc = document) => {
   
   
   
-  for (let loadBookmarksInNewTab of [true, false]) {
-    info(
-      `Running checkContextMenu: ` + JSON.stringify({ loadBookmarksInNewTab })
-    );
+  for (let loadUILinkInTab of [true, false]) {
+    info(`Running checkContextMenu: ` + JSON.stringify({ loadUILinkInTab }));
 
     await SpecialPowers.pushPrefEnv({
-      set: [["browser.tabs.loadBookmarksInTabs", loadBookmarksInNewTab]],
+      set: [["browser.tabs.loadUILinkInTab", loadUILinkInTab]],
     });
 
     
@@ -172,7 +180,7 @@ let checkContextMenu = async (cbfunc, optionItems, doc = document) => {
     
     let expectedOptionItems = [...optionItems];
     if (
-      loadBookmarksInNewTab &&
+      loadUILinkInTab &&
       optionItems.includes("placesContext_open:newtab") &&
       !optionItems.includes("placesContext_open")
     ) {
@@ -193,15 +201,15 @@ let checkContextMenu = async (cbfunc, optionItems, doc = document) => {
     if (expectedOptionItems.includes("placesContext_open")) {
       Assert.equal(
         doc.getElementById("placesContext_open").getAttribute("default"),
-        loadBookmarksInNewTab ? null : "true",
-        `placesContext_open has the correct "default" attribute when loadBookmarksInTabs = ${loadBookmarksInNewTab}`
+        loadUILinkInTab ? null : "true",
+        `placesContext_open has the correct "default" attribute when loadUILinkInTab = ${loadUILinkInTab}`
       );
     }
     if (expectedOptionItems.includes("placesContext_open:newtab")) {
       Assert.equal(
         doc.getElementById("placesContext_open:newtab").getAttribute("default"),
-        loadBookmarksInNewTab ? "true" : null,
-        `placesContext_open:newtab has the correct "default" attribute when loadBookmarksInTabs = ${loadBookmarksInNewTab}`
+        loadUILinkInTab ? "true" : null,
+        `placesContext_open:newtab has the correct "default" attribute when loadUILinkInTab = ${loadUILinkInTab}`
       );
     }
 
@@ -936,3 +944,188 @@ add_task(async function test_private_browsing_window() {
 
   await BrowserTestUtils.closeWindow(win);
 });
+
+
+
+
+
+
+add_task(
+  async function test_folder_context_menu_hides_empty_toolbar_share_folder() {
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.contentsharing.enabled", true]],
+    });
+
+    
+    let folder = await PlacesUtils.bookmarks.insert({
+      index: -1,
+      type: PlacesUtils.bookmarks.TYPE_FOLDER,
+      parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+      title: "Test Share Folder",
+    });
+
+    let toolbarNode = await waitForToolbarNode(folder.guid);
+    Assert.ok(toolbarNode, "Empty folder created");
+
+    let contextMenu = await openContextMenuWithRetry(
+      document.getElementById("placesContext"),
+      () => {
+        EventUtils.synthesizeMouseAtCenter(
+          toolbarNode,
+          { button: 2, type: "contextmenu" },
+          toolbarNode.documentGlobal
+        );
+      }
+    );
+
+    OptionItemIsHidden("contentsharing_sharefolder");
+    await hidePopupAndWait(contextMenu);
+
+    
+    
+    await PlacesUtils.bookmarks.insert({
+      index: -1,
+      type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+      parentGuid: folder.guid,
+      url: `about:config`,
+      title: `Page with No Content`,
+    });
+
+    toolbarNode = await waitForToolbarNode(folder.guid);
+    Assert.ok(toolbarNode, "New bookmark added");
+
+    contextMenu = await openContextMenuWithRetry(
+      document.getElementById("placesContext"),
+      () => {
+        EventUtils.synthesizeMouseAtCenter(
+          toolbarNode,
+          { button: 2, type: "contextmenu" },
+          toolbarNode.documentGlobal
+        );
+      }
+    );
+
+    OptionItemIsHidden("contentsharing_sharefolder");
+    await hidePopupAndWait(contextMenu);
+
+    
+    
+    await PlacesUtils.bookmarks.insert({
+      index: -1,
+      type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+      parentGuid: folder.guid,
+      url: `https://example.com`,
+      title: `Page with Content`,
+    });
+
+    toolbarNode = await waitForToolbarNode(folder.guid);
+    Assert.ok(toolbarNode, "New bookmark added");
+
+    contextMenu = await openContextMenuWithRetry(
+      document.getElementById("placesContext"),
+      () => {
+        EventUtils.synthesizeMouseAtCenter(
+          toolbarNode,
+          { button: 2, type: "contextmenu" },
+          toolbarNode.documentGlobal
+        );
+      }
+    );
+
+    OptionItemExists("contentsharing_sharefolder");
+    await hidePopupAndWait(contextMenu);
+    await PlacesUtils.bookmarks.eraseEverything();
+  }
+);
+
+
+
+
+
+
+add_task(
+  async function test_folder_context_menu_hides_empty_library_share_folder() {
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.contentsharing.enabled", true]],
+    });
+
+    
+    await withLibraryWindow("BookmarksToolbar", async ({ right }) => {
+      
+      let folder = await PlacesUtils.bookmarks.insert({
+        index: -1,
+        type: PlacesUtils.bookmarks.TYPE_FOLDER,
+        parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+        title: "Test Share Folder",
+      });
+
+      let toolbarNode = await waitForToolbarNode(folder.guid);
+      Assert.ok(toolbarNode, "Empty folder created");
+
+      let contextMenu = await openContextMenuWithRetry(
+        right.ownerDocument.getElementById("placesContext"),
+        async () => {
+          right.selectItems([folder.guid]);
+          await synthesizeClickOnSelectedTreeCell(right, {
+            type: "contextmenu",
+          });
+        }
+      );
+
+      OptionItemIsHidden("contentsharing_sharefolder", right.ownerDocument);
+      await hidePopupAndWait(contextMenu);
+
+      
+      
+      await PlacesUtils.bookmarks.insert({
+        index: -1,
+        type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+        parentGuid: folder.guid,
+        url: `about:config`,
+        title: `Page with No Content`,
+      });
+
+      toolbarNode = await waitForToolbarNode(folder.guid);
+      Assert.ok(toolbarNode, "New bookmark added");
+
+      contextMenu = await openContextMenuWithRetry(
+        right.ownerDocument.getElementById("placesContext"),
+        async () => {
+          right.selectItems([folder.guid]);
+          await synthesizeClickOnSelectedTreeCell(right, {
+            type: "contextmenu",
+          });
+        }
+      );
+
+      OptionItemIsHidden("contentsharing_sharefolder", right.ownerDocument);
+      await hidePopupAndWait(contextMenu);
+
+      
+      
+      await PlacesUtils.bookmarks.insert({
+        index: -1,
+        type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+        parentGuid: folder.guid,
+        url: `https://example.com`,
+        title: `Page with Content`,
+      });
+
+      toolbarNode = await waitForToolbarNode(folder.guid);
+      Assert.ok(toolbarNode, "New bookmark added");
+
+      contextMenu = await openContextMenuWithRetry(
+        right.ownerDocument.getElementById("placesContext"),
+        async () => {
+          right.selectItems([folder.guid]);
+          await synthesizeClickOnSelectedTreeCell(right, {
+            type: "contextmenu",
+          });
+        }
+      );
+
+      OptionItemExists("contentsharing_sharefolder", right.ownerDocument);
+      await hidePopupAndWait(contextMenu);
+    });
+  }
+);

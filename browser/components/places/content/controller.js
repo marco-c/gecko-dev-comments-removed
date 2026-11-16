@@ -599,8 +599,8 @@ PlacesController.prototype = {
         
         let hideIfSingleClickOpens =
           item.getAttribute("hide-if-single-click-opens") == "true" &&
-          !PlacesUIUtils.loadBookmarksInBackground &&
-          !PlacesUIUtils.loadBookmarksInTabs &&
+          !PlacesUIUtils.loadUILinkInBackground &&
+          !PlacesUIUtils.loadUILinkInTab &&
           this._view.singleClickOpens;
         let hideIfNotSearch =
           item.getAttribute("hide-if-not-search") == "true" &&
