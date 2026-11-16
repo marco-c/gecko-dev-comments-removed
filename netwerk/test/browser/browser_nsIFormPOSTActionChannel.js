@@ -67,7 +67,7 @@ CustomChannel.prototype = {
   get URI() {
     return this.uri;
   },
-  owner: null,
+  owner: Services.scriptSecurityManager.getSystemPrincipal(),
   notificationCallbacks: null,
   get securityInfo() {
     return null;
@@ -106,12 +106,6 @@ CustomChannel.prototype = {
 </form>
 
 <iframe id="frame" name="frame" width="200" height="200"></iframe>
-
-<script type="text/javascript">
-<!--
-document.getElementById('form').submit();
-//-->
-</script>
 `;
     } else if (this.uri.spec.startsWith(ACTION_BASE)) {
       var postData = "";
@@ -180,55 +174,35 @@ document.getElementById('form').submit();
     Ci.nsIRequest.LOAD_BYPASS_CACHE,
 };
 
-function frameScript() {
+async function loadTestTab(uri) {
   
-  addMessageListener("Test:WaitForIFrame", function () {
-    var check = function () {
-      if (content) {
-        var frame = content.document.getElementById("frame");
-        if (frame) {
-          var upload_stream =
-            frame.contentDocument.getElementById("upload_stream");
-          var post_data = frame.contentDocument.getElementById("post_data");
-          var headers = frame.contentDocument.getElementById("upload_headers");
-          if (upload_stream && post_data && headers) {
-            sendAsyncMessage("Test:IFrameLoaded", [
-              upload_stream.value,
-              post_data.value,
-              headers.value,
-            ]);
-            return;
-          }
-        }
-      }
-
-      setTimeout(check, 100);
-    };
-
-    check();
-  });
   
-}
-
-function loadTestTab(uri) {
-  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, uri);
-  var browser = gBrowser.selectedBrowser;
-
-  let manager = browser.messageManager;
-  browser.messageManager.loadFrameScript(
-    "data:,(" + frameScript.toString() + ")();",
-    true
-  );
-
-  return new Promise(resolve => {
-    function listener({ data: [hasUploadStream, postData, headers] }) {
-      manager.removeMessageListener("Test:IFrameLoaded", listener);
-      resolve([hasUploadStream, atob(postData), JSON.parse(headers)]);
-    }
-
-    manager.addMessageListener("Test:IFrameLoaded", listener);
-    manager.sendAsyncMessage("Test:WaitForIFrame");
+  
+  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, uri, {
+    forceNotRemote: true,
   });
+  let browser = gBrowser.selectedBrowser;
+
+  
+  
+  let form;
+  await TestUtils.waitForCondition(() => {
+    form = browser.contentDocument?.getElementById("form");
+    return form;
+  }, "form is loaded");
+  form.submit();
+
+  let frameDoc;
+  await TestUtils.waitForCondition(() => {
+    frameDoc = browser.contentDocument.getElementById("frame")?.contentDocument;
+    return frameDoc?.getElementById("upload_headers");
+  }, "action page is loaded in the iframe");
+
+  return [
+    frameDoc.getElementById("upload_stream").value,
+    atob(frameDoc.getElementById("post_data").value),
+    JSON.parse(frameDoc.getElementById("upload_headers").value),
+  ];
 }
 
 add_task(async function () {
@@ -237,7 +211,8 @@ add_task(async function () {
     SCHEME,
     handler,
     Ci.nsIProtocolHandler.URI_NORELATIVE |
-      Ci.nsIProtocolHandler.URI_IS_LOCAL_RESOURCE,
+      Ci.nsIProtocolHandler.URI_IS_LOCAL_RESOURCE |
+      Ci.nsIProtocolHandler.URI_IS_UI_RESOURCE,
     -1
   );
   registerCleanupFunction(function () {
