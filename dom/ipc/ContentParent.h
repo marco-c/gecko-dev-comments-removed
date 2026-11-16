@@ -682,13 +682,11 @@ class ContentParent final : public PContentParent,
   
   
   template <typename T>
-  Maybe<T> ValidatePrincipal(
+  Maybe<T&> ValidatePrincipal(
       Tainted<T>& aPrincipal,
       const EnumSet<ValidatePrincipalOptions>& aOptions = {}) {
-    if (!MOZ_IS_VALID(aPrincipal, ValidatePrincipal(aPrincipal, aOptions))) {
-      return Nothing();
-    }
-    return Some(MOZ_NO_VALIDATE(aPrincipal, "Validated above"));
+    return aPrincipal.ValidateRef(
+        [&](const T& aValue) { return ValidatePrincipal(aValue, aOptions); });
   }
 
   nsIDOMProcessParent* ProcessParent() override { return this; }

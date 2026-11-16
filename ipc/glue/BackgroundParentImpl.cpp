@@ -1276,8 +1276,8 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvCreateMLSTransaction(
 
   
   sMLSTaskQueue->Dispatch(NS_NewRunnableFunction(
-      "CreateMLSTransactionRunnable",
-      [endpoint = std::move(aEndpoint), file, principal]() mutable {
+      "CreateMLSTransactionRunnable", [endpoint = std::move(aEndpoint), file,
+                                       principal = *principal]() mutable {
         
         nsresult rv =
             mozilla::dom::MLSTransactionParent::CreateDirectoryIfNotExists(
@@ -1289,7 +1289,7 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvCreateMLSTransaction(
         
         nsAutoCString databasePath;
         rv = mozilla::dom::MLSTransactionParent::ConstructDatabaseFullPath(
-            file, *principal, databasePath);
+            file, principal, databasePath);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return;
         }

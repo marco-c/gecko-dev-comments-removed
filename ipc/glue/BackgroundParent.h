@@ -93,14 +93,12 @@ class BackgroundParent final {
   
   
   template <typename T>
-  static Maybe<T> ValidatePrincipal(
+  static Maybe<T&> ValidatePrincipal(
       PBackgroundParent* aBackgroundActor, Tainted<T>& aPrincipal,
       const EnumSet<dom::ValidatePrincipalOptions>& aOptions = {}) {
-    if (!MOZ_IS_VALID(aPrincipal, ValidatePrincipal(aBackgroundActor,
-                                                    aPrincipal, aOptions))) {
-      return Nothing();
-    }
-    return Some(MOZ_NO_VALIDATE(aPrincipal, "Validated above"));
+    return aPrincipal.ValidateRef([&](const T& aValue) {
+      return ValidatePrincipal(aBackgroundActor, aValue, aOptions);
+    });
   }
 
   static bool ValidatePrincipalInfo(
