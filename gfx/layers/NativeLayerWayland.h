@@ -276,7 +276,7 @@ class NativeLayerWayland : public NativeLayer {
   virtual bool CommitFrontBufferToScreenLocked(
       const widget::WaylandSurfaceLock& aProofOfLock) = 0;
   virtual bool IsFrontBufferChanged() = 0;
-  virtual bool HasFrontBuffer() { return !!mFrontBuffer; }
+  virtual bool HasFrontBuffer() = 0;
 
  protected:
   ~NativeLayerWayland();
@@ -300,10 +300,6 @@ class NativeLayerWayland : public NativeLayer {
   RefPtr<NativeLayerRootWayland> mRootLayer;
 
   RefPtr<widget::WaylandSurface> mSurface;
-
-  
-  RefPtr<widget::WaylandBuffer> mFrontBuffer;
-  bool mFrontBufferBorrowed = false;
 
   const bool mIsOpaque = false;
 
@@ -417,9 +413,19 @@ class NativeLayerWaylandExternal final : public NativeLayerWayland {
       widget::BufferTransaction* aTransaction);
   void PurgeBorrowedBuffers(const widget::WaylandSurfaceLock& aSurfaceLock,
                             bool aForce);
+  bool HasFrontBuffer() override { return !!mFrontBufferSurface; }
 
+  
   uintptr_t mLastSurface = 0;
+
+  
   RefPtr<wr::RenderTextureHost> mTextureHost;
+
+  
+  RefPtr<widget::WaylandBuffer> mFrontBuffer;
+
+  
+  RefPtr<BufferSurface> mFrontBufferSurface;
 
   
   
