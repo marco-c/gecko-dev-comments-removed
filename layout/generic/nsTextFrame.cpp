@@ -10717,8 +10717,28 @@ void nsTextFrame::SetLength(int32_t aLength, nsLineLayout* aLineLayout,
 
   
   
+  
+  
+  
+  
+  bool needBidiFromSource = GetContentLength() == 0;
+
+  
+  
   nsTextFrame* framesToRemove = nullptr;
   while (f && f->mContentOffset < end) {
+    if (needBidiFromSource && f->GetContentLength() > 0) {
+      
+      
+      needBidiFromSource = false;
+      if (f->HasAnyStateBits(NS_FRAME_IS_BIDI)) {
+        FrameBidiData bidi = f->GetBidiData();
+        SetProperty(BidiDataProperty(),
+                    FrameBidiData{bidi.baseLevel, bidi.embeddingLevel,
+                                  kBidiLevelNone});
+        AddStateBits(NS_FRAME_IS_BIDI);
+      }
+    }
     f->mContentOffset = end;
     if (f->GetTextRun(nsTextFrame::eInflated) != mTextRun) {
       ClearTextRuns();
