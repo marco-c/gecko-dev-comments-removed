@@ -94,7 +94,7 @@ async function test_hint_asset(testName, asset, variant) {
     "https://example.com/browser/netwerk/test/browser/early_hint_pixel_count.sjs"
   ).then(response => response.json());
   if (
-    asset === "script" &&
+    (asset === "script" || asset === "module") &&
     variant === "cached" &&
     numConnectBackRemaining === 1
   ) {
@@ -104,7 +104,7 @@ async function test_hint_asset(testName, asset, variant) {
     
     
     info(
-      `${testName} (${asset}+${variant}) in-memory-cached script's notification is skipped`
+      `${testName} (${asset}+${variant}) in-memory-cached ${asset}'s notification is skipped`
     );
   } else {
     Assert.equal(
