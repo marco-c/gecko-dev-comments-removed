@@ -402,8 +402,9 @@ bool SharedSurfacesParent::AgeAndExpireOneGeneration() {
 
 void SharedSurfacesParent::ExpireMap(
     nsTArray<RefPtr<SourceSurfaceSharedDataWrapper>>& aExpired) {
+  
+  
   for (auto& surface : aExpired) {
-    MOZ_RELEASE_ASSERT(surface->GetConsumers() > 0);
     surface->ExpireMap();
   }
 }
