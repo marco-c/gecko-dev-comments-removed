@@ -406,8 +406,6 @@ class MochiRemote(MochitestDesktop):
         
         lastTestSeen = rpm.test_in_flight or currentManifest
 
-        self.device.pull_ccov()
-
         crashed = self.check_for_crashes(symbolsPath, lastTestSeen)
         if crashed:
             status = 1
