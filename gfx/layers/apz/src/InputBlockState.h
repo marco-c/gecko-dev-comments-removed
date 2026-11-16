@@ -641,6 +641,7 @@ class TouchBlockState : public BrowserGesturableBlockState {
 
 
 
+
   bool HasTouchSwipeInfo() const;
 
   
@@ -653,6 +654,8 @@ class TouchBlockState : public BrowserGesturableBlockState {
   }
 
   bool SetContentResponse(bool aPreventDefault) override;
+
+  bool TimeoutContentResponse() override;
 
  private:
   void MaybeNotifyTouchSwipableDirections();
