@@ -20,6 +20,8 @@ class RenderDMABUFTextureHost;
 }  
 
 namespace mozilla::widget {
+class BufferTransaction;
+class WaylandBuffer;
 class WaylandSurfaceLock;
 }  
 
@@ -95,9 +97,6 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
 
   void VSyncCallbackHandler(uint32_t aTime, bool aEmulated);
 
-  RefPtr<widget::WaylandBuffer> BorrowExternalBuffer(
-      RefPtr<BufferSurface> aBufferSurface);
-
 #ifdef MOZ_LOGGING
   nsAutoCString GetDebugTag() const;
   void* GetLoggingWidget() const;
@@ -172,10 +171,6 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
   
   
   nsTArray<RefPtr<NativeLayerWayland>> mRemovedSublayers;
-
-  
-  
-  nsTArray<widget::WaylandBufferHolder> mExternalBuffers;
 
   
   mozilla::Atomic<bool, mozilla::Relaxed> mFrameInProcess{false};
@@ -308,6 +303,7 @@ class NativeLayerWayland : public NativeLayer {
 
   
   RefPtr<widget::WaylandBuffer> mFrontBuffer;
+  bool mFrontBufferBorrowed = false;
 
   const bool mIsOpaque = false;
 
@@ -409,12 +405,26 @@ class NativeLayerWaylandExternal final : public NativeLayerWayland {
 
   void DiscardBackbuffersLocked(const widget::WaylandSurfaceLock& aProofOfLock,
                                 bool aForce) override;
-  void FreeUnusedBackBuffers();
   bool CommitFrontBufferToScreenLocked(
       const widget::WaylandSurfaceLock& aProofOfLock) override;
 
+  RefPtr<widget::WaylandBuffer> BorrowExternalBuffer(
+      const widget::WaylandSurfaceLock& aSurfaceLock,
+      RefPtr<BufferSurface> aBufferSurface);
+  void SetBorrowedBufferTransaction(
+      const widget::WaylandSurfaceLock& aSurfaceLock,
+      widget::WaylandBuffer* aWaylandBuffer,
+      widget::BufferTransaction* aTransaction);
+  void PurgeBorrowedBuffers(const widget::WaylandSurfaceLock& aSurfaceLock,
+                            bool aForce);
+
   uintptr_t mLastSurface = 0;
   RefPtr<wr::RenderTextureHost> mTextureHost;
+
+  
+  
+  constexpr static size_t sMaxWaylandBufferHolders = 30;
+  nsTArray<widget::WaylandBufferHolder> mExternalBuffers;
 };
 
 class NativeLayerRootSnapshotterWayland final

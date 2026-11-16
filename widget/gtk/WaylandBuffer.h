@@ -93,16 +93,37 @@ class WaylandBuffer {
 
 class WaylandBufferHolder final {
  public:
-  bool Matches(BufferSurface* aSurface) const;
+  bool CanRecycle(const WaylandSurfaceLock& aSurfaceLock,
+                  BufferSurface* aSurface);
+  bool Matches(const WaylandSurfaceLock& aSurfaceLock,
+               WaylandBuffer* aWaylandBuffer) const;
 
   wl_buffer* GetWLBuffer() { return mWLBuffer; }
+  void SetTransaction(const WaylandSurfaceLock& aSurfaceLock,
+                      RefPtr<BufferTransaction> aTransaction) {
+    mTransaction = aTransaction;
+  }
+  bool CheckForRecycle(const WaylandSurfaceLock& aSurfaceLock);
+  void Recycle(const WaylandSurfaceLock& aSurfaceLock,
+               RefPtr<WaylandBuffer> aWaylandBuffer);
 
-  WaylandBufferHolder(BufferSurface* aSurface, wl_buffer* aWLBuffer);
+  WaylandBufferHolder(BufferSurface* aSurface, wl_buffer* aWLBuffer,
+                      RefPtr<WaylandBuffer> aWaylandBuffer);
   ~WaylandBufferHolder();
+
+  
+  
+  WaylandBufferHolder(const WaylandBufferHolder&) = delete;
+  WaylandBufferHolder& operator=(const WaylandBufferHolder&) = delete;
 
  private:
   
   wl_buffer* mWLBuffer = nullptr;
+  
+  
+  RefPtr<BufferTransaction> mTransaction;
+  RefPtr<WaylandBuffer> mWaylandBuffer;
+  
   uint32_t mUID = 0;
   uint32_t mPID = 0;
 };

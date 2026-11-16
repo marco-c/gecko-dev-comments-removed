@@ -94,6 +94,11 @@ class WaylandSurface final {
 
   
   
+  LayoutDeviceIntSize GetScaledSize(const WaylandSurfaceLock& aProofOfLock,
+                                    const DesktopIntSize& aSize) const;
+
+  
+  
   
   
   
@@ -108,6 +113,8 @@ class WaylandSurface final {
   bool IsVisible() const { return mIsVisible; }
 
   bool IsToplevelSurface() const { return !mParent; }
+
+  void MarkAsRootSurface() { mIsRootSurface = true; }
 
   
   void VisibleCallbackHandler();
@@ -159,8 +166,8 @@ class WaylandSurface final {
 
   
   
-  bool AttachLocked(const WaylandSurfaceLock& aSurfaceLock,
-                    RefPtr<WaylandBuffer> aBuffer);
+  BufferTransaction* AttachLocked(const WaylandSurfaceLock& aSurfaceLock,
+                                  RefPtr<WaylandBuffer> aBuffer);
   bool IsBufferAttached(WaylandBuffer* aBuffer);
 
   
@@ -193,7 +200,7 @@ class WaylandSurface final {
   
   void PlaceAboveLocked(const WaylandSurfaceLock& aProofOfLock,
                         WaylandSurfaceLock& aLowerSurfaceLock);
-  void MoveLocked(const WaylandSurfaceLock& aProofOfLock,
+  bool MoveLocked(const WaylandSurfaceLock& aProofOfLock,
                   DesktopIntPoint aPosition);
   void SetViewportFollowsSizeChangesLocked(
       const WaylandSurfaceLock& aProofOfLock);
@@ -416,10 +423,6 @@ class WaylandSurface final {
 
   
   
-  LayoutDeviceIntSize GetScaledSize(const DesktopIntSize& aSize) const;
-
-  
-  
   void* mLoggingWidget = nullptr;
 
   
@@ -428,6 +431,9 @@ class WaylandSurface final {
 
   
   mozilla::Atomic<bool, mozilla::Relaxed> mIsVisible{false};
+
+  
+  mozilla::Atomic<bool, mozilla::Relaxed> mIsRootSurface{false};
 
   
   mozilla::Atomic<bool, mozilla::Relaxed> mIsPendingGdkCleanup{false};

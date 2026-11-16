@@ -17,6 +17,7 @@
 #include "mozilla/gfx/gfxVars.h"
 #include "nsGtkUtils.h"
 #include "nsWindow.h"
+#include "nsWindowWayland.h"
 #undef LOG
 #ifdef MOZ_LOGGING
 #  include "Units.h"
@@ -634,13 +635,13 @@ void WaylandSurface::CommitLocked(const WaylandSurfaceLock& aProofOfLock,
   Commit((WaylandSurfaceLock*)&aProofOfLock, aForceCommit, aForceDisplayFlush);
 }
 
-void WaylandSurface::MoveLocked(const WaylandSurfaceLock& aProofOfLock,
+bool WaylandSurface::MoveLocked(const WaylandSurfaceLock& aProofOfLock,
                                 DesktopIntPoint aPosition) {
   MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
   MOZ_DIAGNOSTIC_ASSERT(mIsMapped);
 
   if (mSubsurfacePosition == aPosition) {
-    return;
+    return false;
   }
 
   MOZ_DIAGNOSTIC_ASSERT(mSubsurface);
@@ -649,6 +650,7 @@ void WaylandSurface::MoveLocked(const WaylandSurfaceLock& aProofOfLock,
   mSubsurfacePosition = aPosition;
   wl_subsurface_set_position(mSubsurface.get(), aPosition.x, aPosition.y);
   mSurfaceNeedsCommit = true;
+  return true;
 }
 
 
@@ -1174,18 +1176,23 @@ bool WaylandSurface::RemoveOpaqueSurfaceHandlerLocked(
 }
 
 LayoutDeviceIntSize WaylandSurface::GetScaledSize(
-    const DesktopIntSize& aSize) const {
-  DesktopIntRect rect(
-      gUseStableRounding ? mSubsurfacePosition : DesktopIntPoint(), aSize);
-
+    const WaylandSurfaceLock& aProofOfLock, const DesktopIntSize& aSize) const {
+  
+  
+  
+  
+  DesktopIntRect rect(!mIsRootSurface && nsWindowWayland::UseStableRounding()
+                          ? mSubsurfacePosition
+                          : DesktopIntPoint(),
+                      aSize);
   auto scaledRect =
       LayoutDeviceIntRect::Round(rect * DesktopToLayoutDeviceScale(GetScale()));
 
   LOGVERBOSE(
-      "WaylandSurface::GetScaledSize() pos [%d, %d] size [%d x %d] scale %f "
-      "scaled [%d x %d]",
-      (int)mSubsurfacePosition.x, (int)mSubsurfacePosition.y, aSize.width,
-      aSize.height, GetScale(), scaledRect.width, scaledRect.height);
+      "WaylandSurface::GetScaledSize() stable %d pos [%d, %d] size [%d x %d] "
+      "scale %f scaled [%d x %d]",
+      nsWindowWayland::UseStableRounding(), (int)rect.x, (int)rect.y,
+      rect.width, rect.height, GetScale(), scaledRect.width, scaledRect.height);
   return scaledRect.Size();
 }
 
@@ -1196,7 +1203,7 @@ wl_egl_window* WaylandSurface::GetEGLWindow(DesktopIntSize aSize) {
   MOZ_DIAGNOSTIC_ASSERT(mSurface.get(), "Missing wl_surface!");
 
   mSize = aSize;
-  auto scaledSize = GetScaledSize(aSize);
+  auto scaledSize = GetScaledSize(lock, aSize);
 
   if (!mEGLWindow) {
     mEGLWindow = wl_egl_window_create(mSurface.get(), scaledSize.width,
@@ -1221,7 +1228,7 @@ void WaylandSurface::SetSize(DesktopIntSize aSize) {
   WaylandSurfaceLock lock(this);
 
   mSize = aSize;
-  auto scaledSize = GetScaledSize(aSize);
+  auto scaledSize = GetScaledSize(lock, aSize);
 
   LOGVERBOSE(
       "WaylandSurface::SetSize() size [%d x %d] "
@@ -1235,7 +1242,7 @@ void WaylandSurface::ApplyEGLWindowSize(LayoutDeviceIntSize aEGLWindowSize) {
   WaylandSurfaceLock lock(this,  true);
 
   auto scale = GetScale();
-  auto surfaceSize = GetScaledSize(mSize);
+  auto surfaceSize = GetScaledSize(lock, mSize);
   bool sizeMatches = aEGLWindowSize == surfaceSize;
 
   LOGWAYLAND(
@@ -1340,13 +1347,13 @@ bool WaylandSurface::IsBufferAttached(WaylandBuffer* aBuffer) {
          mBufferAttached;
 }
 
-bool WaylandSurface::AttachLocked(const WaylandSurfaceLock& aSurfaceLock,
-                                  RefPtr<WaylandBuffer> aBuffer) {
+BufferTransaction* WaylandSurface::AttachLocked(
+    const WaylandSurfaceLock& aSurfaceLock, RefPtr<WaylandBuffer> aBuffer) {
   MOZ_DIAGNOSTIC_ASSERT(&aSurfaceLock == mSurfaceLock);
 
   auto scale = GetScale();
   LayoutDeviceIntSize bufferSize = aBuffer->GetSize();
-  auto surfaceSize = GetScaledSize(mSize);
+  auto surfaceSize = GetScaledSize(aSurfaceLock, mSize);
   bool sizeMatches = bufferSize.width == surfaceSize.width &&
                      bufferSize.height == surfaceSize.height;
   LOGWAYLAND(
@@ -1370,7 +1377,7 @@ bool WaylandSurface::AttachLocked(const WaylandSurfaceLock& aSurfaceLock,
 
   auto* transaction = GetNextTransactionLocked(aSurfaceLock, aBuffer);
   if (!transaction) {
-    return false;
+    return nullptr;
   }
 
   wl_surface_attach(mSurface.get(),
@@ -1378,7 +1385,7 @@ bool WaylandSurface::AttachLocked(const WaylandSurfaceLock& aSurfaceLock,
   mLatestAttachedBuffer = reinterpret_cast<uintptr_t>(aBuffer.get());
   mSurfaceNeedsCommit = true;
   mBufferAttached = true;
-  return true;
+  return transaction;
 }
 
 void WaylandSurface::RemoveAttachedBufferLocked(
