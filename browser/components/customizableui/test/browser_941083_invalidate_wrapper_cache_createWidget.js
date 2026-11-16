@@ -9,6 +9,13 @@
 const kWidgetId = "test-invalidate-wrapper-cache";
 
 
+
+
+registerCleanupFunction(() => {
+  CustomizableUI.getTestOnlyInternalProp("gSeenWidgets").delete(kWidgetId);
+});
+
+
 add_task(function () {
   let groupWrapper = CustomizableUI.getWidget(kWidgetId);
   ok(groupWrapper, "Should get group wrapper.");
