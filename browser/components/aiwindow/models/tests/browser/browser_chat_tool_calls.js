@@ -270,7 +270,11 @@ add_task(async function test_terminal_tool_skips_remaining_calls() {
           makeToolCall(
             "call_manage",
             MANAGE_TABS,
-            JSON.stringify({ action: "unsupported", url_tokens: [] })
+            JSON.stringify({
+              action: "close_tabs",
+              ask_confirmation: true,
+              url_tokens: [URL_TOKEN],
+            })
           ),
           pageCall(),
         ];
@@ -291,10 +295,8 @@ add_task(async function test_terminal_tool_skips_remaining_calls() {
           "Tool results stay in tool_calls order when a terminal tool ends the turn"
         );
         Assert.ok(
-          String(
-            toolMessages.find(m => m.content.tool_call_id === "call_manage")
-              ?.content.body
-          ).startsWith("Error: Unsupported manage_tabs action"),
+          toolMessages.find(m => m.content.tool_call_id === "call_manage")
+            .content.body.pending,
           "The terminal tool's own result is recorded"
         );
         Assert.deepEqual(
@@ -759,6 +761,18 @@ add_task(async function test_answers_search_preserves_other_calls_on_failure() {
                   Assert.deepEqual(message.content.body, SKIPPED_BODY);
                 }
               }
+              const searchBody = toolMessages.find(
+                m => m.content.tool_call_id === searchCall.id
+              ).content.body;
+              Assert.strictEqual(
+                searchBody.directAnswer,
+                true,
+                "The stored search result keeps the marker the action log reads"
+              );
+              Assert.ok(
+                !("directAnswerStream" in searchBody),
+                "The stream itself is not stored"
+              );
             } else {
               const followupTurn = await captureChatRequest();
               const { results } = getToolResults(
