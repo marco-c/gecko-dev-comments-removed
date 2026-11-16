@@ -49,6 +49,7 @@
 #include "jit/ScalarReplacement.h"
 #include "jit/ScriptFromCalleeToken.h"
 #include "jit/SimpleAllocator.h"
+#include "jit/Simulator.h"
 #include "jit/Sink.h"
 #include "jit/TypeAnalysis.h"
 #include "jit/UnrollLoops.h"
@@ -57,6 +58,7 @@
 #include "jit/WarpOracle.h"
 #include "jit/WasmBCE.h"
 #include "jit/WasmRefTypeAnalysis.h"
+#include "js/friend/StackLimits.h"
 #include "js/Printf.h"
 #include "js/UniquePtr.h"
 #include "util/Denormals.h"
@@ -104,14 +106,15 @@ JitRuntime::~JitRuntime() {
   js_delete(jitHintsMap_.ref());
 }
 
-uint32_t JitRuntime::startTrampolineCode(MacroAssembler& masm) {
+uint32_t JitRuntime::startTrampolineCode(MacroAssembler& masm,
+                                         TargetKind kind) {
   AutoCreatedBy acb(masm, "startTrampolineCode");
 
   masm.assumeUnreachable("Shouldn't get here");
   masm.flushBuffer();
   masm.haltingAlign(CodeAlignment);
   masm.setFramePushed(0);
-  return masm.currentOffset();
+  return masm.indirectTarget(kind).offset();
 }
 
 bool JitRuntime::initialize(JSContext* cx) {
@@ -911,7 +914,8 @@ const SafepointIndex* IonScript::getSafepointIndex(uint32_t disp) const {
   
   
   if (guessDisp > disp) {
-    while (--guess >= minEntry) {
+    while (guess > minEntry) {
+      guess--;
       guessDisp = table[guess].displacement();
       MOZ_ASSERT(guessDisp >= disp);
       if (guessDisp == disp) {
@@ -1723,6 +1727,11 @@ LIRGraph* GenerateLIR(MIRGenerator* mir) {
     return nullptr;
   }
 
+  if (!PropagateIndirectJumpTargets(mir, *lir)) {
+    return nullptr;
+  }
+  mir->spewPass("Propagate Indirect Jump Targets");
+
   return lir;
 }
 
@@ -2423,6 +2432,20 @@ bool jit::IonCompileScriptForBaselineOSR(JSContext* cx, BaselineFrame* frame,
   MOZ_ASSERT(cx->runtime()->geckoProfiler().enabled() ==
              ion->hasProfilingInstrumentation());
   MOZ_ASSERT(ion->osrPc() == pc);
+
+  
+  
+  uint8_t* newsp =
+      reinterpret_cast<uint8_t*>(frame->framePrefix()) - ion->frameSize();
+#ifdef JS_SIMULATOR
+  if (Simulator::Current()->overRecursed(uintptr_t(newsp))) {
+#else
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.checkWithStackPointerDontReport(cx, newsp)) {
+#endif
+    ReportOverRecursed(cx);
+    return false;
+  }
 
   ion->resetOsrPcMismatchCounter();
 
