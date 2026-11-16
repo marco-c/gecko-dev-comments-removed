@@ -2,14 +2,12 @@
 
 
 
-
-
 #include "mozilla/dom/TextDecoder.h"
 
 #include <stdint.h>
 
 #include "mozilla/Encoding.h"
-#include "mozilla/UniquePtrExtensions.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/dom/BufferSourceBinding.h"
 #include "mozilla/dom/UnionTypes.h"
 #include "nsContentUtils.h"
@@ -52,6 +50,21 @@ void TextDecoderCommon::DecodeNative(Span<const uint8_t> aInput,
                                      ErrorResult& aRv) {
   aOutDecodedString.Truncate();
 
+  auto resetState = mozilla::MakeScopeExit([&] {
+    
+    
+
+    
+    
+    if (!aStream) {
+      if (mIgnoreBOM) {
+        mDecoder->Encoding()->NewDecoderWithoutBOMHandlingInto(*mDecoder);
+      } else {
+        mDecoder->Encoding()->NewDecoderWithBOMRemovalInto(*mDecoder);
+      }
+    }
+  });
+
   CheckedInt<nsAString::size_type> needed =
       mDecoder->MaxUTF16BufferLength(aInput.Length());
   if (!needed.isValid()) {
@@ -86,16 +99,6 @@ void TextDecoderCommon::DecodeNative(Span<const uint8_t> aInput,
   if (!aOutDecodedString.SetLength(written, fallible)) {
     aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
     return;
-  }
-
-  
-  
-  if (!aStream) {
-    if (mIgnoreBOM) {
-      mDecoder->Encoding()->NewDecoderWithoutBOMHandlingInto(*mDecoder);
-    } else {
-      mDecoder->Encoding()->NewDecoderWithBOMRemovalInto(*mDecoder);
-    }
   }
 }
 
