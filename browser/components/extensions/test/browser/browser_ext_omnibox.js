@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 const { UrlbarTestUtils } = ChromeUtils.importESModule(
@@ -422,11 +420,37 @@ add_task(async function () {
         keyword: keyword,
       },
     },
+    background() {
+      browser.test.onMessage.addListener(async () => {
+        await browser.test.assertRejects(
+          browser.omnibox.setDefaultSuggestion({ description: "hello" }),
+          "An unexpected error occurred",
+          "setDefaultSuggestion rejects with a sanitized Error when the keyword failed to register"
+        );
+        browser.test.sendMessage("default-suggestion-rejected");
+      });
+    },
   });
 
   await extension2.startup();
 
   
+  SimpleTest.endMonitorConsole();
+  await waitForConsole;
+
+  
+  
+  
+  
+  waitForConsole = new Promise(resolve => {
+    SimpleTest.monitorConsole(resolve, [
+      {
+        message: /The keyword provided is not registered: "undefined"/,
+      },
+    ]);
+  });
+  extension2.sendMessage("set-default-suggestion");
+  await extension2.awaitMessage("default-suggestion-rejected");
   SimpleTest.endMonitorConsole();
   await waitForConsole;
 

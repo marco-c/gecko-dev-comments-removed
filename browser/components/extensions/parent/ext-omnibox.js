@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
@@ -113,15 +111,9 @@ this.omnibox = class extends ExtensionAPIPersistent {
     return {
       omnibox: {
         setDefaultSuggestion: suggestion => {
-          try {
-            
-            ExtensionSearchHandler.setDefaultSuggestion(
-              this.keyword,
-              suggestion
-            );
-          } catch (e) {
-            return Promise.reject(e.message);
-          }
+          
+          
+          ExtensionSearchHandler.setDefaultSuggestion(this.keyword, suggestion);
         },
 
         onInputStarted: new EventManager({
