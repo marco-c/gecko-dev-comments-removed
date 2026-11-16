@@ -14,16 +14,33 @@ function run_test() {
   
   do_get_profile();
 
+  let testingInterface = Services.cache2.QueryInterface(Ci.nsICacheTesting);
+
+  
+  
+  
+  
+  
+  
+  testingInterface.suspendCacheIOThread(3);
+
   asyncOpenCacheEntry(
     "http://encrypted/",
     "disk",
     Ci.nsICacheStorage.OPEN_TRUNCATE,
     null,
     new OpenCallback(NEW | WAITFORWRITE, META, DATA, function () {
+      testingInterface.resumeCacheIOThread();
       
-      Services.cache2
-        .QueryInterface(Ci.nsICacheTesting)
-        .flush(makeFlushObserver(afterFlush));
+      
+      
+      
+      
+      testingInterface.flush(
+        makeFlushObserver(() => {
+          testingInterface.flush(makeFlushObserver(afterFlush));
+        })
+      );
     })
   );
 
@@ -61,7 +78,10 @@ function afterFlush() {
 
 function makeFlushObserver(callback) {
   return {
-    observe() {
+    observe(subject, topic) {
+      
+      
+      Services.obs.removeObserver(this, topic);
       executeSoon(callback);
     },
   };
