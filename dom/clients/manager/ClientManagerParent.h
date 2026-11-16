@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef _mozilla_dom_ClientManagerParent_h
 #define _mozilla_dom_ClientManagerParent_h
 
@@ -23,10 +21,11 @@ class ClientManagerParent final : public PClientManagerParent {
   void ActorDestroy(ActorDestroyReason aReason) override;
 
   already_AddRefed<PClientHandleParent> AllocPClientHandleParent(
-      const IPCClientInfo& aClientInfo) override;
+      Tainted<IPCClientInfo>& aClientInfo) override;
 
   mozilla::ipc::IPCResult RecvPClientHandleConstructor(
-      PClientHandleParent* aActor, const IPCClientInfo& aClientInfo) override;
+      PClientHandleParent* aActor,
+      Tainted<IPCClientInfo>&& aClientInfo) override;
 
   PClientManagerOpParent* AllocPClientManagerOpParent(
       const ClientOpConstructorArgs& aArgs) override;
@@ -50,10 +49,10 @@ class ClientManagerParent final : public PClientManagerParent {
       const ClientSourceConstructorArgs& aArgs) override;
 
   mozilla::ipc::IPCResult RecvExpectFutureClientSource(
-      const IPCClientInfo& aClientInfo) override;
+      Tainted<IPCClientInfo>&& aClientInfo) override;
 
   mozilla::ipc::IPCResult RecvForgetFutureClientSource(
-      const IPCClientInfo& aClientInfo) override;
+      Tainted<IPCClientInfo>&& aClientInfo) override;
 
  public:
   NS_INLINE_DECL_REFCOUNTING(ClientManagerParent, override)
