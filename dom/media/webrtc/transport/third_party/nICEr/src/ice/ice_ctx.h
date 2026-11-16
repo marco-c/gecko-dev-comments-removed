@@ -131,8 +131,19 @@ struct nr_ice_ctx_ {
 
   nr_ice_media_stream_head streams;           
   int stream_ct;
+  
+  
+  
+  
+  nr_ice_media_stream *pool_stream;
   nr_ice_socket_head sockets;                 
+  
+  
+  
+  
+  
   int uninitialized_candidates;
+  int uninitialized_pool_candidates;
 
   UINT4 gather_rto;
   UINT4 stun_delay;
@@ -173,6 +184,18 @@ void nr_ice_ctx_destroy(nr_ice_ctx** ctxp);
 int nr_ice_set_local_addresses(nr_ice_ctx *ctx, nr_local_addr* stun_addrs, int stun_addr_ct);
 int nr_ice_set_target_for_default_local_address_lookup(nr_ice_ctx *ctx, const char *target_ip, UINT2 target_port);
 int nr_ice_gather(nr_ice_ctx* ctx, NR_async_cb gather_done_cb, void* cb_arg);
+
+
+
+
+#define NR_ICE_MAX_CANDIDATE_POOL_SIZE 10
+int nr_ice_ctx_resize_candidate_pool(nr_ice_ctx *ctx, uint8_t size,
+                                     const char *ufrag, const char *pwd);
+
+void nr_ice_ctx_empty_candidate_pool(nr_ice_ctx *ctx);
+
+uint8_t nr_ice_ctx_candidate_pool_size(nr_ice_ctx *ctx);
+struct nr_ice_component_ *nr_ice_ctx_take_pool_component(nr_ice_ctx *ctx);
 int nr_ice_add_candidate(nr_ice_ctx *ctx, nr_ice_candidate *cand);
 void nr_ice_gather_finished_cb(NR_SOCKET s, int h, void *cb_arg);
 int nr_ice_add_media_stream(nr_ice_ctx *ctx,const char *label,const char *ufrag,const char *pwd,int components, nr_ice_media_stream **streamp);

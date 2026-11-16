@@ -288,7 +288,11 @@ static void nr_ice_candidate_mark_done(nr_ice_candidate *cand, int state)
       
       int is_piggybacking_srflx = (cand->type == SERVER_REFLEXIVE &&
                                    cand->u.srvrflx.relay_candidate != NULL);
-      if (!is_piggybacking_srflx) {
+      
+      
+      
+      
+      if (!is_piggybacking_srflx && !cand->stream->defer_gathering_events) {
         nr_ice_gather_handler *gh = cand->stream->ctx->gather_handler;
         if (gh && gh->vtbl->candidate_error) {
           gh->vtbl->candidate_error(gh->obj, cand->stream, cand);
