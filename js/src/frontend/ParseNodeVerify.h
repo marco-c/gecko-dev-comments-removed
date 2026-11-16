@@ -22,7 +22,6 @@ class ParseNode;
 
 
 
-
 #ifdef DEBUG
 [[nodiscard]] extern bool CheckParseTree(FrontendContext* fc,
                                          const LifoAlloc& alloc, ParseNode* pn);
