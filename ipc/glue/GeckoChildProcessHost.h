@@ -147,7 +147,7 @@ class GeckoChildProcessHost
       geckoargs::ChildProcessArgs aExtraOpts = geckoargs::ChildProcessArgs(),
       int32_t timeoutMs = 0);
 
-  virtual void OnChannelConnected(base::ProcessId peer_pid);
+  virtual void OnChannelConnected();
 
   
   
