@@ -18,11 +18,24 @@ pub type ProcessHandle = libc::pid_t;
 #[cfg(target_os = "macos")]
 pub type ProcessHandle = mach2::mach_types::task_t;
 
-pub struct ProcessReader {
-    process: ProcessHandle,
+pub enum ProcessReader {
+    Local(ProcessHandle),
+    
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    Remote {
+        backend: platform::RemoteBackend,
+        
+        buffer_len: usize,
+    },
 }
 
 impl ProcessReader {
+    #[cfg(not(any(target_os = "linux", target_os = "android")))]
+    fn process(&self) -> ProcessHandle {
+        let ProcessReader::Local(process) = self;
+        *process
+    }
+
     pub fn copy_null_terminated_string(&self, address: usize) -> Result<CString, ReadError> {
         
         
