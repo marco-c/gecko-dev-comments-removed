@@ -2329,6 +2329,16 @@ class GFX2D_API Factory {
 
 
 
+  static bool ValidateUnscaledFontDescriptor(FontType aType,
+                                             const uint8_t* aName,
+                                             size_t aNameLength,
+                                             std::string& aResultName,
+                                             uint32_t& aIndex);
+
+  
+
+
+
   static already_AddRefed<UnscaledFont> CreateUnscaledFontFromFontDescriptor(
       FontType aType, const uint8_t* aData, uint32_t aDataLength,
       uint32_t aIndex);
