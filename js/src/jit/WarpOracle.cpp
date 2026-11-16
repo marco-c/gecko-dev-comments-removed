@@ -58,6 +58,11 @@ class MOZ_STACK_CLASS WarpScriptOracle {
   HandleScript script_;
   const CompileInfo* info_;
   ICScript* icScript_;
+
+  
+  
+  JSFunction* maybeFunction_;
+
   Vector<uint32_t, 16, SystemAllocPolicy> monomorphicInlineHints_;
   bool monomorphicInlineHintsComputed_ = false;
 
@@ -112,7 +117,8 @@ class MOZ_STACK_CLASS WarpScriptOracle {
 
  public:
   WarpScriptOracle(JSContext* cx, WarpOracle* oracle, HandleScript script,
-                   const CompileInfo* info, ICScript* icScript)
+                   const CompileInfo* info, ICScript* icScript,
+                   JSFunction* maybeFunction = nullptr)
       : cx_(cx),
         oracle_(oracle),
         mirGen_(oracle->mirGen()),
@@ -120,7 +126,10 @@ class MOZ_STACK_CLASS WarpScriptOracle {
         script_(script),
         info_(info),
         icScript_(icScript),
-        isInModule_(script->bodyScope()->hasOnChain<ModuleScope>()) {}
+        maybeFunction_(maybeFunction),
+        isInModule_(script->bodyScope()->hasOnChain<ModuleScope>()) {
+    MOZ_ASSERT_IF(maybeFunction, maybeFunction->nonLazyScript() == script);
+  }
 
   AbortReasonOr<WarpScriptSnapshot*> createScriptSnapshot();
 
@@ -374,13 +383,23 @@ AbortReasonOr<bool> WarpScriptOracle::maybeAddConstantBinding(
 
 WarpScriptOracle::AliasedVarTarget WarpScriptOracle::findAliasedVarTarget(
     BytecodeLocation loc) {
+  
+  
+  Scope* enclosingScope = script_->enclosingScope();
+  JSObject* env = nullptr;
   uint32_t hops = loc.getEnvironmentCoordinate().hops();
   for (ScopeIter si(script_->innermostScope(loc.toRawBytecode())); si; si++) {
+    if (si.scope() == enclosingScope && maybeFunction_) {
+      env = maybeFunction_->environment();
+    }
     if (!si.hasSyntacticEnvironment()) {
       continue;
     }
     if (hops > 0) {
       hops--;
+      if (env) {
+        env = &env->as<EnvironmentObject>().enclosingEnvironment();
+      }
       continue;
     }
 
@@ -392,15 +411,21 @@ WarpScriptOracle::AliasedVarTarget WarpScriptOracle::findAliasedVarTarget(
       MOZ_ASSERT_IF(moduleEnv, moduleEnv->shape() == scope->environmentShape());
       return {scope, moduleEnv};
     }
-    return {scope, nullptr};
+
+    return {scope, env ? &env->as<EnvironmentObject>() : nullptr};
   }
   MOZ_CRASH("Invalid environment coordinate");
 }
 
 AbortReasonOr<Ok> WarpScriptOracle::maybeSnapshotGetAliasedVar(
     WarpOpSnapshotList& snapshots, BytecodeLocation loc) {
+  if (!JS::Prefs::ion_environment_specialization()) {
+    return Ok();
+  }
+
   
-  if (!JS::Prefs::ion_environment_specialization() || !isInModule_) {
+  
+  if (!maybeFunction_ && !isInModule_) {
     return Ok();
   }
 
@@ -1644,7 +1669,8 @@ AbortReasonOr<bool> WarpScriptOracle::maybeInlineCall(
 
   
   
-  WarpScriptOracle scriptOracle(cx_, oracle_, targetScript, info, icScript);
+  WarpScriptOracle scriptOracle(cx_, oracle_, targetScript, info, icScript,
+                                inlineData->targetFunction);
 
   AbortReasonOr<WarpScriptSnapshot*> maybeScriptSnapshot =
       scriptOracle.createScriptSnapshot();

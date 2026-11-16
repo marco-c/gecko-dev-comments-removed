@@ -110,6 +110,11 @@ class InliningRoot {
 class InlinableOpData {
  public:
   JSScript* target = nullptr;
+
+  
+  
+  JSFunction* targetFunction = nullptr;
+
   ICScript* icScript = nullptr;
   const uint8_t* endOfSharedPrefix = nullptr;
 };
