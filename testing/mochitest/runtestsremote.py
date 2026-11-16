@@ -25,6 +25,7 @@ SCRIPT_DIR = os.path.abspath(os.path.realpath(os.path.dirname(__file__)))
 
 
 class MochiRemote(MochitestDesktop):
+    deferChaosMode = False
     localProfile = None
     logMessages = []
 
@@ -404,6 +405,8 @@ class MochiRemote(MochitestDesktop):
         
         
         lastTestSeen = rpm.test_in_flight or currentManifest
+
+        self.device.pull_ccov()
 
         crashed = self.check_for_crashes(symbolsPath, lastTestSeen)
         if crashed:
