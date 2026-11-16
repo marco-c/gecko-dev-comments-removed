@@ -25,6 +25,12 @@ pub type ClipPath = generic::GenericClipPath<BasicShape, ComputedUrl>;
 pub type ShapeOutside = generic::GenericShapeOutside<BasicShape, Image>;
 
 
+pub type BorderShape = generic::GenericBorderShape<BasicShape>;
+
+
+pub type BorderShapeComponent = generic::GenericBorderShapeComponent<BasicShape>;
+
+
 pub type BasicShape =
     generic::GenericBasicShape<Angle, LengthPercentage, Position, LengthPercentage, InsetRect>;
 
