@@ -659,6 +659,10 @@ struct arena_t : public BaseAllocClass {
                                    void* aClosure);
 
  public:
+  
+  
+  arena_chunk_t* GetExcessSpareChunk();
+
   void HardPurge();
 
   

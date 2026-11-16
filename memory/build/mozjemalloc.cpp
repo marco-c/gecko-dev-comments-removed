@@ -1365,6 +1365,17 @@ arena_chunk_t* arena_t::PurgeGetSpareChunk(PurgeStats& aStats)
   return chunk;
 }
 
+arena_chunk_t* arena_t::GetExcessSpareChunk() MOZ_REQUIRES(mLock) {
+  if (!mSpares.isEmpty() && !mSpares.isSingle()) {
+    arena_chunk_t* chunk = mSpares.popBack();
+    MOZ_ASSERT(!chunk->mIsPurging);
+    RemoveChunk(chunk);
+    return chunk;
+  }
+
+  return nullptr;
+}
+
 arena_chunk_t* arena_t::PurgeGetDirtyChunk(PurgeCondition aCond,
                                            PurgeStats& aStats)
     MOZ_REQUIRES(mLock) {
@@ -1650,9 +1661,10 @@ bool arena_t::PurgeInfo::ScanForFirstDirtyPage() {
     } else {
       arena_run_t* run =
           reinterpret_cast<arena_run_t*>(run_bits & ~gPageSizeMask);
-      MOZ_ASSERT(run == reinterpret_cast<arena_run_t*>(
-                            reinterpret_cast<uintptr_t>(mChunk) +
-                            (run_idx << gPageSize2Pow)));
+      MOZ_DIAGNOSTIC_ASSERT(run == reinterpret_cast<arena_run_t*>(
+                                       reinterpret_cast<uintptr_t>(mChunk) +
+                                       (run_idx << gPageSize2Pow)));
+      MOZ_DIAGNOSTIC_ASSERT(run->mMagic == ARENA_RUN_MAGIC);
       run_pages = run->mBin->mRunSizePages;
     }
     MOZ_ASSERT(run_pages > 0);
@@ -2721,6 +2733,7 @@ static inline void arena_dalloc(void* aPtr, size_t aOffset, arena_t* aArena) {
   }
 
   purge_action_t purge_action;
+  arena_chunk_t* chunk_to_dealloc;
   {
     MOZ_DIAGNOSTIC_ASSERT(arena->mLock.SafeOnThisThread());
     MaybeMutexAutoLock lock(arena->mLock);
@@ -2739,9 +2752,16 @@ static inline void arena_dalloc(void* aPtr, size_t aOffset, arena_t* aArena) {
       arena->DallocLarge(chunk, aPtr);
     }
 
+    
+    chunk_to_dealloc = arena->GetExcessSpareChunk();
     purge_action = arena->ShouldStartPurge();
-  }
 
+  }  
+
+  if (chunk_to_dealloc) {
+    arena_chunk_dealloc(arena->mChunkAllocator, (void*)chunk_to_dealloc,
+                        kChunkSize);
+  }
   arena->MayDoOrQueuePurge(purge_action, "arena_dalloc");
 }
 
