@@ -10,3 +10,18 @@
 
 
 
+
+
+
+
+
+
+interface IteratorConstructor {
+  
+
+
+
+  concat<T extends readonly unknown[] | []>(
+    ...iterables: { -readonly [K in keyof T]: Iterable<T[K]> & object }
+  ): IteratorObject<T[number], undefined, unknown>;
+}
