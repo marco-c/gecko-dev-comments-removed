@@ -1846,8 +1846,7 @@ static ExceptionHandler::FilterResult ChildFilter(
 
 static MINIDUMP_TYPE GetMinidumpType() {
   MINIDUMP_TYPE minidump_type = static_cast<MINIDUMP_TYPE>(
-      MiniDumpWithFullMemoryInfo | MiniDumpWithUnloadedModules |
-      MiniDumpWithHandleData);
+      MiniDumpWithFullMemoryInfo | MiniDumpWithUnloadedModules);
 
 #  ifdef NIGHTLY_BUILD
   minidump_type = static_cast<MINIDUMP_TYPE>(
@@ -2044,14 +2043,6 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force ) {
   
   
   ::LoadLibraryW(L"psapi.dll");
-
-  
-  
-  
-  
-  
-  
-  ::LoadLibraryW(L"verifier.dll");
 #endif  
 
 #ifdef MOZ_WIDGET_ANDROID
