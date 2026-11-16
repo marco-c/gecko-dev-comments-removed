@@ -6489,8 +6489,9 @@ void CanvasRenderingContext2D::DrawDirectlyToCanvas(
   uint32_t modifiedFlags = aImage.mDrawingFlags | imgIContainer::FLAG_CLAMP;
 
   
-  SVGImageContext svgContext(
-      Some(CSSSize(scaledImageSize.width, scaledImageSize.height)));
+  
+  
+  SVGImageContext svgContext(Some(CSSSize(aImgSize.width, aImgSize.height)));
 
   if (mContextProperties != CanvasContextProperties::None &&
       aImage.mImgContainer->GetType() == imgIContainer::TYPE_VECTOR) {
