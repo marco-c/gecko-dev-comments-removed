@@ -731,26 +731,11 @@ nsresult FetchDriver::HttpFetch(
 #endif
   chan->SetNotificationCallbacks(this);
 
-  const RequestDestination destination =
-      mRequest->GetInterceptionTriggeringPrincipalInfo()
-          ? mRequest->InterceptionDestination()
-          : mRequest->Destination();
-
   nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(chan));
-  if (cos) {
-    
-    
-    
-    
-    if (destination == RequestDestination::_empty) {
-      cos->AddClassFlags(nsIClassOfService::Unblocked);
-    }
-
-    
-    
-    if (UserActivation::IsHandlingUserInput()) {
-      cos->AddClassFlags(nsIClassOfService::UrgentStart);
-    }
+  
+  
+  if (cos && UserActivation::IsHandlingUserInput()) {
+    cos->AddClassFlags(nsIClassOfService::UrgentStart);
   }
 
   
@@ -893,10 +878,8 @@ nsresult FetchDriver::HttpFetch(
   }
 
   if (mIsTrackingFetch && StaticPrefs::network_http_tailing_enabled() && cos) {
-    
     cos->AddClassFlags(nsIClassOfService::Throttleable |
-                       nsIClassOfService::Tail |
-                       nsIClassOfService::TailAllowed);
+                       nsIClassOfService::Tail);
   }
 
   const auto fetchPriority = ToFetchPriority(mRequest->GetPriorityMode());
@@ -913,7 +896,10 @@ nsresult FetchDriver::HttpFetch(
       
       
       
-      const int32_t supportsPriorityDelta = [&destination, &fetchPriority]() {
+      const int32_t supportsPriorityDelta = [this, &fetchPriority]() {
+        auto destination = mRequest->GetInterceptionTriggeringPrincipalInfo()
+                               ? mRequest->InterceptionDestination()
+                               : mRequest->Destination();
         switch (destination) {
           case RequestDestination::Font:
             return FETCH_PRIORITY_ADJUSTMENT_FOR(link_preload_font,
