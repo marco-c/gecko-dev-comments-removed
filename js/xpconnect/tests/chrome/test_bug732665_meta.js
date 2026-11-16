@@ -4,11 +4,15 @@ var stackBottom = stackPointerInfo();
 var stackTop = stackBottom;
 
 function nearNativeStackLimit() {
+  let evalCount = 0;
   function inner() {
     try {
       stackTop = stackPointerInfo();
       
-      var stepsFromLimit = eval("inner()"); 
+      
+      
+      
+      var stepsFromLimit = eval(`inner(); // ${evalCount++}`);
       return stepsFromLimit + 1;
     } catch (e) {
       
