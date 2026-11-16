@@ -1237,19 +1237,17 @@ static bool IsBEndMarginRoot(const nsBlockFrame* frame) {
 class MOZ_RAII LineClampLineIterator {
  public:
   struct Boundary {
-    Boundary() : Boundary(nullptr, nullptr, 0, 0) {}
-    Boundary(nsBlockFrame* aFrame, nsLineBox* aLine, nscoord aBEnd,
-             nscoord aDescendantBEndMargins)
-        : mFrame(aFrame),
-          mLine(aLine),
-          mBEnd(aBEnd),
-          mDescendantBEndMargins(aDescendantBEndMargins) {}
+    Boundary() : Boundary(nullptr, nullptr, 0) {}
+    Boundary(nsBlockFrame* aFrame, nsLineBox* aLine, nscoord aBEnd)
+        : mFrame(aFrame), mLine(aLine), mBEnd(aBEnd) {}
 
     nsBlockFrame* mFrame;
     nsLineBox* mLine;
     
+    
+    
+    
     nscoord mBEnd;
-    nscoord mDescendantBEndMargins;
   };
 
   
@@ -1261,6 +1259,9 @@ class MOZ_RAII LineClampLineIterator {
         mWm(aLastFrameToExit->GetWritingMode()),
         mEnteredLastFrameToExit(aFrame == aLastFrameToExit),
         mRootMaxBSize(aRootMaxBSize),
+        mBPUntilLastFrame(
+            aFrame->GetLogicalUsedBorderAndPadding(aFrame->GetWritingMode())
+                .BEnd(aFrame->GetWritingMode())),
         mCurrentFrameOffset{aFrame->LinesBegin() == mEnd ? nullptr : aFrame,
                             aFrame->LinesBegin(),
                             0,
@@ -1293,6 +1294,12 @@ class MOZ_RAII LineClampLineIterator {
   }
   nscoord GetAccumulatedBEndBP() const {
     return mCurrentFrameOffset.mAccumulatedBEndBP;
+  }
+  nscoord GetDescendantBEndBP() const {
+    MOZ_ASSERT(mEnteredLastFrameToExit,
+               "Tried getting descendants' block end border and padding before "
+               "entering a descendant.");
+    return mCurrentFrameOffset.mAccumulatedBEndBP - mBPUntilLastFrame;
   }
   nscoord GetBEndMargins() const {
     return mCurrentFrameOffset.mCollapsedMargins +
@@ -1332,8 +1339,8 @@ class MOZ_RAII LineClampLineIterator {
     nsLineBox* line = GetCurrentLine();
     if (!mRootMaxBSize || !line->IsEmpty() || line->BSize() != 0) {
       mPreviousBoundary =
-          Boundary{GetCurrentFrame(), line, line->BEnd() + GetUsedBSize(),
-                   GetDescendantBEndMargins()};
+          Boundary{GetCurrentFrame(), line,
+                   line->BEnd() + GetUsedBSize() + GetDescendantBEndMargins()};
       mLastPassedBlock = nullptr;
     }
     ++mCurrentFrameOffset.mCurrentLine;
@@ -1343,6 +1350,22 @@ class MOZ_RAII LineClampLineIterator {
   bool IsLastFrameOrDescendant() { return mEnteredLastFrameToExit; }
 
  private:
+  
+  
+  
+  
+  
+  
+  Boundary CalculateCorrectBoundary(nsBlockFrame* aFrame, nsLineBox* aLine,
+                                    nscoord aBEnd) const {
+    if (!mEnteredLastFrameToExit) {
+      return Boundary{aFrame, aLine, NS_UNCONSTRAINEDSIZE};
+    }
+    return Boundary{aFrame, aLine,
+                    aBEnd + mCurrentFrameOffset.mCurrentBlockBStart +
+                        GetDescendantBEndBP() + GetDescendantBEndMargins()};
+  }
+
   enum class BlockAction {
     
     Descend,
@@ -1371,7 +1394,7 @@ class MOZ_RAII LineClampLineIterator {
     if (!mRootMaxBSize) {
       if (isEmpty) {
         mPreviousBoundary =
-            Boundary{aParent, aLine, frameBEnd, GetDescendantBEndMargins()};
+            Boundary{aParent, aLine, frameBEnd + GetDescendantBEndMargins()};
         mLastPassedBlock = nullptr;
       }
       return BlockAction::Descend;
@@ -1400,7 +1423,7 @@ class MOZ_RAII LineClampLineIterator {
     }
 
     mPreviousBoundary =
-        Boundary{aParent, aLine, frameBEnd, GetDescendantBEndMargins()};
+        Boundary{aParent, aLine, frameBEnd + GetDescendantBEndMargins()};
     mLastPassedBlock = aFrame;
     return BlockAction::Skip;
   }
@@ -1485,6 +1508,7 @@ class MOZ_RAII LineClampLineIterator {
             mMarginsUntilLastFrame =
                 mCurrentFrameOffset.mCollapsedMargins +
                 mCurrentFrameOffset.mCurrentCollapsingMargin.Get();
+            mBPUntilLastFrame = mCurrentFrameOffset.mAccumulatedBEndBP;
           }
 
           mCurrentFrameOffset.mCurrentLine = child->LinesBegin();
@@ -1532,6 +1556,9 @@ class MOZ_RAII LineClampLineIterator {
   
   
   nscoord mMarginsUntilLastFrame = 0;
+
+  
+  nscoord mBPUntilLastFrame;
 
   
   
@@ -2636,8 +2663,7 @@ Maybe<nsBlockFrame::LineClampTarget> nsBlockFrame::FindLineClampAutoTarget(
 
   auto previousTarget = [&]() -> Maybe<LineClampTarget> {
     const auto boundary = iter.GetPreviousBoundary();
-    const nscoord clampedBSize =
-        boundary.mBEnd - bOffsetToRoot + boundary.mDescendantBEndMargins;
+    const nscoord clampedBSize = boundary.mBEnd - bOffsetToRoot;
     if (clampedBSize < 0) {
       return Nothing();
     }
