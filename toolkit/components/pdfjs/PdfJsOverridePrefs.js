@@ -16,12 +16,14 @@
 #if defined(ANDROID)
 
 
+
+
 #ifdef NIGHTLY_BUILD
-  pref("pdfjs.annotationEditorMode", 0);
-  pref("pdfjs.enableSignatureEditor", true);
+  pref("pdfjs.enableAndroidEditing", true);
 #else
-  pref("pdfjs.annotationEditorMode", -1);
+  pref("pdfjs.enableAndroidEditing", false);
 #endif
+  pref("pdfjs.enableSignatureEditor", true);
 
   pref("pdfjs.capCanvasAreaFactor", 100);
 
