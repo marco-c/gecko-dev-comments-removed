@@ -2655,10 +2655,14 @@ nsresult nsHttpTransaction::HandleContentStart() {
     if (mIsForWebTransport) {
       responseChecked = HandleWebTransportResponse(mResponseHead->Status());
       LOG(("HandleWebTransportResponse res=%d", responseChecked));
-      if (responseChecked) {
-        mNoContent = true;
-        mPreserveStream = true;
+      if (!responseChecked) {
+        
+        
+        
+        return NS_ERROR_FAILURE;
       }
+      mNoContent = true;
+      mPreserveStream = true;
     }
 
     if (!responseChecked) {
