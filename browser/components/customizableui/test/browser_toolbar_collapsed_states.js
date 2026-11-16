@@ -49,11 +49,18 @@ add_task(async function test_toolbar_collapsed_states() {
   
   setToolbarVisibility(bookmarksToolbar, "newtab");
 
+  
+  
+  let toolbarShown = BrowserTestUtils.waitForEvent(
+    bookmarksToolbar,
+    "toolbarvisibilitychange"
+  );
   let newTab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     opening: "about:newtab",
     waitForLoad: false,
   });
+  await toolbarShown;
   
   
   assertCollapsedToolbarIds([CustomizableUI.AREA_MENUBAR]);
