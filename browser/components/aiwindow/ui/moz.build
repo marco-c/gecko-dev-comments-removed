@@ -11,6 +11,7 @@ BROWSER_CHROME_MANIFESTS += [
     "test/browser/browser_smartwindow.toml",
     "test/browser/chat/browser.toml",
     "test/browser/get_page_content/browser.toml",
+    "test/browser/tasks/browser.toml",
     "test/browser_perf/perftest.toml",
 ]
 MARIONETTE_MANIFESTS += ["test/marionette/manifest.toml"]
@@ -62,6 +63,7 @@ MOZ_SRC_FILES += [
     "modules/MonitorPanel.sys.mjs",
     "modules/MonitorUIUtils.sys.mjs",
     "modules/ResumeActivity.sys.mjs",
+    "modules/SmartActionsToolbar.sys.mjs",
     "modules/SmartFormFillAutocomplete.sys.mjs",
     "modules/SmartFormFillController.sys.mjs",
     "modules/SmartFormFillDocument.sys.mjs",
