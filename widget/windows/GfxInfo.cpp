@@ -1792,21 +1792,6 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
     
     
 
-#ifndef EARLY_BETA_OR_EARLIER
-    
-    APPEND_TO_DRIVER_BLOCKLIST2(
-        OperatingSystem::Windows, DeviceFamily::IntelAll,
-        nsIGfxInfo::FEATURE_WEBRENDER_COMPOSITOR,
-        nsIGfxInfo::FEATURE_BLOCKED_DEVICE, DRIVER_EQUAL, V(24, 20, 100, 6293),
-        "FEATURE_FAILURE_BUG_1602511");
-
-    APPEND_TO_DRIVER_BLOCKLIST2(OperatingSystem::Windows, DeviceFamily::AtiAll,
-                                nsIGfxInfo::FEATURE_WEBRENDER_COMPOSITOR,
-                                nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
-                                DRIVER_LESS_THAN_OR_EQUAL, V(8, 17, 10, 1129),
-                                "FEATURE_FAILURE_CHROME_BUG_800950");
-#endif
-
     APPEND_TO_DRIVER_BLOCKLIST2(
         OperatingSystem::Windows10or11, DeviceFamily::NvidiaPascal,
         nsIGfxInfo::FEATURE_WEBRENDER_COMPOSITOR,
