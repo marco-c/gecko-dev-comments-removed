@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsCSPParser_h_
 #define nsCSPParser_h_
 
@@ -88,6 +86,7 @@ class nsCSPParser {
   nsCSPBaseSrc* keywordSource();
   nsCSPNonceSrc* nonceSource();
   nsCSPHashSrc* hashSource();
+  nsCSPUrlHashSrc* urlHashSource();
   nsCSPHostSrc* host();
   bool hostChar();
   bool schemeChar();
@@ -200,6 +199,7 @@ class nsCSPParser {
   
   
   bool mHasHashOrNonce;    
+  bool mHasUrlHash;        
   bool mHasAnyUnsafeEval;  
   bool mStrictDynamic;     
   nsCSPKeywordSrc* mUnsafeInlineKeywordSrc;  

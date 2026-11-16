@@ -46,6 +46,7 @@ nsCSPParser::nsCSPParser(policyTokens& aTokens, nsIURI* aSelfURI,
     : mCurChar(nullptr),
       mEndChar(nullptr),
       mHasHashOrNonce(false),
+      mHasUrlHash(false),
       mHasAnyUnsafeEval(false),
       mStrictDynamic(false),
       mUnsafeInlineKeywordSrc(nullptr),
@@ -635,6 +636,54 @@ nsCSPHashSrc* nsCSPParser::hashSource() {
   return new nsCSPHashSrc(algorithm, hash);
 }
 
+constexpr auto kUrlHashPrefix = u"url-"_ns;
+
+
+
+
+
+
+nsCSPUrlHashSrc* nsCSPParser::urlHashSource() {
+  CSPPARSERLOG(("nsCSPParser::urlHashSource, mCurToken: %s, mCurValue: %s",
+                NS_ConvertUTF16toUTF8(mCurToken).get(),
+                NS_ConvertUTF16toUTF8(mCurValue).get()));
+
+  if (!StaticPrefs::security_csp_url_hashes_enabled()) {
+    return nullptr;
+  }
+
+  
+  if (mCurToken.First() != SINGLEQUOTE || mCurToken.Last() != SINGLEQUOTE) {
+    return nullptr;
+  }
+
+  
+  const nsAString& expr = Substring(mCurToken, 1, mCurToken.Length() - 2);
+
+  
+  if (!StringBeginsWith(expr, kUrlHashPrefix,
+                        nsASCIICaseInsensitiveStringComparator)) {
+    return nullptr;
+  }
+
+  
+  const nsAString& hashExpr = Substring(expr, kUrlHashPrefix.Length());
+
+  nsAutoString algorithm;
+  nsAutoString hash;
+  if (!ExtractAlgorithmAndHash(hashExpr, algorithm, hash)) {
+    return nullptr;
+  }
+
+  mHasUrlHash = true;
+
+  return new nsCSPUrlHashSrc(algorithm, hash);
+}
+
+
+
+
+
 
 
 nsCSPBaseSrc* nsCSPParser::sourceExpression() {
@@ -655,6 +704,11 @@ nsCSPBaseSrc* nsCSPParser::sourceExpression() {
   
   if (nsCSPHashSrc* cspHash = hashSource()) {
     return cspHash;
+  }
+
+  
+  if (nsCSPUrlHashSrc* cspUrlHash = urlHashSource()) {
+    return cspUrlHash;
   }
 
   
@@ -1263,6 +1317,7 @@ void nsCSPParser::directive() {
   
   
   mHasHashOrNonce = false;
+  mHasUrlHash = false;
   mHasAnyUnsafeEval = false;
   mStrictDynamic = false;
   mUnsafeInlineKeywordSrc = nullptr;
@@ -1308,7 +1363,7 @@ void nsCSPParser::MaybeWarnAboutIgnoredSources(
           !aSrcs[i]->isKeyword(CSP_UNSAFE_EVAL) &&
           !aSrcs[i]->isKeyword(CSP_WASM_UNSAFE_EVAL) &&
           !aSrcs[i]->isKeyword(CSP_UNSAFE_HASHES) && !aSrcs[i]->isNonce() &&
-          !aSrcs[i]->isHash()) {
+          !aSrcs[i]->isHash() && !aSrcs[i]->isUrlHash()) {
         AutoTArray<nsString, 2> params = {std::move(srcStr), mCurDir[0]};
         logWarningErrorToConsole(nsIScriptError::warningFlag,
                                  "ignoringScriptSrcForStrictDynamic", params);
@@ -1317,7 +1372,7 @@ void nsCSPParser::MaybeWarnAboutIgnoredSources(
 
     
     
-    if (!mHasHashOrNonce) {
+    if (!mHasHashOrNonce && !mHasUrlHash) {
       AutoTArray<nsString, 1> params = {mCurDir[0]};
       logWarningErrorToConsole(nsIScriptError::warningFlag,
                                "strictDynamicButNoHashOrNonce", params);

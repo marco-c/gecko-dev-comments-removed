@@ -236,6 +236,7 @@ class nsCSPBaseSrc {
   virtual bool isReportSample() const { return false; }
 
   virtual bool isHash() const { return false; }
+  virtual bool isUrlHash() const { return false; }
   virtual bool isNonce() const { return false; }
   virtual bool isKeyword(CSPKeyword aKeyword) const { return false; }
   virtual bool isTrustedTypesDirectivePolicyName() const { return false; }
@@ -384,6 +385,28 @@ class nsCSPHashSrc final : public nsCSPHashSrcBase {
 
 
 
+
+
+
+
+
+
+class nsCSPUrlHashSrc final : public nsCSPHashSrcBase {
+ public:
+  nsCSPUrlHashSrc(const nsAString& aAlgorithm, const nsAString& aHash)
+      : nsCSPHashSrcBase(aAlgorithm, aHash) {}
+
+  bool allows(enum CSPKeyword aKeyword,
+              const nsAString& aContentOrNonce) const override {
+    return false;
+  }
+  bool visit(nsCSPSrcVisitor* aVisitor) const override;
+
+  bool isUrlHash() const final { return true; }
+};
+
+
+
 class nsCSPReportURI : public nsCSPBaseSrc {
  public:
   explicit nsCSPReportURI(nsIURI* aURI);
@@ -482,6 +505,8 @@ class nsCSPSrcVisitor {
   virtual bool visitNonceSrc(const nsCSPNonceSrc& src) = 0;
 
   virtual bool visitHashSrc(const nsCSPHashSrc& src) = 0;
+
+  virtual bool visitUrlHashSrc(const nsCSPUrlHashSrc& src) = 0;
 
  protected:
   explicit nsCSPSrcVisitor() = default;
