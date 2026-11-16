@@ -7,7 +7,9 @@ package org.mozilla.fenix.onboarding.view
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.annotation.VisibleForTesting
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -38,22 +40,31 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.paint
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import mozilla.components.compose.base.PagerIndicator
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.button.TextButton
 import mozilla.components.lib.state.ext.observeAsComposableState
+import mozilla.components.support.base.log.logger.Logger
+import org.mozilla.fenix.FeatureFlags
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.isLargeScreenSize
+
+private val logger = Logger("OnboardingScreen")
 
 /** The small device max height. The value comes from [org.mozilla.fenix.ext.isTallWindow]. */
 private val SMALL_SCREEN_MAX_HEIGHT = 570.dp
@@ -99,10 +110,13 @@ fun OnboardingScreen(
     onNavigateToNextPage: () -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
+    // Pages can be appended from a background thread. Create a copy per composition so the pager's page count always
+    // matches the page states built in `OnboardingContent`.
+    val pages = pagesToDisplay.toList()
     val pagerState =
         rememberPagerState(
-            initialPage = resumedPageIndex(initialPageIndex, pagesToDisplay.size),
-            pageCount = { pagesToDisplay.size },
+            initialPage = resumedPageIndex(initialPageIndex, pages.size),
+            pageCount = { pages.size },
         )
     val isSignedIn: State<Boolean?> =
         components.backgroundServices.syncStore.observeAsComposableState { it.account != null }
@@ -119,6 +133,10 @@ fun OnboardingScreen(
                 currentIndex(page)
                 lastSettledPage = page
             }
+    }
+
+    if (FeatureFlags.onboardingHapticsEnabled) {
+        OnboardingPagerHaptics(pagerState)
     }
 
     BackHandler(enabled = pagerState.currentPage > 0) {
@@ -157,12 +175,17 @@ fun OnboardingScreen(
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.currentPage }
             .collect { page ->
-                onImpression(pagesToDisplay[page])
+                val pageUiData = pagesToDisplay.getOrNull(page)
+                if (pageUiData != null) {
+                    onImpression(pageUiData)
+                } else {
+                    logger.warn("Skipping impression for page $page, only ${pagesToDisplay.size} pages to display")
+                }
             }
     }
 
     OnboardingContent(
-        pagesToDisplay = pagesToDisplay,
+        pagesToDisplay = pages,
         pagerState = pagerState,
         onMakeFirefoxDefaultClick = {
             setToDefaultClick(
@@ -221,6 +244,39 @@ internal fun resumedPageIndex(pageIndex: Int, pageCount: Int): Int {
     val lastPageIndex = maxOf(0, pageCount - 1)
     // Bound the saved index to the available pages so a stale value can't point past the last page.
     return pageIndex.coerceIn(0, lastPageIndex)
+}
+
+@Composable
+private fun OnboardingPagerHaptics(pagerState: PagerState) {
+    val haptic = LocalHapticFeedback.current
+
+    LaunchedEffect(pagerState, haptic) {
+        var userDragged = false
+        var previousPage = pagerState.settledPage
+
+        launch {
+            pagerState.interactionSource.interactions.collect { interaction ->
+                when (interaction) {
+                    is DragInteraction.Start -> userDragged = true
+                    is DragInteraction.Cancel -> userDragged = false
+                }
+            }
+        }
+
+        snapshotFlow {
+            pagerState.isScrollInProgress to pagerState.settledPage
+        }
+            .collect { (isScrolling, settledPage) ->
+                if (!isScrolling) {
+                    if (userDragged && settledPage != previousPage) {
+                        haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
+                    }
+
+                    previousPage = settledPage
+                    userDragged = false
+                }
+            }
+    }
 }
 
 private fun setToDefaultClick(
@@ -300,6 +356,19 @@ private fun OnboardingContent(
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val layout = getOnboardingLayout(this)
+
+        val pageStates = pagesToDisplay.map { pageUiData ->
+            mapToOnboardingPageState(
+                onboardingPageUiData = pageUiData,
+                onMakeFirefoxDefaultClick = onMakeFirefoxDefaultClick,
+                onMakeFirefoxDefaultSkipClick = onMakeFirefoxDefaultSkipClick,
+                onSignInButtonClick = onSignInButtonClick,
+                onSignInSkipClick = onSignInSkipClick,
+                onTermsOfServiceButtonClick = onAgreeAndConfirmTermsOfService,
+                isSmallDevice = layout.isSmall,
+            )
+        }
+
         OnboardingBackground(
             isVisible =
                 !isNonLargeScreenLandscape(
@@ -315,6 +384,14 @@ private fun OnboardingContent(
         ) {
             Spacer(Modifier.weight(1f)).takeIf { !layout.isSmall }
 
+            if (pageStates.any { it.onSkipClick != null }) {
+                OnboardingSkipButton(
+                    onClick = pageStates.getOrNull(pagerState.currentPage)?.onSkipClick,
+                    isSmallDevice = layout.isSmall,
+                    modifier = Modifier.align(Alignment.End).padding(layout.contentPadding),
+                )
+            }
+
             HorizontalPager(
                 state = pagerState,
                 modifier =
@@ -329,21 +406,9 @@ private fun OnboardingContent(
                 key = { pagesToDisplay[it].type },
                 overscrollEffect = null,
             ) { pageIndex ->
-                val pageUiState = pagesToDisplay[pageIndex]
-                val onboardingPageState =
-                    mapToOnboardingPageState(
-                        onboardingPageUiData = pageUiState,
-                        onMakeFirefoxDefaultClick = onMakeFirefoxDefaultClick,
-                        onMakeFirefoxDefaultSkipClick = onMakeFirefoxDefaultSkipClick,
-                        onSignInButtonClick = onSignInButtonClick,
-                        onSignInSkipClick = onSignInSkipClick,
-                        onTermsOfServiceButtonClick = onAgreeAndConfirmTermsOfService,
-                        isSmallDevice = layout.isSmall,
-                    )
-
                 OnboardingPageForType(
-                    type = pageUiState.type,
-                    state = onboardingPageState,
+                    type = pagesToDisplay[pageIndex].type,
+                    state = pageStates[pageIndex],
                     termsOfServiceEventHandler = termsOfServiceEventHandler,
                     onMarketingDataLearnMoreClick = onMarketingDataLearnMoreClick,
                     onMarketingOptInToggle = onMarketingOptInToggle,
@@ -373,7 +438,7 @@ private fun OnboardingBackground(isVisible: Boolean, isSolidBackground: Boolean)
 
     val backgroundModifier =
         if (isSolidBackground) {
-            Modifier.background(color = MaterialTheme.colorScheme.surface)
+            Modifier.background(color = MaterialTheme.colorScheme.surfaceBright)
         } else {
             Modifier.paint(
                 painter = painterResource(R.drawable.nova_onboarding_background),
@@ -382,6 +447,39 @@ private fun OnboardingBackground(isVisible: Boolean, isSolidBackground: Boolean)
         }
 
     Box(modifier = Modifier.fillMaxSize().then(backgroundModifier))
+}
+
+/**
+ * Skip button shown above the onboarding card for pages that define a skip action.
+ *
+ * @param onClick Invoked when the button is clicked.
+ * @param isSmallDevice Whether the card fills the screen, in which case the button has no bottom padding.
+ * @param modifier The [Modifier] to be applied to the button.
+ */
+@Composable
+private fun OnboardingSkipButton(
+    onClick: (() -> Unit)?,
+    isSmallDevice: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val isVisible = onClick != null
+    val alpha by
+        animateFloatAsState(
+            targetValue = if (isVisible) 1f else 0f,
+            label = "SkipButtonAlpha",
+        )
+    val bottomPadding = if (isSmallDevice) 0.dp else FirefoxTheme.layout.space.static200
+
+    TextButton(
+        text = stringResource(R.string.nova_onboarding_skip_button),
+        onClick = { onClick?.invoke() },
+        modifier =
+            modifier
+                .padding(bottom = bottomPadding)
+                .graphicsLayer { this.alpha = alpha }
+                .then(if (isVisible) Modifier else Modifier.clearAndSetSemantics {}),
+        enabled = isVisible,
+    )
 }
 
 @Composable
