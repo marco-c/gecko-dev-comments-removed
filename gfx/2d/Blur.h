@@ -146,6 +146,12 @@ class GFX2D_API GaussianBlur final {
   static IntSize CalculateBlurRadius(const Point& aStandardDeviation);
   static Float CalculateBlurSigma(int32_t aBlurRadius);
 
+  
+
+
+
+  static constexpr Float kMaxSoftwareStdDeviation = 100.0f;
+
  private:
   
 

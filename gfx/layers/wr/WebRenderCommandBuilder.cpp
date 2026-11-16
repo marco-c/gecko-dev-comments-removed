@@ -25,6 +25,7 @@
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/Blur.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/image/WebRenderImageProvider.h"
@@ -2392,6 +2393,21 @@ void WebRenderCommandBuilder::PopOverrideForASR(
   mClipManager.PopOverrideForASR(aASR);
 }
 
+DefinedReferenceFrame WebRenderCommandBuilder::DefineReferenceFrame(
+    wr::DisplayListBuilder& aBuilder, nsIFrame* aFrame,
+    FrameReferenceFrame aKind, const LayoutDevicePoint& aOrigin,
+    const wr::ReferenceFrameParams& aParams) {
+  const wr::LayoutVector2D parentScrollOffset =
+      aBuilder.CurrentAccumulatedScrollOffset();
+  DefinedReferenceFrame frame;
+  frame.mId =
+      aBuilder.DefineReferenceFrame(wr::ToLayoutPoint(aOrigin), aParams);
+  frame.mOrigin =
+      aOrigin + LayoutDevicePoint(parentScrollOffset.x, parentScrollOffset.y);
+  frame.mShouldSnap = aParams.should_snap;
+  return frame;
+}
+
 static wr::WrRotation ToWrRotation(VideoRotation aRotation) {
   switch (aRotation) {
     case VideoRotation::kDegree_0:
@@ -2861,6 +2877,24 @@ void WebRenderMaskData::Invalidate() {
   mMaskStyle = nsStyleImageLayers(nsStyleImageLayers::LayerType::Mask);
 }
 
+
+
+
+static uint16_t BlobTileSizeForBlur(float aStdDeviation) {
+  if (aStdDeviation <= 0.0f) {
+    return 0;
+  }
+  
+  IntSize radius =
+      GaussianBlur::CalculateBlurRadius(Point(aStdDeviation, 0.0f));
+  float margin = 1.5f * float(radius.width);
+  uint32_t tileSize = 512;
+  while (tileSize < 5.0f * margin && tileSize < 2048) {
+    tileSize *= 2;
+  }
+  return tileSize > 512 ? uint16_t(tileSize) : 0;
+}
+
 Maybe<wr::ImageMask> WebRenderCommandBuilder::BuildWrMaskImage(
     nsDisplayMasksAndClipPaths* aMaskItem, wr::DisplayListBuilder& aBuilder,
     wr::IpcResourceUpdateQueue& aResources, const StackingContextHelper& aSc,
@@ -3060,8 +3094,9 @@ Maybe<wr::ImageMask> WebRenderCommandBuilder::BuildWrMaskImage(
     }
     wr::ImageDescriptor descriptor(size, 0, *imageFormat,
                                    wr::OpacityType::HasAlphaChannel);
-    if (!aResources.AddBlobImage(key, descriptor, bytes,
-                                 ImageIntRect(0, 0, size.width, size.height))) {
+    if (!aResources.AddBlobImage(
+            key, descriptor, bytes, ImageIntRect(0, 0, size.width, size.height),
+            BlobTileSizeForBlur(recorder->MaxBlurStdDeviation()))) {
       return Nothing();
     }
     maskData->ClearImageKey();

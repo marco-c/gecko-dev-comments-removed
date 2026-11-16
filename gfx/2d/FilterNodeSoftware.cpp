@@ -3074,8 +3074,7 @@ FilterNodeGaussianBlurSoftware::FilterNodeGaussianBlurSoftware()
     : mStdDeviation(0) {}
 
 static float ClampStdDeviation(float aStdDeviation) {
-  
-  return std::clamp(aStdDeviation, 0.f, 100.f);
+  return std::clamp(aStdDeviation, 0.f, GaussianBlur::kMaxSoftwareStdDeviation);
 }
 
 void FilterNodeGaussianBlurSoftware::SetAttribute(uint32_t aIndex,
