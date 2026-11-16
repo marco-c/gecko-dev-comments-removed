@@ -57,8 +57,7 @@ class JujutsuRepository(Repository):
 
     
     
-    
-    HEAD_REVSET = 'coalesce(@ ~ (empty() & description(exact:"")) ~ bookmarks(), @-)'
+    HEAD_REVSET = 'coalesce(@ ~ (empty() & description(exact:"") ~ bookmarks()), @-)'
 
     def __init__(self, path: Path, jj="jj", git="git"):
         super().__init__(path, tool=jj)

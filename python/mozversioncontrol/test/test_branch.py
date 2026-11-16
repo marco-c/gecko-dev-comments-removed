@@ -66,9 +66,6 @@ def test_jj_branch_diverged_bookmark(repo):
     
     vcs._run("describe", "--message", "local work")
     vcs._run("bookmark", "set", "master", "--revision", "@")
-    
-    
-    vcs._run("new")
 
     assert vcs.branch == "master"
     
