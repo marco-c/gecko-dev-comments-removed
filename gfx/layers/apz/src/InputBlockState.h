@@ -630,7 +630,31 @@ class TouchBlockState : public BrowserGesturableBlockState {
   bool NeedsContentResponseAfterLongTap(const MultiTouchInput& aEvent,
                                         InSlop aWasInSlop) const;
 
+  bool SetConfirmedTargetApzc(const RefPtr<AsyncPanZoomController>& aTargetApzc,
+                              TargetConfirmationState aState,
+                              InputQueueIterator aFirstInput,
+                              bool aForScrollbarDrag) override;
+
+  SideBits GetSwipableDirections(const AsyncPanZoomController* aTarget) const;
+
+  
+
+
+
+  bool HasTouchSwipeInfo() const;
+
+  
+
+
+
+  void SetTouchSwipableDirectionsCallback(
+      const TouchSwipableDirectionsCallback& aCallback) {
+    mTouchSwipableDirectionsCallback = aCallback;
+  }
+
  private:
+  void MaybeNotifyTouchSwipableDirections();
+
   nsTArray<TouchBehaviorFlags> mAllowedTouchBehaviors;
   bool mAllowedTouchBehaviorSet;
   bool mDuringFastFling;
@@ -653,6 +677,9 @@ class TouchBlockState : public BrowserGesturableBlockState {
   
   
   bool mNeedsWaitTouchMove;
+  
+  
+  TouchSwipableDirectionsCallback mTouchSwipableDirectionsCallback;
   apz::SingleTapState mSingleTapState;
   ScreenIntPoint mSlopOrigin;
   

@@ -7,9 +7,29 @@
 
 #include "Units.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/layers/TouchCounter.h"
 
 namespace mozilla {
+
+struct TouchSwipeInfo;
+struct TouchSwipeInfoQueue;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -43,7 +63,9 @@ struct TouchSwipeState {
     Tracking,
     
     
-    Rejected
+    Rejected,
+    
+    WaitingForAPZ,
   };
   Phase phase = Phase::Idle;
   
@@ -51,10 +73,15 @@ struct TouchSwipeState {
   
   mozilla::layers::TouchCounter touchCounter;
 
+  
+  UniquePtr<TouchSwipeInfoQueue> touchSwipeInfoQueue;
+
   void AssertCountConsistency() const;
 
   void Start(mozilla::SideBits aSwipableDirections,
              const ScreenIntPoint& aTouchPoint);
+
+  void Wait(uint64_t aInputBlockId, const ScreenIntPoint& aTouchPoint);
 
   void Reset();
 
@@ -67,6 +94,8 @@ struct TouchSwipeState {
   
   
   void ChangePhaseForConsumedTouchInput();
+
+  void QueueInfo(TouchSwipeInfo&& aInfo);
 };
 
 }  

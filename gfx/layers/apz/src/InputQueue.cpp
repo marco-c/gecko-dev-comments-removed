@@ -252,15 +252,16 @@ APZEventResult InputQueue::ReceiveTouchInput(
         
         
         
-        
-        
-        if (block->IsTargetConfirmed() && block->HasAllowedTouchBehaviors() &&
-            block->TouchActionAllowsPanningX()) {
-          MOZ_ASSERT(target, "A confirmed target should be non-null here");
-          result.mSwipableDirectionsForTouch =
-              block->GetOverscrollHandoffChain()->GetSwipableDirections(
-                  *target);
+
+        if (!block->HasTouchSwipeInfo()) {
+          result.mSwipableDirectionsForTouch = Nothing();
+          block->SetTouchSwipableDirectionsCallback(
+              mTouchSwipableDirectionsCallback);
+          break;
         }
+
+        result.mSwipableDirectionsForTouch =
+            Some(block->GetSwipableDirections(target));
         break;
       case MultiTouchInput::MULTITOUCH_MOVE:
         

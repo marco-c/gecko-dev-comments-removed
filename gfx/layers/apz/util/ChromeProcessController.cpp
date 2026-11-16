@@ -378,6 +378,12 @@ void ChromeProcessController::NotifyTouchSwipableDirections(
 
   if (mWidget) {
     
+    
+    
+    mUIThread->Dispatch(NewRunnableMethod<uint64_t, SideBits>(
+        "nsIWidget::ReceiveTouchSwipableDirections", mWidget,
+        &nsIWidget::ReceiveTouchSwipableDirections, aInputBlockId,
+        aSwipableDirections));
   }
 }
 
