@@ -89,7 +89,16 @@ async def setup_granted_device(bidi_session, context, test_page, subscribe_event
     request_device_future = request_device(context, bidi_session, optional_services)
 
     
-    bluetooth_prompt = await bluetooth_prompt_future
+    
+    await asyncio.wait(
+        [bluetooth_prompt_future, request_device_future],
+        return_when=asyncio.FIRST_COMPLETED,
+    )
+    if not bluetooth_prompt_future.done():
+        
+        request_device_future.result()
+        raise AssertionError("requestDevice settled without showing a prompt")
+    bluetooth_prompt = bluetooth_prompt_future.result()
 
     
     await bidi_session.bluetooth.handle_request_device_prompt(
