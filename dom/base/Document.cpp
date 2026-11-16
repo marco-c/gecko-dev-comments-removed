@@ -13300,20 +13300,6 @@ void Document::OnPageHide(bool aPersisted, EventTarget* aDispatchStartTarget,
     
     
     Document::ExitFullscreenInDocTree(this);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    CleanupFullscreenState();
-
-    
-    
-    
   }
 
   if (auto* element = HTMLVideoElement::FromNodeOrNull(
@@ -16345,12 +16331,19 @@ bool Document::IsFullscreenLeaf() {
   return GetFullscreenLeaf(*root);
 }
 
-static CallState ResetFullscreen(Document& aDocument) {
+enum class DispatchFullscreenChangeEvent : bool { No, Yes };
+
+static CallState ResetFullscreen(Document& aDocument,
+                                 DispatchFullscreenChangeEvent aDispatchEvent) {
   if (Element* fsElement = aDocument.GetUnretargetedFullscreenElement()) {
     aDocument.CleanupFullscreenState();
     NS_ASSERTION(!aDocument.Fullscreen(), "Should reset fullscreen");
-    DispatchFullscreenChange(aDocument, fsElement);
-    aDocument.EnumerateSubDocuments(ResetFullscreen);
+    if (aDispatchEvent == DispatchFullscreenChangeEvent::Yes) {
+      DispatchFullscreenChange(aDocument, fsElement);
+    }
+    aDocument.EnumerateSubDocuments([aDispatchEvent](Document& aSubDoc) {
+      return ResetFullscreen(aSubDoc, aDispatchEvent);
+    });
   }
   return CallState::Continue;
 }
@@ -16416,9 +16409,7 @@ void Document::ExitFullscreenInDocTree(Document* aMaybeNotARootDoc) {
     
     
     
-    if (aMaybeNotARootDoc->GetUnretargetedFullscreenElement()) {
-      aMaybeNotARootDoc->CleanupFullscreenState();
-    }
+    ResetFullscreen(*aMaybeNotARootDoc, DispatchFullscreenChangeEvent::No);
     return;
   }
 
@@ -16429,7 +16420,19 @@ void Document::ExitFullscreenInDocTree(Document* aMaybeNotARootDoc) {
   Document* fullscreenLeaf = GetFullscreenLeaf(root);
 
   
-  ResetFullscreen(*root);
+  ResetFullscreen(*root, DispatchFullscreenChangeEvent::Yes);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ResetFullscreen(*aMaybeNotARootDoc, DispatchFullscreenChangeEvent::No);
 
   NS_ASSERTION(!root->Fullscreen(),
                "Fullscreen root should no longer be a fullscreen doc...");
@@ -16556,7 +16559,9 @@ void Document::RestorePreviousFullscreenState(UniquePtr<FullscreenExit> aExit) {
     if (!exitDoc->Fullscreen()) {
       
       
-      exitDoc->EnumerateSubDocuments(ResetFullscreen);
+      exitDoc->EnumerateSubDocuments([](Document& aSubDoc) {
+        return ResetFullscreen(aSubDoc, DispatchFullscreenChangeEvent::Yes);
+      });
     }
   }
   aExit->MayResolvePromise();
