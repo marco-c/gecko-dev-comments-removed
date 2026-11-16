@@ -1204,24 +1204,6 @@ void ModuleLoaderBase::AddToResolvedModuleSet(
   AddToGlobalResolvedSet(std::move(aRecord));
 }
 
-
-void ModuleLoaderBase::ResetPreloadFlag(nsIURI* aURI) {
-  MOZ_ASSERT(aURI);
-  ModuleMapKey key(aURI, ModuleType::JavaScript);
-  if (!IsModuleFetched(key)) {
-    return;
-  }
-
-  RefPtr<ModuleScript> ms;
-  MOZ_ALWAYS_TRUE(mFetchedModules.Get(key, getter_AddRefs(ms)));
-
-  
-  
-  
-  
-  ms->SetForPreload(false);
-}
-
 void ModuleLoaderBase::MigratePreloadedResolvedSet(
     ScriptFetchInfo* aFetchInfo) {
   MOZ_ASSERT(aFetchInfo);
@@ -1328,28 +1310,6 @@ void ModuleLoaderBase::MovePreloadedSetToResolvedSet(
   }
 }
 
-
-
-void ModuleLoaderBase::ResetPreloadedModule(nsIURI* aURI) {
-  MOZ_ASSERT(aURI);
-  ModuleMapKey key(aURI, ModuleType::JavaScript);
-  if (!IsModuleFetched(key)) {
-    return;
-  }
-
-  RefPtr<ModuleScript> ms;
-  MOZ_ALWAYS_TRUE(mFetchedModules.Get(key, getter_AddRefs(ms)));
-  if (!ms->ForPreload()) {
-    return;
-  }
-
-  LOG(
-      ("ModuleLoaderBase::ResetPreloadedModule: module script (%p) reset "
-       "preloaded info",
-       ms.get()));
-  ms->ResetPreload();
-}
-
 void ModuleLoaderBase::ResetPreloadedModuleGraph(
     ModuleLoadRequest* aRootRequest) {
   MOZ_ASSERT(ImportMap::IsMultipleImportMapsSupported());
@@ -1385,10 +1345,11 @@ void ModuleLoaderBase::ResetPreloadedModuleGraph(
         GetModuleFetchInfo(module)->ReleasePreloadedResolvedSet();
       }
     }
+    JS::ResetPreloadedModule(ms->ModuleRecord());
   }
 
   ms->FetchInfo()->ReleasePreloadedResolvedSet();
-  ms->ResetPreload();
+  ms->ResetPreloadErrors();
 }
 
 void ModuleLoaderBase::StartFetchingModuleDependencies(

@@ -498,9 +498,6 @@ class ModuleLoaderBase : public nsISupports {
       mozilla::UniquePtr<SpecifierResolutionRecord> aRecord,
       ScriptFetchInfo* aReferrerFetchInfo);
 
-  void ResetPreloadFlag(nsIURI* aURI);
-  void ResetPreloadedModule(nsIURI* aURI);
-
   
   
   void MigratePreloadedResolvedSet(ScriptFetchInfo* aFetchInfo);

@@ -837,7 +837,7 @@ class ModuleScript final : public nsISupports {
 
   
   
-  void ResetPreload();
+  void ResetPreloadErrors();
   void Shutdown();
 
   friend void CheckModuleScriptPrivate(LoadedScript*, const Value&);
