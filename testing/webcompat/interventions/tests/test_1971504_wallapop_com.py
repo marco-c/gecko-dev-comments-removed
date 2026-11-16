@@ -1,5 +1,3 @@
-import asyncio
-
 import pytest
 from webdriver.error import (
     ElementClickInterceptedException,
@@ -28,7 +26,7 @@ async def does_left_slider_work(client):
         except StaleElementReferenceException:
             await client.stall(0.5)
     slider = client.await_css(LEFT_SLIDER_CSS, is_displayed=True)
-    await asyncio.sleep(0.5)
+    await client.stall(0.5)
 
     
     
@@ -43,7 +41,7 @@ async def does_left_slider_work(client):
     coords = [coords[0] + 10, coords[1] + 10]
     await client.apz_down(coords=coords)
     for i in range(25):
-        await asyncio.sleep(0.01)
+        await client.stall(0.01)
         coords[0] += 5
         await client.apz_move(coords=coords)
     return orig_value != slider_value()

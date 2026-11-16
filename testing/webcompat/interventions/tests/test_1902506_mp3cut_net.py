@@ -1,5 +1,3 @@
-import asyncio
-
 import pytest
 from webdriver.error import WebDriverException
 
@@ -26,7 +24,7 @@ async def open_editor(client):
             client.await_css(PICKER_FROM_URL_CSS, is_displayed=True).click()
             break
         except WebDriverException:  
-            await asyncio.sleep(0.5)
+            await client.stall(0.5)
     
     client.await_css(TEMPO_MENU_CSS, is_displayed=True).click()
     client.await_css(TEMPO_BUTTON_CSS, is_displayed=True).click()

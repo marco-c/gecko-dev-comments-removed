@@ -1,5 +1,3 @@
-import asyncio
-
 import pytest
 from webdriver import NoSuchElementException
 
@@ -26,15 +24,15 @@ async def check_if_scroll_bounces(client, in_headless_mode):
     
     
     client.apz_scroll(client.await_css("body"), dy=100000)
-    await asyncio.sleep(0.2)
+    await client.stall(0.2)
     client.apz_scroll(client.await_css("body"), dy=100000)
-    await asyncio.sleep(0.2)
+    await client.stall(0.2)
     client.apz_scroll(client.await_css("body"), dy=100000)
-    await asyncio.sleep(0.2)
+    await client.stall(0.2)
     client.apz_scroll(client.await_css("body"), dy=100000)
-    await asyncio.sleep(0.2)
+    await client.stall(0.2)
     expected_pos = client.execute_script("return window.scrollY")
-    await asyncio.sleep(0.2)
+    await client.stall(0.2)
     final_pos = client.execute_script("return window.scrollY")
     return expected_pos != final_pos
 
