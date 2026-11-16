@@ -195,6 +195,46 @@ async function activateContextMenuItem(triggerEl, menuItemId, callback) {
   await promiseHidden;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+async function assertOpenInNewTabRespectsLoadInBackground(
+  triggerEl,
+  menuItemId,
+  url
+) {
+  const selectedTabAtStart = gBrowser.selectedTab;
+  for (const loadInBackground of [true, false]) {
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.tabs.loadInBackground", loadInBackground]],
+    });
+    const promiseNewTab = BrowserTestUtils.waitForNewTab(gBrowser, url, true);
+    await activateContextMenuItem(triggerEl, menuItemId);
+    const newTab = await promiseNewTab;
+    Assert.equal(
+      gBrowser.selectedTab,
+      loadInBackground ? selectedTabAtStart : newTab,
+      `With loadInBackground=${loadInBackground}, the new tab opens in the ${
+        loadInBackground ? "background" : "foreground"
+      }.`
+    );
+    if (gBrowser.selectedTab != selectedTabAtStart) {
+      await BrowserTestUtils.switchTab(gBrowser, selectedTabAtStart);
+    }
+    BrowserTestUtils.removeTab(newTab);
+    await SpecialPowers.popPrefEnv();
+  }
+}
+
 function isActiveElement(el) {
   return el.getRootNode().activeElement == el;
 }
@@ -212,6 +252,24 @@ async function waitForRepaint() {
       Services.tm.dispatchToMainThread(resolve);
     })
   );
+}
+
+
+
+
+
+
+
+
+
+async function assertRowTooltip(row, expected, message) {
+  await row.updateComplete;
+  await row.ownerDocument.l10n.translateFragment(row.mainEl);
+  Assert.ok(
+    !row.mainEl.hasAttribute("data-l10n-id"),
+    "Row link has no Fluent ID that could override its tooltip."
+  );
+  Assert.equal(row.mainEl.title, expected, message);
 }
 
 function cleanUpExtraTabs() {
