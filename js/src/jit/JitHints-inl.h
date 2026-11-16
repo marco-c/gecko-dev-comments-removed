@@ -18,7 +18,8 @@ inline JitHintsMap::ScriptKey JitHintsMap::getScriptKey(
   
   
   if (filenameHash && !script->scriptSource()->hasIntroducerFilename()) {
-    return mozilla::AddToHash(filenameHash, script->sourceStart());
+    return mozilla::AddToHash(filenameHash, script->sourceStart(),
+                              script->sourceEnd());
   }
   return 0;
 }
