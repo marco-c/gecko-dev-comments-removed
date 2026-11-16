@@ -570,8 +570,7 @@ nsCSPNonceSrc* nsCSPParser::nonceSource() {
 
   
   mHasHashOrNonce = true;
-  return new nsCSPNonceSrc(
-      Substring(expr, dashIndex + 1, expr.Length() - dashIndex + 1));
+  return new nsCSPNonceSrc(Substring(expr, dashIndex + 1));
 }
 
 
@@ -598,8 +597,7 @@ nsCSPHashSrc* nsCSPParser::hashSource() {
   }
 
   nsAutoString algo(Substring(expr, 0, dashIndex));
-  nsAutoString hash(
-      Substring(expr, dashIndex + 1, expr.Length() - dashIndex + 1));
+  nsAutoString hash(Substring(expr, dashIndex + 1));
 
   for (auto hashSourceValidFn : kHashSourceValidFns) {
     if (algo.LowerCaseEqualsASCII(hashSourceValidFn)) {
