@@ -106,6 +106,9 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   
   TimeStamp GetLaunchTime() const { return mLaunchTime; }
 
+  
+  void OnChannelConnected(base::ProcessId peer_pid) override;
+
   void SetListener(Listener* aListener);
 
   

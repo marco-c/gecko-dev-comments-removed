@@ -61,10 +61,7 @@ class UtilityProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   
   
   
-  RefPtr<LaunchPromiseType> LaunchPromise() {
-    MOZ_ASSERT(NS_IsMainThread());
-    return mLaunchPromise;
-  }
+  RefPtr<LaunchPromiseType> LaunchPromise();
 
   
   
@@ -91,6 +88,9 @@ class UtilityProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
     MOZ_ASSERT(NS_IsMainThread());
     return bool(mUtilityProcessParent);
   }
+
+  
+  void OnChannelConnected(base::ProcessId peer_pid) override;
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   
@@ -154,6 +154,7 @@ class UtilityProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
 
   RefPtr<LaunchPromiseType::Private> mLaunchPromise{};
   bool mLaunchPromiseSettled = false;
+  bool mLaunchPromiseLaunched = false;
   
   bool mLaunchCompleted = false;
 

@@ -19,6 +19,8 @@
 
 namespace mozilla::ipc {
 
+class GeckoChildProcessHost;
+
 class NodeController final : public mojo::core::ports::NodeDelegate,
                              public NodeChannel::Listener {
   using NodeName = mojo::core::ports::NodeName;
@@ -89,7 +91,8 @@ class NodeController final : public mojo::core::ports::NodeDelegate,
   
   
   
-  bool InviteChildProcess(IPC::Channel::ChannelHandle* aClientHandle,
+  bool InviteChildProcess(GeckoChildProcessHost* aChildProcessHost,
+                          IPC::Channel::ChannelHandle* aClientHandle,
                           ScopedPort* aInitialPort, NodeChannel** aNodeChannel);
 
   

@@ -236,7 +236,10 @@ bool GMPProcessParent::Launch(int32_t aTimeoutMs) {
       StaticPrefs::media_gmp_android_isolated_process());
 #endif
 
-  bool launched = LaunchAndWaitForProcessHandle(std::move(args), aTimeoutMs);
+  
+  
+  
+  bool launched = SyncLaunch(std::move(args), aTimeoutMs);
   if (launched) {
     nsFmtString name{u"GMPProcessParent {}", static_cast<void*>(this)};
     mShutdownBlocker = media::ShutdownBlockingTicket::Create(

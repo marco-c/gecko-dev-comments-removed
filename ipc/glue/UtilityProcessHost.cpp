@@ -113,25 +113,50 @@ bool UtilityProcessHost::Launch(geckoargs::ChildProcessArgs aExtraOpts) {
     mPrefSerializer = nullptr;
     return false;
   }
-
-  WhenProcessHandleReady()->Then(
-      GetMainThreadSerialEventTarget(), __func__,
-      [self = RefPtr{this}](
-          const ipc::ProcessHandlePromise::ResolveOrRejectValue& aResult) {
-        if (!self->mShutdownRequested &&
-            self->mLaunchPhase == LaunchPhase::Waiting) {
-          
-          
-          if (aResult.IsResolve()) {
-            self->InitAfterConnect(true);
-          } else {
-            self->RejectPromise(aResult.RejectValue());
-          }
-        }
-      });
-
   LOGD("[%p] UtilityProcessHost::Launch launching async", this);
   return true;
+}
+
+RefPtr<UtilityProcessHost::LaunchPromiseType>
+UtilityProcessHost::LaunchPromise() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (mLaunchPromiseLaunched) {
+    return mLaunchPromise;
+  }
+
+  WhenProcessHandleReady()->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [this, self = RefPtr{this}](
+          const ipc::ProcessHandlePromise::ResolveOrRejectValue& aResult) {
+        if (mLaunchCompleted) {
+          return;
+        }
+        mLaunchCompleted = true;
+        if (aResult.IsReject()) {
+          RejectPromise(aResult.RejectValue());
+        }
+        
+        
+        
+      });
+
+  mLaunchPromiseLaunched = true;
+  return mLaunchPromise;
+}
+
+void UtilityProcessHost::OnChannelConnected(base::ProcessId peer_pid) {
+  MOZ_ASSERT(!NS_IsMainThread());
+  LOGD("[%p] UtilityProcessHost::OnChannelConnected", this);
+
+  GeckoChildProcessHost::OnChannelConnected(peer_pid);
+
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "UtilityProcessHost::OnChannelConnected", [this, self = RefPtr{this}]() {
+        if (!mShutdownRequested && mLaunchPhase == LaunchPhase::Waiting) {
+          InitAfterConnect(true);
+        }
+      }));
 }
 
 void UtilityProcessHost::InitAfterConnect(bool aSucceeded) {
