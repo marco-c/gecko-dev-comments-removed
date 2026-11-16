@@ -28,6 +28,9 @@ void gettime(struct timespec* tp) {
 
   tp->tv_sec = mts.tv_sec;
   tp->tv_nsec = mts.tv_nsec;
+#elif defined(__ANDROID__)
+  
+  ASSERT_EQ(0, clock_gettime(CLOCK_REALTIME, tp));
 #else
   ASSERT_NE(0, timespec_get(tp, TIME_UTC));
 #endif
@@ -245,11 +248,12 @@ TEST_F(MPITest, MpiFixlenOctetsTooSmall) {
     mp_int a;
     ASSERT_EQ(MP_OKAY, mp_init(&a));
     ASSERT_EQ(MP_OKAY, mp_read_unsigned_octets(&a, ref.data(), ref.size()));
-#ifdef DEBUG
+#ifndef DEBUG
+    EXPECT_EQ(MP_BADARG, mp_to_fixlen_octets(&a, buf, ref.size() - 1));
+#elif GTEST_HAS_DEATH_TEST
+    
     
     EXPECT_DEATH(mp_to_fixlen_octets(&a, buf, ref.size() - 1), "");
-#else
-    EXPECT_EQ(MP_BADARG, mp_to_fixlen_octets(&a, buf, ref.size() - 1));
 #endif
     ASSERT_EQ(MP_OKAY, mp_to_fixlen_octets(&a, buf, ref.size()));
     ASSERT_EQ(0, memcmp(buf, ref.data(), ref.size()));
