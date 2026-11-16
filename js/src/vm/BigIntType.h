@@ -9,6 +9,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/Range.h"
 #include "mozilla/Span.h"
+#include "mozilla/Vector.h"
 
 #include "jstypes.h"
 
@@ -236,6 +237,10 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
                                  js::gc::Heap heap = js::gc::Heap::Default);
   static BigInt* createFromNonZeroRawUint64(JSContext* cx, uint64_t n,
                                             bool isNegative);
+  template <size_t N, class AllocPolicy>
+  static BigInt* createFromDigitVector(
+      JSContext* cx, const mozilla::Vector<Digit, N, AllocPolicy>& digits,
+      bool isNegative);
   
   static BigInt* zero(JSContext* cx, js::gc::Heap heap = js::gc::Heap::Default);
   static BigInt* one(JSContext* cx);
@@ -445,6 +450,14 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
   
   static Digit inplaceAddDigits(Digits x, ConstDigits y);
   
+  static void copyDigits(ConstDigits src, Digits dest);
+  
+  static Digit leftShiftDigits(ConstDigits src, unsigned shift, Digits dest);
+  
+  
+  static Digit rightShiftDigits(ConstDigits src, unsigned shift, Digit high,
+                                Digits dest);
+  
   
   
   static void divideDigitsInPlace(Digits u, ConstDigits v, Digits q,
@@ -453,10 +466,6 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
   static void modDigitsInPlaceByCrandallReduction(Digits r, uint32_t k,
                                                   Digit c);
 
-  enum class LeftShiftMode { SameSizeResult, AlwaysAddOneDigit };
-
-  static BigInt* absoluteLeftShiftAlwaysCopy(JSContext* cx, Handle<BigInt*> x,
-                                             unsigned shift, LeftShiftMode);
   static bool productGreaterThan(Digit factor1, Digit factor2, Digit high,
                                  Digit low);
   static BigInt* lshByAbsolute(JSContext* cx, HandleBigInt x, HandleBigInt y);
@@ -466,7 +475,6 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
                                               uint64_t bits,
                                               bool resultNegative);
 
-  void inplaceRightShiftLowZeroBits(unsigned shift);
   void inplaceMultiplyAdd(Digit multiplier, Digit part);
 
   
