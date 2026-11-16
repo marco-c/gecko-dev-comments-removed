@@ -3885,6 +3885,9 @@ class nsDisplayBorder : public nsPaintedDisplayItem {
   }
 
  protected:
+  
+  nsRect CalculateBorderShapeBounds() const;
+
   template <typename T>
   T CalculateBounds(const nsStyleBorder& aStyleBorder) const {
     nsRect borderBounds(ToReferenceFrame(), mFrame->GetSize());
@@ -3893,7 +3896,12 @@ class nsDisplayBorder : public nsPaintedDisplayItem {
       return borderBounds;
     }
 
+    if (!aStyleBorder.mBorderShape.IsNone()) {
+      return T(CalculateBorderShapeBounds());
+    }
+
     nsMargin border = aStyleBorder.GetComputedBorder();
+
     T result;
     if (border.top > 0) {
       result = nsRect(borderBounds.X(), borderBounds.Y(), borderBounds.Width(),
@@ -4443,6 +4451,10 @@ class nsDisplayBackgroundColor : public nsPaintedDisplayItem {
     }
 
     if (mBottomLayerClip == StyleBackgroundClip::BorderArea) {
+      return false;
+    }
+
+    if (!mFrame->StyleBorder()->mBorderShape.IsNone()) {
       return false;
     }
 
@@ -5602,30 +5614,48 @@ class nsDisplayStickyPosition final : public nsDisplayOwnLayer {
 
 class nsDisplayViewTransitionCapture final : public nsDisplayOwnLayer {
  public:
+  enum class Kind : uint8_t {
+    
+    Element,
+    
+    
+    Root,
+    
+    
+    
+    
+    
+    Subdocument,
+  };
+
   nsDisplayViewTransitionCapture(nsDisplayListBuilder* aBuilder,
                                  nsIFrame* aFrame, nsDisplayList* aList,
-                                 const ActiveScrolledRoot* aASR, bool aIsRoot)
+                                 const ActiveScrolledRoot* aASR, Kind aKind)
       : nsDisplayOwnLayer(aBuilder, aFrame, aList, aASR,
                           ContainerASRType::Constant),
-        mIsRoot(aIsRoot) {
+        mKind(aKind) {
     MOZ_COUNT_CTOR(nsDisplayViewTransitionCapture);
     
-    MOZ_ASSERT(aASR == nullptr);
+    
+    
+    MOZ_ASSERT(aASR == nullptr || aKind == Kind::Subdocument);
   }
 
   nsDisplayViewTransitionCapture(nsDisplayListBuilder* aBuilder,
                                  const nsDisplayViewTransitionCapture& aOther)
-      : nsDisplayOwnLayer(aBuilder, aOther), mIsRoot(aOther.mIsRoot) {
+      : nsDisplayOwnLayer(aBuilder, aOther), mKind(aOther.mKind) {
     MOZ_COUNT_CTOR(nsDisplayViewTransitionCapture);
   }
 
   MOZ_COUNTED_DTOR_FINAL(nsDisplayViewTransitionCapture)
   NS_DISPLAY_DECL_NAME("VTCapture", TYPE_VT_CAPTURE)
 
+  Kind GetKind() const { return mKind; }
+
   
   bool CanMerge(const nsDisplayItem* aItem) const override {
-    return !mIsRoot && HasDifferentFrame(aItem) && HasSameTypeAndClip(aItem) &&
-           HasSameContent(aItem);
+    return mKind == Kind::Element && HasDifferentFrame(aItem) &&
+           HasSameTypeAndClip(aItem) && HasSameContent(aItem);
   }
 
   void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override {
@@ -5641,7 +5671,40 @@ class nsDisplayViewTransitionCapture final : public nsDisplayOwnLayer {
 
  private:
   NS_DISPLAY_ALLOW_CLONING()
-  bool mIsRoot = false;
+  Kind mKind = Kind::Element;
+};
+
+
+
+
+
+
+class nsDisplayViewTransitionSubdocumentSnapshot final
+    : public nsPaintedDisplayItem {
+ public:
+  
+  nsDisplayViewTransitionSubdocumentSnapshot(nsDisplayListBuilder* aBuilder,
+                                             nsSubDocumentFrame* aFrame,
+                                             const nsRect& aRect);
+
+  MOZ_COUNTED_DTOR_FINAL(nsDisplayViewTransitionSubdocumentSnapshot)
+  NS_DISPLAY_DECL_NAME("VTSubdocumentSnapshot", TYPE_VT_SUBDOCUMENT_SNAPSHOT)
+
+  nsRect GetBounds(nsDisplayListBuilder* aBuilder, bool* aSnap) const override {
+    *aSnap = false;
+    return mRect + ToReferenceFrame();
+  }
+
+  void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override {}
+
+  WebRenderCommandsResult CreateWebRenderCommands(
+      wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,
+      const StackingContextHelper& aSc,
+      layers::RenderRootStateManager* aManager,
+      nsDisplayListBuilder* aDisplayListBuilder) override;
+
+ private:
+  nsRect mRect;
 };
 
 class nsDisplayFixedPosition : public nsDisplayOwnLayer {

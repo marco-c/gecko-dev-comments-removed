@@ -177,6 +177,42 @@ struct nsCSSRendering {
       const nsStyleBorder& aBorderStyle, mozilla::ComputedStyle* aStyle,
       mozilla::PaintBorderFlags aFlags, Sides aSkipSides = Sides());
 
+  
+
+
+
+
+  static ImgDrawResult PaintBorderShape(nsPresContext* aPresContext,
+                                        gfxContext& aRenderingContext,
+                                        nsIFrame* aForFrame,
+                                        const nsRect& aBorderArea,
+                                        const nsStyleBorder& aBorderStyle,
+                                        mozilla::ComputedStyle* aStyle);
+
+  
+
+
+
+  static already_AddRefed<mozilla::gfx::Path> BorderShapeOuterPath(
+      nsIFrame* aForFrame, const nsRect& aBorderArea,
+      mozilla::gfx::DrawTarget* aDrawTarget);
+
+  
+
+
+
+
+
+  static mozilla::Side BorderShapeRelevantSide(
+      nsIFrame* aForFrame, const nsStyleBorder& aStyleBorder);
+
+  
+
+
+
+
+  static nsMargin BorderShapePaintOverflow(nsIFrame* aForFrame);
+
   static mozilla::Maybe<nsCSSBorderRenderer> CreateBorderRenderer(
       nsPresContext* aPresContext, DrawTarget* aDrawTarget, nsIFrame* aForFrame,
       const nsRect& aDirtyRect, const nsRect& aBorderArea,

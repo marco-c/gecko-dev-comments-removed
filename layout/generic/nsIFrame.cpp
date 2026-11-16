@@ -1991,6 +1991,12 @@ bool nsIFrame::GetBorderRadii(const nsSize& aFrameSize,
     return false;
   }
 
+  
+  
+  if (!StyleBorder()->mBorderShape.IsNone()) {
+    return false;
+  }
+
   const auto& radii = StyleBorder()->mBorderRadius;
   const auto& cornerShape = StyleBorder()->mCornerShape;
   const bool hasRadii = ComputeBorderRadii(radii, cornerShape, aFrameSize,
@@ -8835,6 +8841,14 @@ static nsRect ComputeEffectsRect(nsIFrame* aFrame, const nsRect& aOverflowRect,
     nsRect outsetRect(nsPoint(0, 0), aNewSize);
     outsetRect.Inflate(outsetMargin);
     r.UnionRect(r, outsetRect);
+  }
+
+  
+  
+  if (!styleBorder->mBorderShape.IsNone()) {
+    nsRect shapeRect(nsPoint(0, 0), aNewSize);
+    shapeRect.Inflate(nsCSSRendering::BorderShapePaintOverflow(aFrame));
+    r.UnionRect(r, shapeRect);
   }
 
   
