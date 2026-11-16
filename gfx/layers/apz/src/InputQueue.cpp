@@ -273,7 +273,29 @@ APZEventResult InputQueue::ReceiveTouchInput(
         
         
         
+        
         if (result.GetStatus() != nsEventStatus_eConsumeNoDefault) {
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          const bool isAPZWaitingForContentResponse =
+              !block->HasContentResponded() &&
+              !block->IsContentResponseTimerExpired();
+          if (isAPZWaitingForContentResponse &&
+              !block->HasTouchSwipableDirectionsCallback()) {
+            result.mSwipableDirectionsForTouch = Nothing();
+            block->SetTouchSwipableDirectionsCallback(
+                mTouchSwipableDirectionsCallback);
+          }
           block->SetNeedsToWaitForBrowserGestureResponse(true);
         }
         break;

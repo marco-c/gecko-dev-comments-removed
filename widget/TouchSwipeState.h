@@ -49,6 +49,10 @@ struct TouchSwipeInfoQueue;
 
 
 
+
+
+
+
 struct TouchSwipeState {
   
   mozilla::Maybe<ScreenIntPoint> previousTouchPoint;

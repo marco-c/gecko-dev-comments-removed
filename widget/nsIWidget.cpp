@@ -1349,6 +1349,21 @@ void nsIWidget::MayStartSwipeForTouchInput(const MultiTouchInput& aInput,
     return;
   }
 
+  if (!aResult.mSwipableDirectionsForTouch) {
+    
+    
+    mTouchSwipeState.Wait(aResult.mInputBlockId,
+                          *mTouchSwipeState.previousTouchPoint);
+    auto info = TouchSwipeInfo{.input = aInput, .result = aResult};
+    
+    
+    
+    
+    info.result.mSwipableDirectionsForTouch = Some(SideBits::eNone);
+    mTouchSwipeState.QueueInfo(std::move(info));
+    return;
+  }
+
   const auto touchDelta =
       mTouchSwipeState.GetDelta(aInput.mTouches[0].mScreenPoint);
 
