@@ -152,6 +152,12 @@ struct LinkedProgramInfo final : public RefCounted<LinkedProgramInfo>,
 
 }  
 
+
+uint8_t NumUsedLocationsByElemType(GLenum elemType);
+
+
+uint8_t MaxLocationIndexOffsetByElemType(GLenum elemType);
+
 class WebGLProgram final : public WebGLContextBoundObject {
   friend class WebGLTransformFeedback;
   friend struct webgl::LinkedProgramInfo;

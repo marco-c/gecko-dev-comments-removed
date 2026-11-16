@@ -8,6 +8,7 @@
 #include "GLSLANG/ShaderLang.h"
 #include "WebGLContext.h"
 #include "WebGLObjectModel.h"
+#include "WebGLProgram.h"
 #include "WebGLShaderValidator.h"
 #include "WebGLValidateStrings.h"
 #include "mozilla/MemoryReporting.h"
@@ -133,6 +134,48 @@ size_t WebGLShader::CalcNumSamplerUniforms() const {
 
 size_t WebGLShader::NumAttributes() const {
   return mCompileResults->mAttributes.size();
+}
+
+size_t WebGLShader::CalculateAttributeMaxLocationIndex() const {
+  size_t maxLocationIndexFound = 0;
+  size_t accumulatedLocationSpace = 0;
+  for (const auto& attribute : mCompileResults->mAttributes) {
+    
+    if (attribute.isBuiltIn() && !attribute.isEmulatedBuiltIn()) {
+      continue;
+    }
+
+    
+    accumulatedLocationSpace += NumUsedLocationsByElemType(attribute.type);
+
+    
+    if (attribute.location < 0)  
+    {
+      continue;
+    }
+
+    
+    
+    size_t maxLocationOffset = MaxLocationIndexOffsetByElemType(attribute.type);
+    size_t locationBaseIndex = static_cast<size_t>(attribute.location);
+
+    
+    auto currentMaxLocationIndex = locationBaseIndex + maxLocationOffset;
+
+    if (currentMaxLocationIndex > maxLocationIndexFound) {
+      maxLocationIndexFound = currentMaxLocationIndex;
+    }
+  }
+
+  if (accumulatedLocationSpace >
+      0)  
+  {
+    if (accumulatedLocationSpace - 1 > maxLocationIndexFound) {
+      return accumulatedLocationSpace - 1;
+    }
+  }
+
+  return maxLocationIndexFound;
 }
 
 void WebGLShader::BindAttribLocation(GLuint prog, const std::string& userName,

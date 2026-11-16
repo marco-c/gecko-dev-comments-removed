@@ -40,6 +40,10 @@ class WebGLShader final : public WebGLContextBoundObject {
   size_t CalcNumSamplerUniforms() const;
   size_t NumAttributes() const;
 
+  
+  
+  size_t CalculateAttributeMaxLocationIndex() const;
+
   const auto& CompileResults() const { return mCompileResults; }
   const auto& CompileLog() const { return mCompilationLog; }
   bool IsCompiled() const { return mCompilationSuccessful; }
