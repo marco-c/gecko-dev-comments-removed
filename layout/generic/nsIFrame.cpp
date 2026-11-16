@@ -9944,9 +9944,17 @@ static nsresult GetNextPrevLineFromBlockFrame(PeekOffsetStruct* aPos,
         nsPoint offset = resultFrame->GetOffsetToRootFrame();
         if (resultFrame->GetWritingMode().IsVertical()) {
           point.y = aPos->mDesiredCaretPos.y;
-          point.x = tempRect.width + offset.x;
+          point.x = offset.x;
+          
+          
+          if (aPos->mDirection == eDirPrevious) {
+            point.x += tempRect.width;
+          }
         } else {
-          point.y = tempRect.height + offset.y;
+          point.y = offset.y;
+          if (aPos->mDirection == eDirPrevious) {
+            point.y += tempRect.height;
+          }
           point.x = aPos->mDesiredCaretPos.x;
         }
 
