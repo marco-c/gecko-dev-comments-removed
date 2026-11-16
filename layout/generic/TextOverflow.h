@@ -8,6 +8,7 @@
 #include <algorithm>
 
 #include "mozilla/Likely.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WritingModes.h"
 #include "nsDisplayList.h"
@@ -98,8 +99,7 @@ class TextOverflow final {
 
   
   struct AlignmentEdges {
-    AlignmentEdges()
-        : mIStart(0), mIEnd(0), mIEndOuter(0), mAssignedInner(false) {}
+    constexpr AlignmentEdges() = default;
     void AccumulateInner(WritingMode aWM, const LogicalRect& aRect) {
       if (MOZ_LIKELY(mAssignedInner)) {
         mIStart = std::min(mIStart, aRect.IStart(aWM));
@@ -111,21 +111,22 @@ class TextOverflow final {
       }
     }
     void AccumulateOuter(WritingMode aWM, const LogicalRect& aRect) {
-      mIEndOuter = std::max(mIEndOuter, aRect.IEnd(aWM));
+      mIEndOuter =
+          Some(std::max(mIEndOuter.valueOr(aRect.IEnd(aWM)), aRect.IEnd(aWM)));
     }
     nscoord ISize() { return mIEnd - mIStart; }
 
     
     
-    nscoord mIStart;
-    nscoord mIEnd;
+    nscoord mIStart = 0;
+    nscoord mIEnd = 0;
 
     
     
     
-    nscoord mIEndOuter;
+    Maybe<nscoord> mIEndOuter;
 
-    bool mAssignedInner;
+    bool mAssignedInner = false;
   };
 
   struct InnerClipEdges {
@@ -275,9 +276,14 @@ class TextOverflow final {
       mEdgeAligned = false;
     }
 
-    inline bool IsIStartSuppressed() { return mTextOverflowStyle->IsClip(); }
-    inline bool IsIEndSuppressed() {
-      return IsIStartSuppressed() && !HasBlockEllipsis();
+    bool IsIStartSuppressed() { return mTextOverflowStyle->IsClip(); }
+    bool IsIEndSuppressed() {
+      if (mBlockEllipsis) {
+        
+        
+        return !HasBlockEllipsis();
+      }
+      return IsIStartSuppressed();
     }
 
     

@@ -562,6 +562,7 @@ LogicalRect TextOverflow::ExamineLineFrames(nsLineBox* aLine,
   bool clippedIStartMarker = false;
   bool clippedIEndMarker = false;
   do {
+    aAlignmentEdges->mIEndOuter.reset();
     
     if (guessIStart) {
       mIStart.SetupString(mBlock);
@@ -600,7 +601,6 @@ LogicalRect TextOverflow::ExamineLineFrames(nsLineBox* aLine,
     }
     if (!foundVisibleTextOrAtomic && retryEmptyLine) {
       aAlignmentEdges->mAssignedInner = false;
-      aAlignmentEdges->mIEndOuter = 0;
       aFramesToHide->Clear();
       pass = -1;
       if (mIStart.IsNeeded() && mIStart.mActive && !clippedIStartMarker) {
@@ -639,16 +639,15 @@ LogicalRect TextOverflow::ExamineLineFrames(nsLineBox* aLine,
       mIEnd.mActive = guessIEnd = iendWantsMarker;
       
       
-      
-      
-      if (mIEnd.IsNeeded() && mIEnd.mActive && mIEnd.HasBlockEllipsis()) {
+      if (mIEnd.IsNeeded() && mIEnd.mActive && mIEnd.HasBlockEllipsis() &&
+          aAlignmentEdges->mIEndOuter) {
         NS_ASSERTION(nonSnappedContentArea.IStart(mBlockWM) >
-                         aAlignmentEdges->mIEndOuter,
+                         *aAlignmentEdges->mIEndOuter,
                      "Expected the alignment edge for the out of view content "
                      "to be before the start of the content area");
         mIEnd.mISize = std::max(
             mIEnd.mIntrinsicISize - (nonSnappedContentArea.IStart(mBlockWM) -
-                                     aAlignmentEdges->mIEndOuter),
+                                     *aAlignmentEdges->mIEndOuter),
             0);
       }
       continue;
@@ -738,14 +737,10 @@ void TextOverflow::ProcessLine(const nsDisplayListSet& aLists, nsLineBox* aLine,
   } else {
     
     
-    
-    
-    
-    
-    
     if (mIEnd.HasBlockEllipsis()) {
-      insideMarkersArea = LogicalRect(mBlockWM, alignmentEdges.mIEndOuter,
-                                      insideMarkersArea.BStart(mBlockWM), 0, 1);
+      insideMarkersArea = LogicalRect(
+          mBlockWM, alignmentEdges.mIEndOuter.valueOr(aLine->IStart()),
+          insideMarkersArea.BStart(mBlockWM), 0, 1);
     }
   }
 
