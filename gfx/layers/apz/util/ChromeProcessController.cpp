@@ -364,6 +364,23 @@ void ChromeProcessController::NotifyScaleGestureComplete(
   }
 }
 
+void ChromeProcessController::NotifyTouchSwipableDirections(
+    uint64_t aInputBlockId, SideBits aSwipableDirections) {
+  
+  
+  if (!mUIThread->IsOnCurrentThread()) {
+    mUIThread->Dispatch(NewRunnableMethod<uint64_t, SideBits>(
+        "layers::ChromeProcessController::NotifyTouchSwipableDirections", this,
+        &ChromeProcessController::NotifyTouchSwipableDirections, aInputBlockId,
+        aSwipableDirections));
+    return;
+  }
+
+  if (mWidget) {
+    
+  }
+}
+
 nsIFrame* ChromeProcessController::GetWidgetFrame() const {
   return mWidget ? mWidget->GetFrame() : nullptr;
 }

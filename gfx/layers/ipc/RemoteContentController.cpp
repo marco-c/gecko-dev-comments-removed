@@ -364,6 +364,29 @@ void RemoteContentController::HideDynamicToolbar(
   }
 }
 
+void RemoteContentController::NotifyTouchSwipableDirections(
+    uint64_t aInputBlockId, SideBits aSwipableDirections) {
+  
+  
+  
+  MOZ_ASSERT(XRE_IsGPUProcess());
+
+  
+  if (!NS_IsMainThread()) {
+    NS_DispatchToMainThread(NewRunnableMethod<uint64_t, SideBits>(
+        "layers::RemoteContentController::NotifyTouchSwipableDirections", this,
+        &RemoteContentController::NotifyTouchSwipableDirections, aInputBlockId,
+        aSwipableDirections));
+    return;
+  }
+
+  auto bridge = CompositorBridgeParent::GetApzBridgeParentForRoot(mLayersId);
+  if (bridge) {
+    (void)bridge->SendNotifyTouchSwipableDirections(aInputBlockId,
+                                                    aSwipableDirections);
+  }
+}
+
 void RemoteContentController::NotifyMozMouseScrollEvent(
     const ScrollableLayerGuid::ViewID& aScrollId, const nsString& aEvent) {
   if (!mCompositorThread->IsOnCurrentThread()) {

@@ -278,7 +278,14 @@ APZCTreeManager::APZCTreeManager(LayersId aRootLayersId,
                                  CSSToLayoutDeviceScale aWidgetScale,
                                  UniquePtr<IAPZHitTester> aHitTester)
     : mTestSampleTime(Nothing(), "APZCTreeManager::mTestSampleTime"),
-      mInputQueue(new InputQueue()),
+      mInputQueue(new InputQueue([aRootLayersId](uint64_t aInputBlockId,
+                                                 SideBits aSwipableDirections) {
+        if (RefPtr<GeckoContentController> controller =
+                GetContentController(aRootLayersId)) {
+          controller->NotifyTouchSwipableDirections(aInputBlockId,
+                                                    aSwipableDirections);
+        }
+      })),
       mMapLock("APZCMapLock"),
       mRootLayersId(aRootLayersId),
       mSampler(nullptr),
@@ -919,8 +926,11 @@ void APZCTreeManager::SampleForWebRender(const Maybe<VsyncId>& aVsyncId,
       if (RefPtr<UiCompositorControllerParent> uiController =
               UiCompositorControllerParent::GetFromRootLayerTreeId(
                   mRootLayersId)) {
-        uiController->NotifyCompositorScrollUpdates(
-            apzc->GetCompositorScrollUpdates());
+        nsTArray<CompositorScrollUpdate> updates =
+            apzc->GetCompositorScrollUpdates();
+        if (!updates.IsEmpty()) {
+          uiController->NotifyCompositorScrollUpdates(std::move(updates));
+        }
       }
     }
   }
@@ -3352,6 +3362,42 @@ AsyncPanZoomController* APZCTreeManager::FindRootApzcFor(
 
   HitTestingTreeNode* resultNode = FindRootNodeForLayersId(aLayersId);
   return resultNode ? resultNode->GetApzc() : nullptr;
+}
+
+AsyncPanZoomController* APZCTreeManager::FindDoubleTapHandlerFor(
+    AsyncPanZoomController* aApzc) {
+  RecursiveMutexAutoLock lock(mTreeLock);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  LayersId layersId = aApzc->GetLayersId();
+  AsyncPanZoomController* apzc = aApzc;
+  while (!apzc->IsRootContent()) {
+    AsyncPanZoomController* parent = FindHandoffParent(apzc).mApzc;
+    if (!parent) {
+      
+      return nullptr;
+    }
+    if (parent->GetLayersId() != layersId) {
+      
+      
+      MOZ_ASSERT(apzc->IsRootForLayersId());
+      return apzc;
+    }
+    apzc = parent;
+  }
+  return apzc;
 }
 
 AsyncPanZoomController* APZCTreeManager::FindRootContentApzcForLayersId(

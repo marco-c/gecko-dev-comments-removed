@@ -9,6 +9,7 @@
 
 #include "APZUtils.h"
 #include "DragTracker.h"
+#include "InputBlockState.h"
 #include "InputData.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/RefPtr.h"
@@ -77,7 +78,12 @@ class InputQueue {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(InputQueue)
 
  public:
-  InputQueue();
+  
+
+
+
+  explicit InputQueue(
+      TouchSwipableDirectionsCallback&& aTouchSwipableDirectionsCallback);
 
   
 
@@ -304,6 +310,8 @@ class InputQueue {
   using InputBlockCallbackMap =
       std::unordered_map<uint64_t, InputBlockCallback>;
   InputBlockCallbackMap mInputBlockCallbacks;
+
+  TouchSwipableDirectionsCallback mTouchSwipableDirectionsCallback;
 };
 
 }  
