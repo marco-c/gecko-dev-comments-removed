@@ -1488,7 +1488,19 @@ void nsIWidget::ReceiveTouchSwipableDirections(uint64_t aInputBlockId,
   mTouchSwipeState.Start(aSwipableDirections,
                          *mTouchSwipeState.previousTouchPoint);
 
-  for (const auto& info : queue->queuedInfo) {
+  for (auto& info : queue->queuedInfo) {
+    
+    
+    
+    
+    
+    
+    
+    if (mTouchSwipeState.phase == TouchSwipeState::Phase::WaitingForAPZ) {
+      mTouchSwipeState.QueueInfo(std::move(info));
+      continue;
+    }
+
     mTouchSwipeState.touchCounter.Update(info.input);
     HandleTouchInputForSwipe(info.input, info.result);
   }
