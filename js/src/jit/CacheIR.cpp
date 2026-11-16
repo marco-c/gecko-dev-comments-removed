@@ -14159,7 +14159,7 @@ AttachDecision CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
   
   
   
-  if (isSpread && argsLength() > JIT_ARGS_LENGTH_MAX) {
+  if (argsLength() > JIT_ARGS_LENGTH_MAX) {
     return AttachDecision::NoAction;
   }
 
@@ -14439,7 +14439,7 @@ AttachDecision CallIRGenerator::tryAttachBoundNative(
   }
 
   
-  if (isSpread && argsLength() > JIT_ARGS_LENGTH_MAX) {
+  if (argsLength() > JIT_ARGS_LENGTH_MAX) {
     return AttachDecision::NoAction;
   }
 
