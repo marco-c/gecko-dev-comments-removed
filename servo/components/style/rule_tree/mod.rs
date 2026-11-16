@@ -6,7 +6,9 @@
 
 
 
-use crate::applicable_declarations::{ApplicableDeclarationList, CascadePriority};
+use crate::applicable_declarations::{
+    ApplicableDeclarationBlock, ApplicableDeclarationList, CascadePriority,
+};
 use crate::properties::{LonghandIdSet, PropertyDeclarationBlock};
 use crate::shared_lock::{Locked, StylesheetGuards};
 use crate::stylesheets::layer_rule::LayerOrder;
@@ -37,6 +39,14 @@ bitflags! {
 }
 
 malloc_size_of::malloc_size_of_is_0!(RuleCascadeFlags);
+
+
+pub struct RuleReplacementResult {
+    
+    pub new_path: Option<StrongRuleNode>,
+    
+    pub important_changed: bool,
+}
 
 impl RuleTree {
     fn dump<W: Write>(&self, guards: &StylesheetGuards, writer: &mut W) {
@@ -210,93 +220,64 @@ impl RuleTree {
     }
 
     
+    pub fn replace_pres_hints(
+        &self,
+        hints: &[ApplicableDeclarationBlock],
+        path: &mut StrongRuleNode,
+    ) {
+        let result = self.replace_rules_at_level(
+            path,
+            CascadePriority::PRES_HINTS,
+            |n| n.cascade_priority() == CascadePriority::PRES_HINTS,
+            hints
+                .iter()
+                .rev()
+                .map(|d| (d.source.to_owned(), d.cascade_priority)),
+        );
+        debug_assert!(
+            !result.important_changed,
+            "Pres hints shouldn't have important rules"
+        );
+        if let Some(new_path) = result.new_path {
+            *path = new_path;
+        }
+    }
+
     
     
-    
-    pub fn update_rule_at_level(
+    pub fn replace_single_rule_at_level(
         &self,
         level: CascadeLevel,
         layer_order: LayerOrder,
         pdb: Option<ArcBorrow<Locked<PropertyDeclarationBlock>>>,
-        path: &StrongRuleNode,
-        guards: &StylesheetGuards,
-        important_rules_changed: &mut bool,
-    ) -> Option<StrongRuleNode> {
-        
-        
-        let mut current = path.clone();
-        *important_rules_changed = false;
-
-        
-        let mut children = SmallVec::<[_; 10]>::new();
-        while current.cascade_priority().cascade_level() > level {
-            children.push((
-                current.style_source().unwrap().clone(),
-                current.cascade_priority(),
-            ));
-            current = current.parent().unwrap().clone();
-        }
-
-        let cascade_priority = CascadePriority::new(level, layer_order, RuleCascadeFlags::empty());
-
-        
-        
-        
-        
-        
-        
-        
-        
-        if current.cascade_priority() == cascade_priority {
-            *important_rules_changed |= level.is_important();
-
-            let current_decls = current.style_source().unwrap().get();
-
-            
-            
+        path: &mut StrongRuleNode,
+    ) -> bool {
+        let priority = CascadePriority::new(level, layer_order, RuleCascadeFlags::empty());
+        let need_insert = std::cell::Cell::new(true);
+        let should_remove = |node: &StrongRuleNode| {
+            if node.cascade_priority() != priority {
+                return false;
+            }
             if let Some(ref pdb) = pdb {
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                let is_here_already = ArcBorrow::ptr_eq(pdb, &current_decls.borrow_arc());
-                if is_here_already {
-                    debug!("Picking the fast path in rule replacement");
-                    return None;
+                let current_decls = node.style_source().unwrap().get();
+                if ArcBorrow::ptr_eq(pdb, &current_decls.borrow_arc()) {
+                    need_insert.set(false);
+                    return false;
                 }
             }
-
-            current = current.parent().unwrap().clone();
-        }
-
-        
-        
-        
-        
-        if let Some(pdb) = pdb {
-            let source = StyleSourceBorrow::from_declarations(pdb);
-            if level.is_important() {
-                if pdb.read_with(level.guard(guards)).any_important() {
-                    current = current.ensure_child(self.root(), source, cascade_priority);
-                    *important_rules_changed = true;
-                }
-            } else if pdb.read_with(level.guard(guards)).any_normal() {
-                current = current.ensure_child(self.root(), source, cascade_priority);
+            true
+        };
+        let new_rule = std::iter::from_fn(|| {
+            if !need_insert.replace(false) {
+                return None;
             }
+            Some((StyleSource::from_declarations(pdb?.clone_arc()), priority))
+        });
+        let result = self.replace_rules_at_level(path, priority, should_remove, new_rule);
+        if let Some(new_path) = result.new_path {
+            *path = new_path;
         }
-
-        
-        
-        let rule = self.insert_ordered_rules_from(
-            current,
-            children.iter().rev().map(|(s, p)| (s.borrow(), *p)),
-        );
-        Some(rule)
+        result.important_changed
     }
 
     
@@ -309,55 +290,80 @@ impl RuleTree {
     }
 
     
-    pub fn remove_transition_rule_if_applicable(&self, path: &StrongRuleNode) -> StrongRuleNode {
-        let transitions = CascadeLevel::new(CascadeOrigin::Transitions);
-        self.remove_rules_at_levels(path, transitions, |l| l == transitions)
-    }
-
-    
-    
-    
-    fn remove_rules_at_levels(
+    pub fn remove_transition_rule_if_applicable(
         &self,
         path: &StrongRuleNode,
-        lowest_level: CascadeLevel,
-        mut should_remove: impl FnMut(CascadeLevel) -> bool,
-    ) -> StrongRuleNode {
-        let mut last = path;
-        let iter = path
-            .self_and_ancestors()
-            .take_while(|node| node.cascade_level() >= lowest_level);
-        let mut any_to_remove = false;
-        let mut children = SmallVec::<[_; 10]>::new();
-        for node in iter {
-            if !should_remove(node.cascade_level()) {
-                children.push((
-                    node.style_source().unwrap().clone(),
-                    node.cascade_priority(),
-                ));
-            } else {
-                any_to_remove = true;
-            }
-            last = node;
-        }
-
-        if !any_to_remove {
-            return path.clone();
-        }
-
-        self.insert_ordered_rules_from(
-            last.parent().unwrap().clone(),
-            children.iter().rev().map(|(s, p)| (s.borrow(), *p)),
+    ) -> Option<StrongRuleNode> {
+        self.replace_rules_at_level(
+            path,
+            CascadePriority::TRANSITIONS,
+            |n| n.cascade_priority() == CascadePriority::TRANSITIONS,
+            std::iter::empty(),
         )
+        .new_path
     }
 
     
-    pub fn remove_animation_rules(&self, path: &StrongRuleNode) -> StrongRuleNode {
-        self.remove_rules_at_levels(
+    
+    
+    
+    fn replace_rules_at_level(
+        &self,
+        path: &StrongRuleNode,
+        insert_priority: CascadePriority,
+        mut should_remove: impl FnMut(&StrongRuleNode) -> bool,
+        new_level_children: impl Iterator<Item = (StyleSource, CascadePriority)>,
+    ) -> RuleReplacementResult {
+        let mut last = None;
+        let iter = path
+            .self_and_ancestors()
+            .take_while(|node| node.cascade_priority() >= insert_priority);
+        let mut changed = false;
+        let mut children = SmallVec::<[_; 10]>::new();
+        let mut important_changed = false;
+        for node in iter {
+            let prio = node.cascade_priority();
+            if !should_remove(node) {
+                children.push((node.style_source().unwrap().clone(), prio));
+            } else {
+                important_changed |= prio.is_important();
+                changed = true;
+            }
+            last = Some(node);
+        }
+
+        for (new_child_source, new_child_prio) in new_level_children {
+            children.push((new_child_source, new_child_prio));
+            important_changed |= new_child_prio.is_important();
+            changed = true;
+        }
+
+        let new_path = changed.then(|| {
+            let from = match last {
+                Some(last) => last.parent().unwrap().clone(),
+                None => path.clone(),
+            };
+            self.insert_ordered_rules_from(
+                from,
+                children.iter().rev().map(|(s, p)| (s.borrow(), *p)),
+            )
+        });
+
+        RuleReplacementResult {
+            new_path,
+            important_changed,
+        }
+    }
+
+    
+    pub fn remove_animation_rules(&self, path: &StrongRuleNode) -> Option<StrongRuleNode> {
+        self.replace_rules_at_level(
             path,
-            CascadeLevel::new(CascadeOrigin::SMILOverride),
-            CascadeLevel::is_animation,
+            CascadePriority::SMIL,
+            |n| n.cascade_level().is_animation(),
+            std::iter::empty(),
         )
+        .new_path
     }
 }
 

@@ -1181,15 +1181,8 @@ void HTMLImageElement::InvalidateAttributeMapping() {
     return;
   }
 
-  
-  
-  
-  
-  
-  
-  
   presContext->RestyleManager()->PostRestyleEvent(
-      this, RestyleHint::RESTYLE_SELF, nsChangeHint(0));
+      this, RestyleHint::RESTYLE_PRES_HINTS, nsChangeHint(0));
 }
 
 void HTMLImageElement::SetResponsiveSelector(

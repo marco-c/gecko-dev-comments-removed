@@ -1456,24 +1456,17 @@ impl Stylist {
             let mut inputs = CascadeInputs::new_from_style(style);
             
             inputs.visited_rules = None;
-            let rules = inputs.rules.as_ref().unwrap_or(self.rule_tree.root());
-            let mut important_rules_changed = false;
             if let Some(fallback_block) = fallback_block {
-                let new_rules = self.rule_tree.update_rule_at_level(
+                let mut rules = inputs
+                    .rules
+                    .unwrap_or_else(|| self.rule_tree.root().clone());
+                self.rule_tree.replace_single_rule_at_level(
                     CascadeLevel::new(CascadeOrigin::PositionFallback),
                     LayerOrder::root(),
                     Some(fallback_block.borrow_arc()),
-                    rules,
-                    guards,
-                    &mut important_rules_changed,
+                    &mut rules,
                 );
-                if new_rules.is_some() {
-                    inputs.rules = new_rules;
-                } else {
-                    
-                    
-                    
-                }
+                inputs.rules = Some(rules);
             }
             inputs
         };

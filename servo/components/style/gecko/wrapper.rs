@@ -1674,6 +1674,8 @@ impl<'le> TElement for GeckoElement<'le> {
         }
 
         
+        
+        
         if self.is_link() {
             
             

@@ -9743,11 +9743,7 @@ void Document::ScheduleForPresAttrEvaluation(Element* aElement) {
   DebugOnly<bool> inserted = mLazyPresElements.EnsureInserted(aElement);
   MOZ_ASSERT(inserted);
   if (aElement->HasServoData()) {
-    
-    
-    
-    
-    nsLayoutUtils::PostRestyleEvent(aElement, RestyleHint::RESTYLE_SELF,
+    nsLayoutUtils::PostRestyleEvent(aElement, RestyleHint::RESTYLE_PRES_HINTS,
                                     nsChangeHint(0));
   } else if (auto* presContext = GetPresContext()) {
     presContext->RestyleManager()->IncrementUndisplayedRestyleGeneration();

@@ -101,6 +101,27 @@ impl CascadePriority {
     );
 
     
+    pub const ANIMATIONS: Self = Self::new(
+        CascadeLevel::new(CascadeOrigin::Animations),
+        LayerOrder::root(),
+        RuleCascadeFlags::empty(),
+    );
+
+    
+    pub const SMIL: Self = Self::new(
+        CascadeLevel::new(CascadeOrigin::SMILOverride),
+        LayerOrder::root(),
+        RuleCascadeFlags::empty(),
+    );
+
+    
+    pub const PRES_HINTS: Self = Self::new(
+        CascadeLevel::new(CascadeOrigin::PresHints),
+        LayerOrder::root(),
+        RuleCascadeFlags::empty(),
+    );
+
+    
     pub const fn new(
         cascade_level: CascadeLevel,
         layer_order: LayerOrder,
@@ -160,6 +181,12 @@ impl CascadePriority {
             flags: self.flags,
             layer_order: self.layer_order,
         }
+    }
+
+    
+    #[inline]
+    pub fn is_important(&self) -> bool {
+        self.cascade_level.is_important()
     }
 
     

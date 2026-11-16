@@ -674,13 +674,7 @@ where
             .shared
             .stylist
             .rule_tree()
-            .remove_transition_rule_if_applicable(rule_node);
-        if without_transition_rules == *rule_node {
-            
-            
-            return None;
-        }
-
+            .remove_transition_rule_if_applicable(rule_node)?;
         
         let inputs = CascadeInputs {
             rules: Some(without_transition_rules),
