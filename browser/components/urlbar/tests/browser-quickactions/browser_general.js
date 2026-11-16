@@ -731,7 +731,7 @@ add_task(async function test_query_context_supplied_without_query() {
     );
     
     
-    gURLBar.controller.engagementEvent.discard();
+    gURLBar.controller.session.discard();
     gURLBar.parentController.clearLastQueryContextCache();
 
     let loaded = BrowserTestUtils.browserLoaded(browser, false, url);
