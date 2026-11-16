@@ -2,15 +2,15 @@
 
 
 
+let intercepted = false;
+
 self.addEventListener('fetch', (event) => {
   if (event.request.url.includes('blank-with-cors.html')) {
-    event.waitUntil(
-      self.clients.matchAll({ type: 'window' }).then((clients) => {
-        for (const client of clients) {
-          client.postMessage({ type: 'sw-intercepted', url: event.request.url });
-        }
-      })
-    );
+    intercepted = true;
     event.respondWith(fetch(event.request));
   }
+});
+
+self.addEventListener('message', (event) => {
+  event.ports[0].postMessage(intercepted);
 });
