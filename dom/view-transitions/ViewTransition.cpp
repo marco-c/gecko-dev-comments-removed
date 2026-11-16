@@ -2073,6 +2073,18 @@ void ViewTransition::SkipTransition(SkipTransitionReason aReason) {
 }
 
 
+void ViewTransition::SkipAllAfterRenderingReset(Document& aDocument) {
+  if (RefPtr<ViewTransition> transition = aDocument.GetActiveViewTransition()) {
+    transition->SkipTransition(SkipTransitionReason::ResetRendering);
+  }
+
+  aDocument.EnumerateSubDocuments([&](Document& aSubDoc) {
+    SkipAllAfterRenderingReset(aSubDoc);
+    return CallState::Continue;
+  });
+}
+
+
 
 void ViewTransition::SkipTransition(
     SkipTransitionReason aReason,

@@ -36,6 +36,7 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/SimpleGestureEventBinding.h"
+#include "mozilla/dom/ViewTransition.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/gfx/gfxVars.h"
@@ -1501,10 +1502,26 @@ void nsIWidget::DispatchTouchInput(MultiTouchInput& aInput) {
         
         
         if (touchSwipeEnabled) {
-          if (mTouchSwipeState.phase == TouchSwipeState::Phase::Tracking) {
-            HandleTouchInputAsSwipe(aInput);
-          } else {
-            MayStartSwipeForTouchInput(aInput, result);
+          
+          
+          
+          
+          
+          
+          
+          const uint32_t count =
+              mTouchSwipeState.touchCounter.GetActiveTouchCount();
+          const bool ignoreForSwipe =
+              mTouchSwipeState.phase == TouchSwipeState::Phase::Idle
+                  ? aInput.mType != MultiTouchInput::MULTITOUCH_START
+                  : aInput.mType == MultiTouchInput::MULTITOUCH_START &&
+                        count == 1;
+          if (!ignoreForSwipe) {
+            if (mTouchSwipeState.phase == TouchSwipeState::Phase::Tracking) {
+              HandleTouchInputAsSwipe(aInput);
+            } else {
+              MayStartSwipeForTouchInput(aInput, result);
+            }
           }
         }
 
@@ -1878,6 +1895,11 @@ void nsIWidget::CreateCompositor(int aWidth, int aHeight) {
 
 void nsIWidget::NotifyCompositorSessionLost(CompositorSession* aSession) {
   MOZ_ASSERT(aSession == mCompositorSession);
+  if (PresShell* presShell = GetPresShell()) {
+    if (RefPtr<Document> doc = presShell->GetDocument()) {
+      ViewTransition::SkipAllAfterRenderingReset(*doc);
+    }
+  }
   DestroyLayerManager();
 }
 

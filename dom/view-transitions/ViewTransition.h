@@ -6,6 +6,7 @@
 #define mozilla_dom_ViewTransition_h
 
 #include <functional>
+#include <memory>
 
 #include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
@@ -88,6 +89,7 @@ enum class ViewTransitionPhase : uint8_t {
 };
 
 struct ViewTransitionCapturedElement;
+struct OldSnapshotData;
 
 using ViewTransitionNamedElements =
     nsClassHashtable<nsAtomHashKey, ViewTransitionCapturedElement>;
@@ -129,6 +131,11 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   
   static void AdoptOldSnapshots(WindowRenderer* aRenderer,
                                 ViewTransitionNamedElements& aNamedElements);
+
+  
+  
+  
+  static void SkipAllAfterRenderingReset(Document& aDocument);
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT UniquePtr<ViewTransitionParams>
   CaptureOldStateForCrossDocument();
@@ -193,6 +200,27 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
       nsIFrame* capturedFrame, const gfx::MatrixScales& aInheritedScale,
       nsRect& aOutCapturedRect);
 
+  
+  
+  
+  bool IsCapturingSubdocumentSnapshot() const {
+    return mCapturingSubdocumentSnapshot;
+  }
+  
+  
+  
+  bool IsHoldingSubdocument() const { return !!mSubdocumentSnapshot; }
+  
+  nsRect SubdocumentSnapshotRect() const;
+  
+  
+  nsRect ClipSubdocumentSnapshotRect(const nsRect& aRect);
+  
+  
+  const wr::ImageKey* GetOrCreateSubdocumentSnapshotKey(
+      layers::RenderRootStateManager*, wr::IpcResourceUpdateQueue&);
+  const wr::ImageKey* ReadSubdocumentSnapshotKey();
+
   Element* FindPseudo(const PseudoStyleRequest&) const;
 
   const StyleLockedDeclarationBlock* GetDynamicRuleFor(const Element&) const;
@@ -229,6 +257,8 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Maybe<SkipTransitionReason>
   CaptureOldState();
   [[nodiscard]] Maybe<SkipTransitionReason> CaptureNewState();
+  MOZ_CAN_RUN_SCRIPT void CaptureSubdocumentSnapshotIfNeeded();
+  void ReleaseSubdocumentSnapshot();
   void SetupTransitionPseudoElements();
   [[nodiscard]] bool UpdatePseudoElementStyles(bool aNeedsInvalidation);
   void ClearNamedElements();
@@ -261,6 +291,10 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
       AutoTArray<std::pair<nsIFrame*, RefPtr<nsAtom>>, 32>;
   
   OldCaptureFramesArray* mOldCaptureElements = nullptr;
+
+  
+  std::unique_ptr<OldSnapshotData> mSubdocumentSnapshot;
+  bool mCapturingSubdocumentSnapshot = false;
 
   
   
