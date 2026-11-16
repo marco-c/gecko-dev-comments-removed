@@ -2,32 +2,33 @@
 
 
 
-#ifndef MOZILLA_GFX_RENDERWAYLANDTEXTUREHOST_H
-#define MOZILLA_GFX_RENDERWAYLANDTEXTUREHOST_H
+#ifndef MOZILLA_GFX_RENDERLINUXTEXTUREHOST_H
+#define MOZILLA_GFX_RENDERLINUXTEXTUREHOST_H
 
+#include "RenderTextureHost.h"
 #include "RenderTextureHostSWGL.h"
 #include "mozilla/layers/TextureHostOGL.h"
 #include "mozilla/widget/BufferSurface.h"
 
-class BufferSurface;
-
 namespace mozilla {
+
+namespace layers {
+class SurfaceDescriptorDMABuf;
+}
+
 namespace wr {
 
-
-
-
-
-class RenderWaylandTextureHost final : public RenderTextureHostSWGL {
+class RenderLinuxTextureHost final : public RenderTextureHostSWGL {
  public:
-  RenderWaylandTextureHost(uint8_t* aBuffer,
-                           const layers::BufferDescriptor& aDescriptor);
+  explicit RenderLinuxTextureHost(BufferSurface* aSurface);
+  RenderLinuxTextureHost(uint8_t* aBuffer,
+                         const layers::BufferDescriptor& aDescriptor);
 
-  RenderWaylandTextureHost* AsRenderWaylandTextureHost() override {
-    return this;
-  }
+  RenderLinuxTextureHost* AsRenderLinuxTextureHost() override { return this; }
 
+  gfx::IntSize GetSize(uint8_t aChannelIndex) const;
   wr::WrExternalImage Lock(uint8_t aChannelIndex, gl::GLContext* aGL) override;
+  void Unlock() override;
   void ClearCachedResources() override;
 
   size_t Bytes() override {
@@ -50,13 +51,17 @@ class RenderWaylandTextureHost final : public RenderTextureHostSWGL {
 
   void PrepareForUse() override;
 
+  bool SupportsDirectComposition() {
+    return mSurface->SupportsDirectComposition();
+  }
+
  private:
-  ~RenderWaylandTextureHost();
+  virtual ~RenderLinuxTextureHost();
   void DeleteTextureHandle();
 
-  layers::BufferDescriptor mDescriptor;
   RefPtr<BufferSurface> mSurface;
   RefPtr<gl::GLContext> mGL;
+  RefPtr<gfx::DataSourceSurface> mReadback;
 };
 
 }  
