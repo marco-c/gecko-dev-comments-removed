@@ -1,4 +1,3 @@
-/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -54,7 +53,7 @@ export class ClickHandlerChild extends JSWindowActorChild {
   }
 
   handleClickEvent(event, isFromMiddleMousePasteHandler = false) {
-    if (event.defaultPrevented || event.button == 2) {
+    if (event.defaultPrevented || event.button >= 2) {
       return;
     }
     // Don't do anything on editable things, we shouldn't open links in
