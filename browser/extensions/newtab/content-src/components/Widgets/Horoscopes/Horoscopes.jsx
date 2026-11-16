@@ -6,7 +6,13 @@
 import React, { useCallback } from "react";
 import { useSelector } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
-import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
+import {
+  FRAMED_WIDGET_SANDBOX,
+  WIDGET_REGISTRY,
+  resolveWidgetFrame,
+  resolveWidgetSize,
+  WIDGET_USER_ACTIONS,
+} from "common/WidgetsRegistry.mjs";
 import { WidgetMenuButton } from "../WidgetMenuButton";
 import { WidgetMenuFooter } from "../WidgetMenuFooter";
 import { WidgetMenuPoweredBy } from "../WidgetMenuPoweredBy";
@@ -14,8 +20,7 @@ import { SizeSubmenu } from "../SizeSubmenu";
 import { useWidgetTelemetry } from "../useWidgetTelemetry";
 
 const USER_ACTION_TYPES = {
-  CHANGE_SIZE: "change_size",
-  LEARN_MORE: "learn_more",
+  ...WIDGET_USER_ACTIONS,
   POWERED_BY_YAHOO: "powered_by_yahoo",
 };
 
@@ -42,6 +47,12 @@ const Horoscopes = ({
   widgetEnabledMap,
 }) => {
   const prefs = useSelector(state => state.Prefs.values);
+  const framedWidgets = useSelector(state => state.FramedWidgets);
+  const { src, state: frameState } = resolveWidgetFrame(
+    HOROSCOPES_ENTRY,
+    prefs,
+    framedWidgets
+  );
 
   const widgetSize = resolveWidgetSize(HOROSCOPES_ENTRY, prefs);
 
@@ -84,6 +95,10 @@ const Horoscopes = ({
     recordUserAction(USER_ACTION_TYPES.LEARN_MORE, { source: "context_menu" });
     handleInteraction();
   };
+
+  if (frameState === "hidden") {
+    return null;
+  }
 
   return (
     <article
@@ -147,8 +162,14 @@ const Horoscopes = ({
         </div>
       </div>
 
-      {/* The widget iframe goes here. */}
-      <div className="horoscopes-body" />
+      <div className="horoscopes-body">
+        <iframe
+          className="horoscopes-frame"
+          aria-labelledby="horoscopes-widget-label"
+          src={src}
+          sandbox={FRAMED_WIDGET_SANDBOX}
+        />
+      </div>
     </article>
   );
 };
