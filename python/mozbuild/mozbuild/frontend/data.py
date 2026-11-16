@@ -1615,6 +1615,7 @@ class GeneratedFile(ContextDerived):
 
         suffixes = [
             ".h",
+            ".inc",
             ".py",
             ".rs",
             
@@ -1654,7 +1655,6 @@ class GeneratedFile(ContextDerived):
                 ".c",
                 ".cpp",
                 ".dat",  
-                ".inc",
                 ".m",
                 ".mm",
                 ".def",
