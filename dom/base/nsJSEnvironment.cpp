@@ -1093,8 +1093,8 @@ static void MaybeNotifyStats(const CycleCollectorResults& aResults,
   nsCOMPtr<nsIObserverService> observerService =
       mozilla::services::GetObserverService();
   if (observerService) {
-    observerService->NotifyObservers(nullptr, "cycle-collection-statistics",
-                                     json.get());
+    observerService->NotifyWhenScriptSafe(
+        nullptr, "cycle-collection-statistics", json.get());
   }
 }
 
@@ -1282,7 +1282,7 @@ bool CCGCScheduler::CCRunnerFired(TimeStamp aDeadline) {
   } else if (mPreferFasterCollection) {
     
     
-    aDeadline = aDeadline + TimeDuration::FromMilliseconds(5.0);
+    aDeadline = aDeadline + TimeDuration::FromMilliseconds(5);
   }
 
   bool didDoWork = false;

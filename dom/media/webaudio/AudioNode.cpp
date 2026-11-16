@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AudioNode.h"
 
 #include "AudioNodeEngine.h"
@@ -577,7 +575,7 @@ void AudioNode::DestroyMediaTrack() {
     if (obs) {
       nsAutoString id;
       id.AppendPrintf("%u", mId);
-      obs->NotifyObservers(nullptr, "webaudio-node-demise", id.get());
+      obs->NotifyWhenScriptSafe(nullptr, "webaudio-node-demise", id.get());
     }
   }
 }
