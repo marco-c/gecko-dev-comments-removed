@@ -3752,6 +3752,12 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+  bool IsNonReplacedInline() const;
+
+  
+
+
+
 
 
 

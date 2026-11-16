@@ -618,6 +618,14 @@ bool nsIFrame::IsAtomicInline() const {
          (IsReplaced() || !StyleDisplay()->IsInlineInsideStyle());
 }
 
+bool nsIFrame::IsNonReplacedInline() const {
+  
+  
+  return StyleDisplay()->IsInlineInsideStyle() && !IsReplaced() &&
+         !IsFieldSetFrame() && !IsBlockFrame() && !IsScrollContainerFrame() &&
+         !IsColumnSetWrapperFrame();
+}
+
 bool nsIFrame::ShouldPropagateRepaintsToRoot() const {
   if (!IsPrimaryFrame()) {
     

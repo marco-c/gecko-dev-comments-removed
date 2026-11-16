@@ -2627,13 +2627,53 @@ nscoord FlexItem::ClampMainSizeViaCrossAxisConstraints(
 
 
 
+
+
+
+
+
+
+static bool ChildHasFixedBSizeBasis(nsIFrame* aChild) {
+  
+  
+  if (aChild->IsNonReplacedInline() || aChild->IsTablePart()) {
+    return false;
+  }
+  
+  
+  if (aChild->IsFlexItem() &&
+      !nsFlexContainerFrame::IsItemInlineAxisMainAxis(aChild)) {
+    return false;
+  }
+  const WritingMode wm = aChild->GetWritingMode();
+  
+  
+  
+  if (wm.IsVertical() &&
+      aChild->PresContext()->CompatibilityMode() == eCompatibility_NavQuirks) {
+    return false;
+  }
+  const auto bSize = aChild->StylePosition()->BSize(
+      wm, AnchorPosResolutionParams::From(aChild));
+  return bSize->IsLengthPercentage() &&
+         !bSize->AsLengthPercentage().HasPercent();
+}
+
+
+
+
+
+
+
+
 static bool FrameHasRelativeBSizeDependency(nsIFrame* aFrame) {
   if (aFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE)) {
     return true;
   }
   for (const auto& childList : aFrame->ChildLists()) {
     for (nsIFrame* childFrame : childList.mList) {
-      if (childFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE)) {
+      if (childFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE) &&
+          !ChildHasFixedBSizeBasis(childFrame)) {
         return true;
       }
     }
@@ -4889,8 +4929,7 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
         } else {
           
           
-          
-          mayNeedNextInFlow = contentBoxSize.BSize(wm) - consumedBSize >
+          mayNeedNextInFlow = aReflowInput.ComputedMaxBSize() - consumedBSize >
                               availableSizeForItems.BSize(wm);
         }
       }
