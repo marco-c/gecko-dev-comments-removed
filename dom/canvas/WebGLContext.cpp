@@ -2480,11 +2480,9 @@ static std::vector<std::string> ExplodeName(const std::string& str) {
 
 
 webgl::LinkActiveInfo GetLinkActiveInfo(
-    mozilla::WebGLContext& webgl, const GLuint prog, const bool webgl2,
+    gl::GLContext& gl, const GLuint prog, const bool webgl2,
     const std::unordered_map<std::string, std::string>& nameUnmap) {
   webgl::LinkActiveInfo ret;
-  gl::GLContext& gl = *webgl.gl;
-
   [&]() {
     const auto fnGetProgramui = [&](const GLenum pname) {
       GLint ret = 0;
@@ -2546,41 +2544,11 @@ webgl::LinkActiveInfo GetLinkActiveInfo(
             std::string(stringBuffer.data(), lengthWithoutNull);
         const auto userName = fnUnmapName(mappedName);
 
-        auto locationIndex = gl.fGetAttribLocation(prog, mappedName.c_str());
+        auto loc = gl.fGetAttribLocation(prog, mappedName.c_str());
         if (mappedName.starts_with("gl_")) {
           
           
-          locationIndex = -1;
-        }
-
-        
-        
-        if (locationIndex >= 0) {
-          GLuint maxVertexAttribs = webgl.Limits().maxVertexAttribs;
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          const size_t maxLocationOffset =
-              MaxLocationIndexOffsetByElemType(elemType);
-          const size_t locationBaseIndex = static_cast<size_t>(locationIndex);
-          const size_t lastLocationIndex =
-              locationBaseIndex + maxLocationOffset;
-
-          
-          const bool lastLocationIndexValid =
-              lastLocationIndex < maxVertexAttribs;
-          if (!lastLocationIndexValid) {
-            gfxCriticalNote
-                << "Driver assigned attribute last location index "
-                << lastLocationIndex
-                << " is larger than maxVertexAttribs: " << maxVertexAttribs;
-          }
+          loc = -1;
         }
 
 #ifdef DUMP_MakeLinkResult
@@ -2591,7 +2559,7 @@ webgl::LinkActiveInfo GetLinkActiveInfo(
         info.elemType = elemType;
         info.elemCount = elemCount;
         info.name = userName;
-        info.location = locationIndex;
+        info.location = loc;
         info.baseType = webgl::ToAttribBaseType(info.elemType);
         ret.activeAttribs.push_back(std::move(info));
       }
