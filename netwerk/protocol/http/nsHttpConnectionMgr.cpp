@@ -1873,6 +1873,9 @@ nsresult nsHttpConnectionMgr::TryDispatchExtendedCONNECTransaction(
 
     
     if (aTrans->IsForWebTransport()) {
+      
+      
+      aTrans->Close(NS_ERROR_CONNECTION_REFUSED);
       return NS_ERROR_CONNECTION_REFUSED;
     }
 
