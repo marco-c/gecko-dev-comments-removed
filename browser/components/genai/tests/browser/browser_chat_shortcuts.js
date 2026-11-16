@@ -3942,6 +3942,15 @@ add_task(async function test_selection_callout_click_reaches_action() {
     Assert.equal(clicks[0].extra.action, "copy", "The copy action was clicked");
 
     await panelHidden;
+
+    
+    
+    await EventUtils.promiseNativeMouseEvent({
+      type: "mousemove",
+      target: gURLBar.inputField,
+      offsetX: 0,
+      offsetY: 0,
+    });
   });
 
   await SpecialPowers.popPrefEnv();
