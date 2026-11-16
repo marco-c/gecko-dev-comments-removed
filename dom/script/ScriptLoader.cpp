@@ -1990,11 +1990,13 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
             return false;
           }
 
-          info.mRequest->Cancel();
+          
+          
           if (multiImportMapsEnabled) {
             mModuleLoader->ResetPreloadedModuleGraph(
                 info.mRequest->AsModuleRequest());
           }
+          info.mRequest->Cancel();
 
           return true;
         });
