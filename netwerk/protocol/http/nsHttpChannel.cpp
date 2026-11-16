@@ -2370,6 +2370,15 @@ nsresult nsHttpChannel::CallOnStartRequest() {
 
   
   
+  
+  if (!mCachePump) {
+    mAvailableCachedAltDataType.Truncate();
+    StoreDeliveringAltData(false);
+    mAltDataLength = -1;
+  }
+
+  
+  
   auto onStartGuard = MakeScopeExit([&] {
     LOG(
         ("  calling mListener->OnStartRequest by ScopeExit [this=%p, "
