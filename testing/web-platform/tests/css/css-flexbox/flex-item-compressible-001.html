@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-
-
-
-
+<!--
+     Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/
+-->
 <html>
   <meta charset="utf-8">
   <title>CSS Flexbox Test: Testing automatic minimun size of &lt;input&gt; flex items in a row flex container</title>
@@ -52,7 +52,7 @@
   }
   </style>
 
-  <body onload="checkLayout('.flexbox')">
+  <body onload="document.fonts.ready.then(() => checkLayout('.flexbox'))">
     <p>Test1: "width: 100%"</p>
     <div class="flexbox">
       <div class="spacer"></div>
