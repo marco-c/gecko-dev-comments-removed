@@ -1639,9 +1639,9 @@ struct nsGridContainerFrame::TrackSizingFunctions {
       
       return 1;
     }
-    nscoord repeatTrackSum = 0;
+    AuCoord64 repeatTrackSum = 0;
     
-    nscoord sum = 0;
+    AuCoord64 sum = 0;
     const nscoord percentBasis = aSize;
     for (uint32_t i = 0; i < numTracks; ++i) {
       
@@ -1685,11 +1685,11 @@ struct nsGridContainerFrame::TrackSizingFunctions {
     nscoord gridGap = nsLayoutUtils::ResolveGapToLength(aGridGap, aSize);
     if (numTracks > 1) {
       
-      sum += gridGap * (numTracks - 1);
+      sum += AuCoord64(gridGap) * int64_t(numTracks - 1);
     }
     
     nscoord available = maxFill != NS_UNCONSTRAINEDSIZE ? maxFill : aMinSize;
-    nscoord spaceToFill = available - sum;
+    const AuCoord64 spaceToFill = AuCoord64(available) - sum;
     if (spaceToFill <= 0) {
       
       return 1;
@@ -1697,7 +1697,9 @@ struct nsGridContainerFrame::TrackSizingFunctions {
     
     
     
-    div_t q = div(spaceToFill, repeatTrackSum + gridGap * NumRepeatTracks());
+    const lldiv_t q =
+        lldiv(spaceToFill,
+              repeatTrackSum + AuCoord64(gridGap) * int64_t(NumRepeatTracks()));
     
     uint32_t numRepeatTracks = q.quot + 1;
     if (q.rem != 0 && maxFill == NS_UNCONSTRAINEDSIZE) {
@@ -3284,7 +3286,7 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowInput {
 
     if (auto* absCB = aGridContainerFrame->GetAbsoluteContainingBlock()) {
       
-      absCB->PrepareAbsoluteFrames(aGridContainerFrame);
+      (void)absCB->PrepareAbsoluteFrames(aGridContainerFrame);
     }
     
     const nsFrameList& absPosChildren =
