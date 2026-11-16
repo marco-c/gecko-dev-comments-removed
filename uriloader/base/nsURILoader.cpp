@@ -301,6 +301,15 @@ NS_IMETHODIMP nsDocumentOpenInfo::OnStopRequest(nsIRequest* request,
   
   nsresult rv = CheckContentLengthDiscrepancy(request);
   if (NS_FAILED(rv)) {
+    if (NS_SUCCEEDED(aStatus)) {
+      
+      
+      
+      
+      
+      
+      request->Cancel(rv);
+    }
     aStatus = rv;
   }
 
