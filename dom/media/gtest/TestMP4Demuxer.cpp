@@ -1476,6 +1476,78 @@ TEST(MP4Demuxer, SeekPastLastSample)
   }
 }
 
+
+
+
+TEST(MP4Demuxer, FragSeekToUnparsedFragment)
+{
+  
+  static constexpr int64_t kTimescale = 12800;
+  struct SeekCase {
+    const char* mFileName;
+    
+    int64_t mCachedEnd;
+    TimeUnit mTarget;
+    TimeUnit mExpected;
+    
+    
+    int64_t mMaxReadEnd;
+  };
+  static constexpr SeekCase cases[] = {
+      
+      {"frag_bframes.mp4", 0, TimeUnit(19200, kTimescale),
+       TimeUnit(13312, kTimescale), 46871},
+      
+      
+      {"frag_bframes.mp4", 31787, TimeUnit(25600, kTimescale),
+       TimeUnit(25600, kTimescale), 51575},
+      
+      {"frag_bframes.mp4", 31787, TimeUnit(38400, kTimescale),
+       TimeUnit(37888, kTimescale), 51799},
+      
+      {"frag_bframes.mp4", 0, TimeUnit(128000, kTimescale),
+       TimeUnit(37888, kTimescale), 51799},
+      {"frag_bframes.mp4", 31787, TimeUnit(128000, kTimescale),
+       TimeUnit(37888, kTimescale), 51799},
+      
+      
+      
+      {"frag_multi_gop.mp4", 0, TimeUnit(12800, kTimescale),
+       TimeUnit(11264, kTimescale), 42180},
+      {"frag_multi_gop.mp4", 0, TimeUnit(34560, kTimescale),
+       TimeUnit(31744, kTimescale), 72291},
+  };
+
+  for (const SeekCase& test : cases) {
+    SCOPED_TRACE(test.mTarget.ToString().get());
+    RefPtr<RecordReadsMediaResource> resource =
+        new RecordReadsMediaResource(test.mFileName);
+    ASSERT_NS_SUCCEEDED(resource->Open());
+    if (test.mCachedEnd) {
+      resource->MockAddBufferedRange(0, test.mCachedEnd);
+    }
+    RefPtr<MP4DemuxerBinding> binding = new MP4DemuxerBinding(resource);
+    binding->RunTestAndWait([binding, test, resource]() {
+      binding->mVideoTrack =
+          binding->mDemuxer->GetTrackDemuxer(TrackInfo::kVideoTrack, 0);
+      ASSERT_NE(binding->mVideoTrack, nullptr);
+      binding->mVideoTrack->Seek(test.mTarget)
+          ->Then(
+              binding->mTaskQueue, __func__,
+              [binding, test, resource](const TimeUnit& aTime) {
+                EXPECT_EQ(aTime, test.mExpected)
+                    << "Seek resolved at " << aTime.ToString();
+                EXPECT_LE(resource->mMaxReadOffset, test.mMaxReadEnd);
+                binding->mTaskQueue->BeginShutdown();
+              },
+              [binding](const MediaResult&) {
+                EXPECT_TRUE(false) << "Seek failed";
+                binding->mTaskQueue->BeginShutdown();
+              });
+    });
+  }
+}
+
 struct SkipToRAPTestCase {
   const char* testName;
   const char* fileName;
@@ -1542,6 +1614,19 @@ static constexpr SkipToRAPTestCase skipRAPTestCases[] = {
     {"FragBFramesOk3", "frag_bframes.mp4", true, 28, TimeUnit(13824, 12800),
      TimeUnit(100, 1000), TimeUnit(25600, 12800), 21},
 
+    
+    
+    
+    
+    
+    
+    
+    {"FragMultiGopOk1", "frag_multi_gop.mp4", true, 1, TimeUnit(1024, 12800),
+     TimeUnit(1600, 1000), TimeUnit(21504, 12800), 40},
+    
+    {"FragMultiGopOk2", "frag_multi_gop.mp4", true, 10, TimeUnit(5632, 12800),
+     TimeUnit(2600, 1000), TimeUnit(36864, 12800), 61},
+
     {"Stss1stWrongH264Fail1", "stss-1st-wrong-h264.mp4", false, 1,
      TimeUnit(960, 12800), TimeUnit(2500, 1000), TimeUnit(0, 12800), 99},
 
@@ -1553,6 +1638,13 @@ static constexpr SkipToRAPTestCase skipRAPTestCases[] = {
 
     {"FragBFramesFail", "frag_bframes.mp4", false, 25, TimeUnit(13312, 12800),
      TimeUnit(3000, 1000), TimeUnit(0, 12800), 50},
+    
+    
+    {"FragBFramesFailPastEnd", "frag_bframes.mp4", false, 25,
+     TimeUnit(13312, 12800), TimeUnit(3500, 1000), TimeUnit(0, 12800), 50},
+    
+    {"FragMultiGopFailAtEnd", "frag_multi_gop.mp4", false, 75,
+     TimeUnit(38400, 12800), TimeUnit(100, 1000), TimeUnit(0, 12800), 0},
 };
 
 class SkipToNextRAPTest : public testing::TestWithParam<SkipToRAPTestCase> {};
@@ -1671,8 +1763,7 @@ INSTANTIATE_TEST_SUITE_P(MP4Demuxer, SkipToNextRAPTest,
 
 
 
-TEST(MP4SampleIndex, FragBFramesMarkKeyframes)
-{
+static void CreateFragBFramesVideoIndex(RefPtr<MP4SampleIndex>* aIndex) {
   RefPtr<MockMediaResource> resource =
       new MockMediaResource("frag_bframes.mp4");
   ASSERT_NS_SUCCEEDED(resource->Open());
@@ -1701,6 +1792,13 @@ TEST(MP4SampleIndex, FragBFramesMarkKeyframes)
   MediaByteRangeSet ranges;
   ASSERT_NS_SUCCEEDED(resource->GetCachedRanges(ranges));
   index->UpdateMoofIndex(ranges);
+  *aIndex = index;
+}
+
+TEST(MP4SampleIndex, FragBFramesMarkKeyframes)
+{
+  RefPtr<MP4SampleIndex> index;
+  ASSERT_NO_FATAL_FAILURE(CreateFragBFramesVideoIndex(&index));
 
   SampleIterator iterator(index);
   std::vector<TimeUnit> keyframeTimes;
@@ -1720,4 +1818,18 @@ TEST(MP4SampleIndex, FragBFramesMarkKeyframes)
     ASSERT_NE(next, nullptr);
     EXPECT_EQ(next->mTime, time);
   }
+}
+
+
+
+TEST(MP4SampleIndex, FragNumSamplesBetween)
+{
+  RefPtr<MP4SampleIndex> index;
+  ASSERT_NO_FATAL_FAILURE(CreateFragBFramesVideoIndex(&index));
+
+  EXPECT_EQ(index->NumSamplesBetween({0, 3}, {0, 8}), 5u);
+  EXPECT_EQ(index->NumSamplesBetween({0, 24}, {1, 1}), 1u);
+  EXPECT_EQ(index->NumSamplesBetween({1, 1}, {4, 0}), 50u);
+  EXPECT_EQ(index->NumSamplesBetween({0, 0}, {4, 0}), 75u);
+  EXPECT_EQ(index->NumSamplesBetween({4, 0}, {4, 0}), 0u);
 }
