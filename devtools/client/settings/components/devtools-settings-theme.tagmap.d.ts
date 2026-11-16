@@ -1,0 +1,11 @@
+
+
+
+
+import type { DevToolsSettingsTheme } from "./devtools-settings-theme.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "devtools-settings-theme": DevToolsSettingsTheme;
+  }
+}
