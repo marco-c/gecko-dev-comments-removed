@@ -7550,7 +7550,7 @@ nsresult nsDocShell::SetupNewViewer(nsIDocumentViewer* aNewViewer,
   bool isUnderHiddenEmbedderElement = false;
   
   nsCOMPtr<nsIDocumentViewer> viewer = mDocumentViewer;
-  if (viewer) {
+  if (viewer && viewer->GetDocument()) {
     
     
     viewer->Stop();
@@ -7564,6 +7564,13 @@ nsresult nsDocShell::SetupNewViewer(nsIDocumentViewer* aNewViewer,
 
     viewer->Close();
     aNewViewer->SetPreviousViewer(viewer);
+
+    
+    if (mDocumentViewer != viewer) {
+      aNewViewer->Close();
+      aNewViewer->Destroy();
+      return NS_ERROR_ABORT;
+    }
   }
 
   mDocumentViewer = nullptr;
