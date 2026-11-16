@@ -132,7 +132,11 @@ public class GeckoMediaDrmBridge implements GeckoMediaDrm {
     try {
       
       
-      ensureMediaCryptoCreated();
+      if (!ensureMediaCryptoCreated()) {
+        
+        release();
+        throw new IllegalStateException("Cannot create MediaCrypto");
+      }
     } catch (final android.media.NotProvisionedException e) {
       if (DEBUG) Log.d(LOGTAG, "Device not provisioned:" + e.getMessage());
       startProvisioning(MAX_PROMISE_ID);

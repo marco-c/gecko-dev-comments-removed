@@ -34,8 +34,17 @@ public final class MediaManager extends Service {
             final String keySystem, final String stubId) throws RemoteException {
           if (DEBUG)
             Log.d(LOGTAG, "request DRM bridge. Current active requests:" + mNumActiveRequests);
+          final RemoteMediaDrmBridgeStub stub;
+          try {
+            stub = new RemoteMediaDrmBridgeStub(keySystem, stubId);
+          } catch (final RemoteException e) {
+            
+            
+            Log.e(LOGTAG, "Cannot create DRM bridge", e);
+            return null;
+          }
           mNumActiveRequests++;
-          return new RemoteMediaDrmBridgeStub(keySystem, stubId);
+          return stub;
         }
 
         @Override
