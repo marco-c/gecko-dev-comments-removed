@@ -3,13 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { setCustomElementsManifest } from "@storybook/web-components";
-import { withActions } from "@storybook/addon-actions/decorator";
+import { withActions } from "storybook/actions/decorator";
 import { css, html } from "lit.all.mjs";
 import { MozLitElement } from "toolkit/content/widgets/lit-utils.mjs";
 import customElementsManifest from "../custom-elements.json";
 import { insertFTLIfNeeded, connectFluent } from "./fluent-utils.mjs";
-import chromeMap from "./chrome-map.js";
-import DocsContainer from "./DocsContainer.mjs";
+import { chromeMap } from "./chrome-map.js";
+import DocsContainer from "./DocsContainer.jsx";
 
 // Base Fluent set up.
 connectFluent();
@@ -26,6 +26,20 @@ window.RPMSetPref = () => {
 window.RPMGetFormatURLPref = () => {
   /* NOOP */
 };
+
+// Stub chrome-only globals so modules that touch them at top level (e.g.
+// XPCOMUtils.declareLazy for prefs) can still be evaluated in Storybook.
+window.ChromeUtils = {
+  importESModule: () => ({
+    XPCOMUtils: {
+      declareLazy: () => ({}),
+    },
+  }),
+};
+
+const reusableComponentModules = import.meta.glob("./moz-*/*.mjs", {
+  base: "../../../../toolkit/content/widgets",
+});
 
 /**
  * Function to automatically import reusable components into all stories. This
@@ -44,8 +58,7 @@ function importReusableComponents() {
     }
   }
   mozElements.forEach(elementName => {
-    // eslint-disable-next-line no-unsanitized/method
-    import(`toolkit/content/widgets/${elementName}/${elementName}.mjs`);
+    reusableComponentModules[`./${elementName}/${elementName}.mjs`]();
   });
 
   // Manually import the two components that don't follow our naming conventions.

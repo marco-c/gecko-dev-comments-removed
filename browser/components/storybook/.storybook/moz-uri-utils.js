@@ -3,8 +3,8 @@
 
 
 const path = require("path");
-const [prefixMap, aliasMap, sourceMap] = require("./chrome-map.js");
 const projectRoot = path.resolve(__dirname, "../../../../");
+const [prefixMap, aliasMap, sourceMap] = require("./chrome-map.js").chromeMap;
 
 function rewriteChromeUri(uri) {
   if (uri in aliasMap) {
@@ -19,8 +19,7 @@ function rewriteChromeUri(uri) {
       let objdirPath = bundlePath + relativePath;
       for (let [_objdirPath, [filePath]] of Object.entries(sourceMap)) {
         if (_objdirPath == objdirPath) {
-          
-          return filePath;
+          return path.resolve(projectRoot, filePath);
         }
       }
     }

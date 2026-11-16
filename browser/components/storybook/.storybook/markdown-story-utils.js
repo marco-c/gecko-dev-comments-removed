@@ -62,12 +62,29 @@ function separateWords(str) {
 
 function parseStoriesFromMarkdown(source) {
   let storiesRegex = /```(?:js|html) story\n(?<code>[\s\S]*?)```/g;
+  let exampleStyle = {
+    border: "1px solid var(--border-color)",
+    borderRadius: "var(--border-radius-small)",
+    background: "var(--background-color-canvas)",
+    boxShadow: "var(--box-shadow-level-1)",
+    overflow: "auto",
+  };
+  let blockMargin = {
+    marginBlock:
+      "var(--space-xlarge) calc(var(--space-xlarge) + var(--space-large))",
+  };
+  let tableCellMargin = { margin: 0 };
+  let contentStyle = JSON.stringify({ padding: "var(--space-xxlarge)" });
   
-  
-  return source.replace(
-    storiesRegex,
-    "<Canvas withSource='none'><with-common-styles>\n$<code></with-common-styles></Canvas>"
-  );
+  return source.replace(storiesRegex, (match, code, offset, string) => {
+    let before = string.slice(0, offset);
+    let inTableCell = before.lastIndexOf("<td") > before.lastIndexOf("</td>");
+    let style = JSON.stringify({
+      ...exampleStyle,
+      ...(inTableCell ? tableCellMargin : blockMargin),
+    });
+    return `<Unstyled style={${style}}><div className="docs-story" style={${contentStyle}}><with-common-styles>\n${code}</with-common-styles></div></Unstyled>`;
+  });
 }
 
 
@@ -171,17 +188,11 @@ function getMDXSource(source, title, resourcePath = "") {
   
   
   let mdxSource = `
-import { Meta, Canvas, ArgTypes } from "@storybook/addon-docs";
+import { Meta, ArgTypes, Unstyled } from "@storybook/addon-docs/blocks";
 ${importPath ? `import ${importPath};` : ""}
 
 <Meta
   title="${title}"
-  parameters={{
-    previewTabs: {
-      canvas: { hidden: true },
-    },
-    viewMode: "docs",
-  }}
 />
 
 ${parseStoriesFromMarkdown(source)}
