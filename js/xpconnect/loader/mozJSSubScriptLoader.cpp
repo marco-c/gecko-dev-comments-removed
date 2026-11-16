@@ -326,7 +326,6 @@ static bool CheckAllowedURI(JSContext* aCx, bool aAllowUnsafe, nsIURI* aURI) {
 
   if (aAllowUnsafe || StaticPrefs::security_allow_unsafe_subscript_loads()) {
     
-    
     if (aURI->SchemeIs("file") || aURI->SchemeIs("jar")) {
       return true;
     }
