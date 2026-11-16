@@ -106,9 +106,9 @@ class OffTheBooksCondVar : BlockingResourceBase {
 
 #endif  
 
- private:
-  OffTheBooksCondVar();
+  OffTheBooksCondVar() = delete;
 
+ private:
   OffTheBooksMutex* mLock;
   detail::ConditionVariableImpl mImpl;
 };
