@@ -2831,9 +2831,12 @@ void QuotaManager::InitQuotaForOrigin(
   
   
   
+  
+  
   if (!aFullOriginMetadata.mIsPrivate && !cacheRowMatches &&
       (fullOriginMetadata.mDirty || !aCacheMap.IsActive()) &&
       aDirectoryExists && !mUsageModificationDisabled.load()) {
+    originInfo->mLastModifiedTime = TimeStamp::Now();
     originInfo->mMetadataDirty = true;
     auto* message = new UnboundedMPSCQueue<RefPtr<OriginInfo>>::Message();
     message->data = originInfo;
@@ -6229,14 +6232,15 @@ void QuotaManager::FlushDirtyOriginInfos() {
       continue;
     }
 
-    if (!IsOriginInitialized(groupInfo->GetPersistenceType(), info->Origin())) {
-      continue;
-    }
-
     
     
     
     if (!info->LockedDirty()) {
+      continue;
+    }
+
+    if (!IsOriginInitialized(groupInfo->GetPersistenceType(), info->Origin())) {
+      itemsToRequeue.AppendElement(std::move(info));
       continue;
     }
 
@@ -7265,7 +7269,7 @@ QuotaManager::EnsureTemporaryOriginIsInitializedInternal(
     originMetadataWithEncryption.mIsEncrypted = mStorageEncryptionEnabled;
 
     FullOriginMetadata fullOriginMetadata{
-        originMetadataWithEncryption,
+        std::move(originMetadataWithEncryption),
         OriginStateMetadata{
              timestamp,
              Date::FromTimestamp(timestamp).ToDays(),
