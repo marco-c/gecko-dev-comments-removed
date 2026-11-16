@@ -92,6 +92,15 @@ add_task(async function test_domain_change() {
   
   
   
+  let statuspanel = document.getElementById("statuspanel");
+  await BrowserTestUtils.waitForMutationCondition(
+    statuspanel,
+    { attributeFilter: ["inactive"] },
+    () => !statuspanel.hasAttribute("inactive")
+  );
+  
+  
+  
   ok(
     statuspanelLabel.value.startsWith(`Looking up`) ||
       statuspanelLabel.value.startsWith(`Transferring data`),
