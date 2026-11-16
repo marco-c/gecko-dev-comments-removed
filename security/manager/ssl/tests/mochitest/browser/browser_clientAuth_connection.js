@@ -369,9 +369,20 @@ add_task(async function testCertFilteringWithIntermediate() {
   );
   cars.clearRememberedDecisions();
   
+  
+  
+  
+  let imported = TestUtils.topicObserved("psm:enterprise-certs-imported");
   await SpecialPowers.pushPrefEnv({
-    set: [["security.enterprise_roots.enabled", true]],
+    set: [
+      [
+        "security.enterprise_roots.enabled",
+        !Services.prefs.getBoolPref("security.enterprise_roots.enabled"),
+      ],
+    ],
   });
+  await SpecialPowers.popPrefEnv();
+  await imported;
 });
 
 
