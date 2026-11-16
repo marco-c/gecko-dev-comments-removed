@@ -13402,12 +13402,7 @@ void nsDocShell::MoveLoadingToActiveEntry(bool aExpired, uint32_t aCacheKey,
         
         mBrowsingContext->SetActiveSessionHistoryEntry(
             mozilla::Nothing(), mActiveEntry.get(), previousActiveEntry.get(),
-            mLoadType,
-             0,
-            
-            
-            
-             !mActiveEntry->IsTransient());
+            mLoadType,  0);
       }
       if (loadingEntry->mReplacesActiveEntry) {
         MOZ_ASSERT(previousActiveEntry);
