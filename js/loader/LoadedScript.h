@@ -6,6 +6,7 @@
 #define js_loader_LoadedScript_h
 
 #include "mozilla/dom/SRIMetadata.h"  
+#include "mozilla/Encoding.h"  
 #include "mozilla/Maybe.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/MemoryReporting.h"
@@ -404,13 +405,41 @@ class LoadedScript final : public nsISupports {
 
   
 
-  size_t GetSRILength() const {
+  size_t GetSerializedStencilOffset() const {
     MOZ_ASSERT(CanHaveSRIOnly() || CanHaveSRIAndSerializedStencil());
     return mSerializedStencilOffset;
   }
-  void SetSRILength(size_t sriLength) {
+
+  
+  static constexpr size_t EncodingHeaderSize = 16;
+  struct EncodingHeader {
+    
+    uint8_t mDependsOnClassicScriptHintEncoding;
+
+    static constexpr size_t ClassicScriptEncodingMaxLength =
+        EncodingHeaderSize - 1;
+
+    
+    
+    
+    char mClassicScriptEncoding[ClassicScriptEncodingMaxLength];
+  };
+
+  
+  void WriteIntoEncodingHeader(EncodingHeader* aHeader) const;
+
+  
+  
+  bool ReadFromEncodingHeader(const EncodingHeader* aHeader);
+
+  void SetAlignedSRILength(size_t aAlignedSRILength) {
     MOZ_ASSERT(CanHaveSRIOnly() || CanHaveSRIAndSerializedStencil());
-    mSerializedStencilOffset = AlignTranscodingBytecodeOffset(sriLength);
+    MOZ_ASSERT(JS::IsTranscodingBytecodeOffsetAligned(aAlignedSRILength));
+    static_assert(sizeof(EncodingHeader) == EncodingHeaderSize,
+                  "The struct size should match");
+    static_assert(ENCODING_NAME_MAX_LENGTH < EncodingHeaderSize,
+                  "The encoding name should fit the fixed-length header");
+    mSerializedStencilOffset = aAlignedSRILength + EncodingHeaderSize;
   }
 
   bool HasNoSRIOrSRIAndSerializedStencil() const {
@@ -488,6 +517,31 @@ class LoadedScript final : public nsISupports {
   
   bool IsSRIMetadataReusableBy(const mozilla::dom::SRIMetadata& aSRIMetadata);
 
+  bool DependsOnClassicScriptHintEncoding() const {
+    return mDependsOnClassicScriptHintEncoding;
+  }
+
+  const mozilla::Encoding* ClassicScriptEncoding() const {
+    return mClassicScriptEncoding;
+  }
+
+  void SetClassicScriptEncodingFromBOM(const mozilla::Encoding* aEncoding) {
+    mClassicScriptEncoding = aEncoding;
+    mDependsOnClassicScriptHintEncoding = false;
+  }
+
+  void SetClassicScriptEncodingFromCharsetParameter(
+      const mozilla::Encoding* aEncoding) {
+    mClassicScriptEncoding = aEncoding;
+    mDependsOnClassicScriptHintEncoding = false;
+  }
+
+  void SetClassicScriptEncodingFromFallback(
+      const mozilla::Encoding* aEncoding) {
+    mClassicScriptEncoding = aEncoding;
+    mDependsOnClassicScriptHintEncoding = true;
+  }
+
  public:
   
 
@@ -556,6 +610,12 @@ class LoadedScript final : public nsISupports {
   
   uint64_t mIsEverHitFromMemoryCache : 1;
 
+  
+  
+  
+  
+  uint64_t mDependsOnClassicScriptHintEncoding : 1;
+
   nsCOMPtr<nsIURI> mURI;
 
   
@@ -590,6 +650,13 @@ class LoadedScript final : public nsISupports {
   
   
   
+  
+  
+  
+  
+  
+  
+  
   TranscodeBuffer mSRIAndSerializedStencil;
 
   
@@ -602,6 +669,12 @@ class LoadedScript final : public nsISupports {
   
   
   nsCOMPtr<nsICacheEntryWriteHandle> mCacheEntry;
+
+ private:
+  
+  
+  
+  const mozilla::Encoding* mClassicScriptEncoding = nullptr;
 };
 
 
@@ -698,9 +771,12 @@ class LoadedScriptDelegate {
     GetLoadedScript()->RestoreSRIAndSerializedStencil(std::move(aBuffer));
   }
 
-  size_t GetSRILength() const { return GetLoadedScript()->GetSRILength(); }
-  void SetSRILength(size_t sriLength) {
-    GetLoadedScript()->SetSRILength(sriLength);
+  size_t GetSerializedStencilOffset() const {
+    return GetLoadedScript()->GetSerializedStencilOffset();
+  }
+
+  void SetAlignedSRILength(size_t aAlignedSRILength) {
+    GetLoadedScript()->SetAlignedSRILength(aAlignedSRILength);
   }
 
   void SetTookLongInPreviousRuns() {
@@ -722,7 +798,7 @@ class ModuleScript final : public nsISupports {
 
   
   
-  RefPtr<ScriptFetchInfo> mFetchInfoForAccessingPreloadFlag;
+  RefPtr<ScriptFetchInfo> mFetchInfo;
 
   bool mHadImportMap = false;
 
@@ -748,9 +824,7 @@ class ModuleScript final : public nsISupports {
   Value ErrorToRethrow() const { return mErrorToRethrow; }
   bool HasParseError() const { return !mParseError.isUndefined(); }
   bool HasErrorToRethrow() const { return !mErrorToRethrow.isUndefined(); }
-  bool ForPreload() const {
-    return mFetchInfoForAccessingPreloadFlag->IsForModulePreload();
-  }
+  bool ForPreload() const { return mFetchInfo->IsForModulePreload(); }
   bool HadImportMap() const { return mHadImportMap; }
 
   

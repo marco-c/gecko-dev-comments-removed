@@ -263,7 +263,13 @@ bool LoadedScript::ReadFromEncodingHeader(const EncodingHeader* aHeader) {
   mDependsOnClassicScriptHintEncoding =
       aHeader->mDependsOnClassicScriptHintEncoding;
 
-  size_t encodingStringLen = strlen(aHeader->mClassicScriptEncoding);
+  size_t encodingStringLen =
+      strnlen(aHeader->mClassicScriptEncoding,
+              EncodingHeader::ClassicScriptEncodingMaxLength);
+  if (encodingStringLen == EncodingHeader::ClassicScriptEncodingMaxLength) {
+    return false;
+  }
+
   if (encodingStringLen == 0) {
     mClassicScriptEncoding = nullptr;
     return true;
@@ -306,7 +312,7 @@ NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(ModuleScript)
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
 ModuleScript::ModuleScript(ScriptFetchInfo* aFetchInfo)
-    : mFetchInfoForAccessingPreloadFlag(aFetchInfo) {
+    : mFetchInfo(aFetchInfo) {
   MOZ_ASSERT(!ModuleRecord());
   MOZ_ASSERT(!HasParseError());
   MOZ_ASSERT(!HasErrorToRethrow());
@@ -336,8 +342,7 @@ void ModuleScript::SetModuleRecord(Handle<JSObject*> aModuleRecord) {
 #ifdef DEBUG
   
   if (mModuleRecord) {
-    SetModulePreload(mModuleRecord,
-                     mFetchInfoForAccessingPreloadFlag->IsForModulePreload());
+    SetModulePreload(mModuleRecord, mFetchInfo->IsForModulePreload());
   }
 #endif
 
@@ -365,7 +370,7 @@ void ModuleScript::SetErrorToRethrow(const Value& aError) {
 }
 
 void ModuleScript::SetForPreload(bool aValue) {
-  mFetchInfoForAccessingPreloadFlag->SetForModulePreload(aValue);
+  mFetchInfo->SetForModulePreload(aValue);
 #ifdef DEBUG
   if (ModuleRecord()) {
     SetModulePreload(ModuleRecord(), aValue);
@@ -383,7 +388,7 @@ ResolvedModuleSet* ModuleScript::GetPreloadedResolvedSet() {
 }
 
 void ModuleScript::ResetPreload() {
-  MOZ_ASSERT(mFetchInfoForAccessingPreloadFlag->IsForModulePreload());
+  MOZ_ASSERT(mFetchInfo->IsForModulePreload());
   if (mModuleRecord) {
     ResetPreloadedModule(mModuleRecord);
   }
