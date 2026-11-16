@@ -6,7 +6,7 @@
 
 use crate::context::QuirksMode;
 use crate::error_reporting::{ContextualParseError, ParseErrorReporter};
-use crate::properties::PropertyIdRef;
+use crate::properties::{PropertyId, PropertyIdRef};
 use crate::stylesheets::{CssRuleType, CssRuleTypes, Namespaces, Origin, UrlExtraData};
 use crate::substitution::{AttrTaint, AttrTaintedRange};
 use crate::use_counters::UseCounters;
@@ -72,19 +72,19 @@ impl NestingContext {
 
 
 #[derive(Debug, Default)]
-pub struct PropertyDeclarationContext<'a> {
+pub struct PropertyDeclarationContext {
     
-    property_id: Option<PropertyIdRef<'a>>,
+    property_id: Option<PropertyId>,
     
     
     
     random_count: Cell<i32>,
 }
 
-impl<'a> PropertyDeclarationContext<'a> {
+impl PropertyDeclarationContext {
     
-    pub fn property_id(&self) -> Option<PropertyIdRef<'a>> {
-        self.property_id
+    pub fn property_id(&self) -> Option<PropertyIdRef<'_>> {
+        self.property_id.as_ref().map(PropertyIdRef::from)
     }
 
     
@@ -124,7 +124,7 @@ pub struct ParserContext<'a> {
     
     pub attr_tainted_regions: Cow<'a, AttrTaint>,
     
-    pub property_declaration_context: PropertyDeclarationContext<'a>,
+    pub property_declaration_context: PropertyDeclarationContext,
 }
 
 impl<'a> ParserContext<'a> {
@@ -167,7 +167,7 @@ impl<'a> ParserContext<'a> {
         error_reporter: Option<&'a dyn ParseErrorReporter>,
         use_counters: Option<&'a UseCounters>,
         attr_tainted_regions: AttrTaint,
-        property_id: Option<PropertyIdRef<'a>>,
+        property_id: Option<PropertyIdRef>,
     ) -> Self {
         Self {
             stylesheet_origin,
@@ -180,7 +180,7 @@ impl<'a> ParserContext<'a> {
             nesting_context: NestingContext::new_from_rule(rule_type),
             attr_tainted_regions: Cow::Owned(attr_tainted_regions),
             property_declaration_context: PropertyDeclarationContext {
-                property_id,
+                property_id: property_id.map(PropertyId::from),
                 ..Default::default()
             },
         }
@@ -188,15 +188,30 @@ impl<'a> ParserContext<'a> {
 
     
     
-    pub fn with_property_id<'b, R>(
-        &'b self,
-        property_id: Option<PropertyIdRef<'b>>,
-        cb: impl FnOnce(&ParserContext<'b>) -> R,
+    pub fn with_property_id<R>(
+        &mut self,
+        property_id: Option<PropertyIdRef>,
+        cb: impl FnOnce(&mut Self) -> R,
     ) -> R {
-        cb(&ParserContext {
+        let old = std::mem::replace(
+            &mut self.property_declaration_context,
+            PropertyDeclarationContext {
+                property_id: property_id.map(PropertyId::from),
+                ..Default::default()
+            },
+        );
+        let r = cb(self);
+        self.property_declaration_context = old;
+        r
+    }
+
+    
+    
+    pub fn for_early_substitution<'b>(&'b self) -> ParserContext<'b> {
+        ParserContext {
             stylesheet_origin: self.stylesheet_origin,
             url_data: self.url_data,
-            parsing_mode: self.parsing_mode,
+            parsing_mode: self.parsing_mode | ParsingMode::EARLY_SUBSTITUTION,
             quirks_mode: self.quirks_mode,
             error_reporter: self.error_reporter,
             namespaces: Cow::Borrowed(&*self.namespaces),
@@ -204,10 +219,10 @@ impl<'a> ParserContext<'a> {
             nesting_context: self.nesting_context,
             attr_tainted_regions: Cow::Borrowed(&*self.attr_tainted_regions),
             property_declaration_context: PropertyDeclarationContext {
-                property_id,
+                property_id: self.property_declaration_context.property_id.clone(),
                 ..Default::default()
             },
-        })
+        }
     }
 
     
@@ -223,11 +238,28 @@ impl<'a> ParserContext<'a> {
     }
 
     
-    pub fn with_parsing_mode<R>(&mut self, mode: ParsingMode, cb: impl FnOnce(&Self) -> R) -> R {
+    pub fn with_parsing_mode<R>(
+        &mut self,
+        mode: ParsingMode,
+        cb: impl FnOnce(&mut Self) -> R,
+    ) -> R {
         let old = self.parsing_mode;
         self.parsing_mode |= mode;
         let r = cb(self);
         self.parsing_mode = old;
+        r
+    }
+
+    
+    pub fn with_url_data<R>(
+        &mut self,
+        url_data: &'a UrlExtraData,
+        cb: impl FnOnce(&mut Self) -> R,
+    ) -> R {
+        let old = self.url_data;
+        self.url_data = url_data;
+        let r = cb(self);
+        self.url_data = old;
         r
     }
 

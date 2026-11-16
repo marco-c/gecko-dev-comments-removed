@@ -73,7 +73,7 @@ impl SubstitutionFunctionKind {
 
 pub struct SubstitutionParserContext<'a> {
     
-    pub parser_context: &'a ParserContext<'a>,
+    pub early_parser_context: ParserContext<'a>,
     
     pub input_start: SourcePosition,
     
@@ -84,7 +84,7 @@ impl<'a> SubstitutionParserContext<'a> {
     
     pub fn new(parser_context: &'a ParserContext<'a>, input_start: SourcePosition) -> Self {
         Self {
-            parser_context,
+            early_parser_context: parser_context.for_early_substitution(),
             input_start,
             missing_closing_characters: String::new(),
         }
@@ -397,7 +397,7 @@ impl<T: Parse> SubstitutionArgument<T> {
             return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
         }
         if !value.references.has_references() {
-            let parser_context = context.parser_context;
+            let parser_context = &context.early_parser_context;
             if let Ok(result) =
                 Parser::new(css).parse_entirely(|input| T::parse(parser_context, input))
             {
@@ -438,11 +438,13 @@ impl<T: Clone + Parse> SubstitutionArgument<T> {
                 attr_tainted: false,
             };
         };
-        let parser_context = context.parser_context(&source.url_data);
         ParsedArgument {
-            value: Parser::new(&substitution.css)
-                .parse_entirely(|input| T::parse(&parser_context, input))
-                .ok()
+            value: context
+                .parse_early(&source.url_data, |parser_context| {
+                    Parser::new(&substitution.css)
+                        .parse_entirely(|input| T::parse(parser_context, input))
+                        .ok()
+                })
                 .map(Cow::Owned),
             attr_tainted: substitution.attr_tainted,
         }
@@ -778,8 +780,6 @@ impl<'a> Substitution<'a> {
 
 pub struct SubstitutionReplacementContext<'a, 'b, 'c, 't> {
     
-    pub property_id: Option<PropertyIdRef<'b>>,
-    
     pub substitution_functions: &'a ComputedSubstitutionFunctions,
     
     pub stylist: &'b Stylist,
@@ -789,6 +789,8 @@ pub struct SubstitutionReplacementContext<'a, 'b, 'c, 't> {
     pub attribute_tracker: &'b mut AttributeTracker<'t>,
     
     pub seen: SmallVec<[Name; 8]>,
+    
+    early_parser_context: ParserContext<'a>,
 }
 
 impl<'a, 'b, 'c, 't> SubstitutionReplacementContext<'a, 'b, 'c, 't> {
@@ -799,14 +801,26 @@ impl<'a, 'b, 'c, 't> SubstitutionReplacementContext<'a, 'b, 'c, 't> {
         stylist: &'b Stylist,
         computed_context: &'b computed::Context<'c>,
         attribute_tracker: &'b mut AttributeTracker<'t>,
+        url_data: &'a UrlExtraData,
     ) -> Self {
         Self {
-            property_id,
             substitution_functions,
             stylist,
             computed_context,
             attribute_tracker,
             seen: SmallVec::new(),
+            early_parser_context: ParserContext::new_with_property_id(
+                Origin::Author,
+                url_data,
+                None,
+                ParsingMode::EARLY_SUBSTITUTION,
+                computed_context.quirks_mode,
+                 Default::default(),
+                None,
+                None,
+                AttrTaint::default(),
+                property_id,
+            ),
         }
     }
 
@@ -920,19 +934,13 @@ impl<'a, 'b, 'c, 't> SubstitutionReplacementContext<'a, 'b, 'c, 't> {
     }
 
     
-    pub fn parser_context(&self, url_data: &'b UrlExtraData) -> ParserContext<'b> {
-        ParserContext::new_with_property_id(
-            Origin::Author,
-            url_data,
-            None,
-            ParsingMode::DEFAULT,
-            self.computed_context.quirks_mode,
-             Default::default(),
-            None,
-            None,
-            AttrTaint::default(),
-            self.property_id,
-        )
+    
+    pub fn parse_early<R>(
+        &mut self,
+        url_data: &'a UrlExtraData,
+        cb: impl FnOnce(&mut ParserContext<'a>) -> R,
+    ) -> R {
+        self.early_parser_context.with_url_data(url_data, cb)
     }
 }
 
@@ -962,6 +970,7 @@ pub fn substitute<'a>(
         stylist,
         computed_context,
         attribute_tracker,
+        &variable_value.url_data,
     )
     .substitute_variable_value(variable_value, Some(&mut attr_taint))?;
     Ok(SubstitutionResult {
