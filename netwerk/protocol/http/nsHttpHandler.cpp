@@ -657,14 +657,15 @@ nsresult nsHttpHandler::InitConnectionMgr() {
 
 nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
     nsIURI* aURI, ExtContentPolicyType aType, nsHttpRequestHead* aRequest,
-    bool aSecure, nsHttpChannel* aChan, void (*aSuspend)(nsHttpChannel*),
+    bool aAllowDictionaries, nsHttpChannel* aChan,
+    void (*aSuspend)(nsHttpChannel*),
     const std::function<bool(bool, DictionaryCacheEntry*)>& aCallback) {
   LOG(("Adding Dictionary headers"));
   auto guard = MakeScopeExit([&]() { (aCallback)(false, nullptr); });
 
   nsresult rv = NS_OK;
   
-  if (aSecure) {
+  if (aAllowDictionaries) {
     
     if (StaticPrefs::network_http_dictionaries_enable() && mDictionaryCache) {
       

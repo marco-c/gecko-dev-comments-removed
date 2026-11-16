@@ -636,8 +636,9 @@ nsresult nsHttpChannel::PrepareToConnect() {
   
   
   nsresult rv = gHttpHandler->AddAcceptAndDictionaryHeaders(
-      mURI, mLoadInfo->GetExternalContentPolicyType(), &mRequestHead, IsHTTPS(),
-      this, nsHttpChannel::StaticSuspend,
+      mURI, mLoadInfo->GetExternalContentPolicyType(), &mRequestHead,
+      IsHTTPS() && IsReadableForDictionaries(false), this,
+      nsHttpChannel::StaticSuspend,
       [self = RefPtr(this)](bool aNeedsResume, DictionaryCacheEntry* aDict) {
         if (aNeedsResume) {
           LOG_DICTIONARIES(("Resuming after getting Dictionary headers"));
@@ -3749,7 +3750,8 @@ nsresult nsHttpChannel::ContinueProcessNormal(nsresult rv) {
     
     
     nsAutoCString dictionary;
-    if (StaticPrefs::network_http_dictionaries_enable() && IsHTTPS()) {
+    if (StaticPrefs::network_http_dictionaries_enable() && IsHTTPS() &&
+        IsReadableForDictionaries(true)) {
       (void)mResponseHead->GetHeader(nsHttp::Use_As_Dictionary, dictionary);
       if (!dictionary.IsEmpty()) {
         if (!ParseDictionary(mCacheEntry, mResponseHead.get(), true)) {
@@ -6501,6 +6503,24 @@ nsresult nsHttpChannel::UpdateCacheEntryHeaders(nsICacheEntry* entry,
   
   
   return entry->MetaDataReady();
+}
+
+bool nsHttpChannel::IsReadableForDictionaries(bool aCheckResponse) {
+  ExtContentPolicyType type = mLoadInfo->GetExternalContentPolicyType();
+  
+  
+  if (type == ExtContentPolicy::TYPE_DOCUMENT ||
+      type == ExtContentPolicy::TYPE_SUBDOCUMENT) {
+    return true;
+  }
+  LoadTainting tainting = mLoadInfo->GetTainting();
+  if (tainting == LoadTainting::Opaque) {
+    return false;
+  }
+  if (aCheckResponse && tainting == LoadTainting::CORS) {
+    return PerformCORSCheck();
+  }
+  return true;
 }
 
 bool nsHttpChannel::ParseDictionary(nsICacheEntry* aEntry,

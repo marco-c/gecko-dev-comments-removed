@@ -456,6 +456,10 @@ class nsHttpChannel final : public HttpBaseChannel,
   void UpdateInhibitPersistentCachingFlag();
   bool ParseDictionary(nsICacheEntry* aEntry, nsHttpResponseHead* aResponseHead,
                        bool aModified);
+  
+  
+  
+  bool IsReadableForDictionaries(bool aCheckResponse);
   [[nodiscard]] nsresult AddCacheEntryHeaders(nsICacheEntry* entry,
                                               bool aModified);
   [[nodiscard]] nsresult UpdateCacheEntryHeaders(nsICacheEntry* entry,
