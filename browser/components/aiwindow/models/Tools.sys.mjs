@@ -36,7 +36,7 @@ import {
   CountVectorizer,
   cosSim,
 } from "chrome://global/content/ml/NLPUtils.sys.mjs";
-import { EmbeddingsGenerator } from "chrome://global/content/ml/EmbeddingsGenerator.sys.mjs";
+import { embeddingsGeneratorFactory } from "chrome://global/content/ml/EmbeddingsGenerator.sys.mjs";
 import { SmartTabGroupingManager } from "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs";
 import { UI_TYPES } from "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs";
 
@@ -67,7 +67,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 ChromeUtils.defineLazyGetter(lazy, "console", () =>
   console.createInstance({
-    prefix: "Conversation",
+    logModule: "Conversation",
     maxLogLevelPref: "browser.smartwindow.conversation.logLevel",
   })
 );
@@ -94,7 +94,7 @@ const tokenizer = new CountVectorizer();
 let _embeddingsGenerator = null;
 function getEmbeddingsGenerator() {
   if (!_embeddingsGenerator) {
-    _embeddingsGenerator = EmbeddingsGenerator.forGeneral();
+    _embeddingsGenerator = embeddingsGeneratorFactory.forGeneral();
   }
   return _embeddingsGenerator;
 }
@@ -149,6 +149,8 @@ export const ADD_MEMORY = "add_memory";
 // in Chat.sys.mjs when the pref is off.
 export const AITAB_PREF = "browser.smartwindow.aitab.enabled";
 export const AITAB_TOOLS = new Set([GENERATE_AITAB]);
+export const INCLUDE_CHAT_TAB_PREF =
+  "browser.smartwindow.manageTabs.includeChatTab";
 export const SEARCH_QUERY_ENDPOINT_PREF =
   "browser.smartwindow.searchQuery.endpointURL";
 export const SEARCH_QUERY_APIKEY_PREF =
@@ -565,6 +567,16 @@ export const toolsConfig = [
             minItems: 1,
             description:
               "List of URL tokens identifying the tabs the action should be taken on.",
+          },
+          include_chat_tab: {
+            type: "boolean",
+            description:
+              "Whether to also put the tab this chat is open in into the new " +
+              "tab group. Only used when action is 'group_tabs'. Default to " +
+              "false. Only set to true when the user refers to this " +
+              "conversation (e.g. 'with this chat') or the conversation is " +
+              "about the same topic as the selected tabs. When in doubt, set " +
+              "to false.",
           },
           label: {
             type: "string",
@@ -1824,6 +1836,7 @@ export async function manageTabs(
   const {
     action,
     ask_confirmation = true,
+    include_chat_tab = false,
     url_tokens = [],
     label = "",
   } = params;
@@ -1898,6 +1911,9 @@ export async function manageTabs(
       action,
       validUrls,
       ask_confirmation,
+      include_chat_tab:
+        include_chat_tab === true &&
+        Services.prefs.getBoolPref(INCLUDE_CHAT_TAB_PREF, false),
       label,
       baseTelemetryInfo,
       toolCallId,
