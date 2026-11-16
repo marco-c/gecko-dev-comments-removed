@@ -2176,10 +2176,9 @@ class gfxFont {
 
   
   
-  virtual bool ShapeText(const char16_t* aText, uint32_t aOffset,
-                         uint32_t aLength, Script aScript, nsAtom* aLanguage,
-                         bool aVertical, RoundingFlags aRounding,
-                         gfxShapedText* aShapedText);
+  bool ShapeText(const char16_t* aText, uint32_t aOffset, uint32_t aLength,
+                 Script aScript, nsAtom* aLanguage, bool aVertical,
+                 RoundingFlags aRounding, gfxShapedText* aShapedText);
 
   
   

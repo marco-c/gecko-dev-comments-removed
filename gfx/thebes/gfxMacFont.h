@@ -56,11 +56,6 @@ class gfxMacFont final : public gfxFont {
  protected:
   ~gfxMacFont() override;
 
-  
-  bool ShapeText(const char16_t* aText, uint32_t aOffset, uint32_t aLength,
-                 Script aScript, nsAtom* aLanguage, bool aVertical,
-                 RoundingFlags aRounding, gfxShapedText* aShapedText) override;
-
   bool InitMetricsFromPlatform() override;
   void FinishInitFontMetrics() override;
 
@@ -75,8 +70,6 @@ class gfxMacFont final : public gfxFont {
   
   
   CTFontRef mCTFont;
-
-  mozilla::UniquePtr<gfxFontShaper> mCoreTextShaper;
 
   bool mVariationFont;  
 };
