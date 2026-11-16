@@ -1559,10 +1559,52 @@ BidiEmbeddingLevel nsBidiPresUtils::GetFrameEmbeddingLevel(nsIFrame* aFrame) {
   return GetFirstLeaf(aFrame)->GetEmbeddingLevel();
 }
 
+
+
+
+
+
+
+
+
+
+static const nsIFrame* FirstChildForBidiLeafSearch(const nsIFrame* aFrame) {
+  if (const nsIFrame* prevInFlow = aFrame->GetPrevInFlow()) {
+    if (const nsIFrame* kid =
+            prevInFlow->GetChildList(FrameChildListID::Overflow).FirstChild()) {
+      return kid;
+    }
+  }
+  if (const nsIFrame* kid = aFrame->PrincipalChildList().FirstChild()) {
+    return kid;
+  }
+  for (const nsIFrame* next = aFrame->GetNextInFlow(); next;
+       next = next->GetNextInFlow()) {
+    if (const nsIFrame* kid = next->PrincipalChildList().FirstChild()) {
+      return kid;
+    }
+    if (const nsIFrame* kid =
+            next->GetChildList(FrameChildListID::Overflow).FirstChild()) {
+      return kid;
+    }
+  }
+  return nullptr;
+}
+
 BidiEmbeddingLevel nsBidiPresUtils::GetFrameBaseLevel(const nsIFrame* aFrame) {
+  
+  
   const nsIFrame* firstLeaf = aFrame;
-  while (!IsBidiLeaf(firstLeaf)) {
-    firstLeaf = firstLeaf->PrincipalChildList().FirstChild();
+  for (;;) {
+    if (!firstLeaf->IsBidiInlineContainer() &&
+        !RubyUtils::IsRubyBox(firstLeaf->Type())) {
+      break;
+    }
+    const nsIFrame* kid = FirstChildForBidiLeafSearch(firstLeaf);
+    if (!kid) {
+      break;
+    }
+    firstLeaf = kid;
   }
   return firstLeaf->GetBaseLevel();
 }
