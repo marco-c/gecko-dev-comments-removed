@@ -490,6 +490,9 @@ add_task(async function test_expand_on_hover_keeps_compact() {
     });
   });
 
+  
+  
+  Services.prefs.clearUserPref("sidebar.visibility");
   await SpecialPowers.popPrefEnv();
 });
 
