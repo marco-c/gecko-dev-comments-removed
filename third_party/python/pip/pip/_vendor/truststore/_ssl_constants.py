@@ -1,6 +1,5 @@
 import ssl
 import sys
-import typing
 
 
 
@@ -12,7 +11,7 @@ _original_super_SSLContext = super(_original_SSLContext, _original_SSLContext)
 
 
 
-_truststore_SSLContext_dunder_class: typing.Optional[type]
+_truststore_SSLContext_dunder_class: type | None
 
 
 _truststore_SSLContext_super_class: type

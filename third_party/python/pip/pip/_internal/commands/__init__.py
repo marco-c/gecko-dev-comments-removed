@@ -5,12 +5,17 @@ Package containing all pip commands
 from __future__ import annotations
 
 import importlib
-from collections import namedtuple
-from typing import Any
+from typing import TYPE_CHECKING, Any, NamedTuple
 
-from pip._internal.cli.base_command import Command
+if TYPE_CHECKING:
+    from pip._internal.cli.base_command import Command
 
-CommandInfo = namedtuple("CommandInfo", "module_path, class_name, summary")
+
+class CommandInfo(NamedTuple):
+    module_path: str
+    class_name: str
+    summary: str
+
 
 
 
@@ -119,7 +124,9 @@ def create_command(name: str, **kwargs: Any) -> Command:
     """
     module_path, class_name, summary = commands_dict[name]
     module = importlib.import_module(module_path)
-    command_class = getattr(module, class_name)
+
+    
+    command_class: type[Command] = getattr(module, class_name)
     command = command_class(name=name, summary=summary, **kwargs)
 
     return command

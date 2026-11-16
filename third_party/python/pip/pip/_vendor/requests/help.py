@@ -1,9 +1,12 @@
 """Module containing bug report helper(s)."""
 
+
+
 import json
 import platform
 import ssl
 import sys
+from typing import Any
 
 from pip._vendor import idna
 from pip._vendor import urllib3
@@ -20,8 +23,8 @@ except ImportError:
     OpenSSL = None
     cryptography = None
 else:
-    import cryptography
-    import OpenSSL
+    import cryptography  
+    import OpenSSL  
 
 
 def _implementation():
@@ -40,14 +43,11 @@ def _implementation():
     if implementation == "CPython":
         implementation_version = platform.python_version()
     elif implementation == "PyPy":
-        implementation_version = "{}.{}.{}".format(
-            sys.pypy_version_info.major,
-            sys.pypy_version_info.minor,
-            sys.pypy_version_info.micro,
-        )
-        if sys.pypy_version_info.releaselevel != "final":
+        pypy = sys.pypy_version_info  
+        implementation_version = f"{pypy.major}.{pypy.minor}.{pypy.micro}"
+        if sys.pypy_version_info.releaselevel != "final":  
             implementation_version = "".join(
-                [implementation_version, sys.pypy_version_info.releaselevel]
+                [implementation_version, sys.pypy_version_info.releaselevel]  
             )
     elif implementation == "Jython":
         implementation_version = platform.python_version()  
@@ -59,7 +59,7 @@ def _implementation():
     return {"name": implementation, "version": implementation_version}
 
 
-def info():
+def info() -> dict[str, Any]:
     """Generate information for a bug report."""
     try:
         platform_info = {
@@ -73,15 +73,15 @@ def info():
         }
 
     implementation_info = _implementation()
-    urllib3_info = {"version": urllib3.__version__}
+    urllib3_info = {"version": urllib3.__version__}  
     charset_normalizer_info = {"version": None}
-    chardet_info = {"version": None}
+    chardet_info: dict[str, str | None] = {"version": None}
     if charset_normalizer:
         charset_normalizer_info = {"version": charset_normalizer.__version__}
     if chardet:
         chardet_info = {"version": chardet.__version__}
 
-    pyopenssl_info = {
+    pyopenssl_info: dict[str, str | None] = {
         "version": None,
         "openssl_version": "",
     }
@@ -98,7 +98,7 @@ def info():
     }
 
     system_ssl = ssl.OPENSSL_VERSION_NUMBER
-    system_ssl_info = {"version": f"{system_ssl:x}" if system_ssl is not None else ""}
+    system_ssl_info = {"version": f"{system_ssl:x}" if system_ssl is not None else ""}  
 
     return {
         "platform": platform_info,

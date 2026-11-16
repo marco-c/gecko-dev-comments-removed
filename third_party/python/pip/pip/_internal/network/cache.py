@@ -4,16 +4,20 @@ from __future__ import annotations
 
 import os
 import shutil
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Any, BinaryIO, Callable
+from typing import Any, BinaryIO
 
 from pip._vendor.cachecontrol.cache import SeparateBodyBaseCache
 from pip._vendor.cachecontrol.caches import SeparateBodyFileCache
 from pip._vendor.requests.models import Response
 
-from pip._internal.utils.filesystem import adjacent_tmp_file, replace
+from pip._internal.utils.filesystem import (
+    adjacent_tmp_file,
+    copy_directory_permissions,
+    replace,
+)
 from pip._internal.utils.misc import ensure_dir
 
 
@@ -82,16 +86,7 @@ class SafeFileCache(SeparateBodyBaseCache):
                 writer_func(f)
                 
                 
-                mode = (
-                    os.stat(self.directory).st_mode
-                    & 0o666  
-                    | 0o600  
-                )
-                
-                if os.chmod in os.supports_fd:
-                    os.chmod(f.fileno(), mode)
-                elif os.chmod in os.supports_follow_symlinks:
-                    os.chmod(f.name, mode, follow_symlinks=False)
+                copy_directory_permissions(self.directory, f)
 
             replace(f.name, path)
 

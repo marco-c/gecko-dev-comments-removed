@@ -19,7 +19,7 @@ class InstallationReport:
             
             
             
-            "download_info": ireq.download_info.to_dict(),
+            "download_info": ireq.download_info.to_dict_compat(),
             
             
             
