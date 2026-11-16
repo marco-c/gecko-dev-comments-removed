@@ -302,8 +302,10 @@ add_task(async function fetch_byguid_prefix() {
   Assert.ok(bm3.guid.startsWith(PREFIX));
 
   
+  
   let bm4 = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    guid: PlacesUtils.generateGuidWithPrefix(PREFIX.toLowerCase()),
     url: "http://bm3.example.com/",
     title: "bookmark 4",
   });
