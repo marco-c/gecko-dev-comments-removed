@@ -5964,8 +5964,7 @@ Element* nsFocusManager::GetTheFocusableArea(Element* aTarget,
     return IsAreaElementFocusable(*area) ? area : nullptr;
   }
 
-  nsIFrame* frame = aTarget->GetPrimaryFrame();
-  if (!frame) {
+  if (!aTarget->IsRendered()) {
     return nullptr;
   }
 
@@ -5984,7 +5983,8 @@ Element* nsFocusManager::GetTheFocusableArea(Element* aTarget,
   
   
   IsFocusableFlags flags = FocusManagerFlagsToIsFocusableFlags(aFlags);
-  if (frame->IsFocusable(flags)) {
+  nsIFrame* frame = aTarget->GetPrimaryFrame();
+  if (frame && frame->IsFocusable(flags)) {
     return aTarget;
   }
 

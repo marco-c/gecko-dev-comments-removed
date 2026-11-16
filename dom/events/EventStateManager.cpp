@@ -4234,20 +4234,22 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
         
         
         for (; newFocus; newFocus = newFocus->GetFlattenedTreeParentElement()) {
+          
+          
           nsIFrame* frame = nsLayoutUtils::GetPrimaryOrAreaImageFrame(newFocus);
-          if (!frame) {
+          if (!frame && !newFocus->IsDisplayContents()) {
             continue;
           }
 
           
           
-          if (frame->IsMenuPopupFrame()) {
+          if (frame && frame->IsMenuPopupFrame()) {
             newFocus = nullptr;
             break;
           }
 
           auto flags = IsFocusableFlags::WithMouse;
-          if (frame->IsFocusable(flags)) {
+          if (frame && frame->IsFocusable(flags)) {
             break;
           }
 
