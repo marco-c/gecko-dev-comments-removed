@@ -762,6 +762,7 @@
         this.input.controller.stopSearch();
 
         this.mPopupOpen = false;
+        this.mousedOverIndex = -1;
         this._setSecondaryActionFocused(false);
 
         
