@@ -450,7 +450,11 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
   
   static Digit inplaceAddDigits(Digits x, ConstDigits y);
   
+  static Digit inplaceIncrementDigits(Digits x);
+  
   static void copyDigits(ConstDigits src, Digits dest);
+  
+  static void zeroDigits(Digits dest);
   
   static Digit leftShiftDigits(ConstDigits src, unsigned shift, Digits dest);
   
