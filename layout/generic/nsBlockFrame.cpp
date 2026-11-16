@@ -1222,6 +1222,14 @@ static bool HasNonAutoBSizeForLineClamp(const nsBlockFrame* aFrame,
               ->IsAuto();
 }
 
+static bool IsBEndMarginRoot(const nsBlockFrame* frame) {
+  bool unused, isMarginRoot;
+  frame->IsMarginRoot(&unused, &isMarginRoot);
+  return isMarginRoot ||
+         frame->GetLogicalUsedBorderAndPadding(frame->GetWritingMode())
+             .BEnd(frame->GetWritingMode());
+}
+
 
 
 
@@ -1268,14 +1276,14 @@ class MOZ_RAII LineClampLineIterator {
                                       : nullptr;
   }
   nsBlockFrame* GetCurrentFrame() { return mCurrentFrameOffset.mFrame; }
-  nscoord GetCurrentFrameBOffset() {
+  nscoord GetCurrentFrameBOffset() const {
     return mCurrentFrameOffset.mConsumedBSize;
   }
-  nscoord GetBEndMargins() {
+  nscoord GetBEndMargins() const {
     return mCurrentFrameOffset.mCollapsedMargins +
            mCurrentFrameOffset.mCurrentCollapsingMargin.Get();
   }
-  nscoord GetDescendantBEndMargins() {
+  nscoord GetDescendantBEndMargins() const {
     return GetBEndMargins() - mMarginsUntilLastFrame;
   }
 
@@ -1383,13 +1391,6 @@ class MOZ_RAII LineClampLineIterator {
     return BlockAction::Skip;
   }
 
-  static bool IsBEndMarginRoot(nsBlockFrame* frame) {
-    bool unused, isMarginRoot;
-    frame->IsMarginRoot(&unused, &isMarginRoot);
-    return isMarginRoot ||
-           frame->GetLogicalUsedBorderAndPadding(frame->GetWritingMode())
-               .BEnd(frame->GetWritingMode());
-  }
   struct FrameOffsetData {
     
     nsBlockFrame* mFrame;
