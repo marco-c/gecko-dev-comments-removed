@@ -241,9 +241,6 @@ static void drag_data_received_event_cb(
     GtkWidget* aWidget, GdkDragContext* aDragContext, gint aX, gint aY,
     GtkSelectionData* aSelectionData, guint aInfo, guint aTime, gpointer aData);
 
-
-static nsresult initialize_prefs(void);
-
 static guint32 sLastUserInputTime = GDK_CURRENT_TIME;
 
 static SystemTimeConverter<guint32>& TimeConverter() {
@@ -341,7 +338,6 @@ static nsIWidget::Raise gFocusRequestWindowRaise = nsIWidget::Raise::No;
 static bool gBlockActivateEvent = false;
 static bool gGlobalsInitialized = false;
 static bool gUseAspectRatio = true;
-bool gUseStableRounding = true;
 static uint32_t gLastTouchID = 0;
 
 
@@ -432,21 +428,19 @@ nsWindow::nsWindow()
 
   if (!gGlobalsInitialized) {
     gGlobalsInitialized = true;
-
-    
-    initialize_prefs();
-
+    if (Preferences::HasUserValue("widget.use-aspect-ratio")) {
+      gUseAspectRatio = Preferences::GetBool("widget.use-aspect-ratio", true);
+    } else {
+      gUseAspectRatio =
+          IsGnomeDesktopEnvironment() || IsKdeDesktopEnvironment();
+    }
 #ifdef MOZ_WAYLAND
-    
-    
-    
     if (GdkIsWaylandDisplay()) {
-      nsCOMPtr<nsIClipboard> clipboard =
-          do_GetService("@mozilla.org/widget/clipboard;1");
-      NS_ASSERTION(clipboard, "Failed to init clipboard!");
+      nsWindowWayland::InitPrefs();
     }
 #endif
   }
+
   
   
   
@@ -496,10 +490,7 @@ void nsWindow::DispatchResized() {
 
   
   
-  auto clientSize = gUseStableRounding && !IsWaylandPopup()
-                        ? GetClientSize()
-                        : LayoutDeviceIntSize::Round(mClientArea.Size() *
-                                                     GetDesktopToDeviceScale());
+  auto clientSize = GetRoundedClientSize();
 
   LOG("nsWindow::DispatchResized() client scaled size [%d, %d]",
       (int)clientSize.width, (int)clientSize.height);
@@ -669,7 +660,7 @@ bool nsWindow::WidgetTypeSupportsNativeCompositing() {
   if (IsDragPopup()) {
     return false;
   }
-  return WidgetTypeSupportsAcceleration();
+  return mIsAccelerated;
 }
 
 static bool IsPenEvent(GdkEvent* aEvent, bool* isEraser) {
@@ -1388,6 +1379,12 @@ LayoutDeviceIntRect nsWindow::GetBounds() {
 
 LayoutDeviceIntSize nsWindow::GetClientSize() {
   return ToLayoutDevicePixels(mClientArea).Size();
+}
+
+
+LayoutDeviceIntSize nsWindow::GetRoundedClientSize() {
+  return LayoutDeviceIntSize::Round(mClientArea.Size() *
+                                    GetDesktopToDeviceScale());
 }
 
 LayoutDeviceIntRect nsWindow::GetClientBounds() {
@@ -3050,15 +3047,23 @@ void nsWindow::OnButtonPressEvent(GdkEventButton* aEvent) {
       if (!Preferences::GetBool("mousebutton.4th.enabled", true)) {
         return;
       }
-      DispatchCommandEvent(nsGkAtoms::Back);
-      return;
+      if (!StaticPrefs::dom_event_mouse_xbuttons_enabled()) {
+        DispatchCommandEvent(nsGkAtoms::Back);
+        return;
+      }
+      domButton = MouseButton::eX1;
+      break;
     case 9:
     case 10:
       if (!Preferences::GetBool("mousebutton.5th.enabled", true)) {
         return;
       }
-      DispatchCommandEvent(nsGkAtoms::Forward);
-      return;
+      if (!StaticPrefs::dom_event_mouse_xbuttons_enabled()) {
+        DispatchCommandEvent(nsGkAtoms::Forward);
+        return;
+      }
+      domButton = MouseButton::eX2;
+      break;
     default:
       return;
   }
@@ -3114,6 +3119,7 @@ void nsWindow::OnButtonReleaseEvent(GdkEventButton* aEvent) {
   bool isPenEvent = IsPenEvent((GdkEvent*)aEvent, &isEraser);
 
   uint16_t domButton;
+  nsStaticAtom* command = nullptr;
   switch (aEvent->button) {
     case 1:
       if (isEraser) {
@@ -3127,6 +3133,24 @@ void nsWindow::OnButtonReleaseEvent(GdkEventButton* aEvent) {
       break;
     case 3:
       domButton = MouseButton::eSecondary;
+      break;
+    
+    case 8:
+      if (!StaticPrefs::dom_event_mouse_xbuttons_enabled() ||
+          !Preferences::GetBool("mousebutton.4th.enabled", true)) {
+        return;
+      }
+      domButton = MouseButton::eX1;
+      command = nsGkAtoms::Back;
+      break;
+    case 9:
+    case 10:
+      if (!StaticPrefs::dom_event_mouse_xbuttons_enabled() ||
+          !Preferences::GetBool("mousebutton.5th.enabled", true)) {
+        return;
+      }
+      domButton = MouseButton::eX2;
+      command = nsGkAtoms::Forward;
       break;
     default:
       return;
@@ -3142,6 +3166,7 @@ void nsWindow::OnButtonReleaseEvent(GdkEventButton* aEvent) {
   gdouble pressure = 0;
   gdk_event_get_axis((GdkEvent*)aEvent, GDK_AXIS_PRESSURE, &pressure);
   event.mPressure = pressure ? (float)pressure : (float)mLastMotionPressure;
+  event.mCommand = command;
 
   
   
@@ -6462,18 +6487,6 @@ void nsWindow::InitDragEvent(WidgetDragEvent& aEvent) {
   KeymapWrapper::InitInputEvent(aEvent, modifierState);
 }
 
-static nsresult initialize_prefs(void) {
-  if (Preferences::HasUserValue("widget.use-aspect-ratio")) {
-    gUseAspectRatio = Preferences::GetBool("widget.use-aspect-ratio", true);
-  } else {
-    gUseAspectRatio = IsGnomeDesktopEnvironment() || IsKdeDesktopEnvironment();
-  }
-  
-  
-  gUseStableRounding = !IsKdeDesktopEnvironment() || GdkIsX11Display();
-  return NS_OK;
-}
-
 #ifdef ACCESSIBILITY
 void nsWindow::CreateRootAccessible() {
   if (!mRootAccessible) {
@@ -7016,11 +7029,9 @@ void nsWindow::CreateAndPutGdkScrollEvent(mozilla::LayoutDeviceIntPoint aPoint,
   event.scroll.x = DevicePixelsToGdkCoordRoundDown(pointInWindow.x);
   event.scroll.y = DevicePixelsToGdkCoordRoundDown(pointInWindow.y);
 
-  
-  
   event.scroll.direction = GDK_SCROLL_SMOOTH;
-  event.scroll.delta_x = -aDeltaX;
-  event.scroll.delta_y = -aDeltaY;
+  event.scroll.delta_x = aDeltaX;
+  event.scroll.delta_y = aDeltaY;
 
   gdk_event_put(&event);
 }
@@ -7036,7 +7047,9 @@ nsresult nsWindow::SynthesizeNativeMouseScrollEvent(
     return NS_OK;
   }
 
-  CreateAndPutGdkScrollEvent(aPoint, aDeltaX, aDeltaY);
+  
+  
+  CreateAndPutGdkScrollEvent(aPoint, -aDeltaX, -aDeltaY);
 
   return NS_OK;
 }
@@ -7283,15 +7296,8 @@ void nsWindow::GetCompositorWidgetInitData(
   }
 #endif
 
-  
-  
-  auto clientSize = gUseStableRounding && !IsWaylandPopup()
-                        ? GetClientSize()
-                        : LayoutDeviceIntSize::Round(mClientArea.Size() *
-                                                     GetDesktopToDeviceScale());
-
   *aInitData = mozilla::widget::GtkCompositorWidgetInitData(
-      GetX11Window(), displayName, GdkIsX11Display(), clientSize);
+      GetX11Window(), displayName, GdkIsX11Display(), GetRoundedClientSize());
 }
 
 nsresult nsWindow::SetSystemFont(const nsCString& aFontName) {
@@ -7737,13 +7743,33 @@ uint32_t nsWindow::GetMaxTouchPoints() const {
 void nsWindow::SessionRestoreFinished() {
   LOGW("nsWindow::SessionRestoreFinished() set focus to [%p]",
        gFocusRequestWindow.get());
+
+  
+  
+  
+  
+  nsTArray<RefPtr<nsWindow>> waitingWindows;
+  GList* toplevels = gtk_window_list_toplevels();
+  for (GList* item = toplevels; item; item = item->next) {
+    nsWindow* window = FromGtkWidget(GTK_WIDGET(item->data));
+    if (window && window->mWaitingToSessionRestore) {
+      waitingWindows.AppendElement(window);
+    }
+  }
+  g_list_free(toplevels);
+  for (const RefPtr<nsWindow>& window : waitingWindows) {
+    if (window->IsDestroyed() || !window->mWaitingToSessionRestore) {
+      continue;
+    }
+    LOGW("  [%p] was not restored, show it", window.get());
+    window->mWaitingToSessionRestore = false;
+    if (window->mNeedsShow) {
+      window->NativeShow( true);
+    }
+  }
+
   if (!gFocusRequestWindow) {
     return;
-  }
-  if (gFocusRequestWindow->mWaitingToSessionRestore) {
-    NS_WARNING(
-        "Session restore finished before nsWindow::MoveToWorkspace() calls!");
-    gFocusRequestWindow->mWaitingToSessionRestore = false;
   }
   gFocusRequestWindow->SetFocus(gFocusRequestWindowRaise,
                                 mozilla::dom::CallerType::System);
