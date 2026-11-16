@@ -3751,9 +3751,7 @@ void nsGenericHTMLElement::ShowPopoverInternal(Element* aSource,
       GetPopoverData()->SetOpenedInMode(PopoverAttributeState::Hint);
     }
     
-    if (StaticPrefs::dom_closewatcher_enabled()) {
-      GetPopoverData()->EnsureCloseWatcher(this);
-    }
+    GetPopoverData()->EnsureCloseWatcher(this);
   }
 
   

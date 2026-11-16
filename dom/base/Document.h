@@ -2163,12 +2163,6 @@ class Document : public nsINode,
 
 
 
-  MOZ_CAN_RUN_SCRIPT void HandleEscKey();
-
-  
-
-
-
   MOZ_CAN_RUN_SCRIPT void ProcessCloseRequest();
 
   

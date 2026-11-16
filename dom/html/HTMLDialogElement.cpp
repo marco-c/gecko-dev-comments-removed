@@ -246,17 +246,13 @@ void HTMLDialogElement::RequestClose(Element* aSource,
   }
 
   
-  if (StaticPrefs::dom_closewatcher_enabled()) {
-    MOZ_ASSERT(closeWatcher, "RequestClose needs mCloseWatcher");
-  }
+  MOZ_ASSERT(closeWatcher, "RequestClose needs mCloseWatcher");
 
   
-  if (StaticPrefs::dom_closewatcher_enabled()) {
-    
-    
-    
-    closeWatcher->SetEnabled(true);
-  }
+  
+  
+  
+  closeWatcher->SetEnabled(true);
 
   
   if (aReturnValue.isSome()) {
@@ -267,11 +263,7 @@ void HTMLDialogElement::RequestClose(Element* aSource,
   mRequestCloseSourceElement = do_GetWeakReference(aSource);
 
   
-  if (StaticPrefs::dom_closewatcher_enabled()) {
-    closeWatcher->RequestToClose(false);
-  } else {
-    RunCancelDialogSteps();
-  }
+  closeWatcher->RequestToClose(false);
 
   
   if (closeWatcher) {
@@ -480,9 +472,7 @@ void HTMLDialogElement::ShowModal(Element* aSource, ErrorResult& aError) {
   SetOpen(true, aError);
 
   
-  if (StaticPrefs::dom_closewatcher_enabled()) {
-    MOZ_ASSERT(mCloseWatcher, "ShowModal needs mCloseWatcher");
-  }
+  MOZ_ASSERT(mCloseWatcher, "ShowModal needs mCloseWatcher");
 
   
   
@@ -596,27 +586,6 @@ void HTMLDialogElement::FocusDialog() {
 
 int32_t HTMLDialogElement::TabIndexDefault() { return 0; }
 
-void HTMLDialogElement::RunCancelDialogSteps() {
-  
-  
-  bool defaultAction = true;
-  nsContentUtils::DispatchTrustedEvent(this, u"cancel"_ns, CanBubble::eNo,
-                                       Cancelable::eYes, &defaultAction);
-
-  
-  
-  
-  
-  
-  
-  if (defaultAction) {
-    Maybe<nsAutoString> retValue;
-    GetRequestCloseReturnValue(retValue);
-    RefPtr<Element> source = GetRequestCloseSourceElement();
-    Close(source, retValue);
-  }
-}
-
 bool HTMLDialogElement::IsValidCommandAction(Command aCommand) const {
   return nsGenericHTMLElement::IsValidCommandAction(aCommand) ||
          aCommand == Command::ShowModal || aCommand == Command::Close ||
@@ -677,7 +646,6 @@ void HTMLDialogElement::QueueToggleEventTask(Element* aSource) {
 
 
 void HTMLDialogElement::SetDialogCloseWatcherIfNeeded() {
-  MOZ_ASSERT(StaticPrefs::dom_closewatcher_enabled(), "CloseWatcher enabled");
   
   MOZ_ASSERT(!mCloseWatcher);
 
@@ -736,13 +704,11 @@ void HTMLDialogElement::SetupSteps() {
   OwnerDoc()->AddOpenDialog(*this);
 
   
-  if (StaticPrefs::dom_closewatcher_enabled()) {
-    SetDialogCloseWatcherIfNeeded();
-  }
+  SetDialogCloseWatcherIfNeeded();
 }
 
 void HTMLDialogElement::SetCloseWatcherEnabledState() {
-  if (StaticPrefs::dom_closewatcher_enabled() && mCloseWatcher) {
+  if (mCloseWatcher) {
     mCloseWatcher->SetEnabled(GetClosedBy() != ClosedBy::None);
   }
 }

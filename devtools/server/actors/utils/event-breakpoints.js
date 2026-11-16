@@ -143,12 +143,8 @@ const AVAILABLE_BREAKPOINTS = [
   {
     name: "CloseWatcher",
     items: [
-      closeWatcherEvent("closewatcher", "cancel", () =>
-        Services.prefs.getBoolPref("dom.closewatcher.enabled")
-      ),
-      closeWatcherEvent("closewatcher", "close", () =>
-        Services.prefs.getBoolPref("dom.closewatcher.enabled")
-      ),
+      closeWatcherEvent("closewatcher", "cancel"),
+      closeWatcherEvent("closewatcher", "close"),
     ],
   },
   {
@@ -160,12 +156,7 @@ const AVAILABLE_BREAKPOINTS = [
       generalEvent("control", "focus"),
       generalEvent("control", "focusin"),
       generalEvent("control", "focusout"),
-      
-      generalEvent(
-        "control",
-        "command",
-        global => global && "CommandEvent" in global
-      ),
+      generalEvent("control", "command"),
       generalEvent("control", "reset"),
       generalEvent("control", "resize"),
       generalEvent("control", "scroll"),
