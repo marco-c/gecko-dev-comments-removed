@@ -130,6 +130,7 @@ class FFmpegVideoDecoder<LIBAV_VER>
   Maybe<MediaDataDecoder::PropertyValue> GetDecodeProperty(
       MediaDataDecoder::PropertyName aName) const override;
 #endif
+  void SetSeekThreshold(const media::TimeUnit& aTime) override;
 
   static AVCodecID GetCodecId(const nsACString& aMimeType);
 
@@ -167,6 +168,12 @@ class FFmpegVideoDecoder<LIBAV_VER>
                                   int64_t aDuration, int64_t aTimecode,
                                   MediaDataDecoder::DecodedData& aResults);
 #endif
+  
+  
+  bool MaybeDropFrame(int64_t aPts, int64_t aDuration);
+
+  
+  Maybe<media::TimeUnit> mSeekTarget;
   void ProcessShutdown() override;
   MediaResult DoDecode(MediaRawData* aSample, uint8_t* aData, int aSize,
                        bool* aGotFrame, DecodedData& aResults) override;
