@@ -2290,7 +2290,7 @@ pref("browser.aboutwelcome.experimentsGate.minDisplayMs", 3000);
 pref("browser.aboutwelcome.experimentsGate.maxDisplayMs", 8000);
 
 
-pref("browser.nova.enabled", true);
+pref("browser.nova.enabled", true, locked);
 
 
 pref("messaging-system.profile.singleProfileMessaging.disable", true);
