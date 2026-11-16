@@ -134,15 +134,6 @@ PdfStructTreeBuilder::GlobalAccessibleId PdfStructTreeBuilder::GetAccId(
   if (!content) {
     return {};
   }
-  if (content->IsText()) {
-    nsINode* parent = content->GetParent();
-    if (parent->IsMathMLElement()) {
-      
-      
-      
-      content = parent->AsContent();
-    }
-  }
   dom::Document* doc = content->OwnerDoc();
   
   
@@ -151,9 +142,22 @@ PdfStructTreeBuilder::GlobalAccessibleId PdfStructTreeBuilder::GetAccId(
   if (!docAcc) {
     return {};
   }
-  Accessible* acc = docAcc->GetAccessible(content);
+  LocalAccessible* acc = docAcc->GetAccessible(content);
   if (!acc) {
     return {};
+  }
+  if (content->IsText()) {
+    LocalAccessible* parent = acc->LocalParent();
+    if (parent && parent->GetContent() &&
+        parent->GetContent()->IsMathMLElement()) {
+      
+      
+      
+      
+      
+      
+      acc = parent;
+    }
   }
   uint64_t innerWindowId = doc->InnerWindowID();
   if (!innerWindowId) {
@@ -533,12 +537,16 @@ void PdfStructTreeBuilder::BuildStructSubtree(Accessible* aAcc,
     }
   }
 
+  
+  
+  
+  const bool accIsMathMLElement = aPdf.fNamespace.equals(kNamespaceMathMl);
   uint32_t count = aAcc->ChildCount();
   aPdf.fChildVector.resize(count);
   for (uint32_t c = 0; c < count; ++c) {
     aPdf.fChildVector[c] = std::make_unique<SkPDF::StructureElementNode>();
     Accessible* child = aAcc->ChildAt(c);
-    if (aInMath && child->IsTextLeaf()) {
+    if (accIsMathMLElement && child->IsTextLeaf()) {
       
       
       continue;
