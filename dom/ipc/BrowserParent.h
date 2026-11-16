@@ -280,6 +280,9 @@ class BrowserParent final : public PBrowserParent,
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY mozilla::ipc::IPCResult RecvReplyKeyEvent(
       const WidgetKeyboardEvent& aEvent, const nsID& aUUID);
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY mozilla::ipc::IPCResult RecvReplyMouseEvent(
+      bool aDefaultPrevented, const nsID& aUUID);
 
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY mozilla::ipc::IPCResult RecvAccessKeyNotHandled(
@@ -930,6 +933,8 @@ class BrowserParent final : public PBrowserParent,
     CopyableTArray<AlternativeCharCode> mAlternativeCharCodes;
   };
   nsTArray<SentKeyEventData> mWaitingReplyKeyboardEvents;
+  struct SentMouseEventData;
+  nsTArray<SentMouseEventData> mWaitingReplyMouseEvents;
 
   LayoutDeviceIntRect mRect;
   LayoutDeviceIntSize mDimensions;

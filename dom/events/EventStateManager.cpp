@@ -6538,6 +6538,20 @@ nsresult EventStateManager::PostHandleMouseUp(
   }
 
   
+  
+  
+  if (aMouseUpEvent->mCommand && XRE_IsParentProcess() &&
+      !aMouseUpEvent->HasBeenPostedToRemoteProcess() &&
+      !aMouseUpEvent->DefaultPrevented()) {
+    if (!mPresContext || NS_WARN_IF(!mPresContext->GetRootWidget())) {
+      return NS_OK;
+    }
+    nsCOMPtr widget = mPresContext->GetRootWidget();
+    aMouseUpEvent->mCommand.Run(widget);
+    return NS_OK;
+  }
+
+  
   if (aMouseUpEvent->mButton != MouseButton::eMiddle ||
       !WidgetMouseEvent::IsMiddleClickPasteEnabled()) {
     return NS_OK;

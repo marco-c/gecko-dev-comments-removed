@@ -351,6 +351,28 @@ class WidgetMouseEventBase : public WidgetInputEvent {
 
 
 
+
+
+class WidgetMouseEventCommand {
+ public:
+  WidgetMouseEventCommand() = default;
+  MOZ_IMPLICIT
+  WidgetMouseEventCommand(EventMessage aContentCommand)
+      : mContentCommand(aContentCommand) {
+    MOZ_ASSERT(mContentCommand >= eContentCommandEventFirst &&
+               mContentCommand <= eContentCommandEventLast);
+  }
+  MOZ_IMPLICIT
+  WidgetMouseEventCommand(nsStaticAtom* aBrowserCommand)
+      : mBrowserCommand(aBrowserCommand) {}
+  explicit operator bool() const { return mBrowserCommand || mContentCommand; }
+  MOZ_CAN_RUN_SCRIPT void Run(nsIWidget* aRootWidget);
+
+ private:
+  EventMessage mContentCommand = eVoidEvent;
+  nsStaticAtom* mBrowserCommand = nullptr;
+};
+
 class WidgetMouseEvent : public WidgetMouseEventBase,
                          public WidgetPointerHelper {
  private:
@@ -487,6 +509,9 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
   nsCOMPtr<dom::EventTarget> mClickTarget;
 
   
+  WidgetMouseEventCommand mCommand;
+
+  
   
   
   
@@ -564,6 +589,7 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
     
     
     mMovement = aEvent.mMovement;
+    mCommand = aEvent.mCommand;
   }
 
   

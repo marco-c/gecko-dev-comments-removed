@@ -3174,6 +3174,8 @@ class nsContentUtils {
       const mozilla::CSSPoint& aPoint, const nsPoint& aOffset,
       nsPresContext* aPresContext);
 
+  static EventMessage ContentCommandFromString(const nsAString& aType);
+
   
 
 

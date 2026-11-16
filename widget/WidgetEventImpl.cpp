@@ -2,6 +2,8 @@
 
 
 
+#include <fmt/format.h>
+
 #include "BasicEvents.h"
 #include "ContentEvents.h"
 #include "MiscEvents.h"
@@ -31,6 +33,7 @@
 #include "nsIDragSession.h"
 #include "nsMathUtils.h"
 #include "nsPrintfCString.h"
+#include "nsUnicharUtils.h"
 
 #if defined(XP_WIN)
 #  include "WinUtils.h"
@@ -1140,6 +1143,25 @@ void WidgetMouseEvent::AssertContextMenuEventButtonConsistency() const {
 }
 #endif
 
+void WidgetMouseEventCommand::Run(nsIWidget* aRootWidget) {
+  MOZ_ASSERT(*this, "Should only be called on non-void command.");
+  if (mContentCommand) {
+    MOZ_ASSERT(!mBrowserCommand,
+               "Only one of mContentCommand/mBrowserCommand should be set.");
+    WidgetContentCommandEvent contentCommandEvent(true, mContentCommand,
+                                                  aRootWidget);
+    widget::TextEventDispatcher* dispatcher =
+        aRootWidget->GetTextEventDispatcher();
+    if (NS_WARN_IF(!dispatcher)) {
+      return;
+    }
+    dispatcher->DispatchContentCommandEvent(contentCommandEvent);
+    return;
+  }
+  WidgetCommandEvent commandEvent(true, mBrowserCommand, aRootWidget);
+  aRootWidget->DispatchEvent(&commandEvent);
+}
+
 
 
 
@@ -1396,6 +1418,13 @@ bool WidgetKeyboardEvent::ShouldCauseKeypressEvents() const {
   }
 }
 
+static bool AcceptableCharForShortcutKey(uint32_t aCharCode) {
+  constexpr static uint32_t kCharCodeDEL = 0x7F;
+  return aCharCode >= ' ' && aCharCode != kCharCodeDEL &&
+         
+         IsInBMP(aCharCode);
+}
+
 static bool HasASCIIDigit(const ShortcutKeyCandidateArray& aCandidates) {
   for (uint32_t i = 0; i < aCandidates.Length(); ++i) {
     uint32_t ch = aCandidates[i].mCharCode;
@@ -1415,7 +1444,32 @@ static bool IsCaseChangeableChar(uint32_t aChar) {
                                ToUpperCase(static_cast<char16_t>(aChar));
 }
 
-void WidgetKeyboardEvent::GetShortcutKeyCandidates(
+static Maybe<uint32_t> IndexOfCharCaseInsensitive(
+    const ShortcutKeyCandidateArray& aCandidates, uint32_t aCharCode,
+    const Maybe<ShortcutKeyCandidate::ShiftState>& aShiftState = Nothing()) {
+  for (const uint32_t index : IntegerRange(aCandidates.Length())) {
+    const auto& candidate = aCandidates[index];
+    if (aShiftState && candidate.mShiftState != aShiftState.value()) {
+      continue;
+    }
+    if (CharsCaseInsensitiveEqual(candidate.mCharCode, aCharCode)) {
+      return Some(index);
+    }
+  }
+  return Nothing();
+}
+
+static bool ContainsCharCaseInsensitive(
+    const ShortcutKeyCandidateArray& aCandidates, uint32_t aCharCode,
+    const Maybe<ShortcutKeyCandidate::ShiftState>& aShiftState = Nothing()) {
+  return IndexOfCharCaseInsensitive(aCandidates, aCharCode, aShiftState)
+      .isSome();
+}
+
+LazyLogModule gShortcutKeyCandidateLog("ShortcutKeyCandidates");
+
+void WidgetKeyboardEvent::GetShortcutKeyCandidatesInternal(
+    ShortcutKeyPriority aPriority,
     ShortcutKeyCandidateArray& aCandidates) const {
   MOZ_ASSERT(aCandidates.IsEmpty(), "aCandidates must be empty");
 
@@ -1437,77 +1491,186 @@ void WidgetKeyboardEvent::GetShortcutKeyCandidates(
   
   
   
-  uint32_t pseudoCharCode = PseudoCharCode();
-  if (pseudoCharCode) {
-    ShortcutKeyCandidate key(pseudoCharCode, ShiftState::MatchExactly,
-                             SkipIfEarlierHandlerDisabled::No);
-    aCandidates.AppendElement(key);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  const auto ComputeCandidateIndex = [&](uint32_t aCharCode,
+                                         ShiftState aShiftState) -> uint32_t {
+    
+    
+    if (aPriority == ShortcutKeyPriority::UserIntention) {
+      return aCandidates.Length();
+    }
+    
+    
+    if (aShiftState == ShiftState::Ignorable) {
+      if (const Maybe<uint32_t> index = IndexOfCharCaseInsensitive(
+              aCandidates, aCharCode, Some(ShiftState::MatchExactly))) {
+        return index.value();
+      }
+    }
+    
+    
+    
+    
+    
+    
+    if (IS_ASCII_ALPHA(aCharCode)) {
+      return 0;
+    }
+    if (aCharCode > 0x7F) {
+      
+      return aCandidates.Length();
+    }
+    
+    
+    for (uint32_t i = 0; i < aCandidates.Length(); i++) {
+      if (aCandidates[i].mCharCode > 0x7F) {
+        return i;
+      }
+    }
+    return aCandidates.Length();
+  };
+
+  if (AcceptableCharForShortcutKey(PseudoCharCode())) {
+    aCandidates.AppendElement(
+        ShortcutKeyCandidate(PseudoCharCode(), ShiftState::MatchExactly,
+                             SkipIfEarlierHandlerDisabled::No));
   }
 
-  uint32_t len = mAlternativeCharCodes.Length();
-  if (!IsShift()) {
-    for (uint32_t i = 0; i < len; ++i) {
-      uint32_t ch = mAlternativeCharCodes[i].mUnshiftedCharCode;
-      if (!ch || ch == pseudoCharCode) {
-        continue;
-      }
-      ShortcutKeyCandidate key(ch, ShiftState::MatchExactly,
-                               SkipIfEarlierHandlerDisabled::No);
-      aCandidates.AppendElement(key);
+  const bool isShift = IsShift();
+  for (const auto& alt : mAlternativeCharCodes) {
+    const uint32_t ch = isShift ? alt.mShiftedCharCode : alt.mUnshiftedCharCode;
+    if (!AcceptableCharForShortcutKey(ch)) {
+      continue;
     }
-    
-    
-    
-    
-    if (!HasASCIIDigit(aCandidates)) {
-      for (uint32_t i = 0; i < len; ++i) {
-        uint32_t ch = mAlternativeCharCodes[i].mShiftedCharCode;
-        if (ch >= '0' && ch <= '9') {
-          ShortcutKeyCandidate key(
-              ch, ShiftState::MatchExactly,
-              
-              
-              SkipIfEarlierHandlerDisabled::Yes);
-          aCandidates.AppendElement(key);
-          break;
-        }
-      }
+
+    if (!ContainsCharCaseInsensitive(aCandidates, ch)) {
+      aCandidates.InsertElementAt(
+          ComputeCandidateIndex(ch, ShiftState::MatchExactly),
+          ShortcutKeyCandidate(ch, ShiftState::MatchExactly,
+                               SkipIfEarlierHandlerDisabled::No));
     }
-  } else {
-    for (uint32_t i = 0; i < len; ++i) {
-      uint32_t ch = mAlternativeCharCodes[i].mShiftedCharCode;
-      if (!ch) {
-        continue;
+
+    if (!isShift) {
+      continue;
+    }
+
+    
+    
+    if (ContainsCharCaseInsensitive(aCandidates, ch,
+                                    Some(ShiftState::Ignorable))) {
+      continue;
+    }
+
+    
+    
+    const uint32_t unshiftCh = alt.mUnshiftedCharCode;
+    if (CharsCaseInsensitiveEqual(ch, unshiftCh)) {
+      continue;
+    }
+
+    
+    
+    
+    if (IsCaseChangeableChar(ch)) {
+      continue;
+    }
+
+    
+    
+    aCandidates.InsertElementAt(
+        ComputeCandidateIndex(ch, ShiftState::Ignorable),
+        ShortcutKeyCandidate(ch, ShiftState::Ignorable,
+                             SkipIfEarlierHandlerDisabled::No));
+  }
+
+  
+  
+  
+  
+  if (!isShift && !HasASCIIDigit(aCandidates)) {
+    for (const auto& alt : mAlternativeCharCodes) {
+      if (alt.mShiftedCharCode >= '0' && alt.mShiftedCharCode <= '9') {
+        
+        
+        
+        const uint32_t index = ComputeCandidateIndex(alt.mShiftedCharCode,
+                                                     ShiftState::MatchExactly);
+        aCandidates.InsertElementAt(
+            index,
+            ShortcutKeyCandidate(
+                alt.mShiftedCharCode, ShiftState::MatchExactly,
+                
+                
+                SkipIfEarlierHandlerDisabled::Yes));
+        break;
       }
-
-      if (ch != pseudoCharCode) {
-        ShortcutKeyCandidate key(ch, ShiftState::MatchExactly,
-                                 SkipIfEarlierHandlerDisabled::No);
-        aCandidates.AppendElement(key);
-      }
-
-      
-      
-
-      
-      
-      uint32_t unshiftCh = mAlternativeCharCodes[i].mUnshiftedCharCode;
-      if (CharsCaseInsensitiveEqual(ch, unshiftCh)) {
-        continue;
-      }
-
-      
-      
-      
-      if (IsCaseChangeableChar(ch)) {
-        continue;
-      }
-
-      
-      
-      ShortcutKeyCandidate key(ch, ShiftState::Ignorable,
-                               SkipIfEarlierHandlerDisabled::No);
-      aCandidates.AppendElement(key);
     }
   }
 
@@ -1517,10 +1680,29 @@ void WidgetKeyboardEvent::GetShortcutKeyCandidates(
   
   
   if (mKeyNameIndex == KEY_NAME_INDEX_USE_STRING &&
-      mCodeNameIndex == CODE_NAME_INDEX_Space && pseudoCharCode != ' ') {
-    ShortcutKeyCandidate spaceKey(' ', ShiftState::MatchExactly,
-                                  SkipIfEarlierHandlerDisabled::No);
-    aCandidates.AppendElement(spaceKey);
+      mCodeNameIndex == CODE_NAME_INDEX_Space &&
+      !ContainsCharCaseInsensitive(aCandidates, ' ')) {
+    
+    
+    
+    const uint32_t index = ComputeCandidateIndex(' ', ShiftState::MatchExactly);
+    aCandidates.InsertElementAt(
+        index, ShortcutKeyCandidate(' ', ShiftState::MatchExactly,
+                                    SkipIfEarlierHandlerDisabled::No));
+  }
+
+  if (MOZ_LOG_TEST(gShortcutKeyCandidateLog, LogLevel::Info)) {
+    nsAutoString domKeyValue;
+    GetDOMKeyName(domKeyValue);
+    MOZ_LOG_FMT(gShortcutKeyCandidateLog, LogLevel::Info,
+                "key=\"{}\", isShift={}, isAlt={}, isCtrl={}, isMeta={}",
+                NS_ConvertUTF16toUTF8(domKeyValue), isShift, IsAlt(),
+                IsControl(), IsMeta());
+    MOZ_LOG_FMT(gShortcutKeyCandidateLog, LogLevel::Info,
+                "  aPriority={}, result:", aPriority);
+    for (const auto& candidate : aCandidates) {
+      MOZ_LOG_FMT(gShortcutKeyCandidateLog, LogLevel::Info, "  {}", candidate);
+    }
   }
 }
 
@@ -2487,6 +2669,25 @@ void InternalAnimationEvent::AssignAnimationEventData(
   mElapsedTime = aEvent.mElapsedTime;
   mPseudoElement = aEvent.mPseudoElement;
   mAnimation = aEvent.mAnimation;
+}
+
+
+
+
+
+std::string format_as(const ShortcutKeyCandidate& aCandidate) {
+  return fmt::format(
+      "{{ mCharCode=0x{:08X}{}, mShiftState={}, "
+      "mSkipIfEarlierHandlerDisabled={} }}",
+      aCandidate.mCharCode,
+      aCandidate.mCharCode >= ' ' && IsInBMP(aCandidate.mCharCode)
+          ? fmt::format(
+                " (\"{}\")",
+                NS_ConvertUTF16toUTF8(
+                    nsAutoString(static_cast<char16_t>(aCandidate.mCharCode)))
+                    .get())
+          : "",
+      aCandidate.mShiftState, aCandidate.mSkipIfEarlierHandlerDisabled);
 }
 
 }  
