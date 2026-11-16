@@ -338,6 +338,11 @@ class WebRenderMaskData : public WebRenderUserData {
   nsStyleImageLayers mMaskStyle;
   gfx::MatrixScales mScale;
   bool mShouldHandleOpacity;
+  
+  
+  
+  nsTArray<uint8_t> mRecording;
+  gfx::IntSize mRecordingSize;
 };
 
 extern void DestroyWebRenderUserDataTable(WebRenderUserDataTable* aTable);
