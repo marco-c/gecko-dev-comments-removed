@@ -426,6 +426,9 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
   bool mIsCoalescedModulePreload;
 
   
+  bool mWasAbortedByNavigation;
+
+  
   
   nsresult mUnreportedPreloadError;
 

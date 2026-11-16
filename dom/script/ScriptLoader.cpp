@@ -3069,6 +3069,14 @@ void ScriptLoader::FireScriptAvailable(nsresult aResult,
                          aRequest->GetScriptLoadContext()->mLineNo);
   }
 
+  
+  
+  
+  if (!aRequest->GetScriptLoadContext()->mWasAbortedByNavigation) {
+    nsCOMPtr<Element> element = do_QueryInterface(scriptElement);
+    element->OwnerDoc()->UnblockRendering(*element);
+  }
+
   const bool isInlineClassicScript =
       aRequest->GetScriptLoadContext()->mIsInline &&
       !aRequest->IsModuleRequest();
@@ -4982,6 +4990,16 @@ nsresult ScriptLoader::OnStreamComplete(
 
   if (aRequest->IsCanceled()) {
     return NS_BINDING_ABORTED;
+  }
+
+  
+  
+  if (aChannelStatus == NS_BINDING_ABORTED && aChannel) {
+    nsAutoCString reason;
+    aChannel->GetCanceledReason(reason);
+    if (reason.EqualsLiteral("navigation")) {
+      aRequest->GetScriptLoadContext()->mWasAbortedByNavigation = true;
+    }
   }
 
   nsresult rv = VerifySRI(aRequest, aChannel, aSRIStatus, aSRIDataVerifier);
