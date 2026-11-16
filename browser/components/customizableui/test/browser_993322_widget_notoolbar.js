@@ -56,4 +56,7 @@ add_task(async function () {
   CustomizableUI.unregisterArea(TOOLBARID, true);
   toolbar.remove();
   gAddedToolbars.clear();
+  
+  
+  CustomizableUI.getTestOnlyInternalProp("gSeenWidgets").delete(BUTTONID);
 });
