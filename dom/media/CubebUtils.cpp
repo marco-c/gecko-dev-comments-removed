@@ -802,7 +802,6 @@ static const char* gInitCallbackPrefs[] = {
     PREF_CUBEB_SANDBOX,
     PREF_AUDIOIPC_STACK_SIZE,
     PREF_AUDIOIPC_SHM_AREA_SIZE,
-    nullptr,
 };
 
 static const char* gCallbackPrefs[] = {
@@ -811,7 +810,6 @@ static const char* gCallbackPrefs[] = {
     
     
     PREF_CUBEB_LOGGING_LEVEL,
-    nullptr,
 };
 
 void InitLibrary() {

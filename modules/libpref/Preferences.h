@@ -14,6 +14,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/Span.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/dom/RemoteType.h"
 #include "mozilla/ipc/SharedMemoryHandle.h"
@@ -335,36 +336,33 @@ class Preferences final : public nsIPrefService,
   
   
   
-  
-  
-  
   template <typename T = void>
   static nsresult RegisterCallbacks(PrefChangedFunc aCallback,
-                                    const char* const* aPrefs,
+                                    Span<const char* const> aPrefs,
                                     T* aClosure = nullptr) {
     return RegisterCallbacks(aCallback, aPrefs, static_cast<void*>(aClosure),
                              false);
   }
   static nsresult RegisterCallbacksAndCall(PrefChangedFunc aCallback,
-                                           const char* const* aPrefs,
+                                           Span<const char* const> aPrefs,
                                            void* aClosure = nullptr);
   template <typename T = void>
   static nsresult UnregisterCallbacks(PrefChangedFunc aCallback,
-                                      const char* const* aPrefs,
+                                      Span<const char* const> aPrefs,
                                       T* aClosure = nullptr) {
     return UnregisterCallbacks(aCallback, aPrefs, static_cast<void*>(aClosure),
                                false);
   }
   template <typename T = void>
   static nsresult RegisterPrefixCallbacks(PrefChangedFunc aCallback,
-                                          const char* const* aPrefs,
+                                          Span<const char* const> aPrefs,
                                           T* aClosure = nullptr) {
     return RegisterCallbacks(aCallback, aPrefs, static_cast<void*>(aClosure),
                              true);
   }
   template <typename T = void>
   static nsresult UnregisterPrefixCallbacks(PrefChangedFunc aCallback,
-                                            const char* const* aPrefs,
+                                            Span<const char* const> aPrefs,
                                             T* aClosure = nullptr) {
     return UnregisterCallbacks(aCallback, aPrefs, static_cast<void*>(aClosure),
                                true);
@@ -493,11 +491,11 @@ class Preferences final : public nsIPrefService,
                                      const nsACString& aPref, void* aClosure,
                                      bool aPrefixMatch);
   static nsresult RegisterCallbacks(PrefChangedFunc aCallback,
-                                    const char* const* aPrefs, void* aClosure,
-                                    bool aPrefixMatch);
+                                    Span<const char* const> aPrefs,
+                                    void* aClosure, bool aPrefixMatch);
   static nsresult UnregisterCallbacks(PrefChangedFunc aCallback,
-                                      const char* const* aPrefs, void* aClosure,
-                                      bool aPrefixMatch);
+                                      Span<const char* const> aPrefs,
+                                      void* aClosure, bool aPrefixMatch);
 
   static uint32_t UnregisterCallbacksForBranch(nsPrefBranch* aBranch);
 
