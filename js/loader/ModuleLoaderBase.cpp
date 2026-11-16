@@ -219,7 +219,7 @@ bool ModuleLoaderBase::HostLoadImportedModule(
     
     
     
-    loader->AddToResolvedModuleSet(std::move(record), aHostDefined);
+    loader->AddToResolvedModuleSet(std::move(record), fetchInfo);
   }
 
   ModuleType moduleType = GetModuleRequestType(aCx, aModuleRequest);
@@ -430,7 +430,7 @@ JSString* ModuleLoaderBase::ImportMetaResolveImpl(
     if (ImportMap::IsMultipleImportMapsSupported()) {
       
       
-      loader->AddToResolvedModuleSet(std::move(record));
+      loader->AddToResolvedModuleSet(std::move(record), fetchInfo);
     }
 
     nsAutoCString url;
@@ -1179,35 +1179,14 @@ static void AddToResolvedSet(ResolvedModuleSet* aSet,
   MOZ_ALWAYS_TRUE(aSet->add(ptr, std::move(aRecord)));
 }
 
-void ModuleLoaderBase::AddToPreloadedResolvedSet(
-    ModuleLoadRequest* aRootRequest,
-    UniquePtr<SpecifierResolutionRecord> aRecord) {
-  MOZ_ASSERT(aRootRequest);
-  MOZ_ASSERT(aRootRequest->mModuleScript);
-
-  ResolvedModuleSet* set =
-      aRootRequest->mModuleScript->FetchInfo()->GetPreloadedResolvedSet();
-  MOZ_ASSERT(set);
-  AddToResolvedSet(set, std::move(aRecord));
-}
-
 void ModuleLoaderBase::AddToGlobalResolvedSet(
     UniquePtr<SpecifierResolutionRecord> aRecord) {
   AddToResolvedSet(GetResolvedModuleSet(), std::move(aRecord));
 }
 
-static ModuleLoadRequest* GetPreloadRootModuleRequest(
-    JS::Handle<JS::Value> aHostDefined) {
-  MOZ_ASSERT(!aHostDefined.isUndefined());
-  ModuleLoadRequest* parent =
-      static_cast<ModuleLoadRequest*>(aHostDefined.toPrivate());
-  MOZ_ASSERT(parent);
-  return parent->GetRootModule();
-}
-
 void ModuleLoaderBase::AddToResolvedModuleSet(
     UniquePtr<SpecifierResolutionRecord> aRecord,
-    Handle<Value> aHostDefined ) {
+    ScriptFetchInfo* aReferrerFetchInfo) {
   
   if (!mLoader->IsImportMapSupported()) {
     return;
@@ -1216,15 +1195,10 @@ void ModuleLoaderBase::AddToResolvedModuleSet(
   
   nsCOMPtr<nsIURI> _ = aRecord->TakeResult();
 
-  
-  
-  
-  if (!aHostDefined.isUndefined()) {
-    RefPtr<ModuleLoadRequest> root = GetPreloadRootModuleRequest(aHostDefined);
-    if (root->mLoadContext->IsPreload()) {
-      AddToPreloadedResolvedSet(root, std::move(aRecord));
-      return;
-    }
+  if (aReferrerFetchInfo && aReferrerFetchInfo->IsForModulePreload()) {
+    AddToResolvedSet(aReferrerFetchInfo->GetPreloadedResolvedSet(),
+                     std::move(aRecord));
+    return;
   }
 
   AddToGlobalResolvedSet(std::move(aRecord));
