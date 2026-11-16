@@ -11,7 +11,8 @@ dbg.onDebuggerStatement = function (frame) {
 
 g.eval('var arr = [];')
 for (i = 0; i < N; i++)  
-    g.eval("arr.push(function () { debugger }); arr[arr.length - 1]();");
+    
+    g.eval("arr.push(function () { debugger }); arr[arr.length - 1]();" + i);
 
 gc();
 
