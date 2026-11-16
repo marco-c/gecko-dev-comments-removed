@@ -28,6 +28,7 @@ import mozilla.components.browser.engine.gecko.permission.GeckoPermissionRequest
 import mozilla.components.browser.engine.gecko.prompt.GeckoPromptDelegate
 import mozilla.components.browser.engine.gecko.translate.GeckoTranslateSessionDelegate
 import mozilla.components.browser.engine.gecko.translate.GeckoTranslationUtils.intoTranslationError
+import mozilla.components.browser.engine.gecko.util.makePdfDownloadFilename
 import mozilla.components.browser.engine.gecko.window.GeckoWindowRequest
 import mozilla.components.concept.engine.DownloadDelegate
 import mozilla.components.concept.engine.EngineSession
@@ -68,6 +69,7 @@ import mozilla.components.support.ktx.kotlin.isEmail
 import mozilla.components.support.ktx.kotlin.isExtensionUrl
 import mozilla.components.support.ktx.kotlin.isGeoLocation
 import mozilla.components.support.ktx.kotlin.isPhone
+import mozilla.components.support.ktx.kotlin.sanitizeFileName
 import mozilla.components.support.ktx.kotlin.tryGetHostFromUrl
 import mozilla.components.support.utils.CertificateUtils
 import mozilla.components.support.utils.DownloadUtils
@@ -88,6 +90,7 @@ import org.mozilla.geckoview.GeckoSession.NavigationDelegate
 import org.mozilla.geckoview.GeckoSession.PermissionDelegate.ContentPermission
 import org.mozilla.geckoview.GeckoSessionSettings
 import org.mozilla.geckoview.PageExtractionController
+import org.mozilla.geckoview.PictureInPictureController
 import org.mozilla.geckoview.TranslationsController.SessionTranslation as GeckoViewTranslateSession
 import org.mozilla.geckoview.WebRequestError
 import org.mozilla.geckoview.WebResponse
@@ -98,7 +101,7 @@ class GeckoEngineSession(
     private val runtime: GeckoRuntime,
     private val privateMode: Boolean = false,
     private val defaultSettings: Settings? = null,
-    contextId: String? = null,
+    private val contextId: String? = null,
     private val geckoSessionProvider: () -> GeckoSession = {
         val settings = GeckoSessionSettings.Builder().usePrivateMode(privateMode).contextId(contextId).build()
         GeckoSession(settings)
@@ -253,14 +256,15 @@ class GeckoEngineSession(
 
                     val url = webResponse.uri
                     val contentType = "application/pdf"
-                    val disposition = currentTitle?.let { makePdfContentDisposition(it) }
                     // A successful status code suffices because the PDF bytes are either generated
                     // for the page or directly pulled from the PDF.
                     val responseStatus = RESPONSE_CODE_SUCCESS
                     // We do not know the size at this point; send 0 so consumers do not display it.
                     val contentLength = 0L
-                    // NB: If the title is an empty string, there is a chance the PDF will not have a name.
-                    // See https://github.com/mozilla-mobile/android-components/issues/12276
+                    // Update the content disposition to ensure we have proper file naming for both viewed or generated
+                    // PDFs
+                    val disposition = contentDispositionForPdf(webResponse)
+                    // Ensures the name is properly sanitized for the filesystem
                     val fileName =
                         settings.downloadDelegate?.guessFileName(
                             contentDisposition = disposition,
@@ -312,12 +316,24 @@ class GeckoEngineSession(
         pdfToDownload()
             .then(
                 { webResponse ->
-                    if (webResponse?.body == null) {
+                    val body = webResponse?.body
+                    if (body == null) {
                         onException(IllegalStateException("No PDF available"))
                         return@then GeckoResult<Void>()
                     }
 
-                    onResult(webResponse.toResponse())
+                    onResult(
+                        Response(
+                            url = webResponse.uri,
+                            status = RESPONSE_CODE_SUCCESS,
+                            headers =
+                                MutableHeaders(
+                                    CONTENT_TYPE to "application/pdf",
+                                    CONTENT_DISPOSITION to contentDispositionForPdf(webResponse),
+                                ),
+                            body = Response.Body(body),
+                        )
+                    )
                     GeckoResult()
                 },
                 { throwable ->
@@ -325,6 +341,25 @@ class GeckoEngineSession(
                     GeckoResult()
                 },
             )
+    }
+
+    /**
+     * Ensures a proper Content-Disposition is available to guarantee PDFs have reasonable names for downloading or
+     * sharing.
+     *
+     * @param webResponse The PDF response. May come either from the PDF viewer or from generating a PDF from browser
+     *   content.
+     * @return The Content-Disposition to download or share the PDF with.
+     */
+    private fun contentDispositionForPdf(webResponse: WebResponse): String {
+        val pdfFilename =
+            DownloadUtils.extractFileNameFromUrlOrNull(
+                    contentDisposition = webResponse.headers[CONTENT_DISPOSITION],
+                    url = null,
+                )
+                ?.sanitizeFileName()
+        // Ensures content disposition is set up properly for downloading a PDF
+        return makePdfContentDisposition(makePdfDownloadFilename(filename = pdfFilename, title = currentTitle))
     }
 
     /**
@@ -608,6 +643,51 @@ class GeckoEngineSession(
     /** See [EngineSession.onPipModeChanged]. */
     override fun onPipModeChanged(enabled: Boolean) {
         geckoSession.compositorController.onPipModeChanged(enabled)
+    }
+
+    /** See [EngineSession.requestPictureInPicture]. */
+    @OptIn(ExperimentalGeckoViewApi::class)
+    override fun requestPictureInPicture() {
+        geckoSession.sessionPictureInPicture
+            .request()
+            .accept(
+                { notifyObservers { onPictureInPictureRequestFinished() } },
+                { throwable ->
+                    logger.warn("Picture-in-picture request failed", throwable)
+                    notifyObservers { onPictureInPictureRequestFinished() }
+                },
+            )
+    }
+
+    /** Creates a new session which clones a video of this session into a picture-in-picture window. */
+    @OptIn(ExperimentalGeckoViewApi::class)
+    private fun createPictureInPictureSession(placementToken: String) =
+        GeckoEngineSession(
+                runtime = runtime,
+                privateMode = privateMode,
+                defaultSettings = defaultSettings,
+                contextId = contextId,
+                geckoSessionProvider = {
+                    val settings =
+                        GeckoSessionSettings.Builder()
+                            .usePrivateMode(privateMode)
+                            .contextId(contextId)
+                            .pictureInPictureToken(placementToken)
+                            .build()
+                    GeckoSession(settings)
+                },
+            )
+            .also { it.loadUrl(ABOUT_BLANK) }
+
+    /** See [EngineSession.exitPictureInPicture]. */
+    @OptIn(ExperimentalGeckoViewApi::class)
+    override fun exitPictureInPicture() {
+        geckoSession.sessionPictureInPicture
+            .exit()
+            .accept(
+                {},
+                { throwable -> logger.warn("Picture-in-picture exit failed", throwable) },
+            )
     }
 
     /** See [EngineSession.checkForFormData]. */
@@ -1745,6 +1825,23 @@ class GeckoEngineSession(
             }
         }
 
+    @OptIn(ExperimentalGeckoViewApi::class)
+    private fun createPictureInPictureDelegate() =
+        object : PictureInPictureController.SessionPictureInPicture.Delegate {
+            override fun onEnterPictureInPicture(session: GeckoSession, placementToken: String) {
+                if (placementToken.isEmpty()) {
+                    logger.warn("Ignoring picture-in-picture request without a placement token")
+                    return
+                }
+                val pictureInPictureSession = createPictureInPictureSession(placementToken)
+                notifyObservers { onEnterPictureInPicture(pictureInPictureSession) }
+            }
+
+            override fun onExitPictureInPicture(session: GeckoSession) {
+                notifyObservers { onExitPictureInPicture() }
+            }
+        }
+
     /**
      * Handles long click events.
      *
@@ -1772,7 +1869,7 @@ class GeckoEngineSession(
                 }
             GeckoSession.ContentDelegate.ContextElement.TYPE_IMAGE -> {
                 when {
-                    elementSrc != null && uri != null -> HitResult.IMAGE_SRC(elementSrc, uri)
+                    elementSrc != null && uri != null -> HitResult.IMAGE_SRC(elementSrc, uri, title)
                     elementSrc != null -> HitResult.IMAGE(elementSrc, title)
                     else -> HitResult.UNKNOWN("")
                 }
@@ -1803,6 +1900,7 @@ class GeckoEngineSession(
             })
     }
 
+    @OptIn(ExperimentalGeckoViewApi::class)
     private fun createGeckoSession(shouldOpen: Boolean = true) {
         this.geckoSession = geckoSessionProvider()
 
@@ -1835,6 +1933,7 @@ class GeckoEngineSession(
         geckoSession.mediaSessionDelegate = GeckoMediaSessionDelegate(this)
         geckoSession.scrollDelegate = createScrollDelegate()
         geckoSession.translationsSessionDelegate = GeckoTranslateSessionDelegate(this)
+        geckoSession.pictureInPictureDelegate = createPictureInPictureDelegate()
     }
 
     companion object {
