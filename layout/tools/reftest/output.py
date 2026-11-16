@@ -23,7 +23,9 @@ class ReftestFormatter(TbplFormatter):
         if "component" in data and data["component"] == "mozleak":
             
             
-            return "%s\n" % data["message"]
+            if "message" in data:
+                return "%s\n" % data["message"]
+            return TbplFormatter.__call__(self, data)
 
         formatted = TbplFormatter.__call__(self, data)
 
