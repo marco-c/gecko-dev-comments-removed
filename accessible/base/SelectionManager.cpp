@@ -116,6 +116,15 @@ void SelectionManager::ProcessTextSelChangeEvent(AccEvent* aEvent) {
       caretCntr,
       "No text container for focus while there's one for common ancestor?!");
   if (!caretCntr) return;
+  if (caretCntr->IsDefunct()) {
+    
+    
+    
+    
+    
+    MOZ_ASSERT_UNREACHABLE("Text container for caret is defunct");
+    return;
+  }
 
   Selection* selection = caretCntr->DOMSelection();
 
