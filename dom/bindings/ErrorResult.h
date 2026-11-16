@@ -228,7 +228,13 @@ class TErrorResult {
   
   
   
-  void SuppressException();
+  void SuppressException() {
+    WouldReportJSException();
+    MaybeClearUnionData();
+    
+    
+    mResult = NS_OK;
+  }
 
   
   
@@ -431,7 +437,7 @@ class TErrorResult {
   
   
   void operator=(nsresult rv) {
-    ClearUnionData();
+    MaybeClearUnionData();
     AssignErrorCode(rv);
   }
 
@@ -573,6 +579,17 @@ class TErrorResult {
   
   
   void ClearUnionData();
+
+  
+  
+  MOZ_ALWAYS_INLINE void MaybeClearUnionData() {
+    AssertInOwningThread();
+    if (Failed()) {
+      ClearUnionData();
+    } else {
+      MOZ_ASSERT(mUnionState == HasNothing);
+    }
+  }
 
   
   

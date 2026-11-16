@@ -646,16 +646,6 @@ void TErrorResult<CleanupPolicy>::CloneTo(TErrorResult& aRv) const {
 }
 
 template <typename CleanupPolicy>
-void TErrorResult<CleanupPolicy>::SuppressException() {
-  AssertInOwningThread();
-  WouldReportJSException();
-  ClearUnionData();
-  
-  
-  mResult = NS_OK;
-}
-
-template <typename CleanupPolicy>
 void TErrorResult<CleanupPolicy>::SetPendingException(JSContext* cx,
                                                       const char* context) {
   AssertInOwningThread();
