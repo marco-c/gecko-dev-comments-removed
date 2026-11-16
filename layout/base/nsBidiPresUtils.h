@@ -326,6 +326,17 @@ class nsBidiPresUtils {
 
 
 
+
+
+
+  static mozilla::intl::BidiEmbeddingLevel GetLineBaseLevel(
+      const nsIFrame* aFirstFrameOnLine);
+
+  
+
+
+
+
   static mozilla::intl::BidiDirection ParagraphDirection(
       const nsIFrame* aFrame) {
     return GetFrameBaseLevel(aFrame).Direction();
