@@ -249,6 +249,10 @@ enum class NodeSelectorFlags : uint32_t {
   RelativeSelectorSearchDirectionAncestorSibling =
       RelativeSelectorSearchDirectionSibling |
       RelativeSelectorSearchDirectionAncestor,
+
+  
+  
+  ContainerQueryWithUnparsedAttr = 1 << 11,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(NodeSelectorFlags);
