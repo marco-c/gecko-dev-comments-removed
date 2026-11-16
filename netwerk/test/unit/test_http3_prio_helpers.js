@@ -25,7 +25,7 @@ let Http3Listener = function (
 
 
 function parse_priority_response_header(priority) {
-  const priority_array = priority.split(",");
+  const priority_array = priority.split(",").map(element => element.trim());
 
   
   const urgency = priority_array.find(element => element.includes("u="));
