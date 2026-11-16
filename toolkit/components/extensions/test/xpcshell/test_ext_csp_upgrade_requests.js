@@ -23,6 +23,10 @@ add_task(async function test_csp_upgrade() {
       ["blocking"]
     );
 
+    
+    
+    await browser.webRequest.handlerBehaviorChanged();
+
     await browser.test.assertRejects(
       fetch("http://example.com/"),
       "NetworkError when attempting to fetch resource.",
