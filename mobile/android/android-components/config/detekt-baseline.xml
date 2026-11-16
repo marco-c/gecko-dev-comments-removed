@@ -35,6 +35,8 @@
     <ID>ClassAcronymCasing:URLRenderer.kt$URLRenderer</ID>
     <ID>ClassAcronymCasing:URLStringUtils.kt$URLStringUtils</ID>
     <ID>ClassAcronymCasing:WebURLFinder.kt$WebURLFinder</ID>
+    <ID>DisplayedTextCasing:IconsScreen.kt$uppercase()</ID>
+    <ID>DisplayedTextCasing:StatusBadge.kt$uppercase()</ID>
     <ID>ForbiddenSuppress:AMOAddonsProvider.kt$AMOAddonsProvider$@Suppress("CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:AMOAddonsProvider.kt$AMOAddonsProvider$@Suppress("NestedBlockDepth", "CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:AbstractFetchDownloadService.kt$AbstractFetchDownloadService.&lt;no name provided&gt;$@Suppress("LongMethod")</ID>
@@ -106,6 +108,7 @@
     <ID>ForbiddenSuppress:LoginPickerView.kt$@Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:MainActivity.kt$MainActivity$@Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:ManifestDatabase.kt$ManifestDatabase.Companion$@Suppress("MagicNumber")</ID>
+    <ID>ForbiddenSuppress:Menu.kt$@Suppress("CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:MozillaSocorroService.kt$MozillaSocorroService$@Suppress("LongParameterList", "LongMethod", "CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:NestedGeckoView.kt$NestedGeckoView$@Suppress("CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:Origin.kt$@Suppress("LongMethod")</ID>
