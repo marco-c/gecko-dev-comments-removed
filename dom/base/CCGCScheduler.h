@@ -47,6 +47,9 @@ extern const TimeDuration kIdleICCSliceBudget;
 extern const TimeDuration kMaxICCDuration;
 
 
+extern const TimeDuration kMinSliceBudget;
+
+
 
 extern const TimeDuration kCCForced;
 constexpr uint32_t kCCForcedPurpleLimit = 10;
