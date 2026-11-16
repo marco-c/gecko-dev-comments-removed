@@ -1,8 +1,10 @@
 
 
 
-use heck::{ToLowerCamelCase, ToShoutySnakeCase, ToUpperCamelCase};
+
 use std::fmt::Display;
+
+use heck::{ToLowerCamelCase, ToShoutySnakeCase, ToUpperCamelCase};
 
 
 pub fn class_name(nm: &dyn Display) -> String {

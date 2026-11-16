@@ -1,13 +1,14 @@
 
 
 
-use askama::Template;
+
 use std::collections::HashSet;
 
-use crate::{
-    backends::{CodeDeclaration, CodeOracle, CodeType, TypeIdentifier},
-    intermediate_representation::{FeatureDef, FeatureManifest, TypeFinder},
-};
+use askama::Template;
+
+use crate::backends::{CodeDeclaration, CodeOracle, CodeType, TypeIdentifier};
+use crate::intermediate_representation::{FeatureDef, FeatureManifest, TypeFinder};
+
 mod bundled;
 mod common;
 mod enum_;

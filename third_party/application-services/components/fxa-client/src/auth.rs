@@ -46,14 +46,6 @@ impl FirefoxAccount {
     
     
     
-    pub fn get_auth_state(&self) -> FxaRustAuthState {
-        self.internal.lock().get_auth_state()
-    }
-
-    
-    
-    
-    
     
     
     
@@ -146,21 +138,6 @@ pub struct AuthorizationInfo {
     pub active: bool,
 }
 
-#[derive(uniffi::Enum, Clone, Copy, Debug, PartialEq, Eq)]
-
-
-
-
-
-
-
-
-pub enum FxaRustAuthState {
-    Disconnected,
-    Connected,
-    AuthIssues,
-}
-
 #[derive(uniffi::Enum, Clone, Debug, PartialEq, Eq)]
 
 
@@ -172,25 +149,16 @@ pub enum FxaState {
     Disconnected,
     
     
+    
     Authenticating {
         oauth_url: String,
-        initial_state: FxaRustAuthState,
+        initial_state: Box<FxaState>,
     },
     
     Connected,
     
     
     AuthIssues,
-}
-
-impl From<FxaRustAuthState> for FxaState {
-    fn from(value: FxaRustAuthState) -> Self {
-        match value {
-            FxaRustAuthState::Connected => FxaState::Connected,
-            FxaRustAuthState::Disconnected => FxaState::Disconnected,
-            FxaRustAuthState::AuthIssues => FxaState::AuthIssues,
-        }
-    }
 }
 
 #[derive(uniffi::Enum, Clone, Debug, PartialEq, Eq)]

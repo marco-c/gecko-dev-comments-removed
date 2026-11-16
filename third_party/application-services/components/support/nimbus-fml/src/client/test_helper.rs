@@ -2,12 +2,10 @@
 
 
 
-use crate::{
-    editing::{CursorPosition, CursorSpan},
-    error::Result,
-    intermediate_representation::FeatureManifest,
-    FmlClient,
-};
+use crate::FmlClient;
+use crate::editing::{CursorPosition, CursorSpan};
+use crate::error::Result;
+use crate::intermediate_representation::FeatureManifest;
 
 pub(crate) fn client(path: &str, channel: &str) -> Result<FmlClient> {
     let root = env!("CARGO_MANIFEST_DIR");

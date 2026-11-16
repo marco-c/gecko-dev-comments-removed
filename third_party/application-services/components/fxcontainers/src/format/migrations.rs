@@ -92,3 +92,10 @@ pub(crate) fn migrate_7_to_8(data: &mut ContainersData) {
 
     data.version = 8;
 }
+
+
+
+
+pub(crate) fn migrate_8_to_9(data: &mut ContainersData) {
+    data.version = 9;
+}

@@ -9,8 +9,8 @@
 
 
 use crate::{
-    internal::FirefoxAccount, DeviceCapability, DeviceType, Error, FxaError, FxaRustAuthState,
-    FxaState, LocalDevice, Result,
+    internal::FirefoxAccount, DeviceCapability, DeviceType, Error, FxaError, FxaState, LocalDevice,
+    Result,
 };
 use error_support::GetErrorHandling;
 
@@ -25,22 +25,6 @@ pub enum StateMachineErr {
     Handled { cause: Box<Error>, target: FxaState },
     
     Fatal(Box<Error>),
-}
-
-impl StateMachineErr {
-    
-    
-    pub fn new(cause: Error, target_if_handled: FxaState) -> Self {
-        match cause {
-            Error::StateMachineLogicError(_) | Error::InvalidStateTransition(_) => {
-                Self::Fatal(Box::new(cause))
-            }
-            other => Self::Handled {
-                cause: Box::new(other),
-                target: target_if_handled,
-            },
-        }
-    }
 }
 
 
@@ -171,8 +155,8 @@ impl<'a> RetryingAccount<'a> {
         })
     }
 
-    pub fn get_auth_state(&mut self) -> FxaRustAuthState {
-        self.inner.get_auth_state()
+    pub fn get_initial_state(&mut self) -> FxaState {
+        self.inner.get_initial_state()
     }
 
     pub fn disconnect(&mut self) {

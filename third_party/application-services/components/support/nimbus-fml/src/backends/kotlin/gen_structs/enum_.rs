@@ -6,9 +6,8 @@ use std::fmt::Display;
 
 use askama::Template;
 
-use super::common;
-use super::common::code_type;
-use super::filters;
+use crate::backends::kotlin::gen_structs::common::{self, code_type};
+use crate::backends::kotlin::gen_structs::filters;
 use crate::backends::{CodeDeclaration, CodeOracle, CodeType, LiteralRenderer, VariablesType};
 use crate::intermediate_representation::{EnumDef, FeatureManifest, Literal};
 
