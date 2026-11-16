@@ -25311,6 +25311,8 @@ interface nsIGIOService extends nsISupports {
   
   findAppFromCommand(cmd: string): nsIGIOMimeApp;
   
+  createAppFromExecutable(executable: nsIFile, appName: string, passURI: boolean): nsIGIOMimeApp;
+  
   getDescriptionForMimeType(mimeType: string): string;
   
   readonly isRunningUnderFlatpak: boolean;

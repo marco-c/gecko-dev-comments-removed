@@ -21,6 +21,10 @@
 #include "mozilla/StaticPrefs_browser.h"
 #include "xpcpublic.h"
 #include "nsIGIOService.h"
+#ifdef MOZ_WIDGET_GTK
+#  include "nsNetUtil.h"
+#  include "nsServiceManagerUtils.h"
+#endif
 
 static bool sInitializedOurData = false;
 mozilla::StaticRefPtr<nsIFile> sOurAppFile;
@@ -341,7 +345,7 @@ nsMIMEInfoBase::LaunchWithFile(nsIFile* aFile) {
     rv = localHandler->GetExecutable(getter_AddRefs(executable));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    return LaunchWithIProcess(executable, aFile->NativePath());
+    return LaunchAppWithFile(executable, aFile);
   }
 
   return NS_ERROR_INVALID_ARG;
@@ -478,6 +482,27 @@ nsresult nsMIMEInfoBase::LaunchWithIProcess(nsIFile* aApp, const int aArgc,
 }
 
 
+nsresult nsMIMEInfoBase::LaunchAppWithFile(nsIFile* aApp, nsIFile* aFile) {
+#ifdef MOZ_WIDGET_GTK
+  
+  
+  nsCOMPtr<nsIGIOService> gio = do_GetService(NS_GIOSERVICE_CONTRACTID);
+  nsCOMPtr<nsIURI> uri;
+  if (gio && NS_SUCCEEDED(NS_NewFileURI(getter_AddRefs(uri), aFile))) {
+    nsAutoString name;
+    aApp->GetLeafName(name);
+    nsCOMPtr<nsIGIOMimeApp> app;
+    if (NS_SUCCEEDED(gio->CreateAppFromExecutable(
+            aApp, NS_ConvertUTF16toUTF8(name), false, getter_AddRefs(app)))) {
+      return app->LaunchWithURI(uri, nullptr);
+    }
+  }
+#endif
+
+  return LaunchWithIProcess(aApp, aFile->NativePath());
+}
+
+
 NS_IMETHODIMP
 nsMIMEInfoImpl::GetDefaultDescription(nsAString& aDefaultDescription) {
   if (mDefaultAppDescription.IsEmpty()) {
@@ -538,7 +563,7 @@ nsresult nsMIMEInfoImpl::LaunchDefaultWithFile(nsIFile* aFile) {
     return NS_ERROR_FILE_NOT_FOUND;
   }
 
-  return LaunchWithIProcess(defaultApp, aFile->NativePath());
+  return LaunchAppWithFile(defaultApp, aFile);
 }
 
 NS_IMETHODIMP

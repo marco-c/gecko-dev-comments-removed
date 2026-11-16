@@ -141,6 +141,16 @@ class nsMIMEInfoBase : public nsIMIMEInfo {
 
 
 
+
+
+  static nsresult LaunchAppWithFile(nsIFile* aApp, nsIFile* aFile);
+
+  
+
+
+
+
+
   static nsresult GetLocalFileFromURI(nsIURI* aURI, nsIFile** aFile);
 
   
