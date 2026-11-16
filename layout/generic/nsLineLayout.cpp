@@ -1266,7 +1266,7 @@ bool nsLineLayout::CanPlaceFrame(PerFrameData* pfd, bool aNotSafeToBreak,
 
   
   
-  if (0 == startMargin + pfd->mBounds.ISize(lineWM) + endMargin) {
+  if (0 == pfd->mBounds.ISize(lineWM) && 0 == startMargin + endMargin) {
     
 #ifdef NOISY_CAN_PLACE_FRAME
     printf("   ==> empty frame fits\n");
