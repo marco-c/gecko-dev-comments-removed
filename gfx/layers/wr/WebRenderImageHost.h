@@ -79,6 +79,9 @@ class WebRenderImageHost : public CompositableHost, public ImageComposite {
 
   void SetCurrentTextureHost(TextureHost* aTexture);
 
+  
+  void ClearPendingRemoteTextures();
+
   std::unordered_map<uint64_t, RefPtr<WebRenderBridgeParentRef>> mWrBridges;
 
   AsyncImagePipelineManager* mCurrentAsyncImageManager;
@@ -87,6 +90,10 @@ class WebRenderImageHost : public CompositableHost, public ImageComposite {
 
   std::deque<CompositableTextureHostRef> mPendingRemoteTextureWrappers;
   bool mWaitingReadyCallback = false;
+  
+  uint64_t mReadyCallbackGeneration = 0;
+  RemoteTextureOwnerId mReadyCallbackOwnerId;
+  base::ProcessId mReadyCallbackForPid = 0;
   bool mWaitForRemoteTextureOwner = true;
 
   RefPtr<wr::RenderTextureHostUsageInfo> mRenderTextureHostUsageInfo;
