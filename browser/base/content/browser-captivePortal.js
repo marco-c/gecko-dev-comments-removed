@@ -24,6 +24,10 @@ var CaptivePortalWatcher = {
 
   
   
+  _recheckObserver: null,
+
+  
+  
   _previousCaptivePortalTab: null,
 
   
@@ -79,6 +83,7 @@ var CaptivePortalWatcher = {
     Services.obs.removeObserver(this, "captive-portal-login-success");
 
     this._cancelDelayedCaptivePortal();
+    this._removeRecheckObserver();
   },
 
   delayedStartup() {
@@ -207,16 +212,17 @@ var CaptivePortalWatcher = {
 
     Services.obs.notifyObservers(null, "delayed-captive-portal-handled");
 
+    this._removeRecheckObserver();
+
     
     
     this._cps.recheckCaptivePortal();
     this._waitingForRecheck = true;
     let requestTime = Date.now();
 
-    let observer = () => {
+    this._recheckObserver = () => {
       let time = Date.now() - requestTime;
-      Services.obs.removeObserver(observer, "captive-portal-check-complete");
-      this._waitingForRecheck = false;
+      this._removeRecheckObserver();
       if (this._cps.state != this._cps.LOCKED_PORTAL) {
         
         return;
@@ -229,7 +235,22 @@ var CaptivePortalWatcher = {
         this.ensureCaptivePortalTab();
       }
     };
-    Services.obs.addObserver(observer, "captive-portal-check-complete");
+    Services.obs.addObserver(
+      this._recheckObserver,
+      "captive-portal-check-complete"
+    );
+  },
+
+  _removeRecheckObserver() {
+    if (!this._recheckObserver) {
+      return;
+    }
+    Services.obs.removeObserver(
+      this._recheckObserver,
+      "captive-portal-check-complete"
+    );
+    this._recheckObserver = null;
+    this._waitingForRecheck = false;
   },
 
   _captivePortalGone(aSuccess) {
