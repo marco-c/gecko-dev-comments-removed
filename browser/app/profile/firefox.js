@@ -2259,7 +2259,7 @@ pref("browser.newtabpage.activity-stream.hideTopSitesWithSearchParam", "mfadid=a
 pref("browser.newtabpage.activity-stream.selfLoading.enabled", true);
 
 
-pref("browser.newtabpage.activity-stream.nova.enabled", true);
+pref("browser.newtabpage.activity-stream.nova.enabled", true, locked);
 
 
 pref("browser.newtabpage.resource-mapping.log", false);
