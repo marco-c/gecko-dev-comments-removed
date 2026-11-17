@@ -577,6 +577,7 @@ impl Renderer {
         };
 
         
+        
         let mut largest_sdr_yuv_tile = None;
         if self.limit_sdr_yuv_external_composites
             && layer_mode == LayerMode::Swapchains
@@ -595,7 +596,11 @@ impl Renderer {
                 if surface.external_image_id.is_none()
                     || !matches!(
                         surface.color_data,
-                        ResolvedExternalSurfaceColorData::Yuv { channel_bit_depth: 8, .. }
+                        ResolvedExternalSurfaceColorData::Yuv {
+                            channel_bit_depth: 8,
+                            is_drm_source: false,
+                            ..
+                        }
                     )
                 {
                     continue;
@@ -702,7 +707,11 @@ impl Renderer {
                 if self.limit_sdr_yuv_external_composites
                     && matches!(
                         surface.color_data,
-                        ResolvedExternalSurfaceColorData::Yuv { channel_bit_depth: 8, .. }
+                        ResolvedExternalSurfaceColorData::Yuv {
+                            channel_bit_depth: 8,
+                            is_drm_source: false,
+                            ..
+                        }
                     )
                     && largest_sdr_yuv_tile != Some(idx)
                 {
@@ -1287,20 +1296,30 @@ impl Renderer {
             
             let clear_color = content_clear_color.take().unwrap_or(ColorF::TRANSPARENT);
 
-            if layer_mode == LayerMode::Swapchains {
-                if let Some(PartialPresentMode::Single { dirty_rect }) = partial_present_mode {
-                    let device_rect = DeviceRect::from_size(device_size.to_f32());
-                    let clipped_dirty_rect = dirty_rect.intersection_unchecked(&device_rect);
-                    if clipped_dirty_rect.is_empty() {
-                        continue;
-                    }
-                }
-            }
-
             let dirty_rect_storage;
             let dirty_rects: &[DeviceIntRect] = match partial_present_mode {
                 Some(PartialPresentMode::Single { dirty_rect }) => {
-                    dirty_rect_storage = [dirty_rect.to_i32()];
+                    let dirty_rect = if layer_mode == LayerMode::Swapchains {
+                        let device_rect = DeviceRect::from_size(device_size.to_f32());
+                        let clipped_dirty_rect = dirty_rect.intersection_unchecked(&device_rect);
+                        if clipped_dirty_rect.is_empty() {
+                            continue;
+                        }
+
+                        let dirty_rect = clipped_dirty_rect.to_i32();
+                        
+                        
+                        
+                        if dirty_rect.is_empty() {
+                            continue;
+                        }
+                        dirty_rect
+                    } else {
+                        dirty_rect.to_i32()
+                    };
+
+                    
+                    dirty_rect_storage = [dirty_rect];
                     &dirty_rect_storage
                 }
                 None => &[],
