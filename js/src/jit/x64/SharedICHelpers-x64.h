@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_x64_SharedICHelpers_x64_h
 #define jit_x64_SharedICHelpers_x64_h
 
@@ -61,7 +59,7 @@ inline void EmitStubGuardFailure(MacroAssembler& masm) {
   masm.loadPtr(Address(ICStubReg, ICCacheIRStub::offsetOfNext()), ICStubReg);
 
   
-  masm.jmp(Operand(ICStubReg, ICStub::offsetOfStubCode()));
+  masm.tailJump(Address(ICStubReg, ICStub::offsetOfStubCode()));
 }
 
 }  

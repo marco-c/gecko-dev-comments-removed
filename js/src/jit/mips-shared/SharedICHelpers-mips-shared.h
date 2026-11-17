@@ -77,7 +77,7 @@ inline void EmitStubGuardFailure(MacroAssembler& masm) {
 
   
   MOZ_ASSERT(ICTailCallReg == ra);
-  masm.jump(Address(ICStubReg, ICStub::offsetOfStubCode()));
+  masm.tailJump(Address(ICStubReg, ICStub::offsetOfStubCode()));
 }
 
 }  

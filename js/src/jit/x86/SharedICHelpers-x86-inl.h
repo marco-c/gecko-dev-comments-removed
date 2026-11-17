@@ -2,13 +2,12 @@
 
 
 
-
-
 #ifndef jit_x86_SharedICHelpers_x86_inl_h
 #define jit_x86_SharedICHelpers_x86_inl_h
 
-#include "jit/BaselineFrame.h"
 #include "jit/SharedICHelpers.h"
+
+#include "jit/BaselineFrame.h"
 
 #include "jit/MacroAssembler-inl.h"
 
@@ -31,7 +30,7 @@ inline void EmitBaselineTailCallVM(TrampolinePtr target, MacroAssembler& masm,
   
   masm.push(FrameDescriptor(FrameType::BaselineJS));
   masm.push(ICTailCallReg);
-  masm.jump(target);
+  masm.tailJump(target);
 }
 
 inline void EmitBaselineCallVM(TrampolinePtr target, MacroAssembler& masm) {

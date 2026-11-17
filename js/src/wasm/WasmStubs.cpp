@@ -2848,11 +2848,24 @@ static bool GenerateTrapExit(MacroAssembler& masm, Label* throwLabel,
   masm.storePtr(ReturnReg, Address(masm.getStackPointer(), offsetOfReturnWord));
   masm.PopRegsInMask(RegsToPreserve);
 
-#ifdef JS_CODEGEN_ARM64
-  WasmPop(masm, lr);
-  masm.abiret();
-#else
+  
+  
+  
+  
+  
+  
+  
+  
+#if defined(JS_CODEGEN_ARM)
   masm.ret();
+#elif defined(JS_USE_LINK_REGISTER)
+  WasmPop(masm, LinkRegister);
+#  ifdef JS_CODEGEN_ARM64
+  masm.syncStackPtr();
+#  endif
+  masm.jump(LinkRegister);
+#else
+  masm.jump(Address(masm.getStackPointer(), 0));
 #endif
 
   return FinishOffsets(masm, offsets);
@@ -3715,7 +3728,7 @@ bool wasm::GenerateProvisionalLazyJitEntryStub(MacroAssembler& masm,
   masm.popReturnAddress();
 #endif
 
-  masm.jump(ReturnReg);
+  masm.tailJump(ReturnReg);
 
 #ifdef JS_CODEGEN_ARM64
   

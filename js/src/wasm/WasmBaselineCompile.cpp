@@ -1088,7 +1088,7 @@ void BaseCompiler::insertPerFunctionDebugStub() {
 
   
   masm.bind(&L);
-  masm.jump(Address(InstanceReg, Instance::offsetOfDebugStub()));
+  masm.tailJump(Address(InstanceReg, Instance::offsetOfDebugStub()));
 }
 
 void BaseCompiler::saveRegisterReturnValues(const ResultType& resultType) {
