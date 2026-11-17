@@ -908,7 +908,7 @@ class XPCShellTestThread(Thread):
                     if line.get("action") == "test_status" and "expected" in line:
                         
                         line["expected"] = line.get("status")
-                        line.setdefault("extra", {})["will_retry"] = True
+                        line["will_retry"] = True
                     elif line.get("action") == "log" and line.get("level") == "ERROR":
                         
                         
@@ -1344,6 +1344,7 @@ class XPCShellTestThread(Thread):
                         message=retry_message,
                         group=group,
                         extra=extra,
+                        will_retry=True,
                     )
                     self.clean_temp_dirs(path)
                     if self.verboseIfFails and not self.verbose:
