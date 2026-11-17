@@ -362,6 +362,19 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+
+    @ExperimentalGeckoViewApi
+    public @NonNull Builder creditCardSecurityCodeEnabled(final boolean enabled) {
+      getSettings().setCreditCardSecurityCodeEnabled(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+
     public @NonNull Builder fissionEnabled(final boolean enabled) {
       getSettings().mFissionEnabled.set(enabled);
       return this;
@@ -780,6 +793,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new Pref<Boolean>("signon.autofillForms", true);
    final PrefWithoutDefault<String> mFirefoxRelay =
       new PrefWithoutDefault<>("signon.firefoxRelay.feature");
+   final Pref<String> mCreditCardSecurityCodeSupported =
+      new Pref<>("extensions.formautofill.creditCards.cvv.supported", "off");
    final PrefWithoutDefault<String> mIpProtectionAuthProvider =
       new PrefWithoutDefault<>("toolkit.ipProtection.android.authProvider");
    final Pref<Boolean> mAutomaticallyOfferPopup =
@@ -2038,6 +2053,29 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   public @NonNull GeckoRuntimeSettings setLoginAutofillEnabled(final boolean enabled) {
     mAutofillLogins.commit(enabled);
+    return this;
+  }
+
+  
+
+
+
+
+  @ExperimentalGeckoViewApi
+  public boolean getCreditCardSecurityCodeEnabled() {
+    return "on".equals(mCreditCardSecurityCodeSupported.get());
+  }
+
+  
+
+
+
+
+
+
+  @ExperimentalGeckoViewApi
+  public @NonNull GeckoRuntimeSettings setCreditCardSecurityCodeEnabled(final boolean enabled) {
+    mCreditCardSecurityCodeSupported.commit(enabled ? "on" : "off");
     return this;
   }
 
