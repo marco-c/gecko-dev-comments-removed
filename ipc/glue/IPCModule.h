@@ -1,0 +1,21 @@
+
+
+
+
+#ifndef IPC_GLUE_IPCMODULE_H_
+#define IPC_GLUE_IPCMODULE_H_
+
+#include "ErrorList.h"
+
+namespace mozilla::ipc {
+
+
+
+
+
+
+nsresult InitIPCModule();
+
+}  
+
+#endif

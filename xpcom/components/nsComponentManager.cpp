@@ -21,6 +21,7 @@
 #include "mozilla/Services.h"
 #include "mozilla/URLPreloader.h"
 #include "mozilla/Variant.h"
+#include "mozilla/ipc/IPCModule.h"
 #include "nsArray.h"
 #include "nsCOMPtr.h"
 #include "nsCategoryManager.h"
@@ -356,6 +357,8 @@ nsresult nsComponentManagerImpl::Init() {
   nsCategoryManager::GetSingleton()->SuppressNotifications(false);
 
   RegisterWeakMemoryReporter(this);
+
+  mozilla::ipc::InitIPCModule();
 
   
   
