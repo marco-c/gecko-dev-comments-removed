@@ -30,8 +30,8 @@ class TempAllocator {
   
   
   
-  static const size_t BallastSize;             
-  static const size_t PreferredLifoChunkSize;  
+  static constexpr size_t BallastSize = 16 * 1024;
+  static constexpr size_t PreferredLifoChunkSize = 32 * 1024;
 
   explicit TempAllocator(LifoAlloc* lifoAlloc) : lifoScope_(lifoAlloc) {
     lifoAlloc->setAsInfallibleByDefault();

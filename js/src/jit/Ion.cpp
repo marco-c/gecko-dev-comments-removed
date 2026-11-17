@@ -2856,7 +2856,3 @@ size_t jit::SizeOfIonData(JSScript* script,
 
   return result;
 }
-
-
- const size_t TempAllocator::BallastSize = 16 * 1024;
- const size_t TempAllocator::PreferredLifoChunkSize = 32 * 1024;
