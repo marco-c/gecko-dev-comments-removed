@@ -641,6 +641,9 @@ def build_docker_worker_payload(config, task, task_def):
 
     if "max-run-time" in worker:
         payload["maxRunTime"] = worker["max-run-time"]
+        
+        
+        payload["env"]["TASKCLUSTER_MAX_RUN_TIME"] = str(worker["max-run-time"])
 
     run_task = is_run_task(payload.get("command", [""])[0])
 
@@ -831,6 +834,9 @@ def build_generic_worker_payload(config, task, task_def):
             task_def["payload"]["onExitStatus"]["retry"].extend([4])
 
     env = worker.get("env", {})
+    
+    
+    env["TASKCLUSTER_MAX_RUN_TIME"] = str(worker["max-run-time"])
 
     
     
