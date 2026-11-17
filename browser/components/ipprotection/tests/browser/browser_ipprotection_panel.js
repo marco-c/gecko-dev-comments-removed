@@ -177,10 +177,7 @@ add_task(async function test_location_button_opens_subview() {
     isProtectionEnabled: true,
   });
 
-  let statusCard = content.statusCardEl;
-  Assert.ok(statusCard, "ipprotection-status-card should be present");
-
-  let locationButton = statusCard.locationButtonEl;
+  let locationButton = content.locationButtonEl;
   Assert.ok(locationButton, "Location selection button should be present");
 
   let subview = PanelMultiView.getViewNode(
