@@ -432,7 +432,16 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
 
+
   [[nodiscard]] nsresult ReDecodeLocalFile() MOZ_REQUIRES(mTokenizerMutex);
+
+  
+
+
+
+
+  [[nodiscard]] nsresult CommitOrReDecodeLocalFile()
+      MOZ_REQUIRES(mTokenizerMutex);
 
   
 

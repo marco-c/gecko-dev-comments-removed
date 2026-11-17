@@ -934,33 +934,32 @@ nsresult nsHtml5StreamParser::WriteStreamBytes(
       (void)totalRead;
       if (!mLookingForMetaCharset && mDecodingLocalFileWithoutTokenizing &&
           mNumBytesBuffered == LOCAL_FILE_UTF_8_BUFFER_SIZE) {
-        MOZ_ASSERT(!mStartedFeedingDetector);
-        for (auto&& buffer : mBufferedBytes) {
-          FeedDetector(buffer);
-        }
-        
-        
-        
-        
-        auto [encoding, source] = GuessEncoding(true);
-        mCharsetSource = source;
-        if (encoding != mEncoding) {
-          mEncoding = encoding;
-          nsresult rv = ReDecodeLocalFile();
-          if (NS_FAILED(rv)) {
-            return rv;
-          }
-        } else {
-          MOZ_ASSERT(mEncoding == UTF_8_ENCODING);
-          nsresult rv = CommitLocalFileToEncoding();
-          if (NS_FAILED(rv)) {
-            return rv;
-          }
-        }
+        return CommitOrReDecodeLocalFile();
       }
       return NS_OK;
     }
   }
+}
+
+[[nodiscard]] nsresult nsHtml5StreamParser::CommitOrReDecodeLocalFile() {
+  MOZ_ASSERT(mDecodingLocalFileWithoutTokenizing && !mLookingForMetaCharset);
+  MOZ_ASSERT(mNumBytesBuffered == LOCAL_FILE_UTF_8_BUFFER_SIZE);
+  MOZ_ASSERT(!mStartedFeedingDetector);
+  for (auto&& buffer : mBufferedBytes) {
+    FeedDetector(buffer);
+  }
+  
+  
+  
+  
+  auto [encoding, source] = GuessEncoding(true);
+  mCharsetSource = source;
+  if (encoding != mEncoding) {
+    mEncoding = encoding;
+    return ReDecodeLocalFile();
+  }
+  MOZ_ASSERT(mEncoding == UTF_8_ENCODING);
+  return CommitLocalFileToEncoding();
 }
 
 [[nodiscard]] nsresult nsHtml5StreamParser::ReDecodeLocalFile() {
@@ -992,8 +991,13 @@ nsresult nsHtml5StreamParser::WriteStreamBytes(
   mTreeBuilder->SetDocumentCharset(mEncoding, mCharsetSource, true);
 
   
+  
+  
   for (auto&& buffer : mBufferedBytes) {
-    DoDataAvailable(buffer);
+    nsresult rv = WriteStreamBytes(buffer);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
   }
 
   if (mMode == VIEW_SOURCE_HTML) {
@@ -1492,41 +1496,51 @@ void nsHtml5StreamParser::DoDataAvailableBuffer(
     mBufferedBytes.Clear();
     return;
   }
-  CheckedInt<size_t> bufferedPlusLength(aBuffer.Length());
-  bufferedPlusLength += mNumBytesBuffered;
-  if (!bufferedPlusLength.isValid()) {
-    MarkAsBroken(NS_ERROR_OUT_OF_MEMORY);
-    return;
-  }
   
   
-  bool metaBoundaryWithinBuffer =
-      mLookingForMetaCharset &&
-      mNumBytesBuffered < UNCONDITIONAL_META_SCAN_BOUNDARY &&
-      bufferedPlusLength.value() > UNCONDITIONAL_META_SCAN_BOUNDARY;
-  bool localFileLimitWithinBuffer =
-      mDecodingLocalFileWithoutTokenizing &&
-      mNumBytesBuffered < LOCAL_FILE_UTF_8_BUFFER_SIZE &&
-      bufferedPlusLength.value() > LOCAL_FILE_UTF_8_BUFFER_SIZE;
-  if (!metaBoundaryWithinBuffer && !localFileLimitWithinBuffer) {
-    
-    mNumBytesBuffered = bufferedPlusLength.value();
-    mBufferedBytes.AppendElement(std::move(aBuffer));
-    DoDataAvailable(mBufferedBytes.LastElement());
-  } else {
-    MOZ_RELEASE_ASSERT(
-        !(metaBoundaryWithinBuffer && localFileLimitWithinBuffer),
-        "How can Necko give us a buffer this large?");
+  
+  
+  
+  Span<const uint8_t> remaining = aBuffer.AsSpan();
+  for (;;) {
+    CheckedInt<size_t> bufferedPlusLength(remaining.Length());
+    bufferedPlusLength += mNumBytesBuffered;
+    if (!bufferedPlusLength.isValid()) {
+      MarkAsBroken(NS_ERROR_OUT_OF_MEMORY);
+      return;
+    }
+    bool metaBoundaryWithinBuffer =
+        mLookingForMetaCharset &&
+        mNumBytesBuffered < UNCONDITIONAL_META_SCAN_BOUNDARY &&
+        bufferedPlusLength.value() > UNCONDITIONAL_META_SCAN_BOUNDARY;
+    bool localFileLimitWithinBuffer =
+        mDecodingLocalFileWithoutTokenizing &&
+        mNumBytesBuffered < LOCAL_FILE_UTF_8_BUFFER_SIZE &&
+        bufferedPlusLength.value() > LOCAL_FILE_UTF_8_BUFFER_SIZE;
+    if (!metaBoundaryWithinBuffer && !localFileLimitWithinBuffer) {
+      if (remaining.Elements() == aBuffer.Elements()) {
+        mBufferedBytes.AppendElement(std::move(aBuffer));
+      } else {
+        Maybe<Buffer<uint8_t>> maybeTail = Buffer<uint8_t>::CopyFrom(remaining);
+        if (maybeTail.isNothing()) {
+          MarkAsBroken(NS_ERROR_OUT_OF_MEMORY);
+          return;
+        }
+        mBufferedBytes.AppendElement(std::move(*maybeTail));
+      }
+      
+      mNumBytesBuffered = bufferedPlusLength.value();
+      DoDataAvailable(mBufferedBytes.LastElement());
+      break;
+    }
     size_t boundary = metaBoundaryWithinBuffer
                           ? UNCONDITIONAL_META_SCAN_BOUNDARY
                           : LOCAL_FILE_UTF_8_BUFFER_SIZE;
     
     size_t overBoundary = bufferedPlusLength.value() - boundary;
-    MOZ_RELEASE_ASSERT(overBoundary < aBuffer.Length());
-    size_t untilBoundary = aBuffer.Length() - overBoundary;
-    auto span = aBuffer.AsSpan();
-    auto head = span.To(untilBoundary);
-    auto tail = span.From(untilBoundary);
+    MOZ_RELEASE_ASSERT(overBoundary < remaining.Length());
+    size_t untilBoundary = remaining.Length() - overBoundary;
+    Span<const uint8_t> head = remaining.To(untilBoundary);
     MOZ_RELEASE_ASSERT(mNumBytesBuffered + untilBoundary == boundary);
     
     
@@ -1540,14 +1554,7 @@ void nsHtml5StreamParser::DoDataAvailableBuffer(
     DoDataAvailable(mBufferedBytes.LastElement());
     
 
-    Maybe<Buffer<uint8_t>> maybeTail = Buffer<uint8_t>::CopyFrom(tail);
-    if (maybeTail.isNothing()) {
-      MarkAsBroken(NS_ERROR_OUT_OF_MEMORY);
-      return;
-    }
-    mNumBytesBuffered += tail.Length();
-    mBufferedBytes.AppendElement(std::move(*maybeTail));
-    DoDataAvailable(mBufferedBytes.LastElement());
+    remaining = remaining.From(untilBoundary);
   }
   
   
@@ -2357,6 +2364,16 @@ bool nsHtml5StreamParser::ProcessLookingForMetaCharset(bool aEof) {
         MarkAsBroken(r.unwrapErr());
         return false;
       }
+    } else if (mNumBytesBuffered == LOCAL_FILE_UTF_8_BUFFER_SIZE) {
+      
+      
+      nsresult rv = CommitOrReDecodeLocalFile();
+      if (NS_FAILED(rv)) {
+        MarkAsBroken(rv);
+        return false;
+      }
+      MOZ_ASSERT(!mBufferingBytes);
+      mBufferedBytes.Clear();
     }
   }
   return rewound;
