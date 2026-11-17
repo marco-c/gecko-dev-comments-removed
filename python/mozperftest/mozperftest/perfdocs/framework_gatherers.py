@@ -587,7 +587,17 @@ class MozperftestGatherer(FrameworkGatherer):
     def build_test_description(
         self, title, test_description="", suite_name="", metrics_info=None
     ):
-        return [str(self.script_infos[title])]
+        
+        
+        content = "\n".join(str(self.script_infos[title]).split("\n")[2:])
+        
+        
+        
+        anchor = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
+        result = f"::::{{dropdown}} {title}\n:class-container: anchor-id-{anchor}\n\n"
+        result += content
+        result += "::::\n"
+        return [result]
 
     def build_suite_section(self, title, content):
         return self._build_section_with_header(title, content, header_type="H2")
