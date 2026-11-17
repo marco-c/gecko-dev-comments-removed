@@ -165,24 +165,12 @@ ContentClassifierRequest::ContentClassifierRequest(nsIChannel* aChannel)
   
   
   
-  
   nsCOMPtr<nsIURI> innermostURI = NS_GetInnermostURI(uri);
   if (!innermostURI) return;
 
   nsCString host;
-  if (innermostURI == uri) {
-    
-    rv = GetNormalizedHostAndSpec(uri, host, mUrl);
-    if (NS_FAILED(rv)) return;
-  } else {
-    
-    
-    rv = uri->GetSpec(mUrl);
-    if (NS_FAILED(rv)) return;
-    rv = innermostURI->GetHost(host);
-    if (NS_FAILED(rv)) return;
-    NormalizeHostname(host);
-  }
+  rv = GetNormalizedHostAndSpec(innermostURI, host, mUrl);
+  if (NS_FAILED(rv)) return;
   
   
   mHostname = host;
@@ -303,8 +291,11 @@ ContentClassifierRequest::ContentClassifierRequest(
   nsresult rv = NS_NewURI(getter_AddRefs(uri), aUrl);
   if (NS_FAILED(rv)) return;
 
+  nsCOMPtr<nsIURI> innermostURI = NS_GetInnermostURI(uri);
+  if (!innermostURI) return;
+
   nsCString host;
-  rv = GetNormalizedHostAndSpec(uri, host, mUrl);
+  rv = GetNormalizedHostAndSpec(innermostURI, host, mUrl);
   if (NS_FAILED(rv)) return;
   mHostname = host;
   nsContentUtils::MaybeFixIPv6Host(mHostname);
