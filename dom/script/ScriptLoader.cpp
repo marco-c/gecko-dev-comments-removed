@@ -2386,9 +2386,11 @@ nsresult ScriptLoader::AttemptOffThreadScriptCompile(
   
   
   
+  
   if (aRequest->IsModuleRequest() &&
       (aRequest->AsModuleRequest()->mModuleType == JS::ModuleType::JSON ||
-       aRequest->AsModuleRequest()->mModuleType == JS::ModuleType::CSS)) {
+       aRequest->AsModuleRequest()->mModuleType == JS::ModuleType::CSS ||
+       aRequest->AsModuleRequest()->mModuleType == JS::ModuleType::Text)) {
     return NS_OK;
   }
 
