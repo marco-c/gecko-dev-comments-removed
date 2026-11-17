@@ -1485,11 +1485,26 @@ void EraseLayerState(LayersId aId) {
         auto* state =
             CompositorBridgeParent::GetLayerTreeStateUnderLock(aId, aProof);
         if (state) {
+          wrBridge = state->mWrBridge;
+        }
+      });
+
+  
+  
+  
+  if (wrBridge) {
+    wrBridge->Destroy();
+  }
+
+  CompositorBridgeParent::WithIndirectLayerTreesLock(
+      [&](const StaticMonitorAutoLock& aProof) {
+        auto* state =
+            CompositorBridgeParent::GetLayerTreeStateUnderLock(aId, aProof);
+        if (state) {
           CompositorBridgeParent* parent = state->mParent;
           if (parent) {
             apz = parent->GetAPZUpdater();
           }
-          wrBridge = state->mWrBridge;
           LAYERTREE_LOG("Erasing layer tree {:x}", aId);
           CompositorBridgeParent::EraseLayerTreeStateUnderLock(aId, aProof);
         }
@@ -1497,10 +1512,6 @@ void EraseLayerState(LayersId aId) {
 
   if (apz) {
     apz->NotifyLayerTreeRemoved(aId);
-  }
-
-  if (wrBridge) {
-    wrBridge->Destroy();
   }
 }
 
