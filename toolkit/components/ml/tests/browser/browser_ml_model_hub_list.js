@@ -179,22 +179,26 @@ add_task(async function test_list_files_requires_a_model_or_a_task() {
 
 
 
-
-
-
-
-
-
-add_task(async function test_list_files_by_task_name_alone_throws() {
+add_task(async function test_list_files_by_task_name_alone() {
   const hub = await withModelHub();
   hub.serve({ file: CONFIG, size: CONFIG_BYTES });
-  await hub.download({ file: CONFIG });
+  await hub.download({ file: CONFIG, engineId: "engine-one" });
 
-  await Assert.rejects(
-    hub.modelHub.listFiles({ taskName: TASK_NAME }),
-    /Data provided to an operation does not meet requirements/,
-    "Listing a task's files without also naming the model throws a DataError."
+  const { files, metadata } = await hub.modelHub.listFiles({
+    taskName: TASK_NAME,
+  });
+
+  Assert.deepEqual(
+    files.map(entry => entry.path),
+    [CONFIG],
+    "The task's files are listed without also naming the model."
   );
+  Assert.deepEqual(
+    metadata.engineIds,
+    ["engine-one"],
+    "The engines resolved through the task are reported."
+  );
+  Assert.equal(metadata.totalSize, CONFIG_BYTES, "The size is aggregated.");
 
   await hub.cleanup();
 });
@@ -203,12 +207,7 @@ add_task(async function test_list_files_by_task_name_alone_throws() {
 
 
 
-
-
-
-
-
-add_task(async function test_list_files_misreports_engines() {
+add_task(async function test_list_files_reports_engines() {
   const hub = await withModelHub();
   hub.serve({ file: CONFIG, size: CONFIG_BYTES });
   hub.serve({ file: WEIGHTS, size: WEIGHTS_BYTES });
@@ -222,15 +221,22 @@ add_task(async function test_list_files_misreports_engines() {
     revision: REVISION,
   });
 
+  const enginesByPath = Object.fromEntries(
+    files.map(entry => [entry.path, [...entry.engineIds].sort()])
+  );
+
   Assert.deepEqual(
-    files.map(entry => entry.engineIds),
-    [[], []],
-    "Per-file engine ids are always empty."
+    enginesByPath,
+    {
+      [CONFIG]: ["engine-one", "engine-two"],
+      [WEIGHTS]: ["engine-one"],
+    },
+    "Each file reports the engines that asked for it."
   );
   Assert.deepEqual(
-    metadata.engineIds,
-    ["engine-one"],
-    "The aggregate reports only the last file's engines, losing engine-two."
+    [...metadata.engineIds].sort(),
+    ["engine-one", "engine-two"],
+    "The aggregate is the union across files, so engine-two is not lost."
   );
 
   await hub.cleanup();
