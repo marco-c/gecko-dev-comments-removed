@@ -695,27 +695,6 @@ impl GpuBufferDataF for QuadSegment {
 
 
 
-
-#[derive(Copy, Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-pub struct QuadRoundedClip {
-    pub rect: DeviceRect,
-    pub radius: f32,
-}
-
-impl GpuBufferDataF for QuadRoundedClip {
-    const NUM_BLOCKS: usize = 2;
-    fn write(&self, writer: &mut GpuBufferWriterF) {
-        writer.push_one(self.rect);
-        writer.push_one([self.radius, 0.0, 0.0, 0.0]);
-    }
-}
-
-
-
-
-
-
 #[derive(Copy, Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]

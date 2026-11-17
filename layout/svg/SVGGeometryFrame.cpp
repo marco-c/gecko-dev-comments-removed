@@ -859,6 +859,7 @@ WebRenderCommandsResult SVGGeometryFrame::CreateWebRenderCommands(
   
   
   
+  
   auto pushSolidFill = [&](wr::ColorF aColor) {
     wr::LayoutRect wrRect = toDevice(shape.AsRect());
     if (shape.IsRect()) {

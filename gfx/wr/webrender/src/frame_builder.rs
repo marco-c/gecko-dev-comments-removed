@@ -172,10 +172,6 @@ pub struct FrameBuildingState<'a> {
     
     
     
-    pub quad_rounded_clip_enabled: bool,
-    
-    
-    
     
     
     
@@ -624,7 +620,6 @@ impl FrameBuilder {
             image_dependencies: FastHashMap::default(),
             picture_scratch_handles: &mut picture_scratch_handles,
             path_rendering_enabled: !debug_flags.contains(DebugFlags::DISABLE_DIRECT_PATH_FILL),
-            quad_rounded_clip_enabled: !scene.config.is_software,
         };
 
 

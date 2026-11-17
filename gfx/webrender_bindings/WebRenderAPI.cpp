@@ -1535,21 +1535,24 @@ void DisplayListBuilder::PushRoundedRect(const wr::LayoutRect& aBounds,
   
   
   
-  wr::ComplexClipRegion region;
-  region.rect = aBounds;
-  region.radii = {aRadii, aRadii, aRadii, aRadii, 1.0f, 1.0f, 1.0f, 1.0f};
-  region.inset = EmptyLayoutSideOffsets();
-  region.mode = wr::ClipMode::Clip;
+  
+  
+  
+  
+  
+  wr::BorderSide side = {aColor, wr::BorderStyle::Solid};
+  float h = aBounds.width() * 0.6f;
+  float v = aBounds.height() * 0.6f;
+  wr::LayoutSideOffsets widths = {v, h, v, h};
+  wr::BorderRadius radii = {aRadii, aRadii, aRadii, aRadii,
+                            1.0f,   1.0f,   1.0f,   1.0f};
+  wr::LayoutSideOffsets inset = EmptyLayoutSideOffsets();
 
-  auto clipId = DefineRoundedRectClip(Nothing(), region);
-  auto clipChainId =
-      DefineClipChain({&clipId, 1}, CurrentClipChainIdIfNotRoot());
-  auto spaceAndClip =
-      WrSpaceAndClipChain{mCurrentSpaceAndClipChain.space, clipChainId.id};
-
-  wr_dp_push_rect(mWrState, aBounds, aClip, aIsBackfaceVisible,
-                   false,
-                   false, &spaceAndClip, aColor);
+  
+  wr_dp_push_border(mWrState, aBounds, aClip, aIsBackfaceVisible,
+                     false,
+                    &mCurrentSpaceAndClipChain, wr::AntialiasBorder::Yes,
+                    widths, side, side, side, side, radii, inset);
 }
 
 void DisplayListBuilder::PushHitTest(

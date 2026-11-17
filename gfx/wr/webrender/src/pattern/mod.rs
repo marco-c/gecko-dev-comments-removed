@@ -82,20 +82,6 @@ impl PatternKind {
     pub fn requires_backdrop_readback(&self) -> bool {
         *self == PatternKind::MixBlend
     }
-
-    
-    
-    pub fn supports_rounded_clip(&self) -> bool {
-        matches!(
-            self,
-            PatternKind::ColorOrTexture
-            | PatternKind::TextureExternal
-            | PatternKind::TextureExternalBT709
-            | PatternKind::TextureRect
-            | PatternKind::Gradient
-            | PatternKind::Repeat
-        )
-    }
 }
 
 
