@@ -47,6 +47,9 @@ function test() {
       );
 
       
+      ForceRefreshParent.resetState();
+
+      
       ForceRefreshParent.SimpleTest = SimpleTest;
       ForceRefreshParent.refresh = refresh;
       ForceRefreshParent.forceRefresh = forceRefresh;
