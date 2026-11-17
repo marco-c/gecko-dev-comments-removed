@@ -433,12 +433,19 @@ void nsAppShell::TermSignalHandler(int signo) {
     NS_WARNING("Wrong signal!");
     return;
   }
+  if (!sAppShell) {
+    NS_WARNING("SIGTERM received without an app shell");
+    return;
+  }
   sAppShell->ScheduleQuitEvent();
 }
 
 void nsAppShell::InstallTermSignalHandler() {
-  if (!XRE_IsParentProcess() || PR_GetEnv("MOZ_DISABLE_SIG_HANDLER") ||
-      !sAppShell) {
+  if (!XRE_IsParentProcess() || PR_GetEnv("MOZ_DISABLE_SIG_HANDLER")) {
+    return;
+  }
+  MOZ_DIAGNOSTIC_ASSERT(sAppShell, "Install the handler after the app shell");
+  if (!sAppShell) {
     return;
   }
 
@@ -625,12 +632,6 @@ bool nsAppShell::IsSessionRestoreSupported() {
     }
     if (!StaticPrefs::widget_wayland_session_management_enabled_AtStartup()) {
       LOGW("nsAppShell::IsSessionRestoreSupported(): disabled by pref.");
-      return false;
-    }
-    if (IsGnomeDesktopEnvironment()) {
-      LOGW(
-          "nsAppShell::IsSessionRestoreSupported(): disabled due to Bug "
-          "2064100.");
       return false;
     }
 
