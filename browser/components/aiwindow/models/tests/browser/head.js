@@ -508,8 +508,10 @@ async function visitPage(url) {
 
 
 
-function getMemoriesGenerationRunEvents() {
-  return Glean.smartWindow.memoriesGenerationRun.testGetValue() ?? [];
+
+
+function getGenerationRunEvents(metric) {
+  return metric.testGetValue() ?? [];
 }
 
 
@@ -523,7 +525,9 @@ function getMemoriesGenerationRunEvents() {
 
 
 
-function assertMemoriesGenerationRunEvent(expected, { stats } = {}) {
+
+
+function assertGenerationRunEvent(metric, expected, { stats } = {}) {
   const toExtras = values =>
     Object.fromEntries(
       Object.entries(values).map(([key, value]) => [key, String(value)])
@@ -531,13 +535,13 @@ function assertMemoriesGenerationRunEvent(expected, { stats } = {}) {
   let actual;
   if (stats) {
     Assert.deepEqual(
-      getMemoriesGenerationRunEvents(),
+      getGenerationRunEvents(metric),
       [],
       "A direct call records no run."
     );
     actual = toExtras(stats);
   } else {
-    const events = getMemoriesGenerationRunEvents();
+    const events = getGenerationRunEvents(metric);
     Assert.equal(events.length, 1, "One run should be recorded.");
     actual = events[0].extra;
   }

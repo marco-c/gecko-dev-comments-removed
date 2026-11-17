@@ -718,7 +718,7 @@ add_task(async function test_maintenance_failure_is_contained() {
 
       
       
-      assertMemoriesGenerationRunEvent({
+      assertGenerationRunEvent(Glean.smartWindow.memoriesGenerationRun, {
         generation_triggered: true,
         merge_status: "ran",
         outcome: "success",
@@ -987,12 +987,20 @@ add_task(async function test_retryable_journey_failure_backs_off() {
 
       
       
-      assertMemoriesGenerationRunEvent({
+      assertGenerationRunEvent(Glean.smartWindow.memoriesGenerationRun, {
         generation_triggered: true,
         memories_before: 1,
         merge_status: "ran",
         memories_after: 1,
         outcome: "success",
+      });
+      
+      
+      assertGenerationRunEvent(Glean.smartWindow.journeysGenerationRun, {
+        journeys_eligible_after: 0,
+        outcome: "error",
+        error_stage: "other",
+        error_type: "transient",
       });
     }
   );
