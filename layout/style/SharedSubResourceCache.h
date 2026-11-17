@@ -48,8 +48,8 @@ class nsHttpResponseHead;
 
 namespace SharedSubResourceCacheUtils {
 
-void AddMemoryPressureObserver(nsIObserver* aObserver);
-void RemoveMemoryPressureObserver(nsIObserver* aObserver);
+void AddMemoryPressureAndSafeBrowsingObserver(nsIObserver* aObserver);
+void RemoveMemoryPressureAndSafeBrowsingObserver(nsIObserver* aObserver);
 
 }  
 
@@ -175,13 +175,15 @@ class SharedSubResourceCache {
     sSingleton = new Derived();
     sSingleton->Init();
     sSingleton->AddPrefCallback();
-    SharedSubResourceCacheUtils::AddMemoryPressureObserver(sSingleton);
+    SharedSubResourceCacheUtils::AddMemoryPressureAndSafeBrowsingObserver(
+        sSingleton);
     return sSingleton.get();
   }
 
   static void DeleteSingleton() {
     if (sSingleton) {
-      SharedSubResourceCacheUtils::RemoveMemoryPressureObserver(sSingleton);
+      SharedSubResourceCacheUtils::RemoveMemoryPressureAndSafeBrowsingObserver(
+          sSingleton);
       sSingleton->RemovePrefCallback();
     }
     sSingleton = nullptr;
@@ -292,6 +294,17 @@ class SharedSubResourceCache {
   
   nsresult DoObserve(nsISupports* aSubject, const char* aTopic,
                      const char16_t* aData) {
+    if (strcmp(aTopic, "safebrowsing-update-finished") == 0) {
+      nsDependentString data(aData);
+      if (data.EqualsLiteral("success:mozilla")) {
+        
+        
+        
+        ClearAllProcessesForSafeBrowsingUpdate();
+      }
+      return NS_OK;
+    }
+
     if (ShouldIgnoreMemoryPressure()) {
       return NS_OK;
     }
@@ -347,6 +360,13 @@ class SharedSubResourceCache {
     ClearInProcess( Some(false), Nothing(), Nothing(), Nothing(),
                    Nothing());
   }
+
+  
+  
+  
+  
+  
+  virtual void ClearAllProcessesForSafeBrowsingUpdate() = 0;
 
   void CancelPendingLoadsForLoader(Loader&);
 

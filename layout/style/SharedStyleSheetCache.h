@@ -48,6 +48,10 @@ class SharedStyleSheetCache final
     return Base::DoObserve(aSubject, aTopic, aData);
   }
 
+  void ClearAllProcessesForSafeBrowsingUpdate() override {
+    Clear( Some(false));
+  }
+
   
   
   static void LoadCompleted(SharedStyleSheetCache*, css::SheetLoadData&,
