@@ -511,6 +511,13 @@ bool EarlyHintPreloader::MatchesRequest(nsIURI* aURI,
     return false;
   }
 
+  
+  
+  if (mLoadInfo->GetLoadingEmbedderPolicy() !=
+      aLoadInfo->GetLoadingEmbedderPolicy()) {
+    return false;
+  }
+
   nsIPrincipal* loadingPrincipal = aLoadInfo->GetLoadingPrincipal();
   if (!loadingPrincipal) {
     return false;
