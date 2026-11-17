@@ -258,6 +258,10 @@ class TrustPanel {
     
     Services.obs.addObserver(this, "fxaccounts:onlogout");
 
+    
+    
+    UrlbarPrefs.addObserver(this);
+
     customElements.whenDefined("breach-alert-panel").then(() => {
       const breachAlertElement = document.getElementById(
         "trustpanel-breach-alert-section"
@@ -283,6 +287,7 @@ class TrustPanel {
 
     Services.obs.removeObserver(this, "smartblock:open-protections-panel");
     Services.obs.removeObserver(this, "fxaccounts:onlogout");
+    UrlbarPrefs.removeObserver(this);
   }
 
   get #popup() {
@@ -392,6 +397,9 @@ class TrustPanel {
       document
         .getElementById("trustpanel-toggle")
         .addEventListener("click", () => this.#toggleTrackingProtection());
+      document
+        .getElementById("trackercount-toggle")
+        .addEventListener("click", () => this.#toggleTrackerCount());
       document
         .getElementById("identity-popup-remove-cert-exception")
         .addEventListener("click", () => this.#removeCertException());
@@ -579,14 +587,8 @@ class TrustPanel {
     if (!this.#enabled || !this.#uri) {
       return;
     }
-    if (!this.#trackerCountEnabled) {
-      return;
-    }
+    this.#blockersChecked = true;
     this.#updateToolbarTrackerCount();
-    if (!this.#blockersChecked) {
-      this.#blockersChecked = true;
-      this.#updateUrlbarIcon();
-    }
   }
 
   updateIdentity(state, uri) {
@@ -710,6 +712,9 @@ class TrustPanel {
   }
 
   #updateUrlbarIcon() {
+    if (!this.#enabled || !this.#uri) {
+      return;
+    }
     let icon = document.getElementById("trust-icon-container");
     let targetClasses = new Set();
     targetClasses.add(this.#isSecurePage() ? "secure" : "insecure");
@@ -752,10 +757,10 @@ class TrustPanel {
     const browser = gBrowser.selectedBrowser;
     
     if (targetClasses.has("breached")) {
-      if (browser.lastAnimatedBreachURI !== this.#uri?.spec) {
+      if (browser.lastAnimatedBreachURI !== this.#uri.spec) {
         
         targetClasses.add("breach-animating");
-        browser.lastAnimatedBreachURI = this.#uri?.spec;
+        browser.lastAnimatedBreachURI = this.#uri.spec;
 
         Glean.trustpanel.breachAlertShieldAnimated.record({
           breach_status: this.#breachedStatus,
@@ -775,9 +780,9 @@ class TrustPanel {
 
     if (
       targetClasses.has("has-blocked-trackers") &&
-      browser.lastTrackerCountShownURI !== this.#uri?.spec
+      browser.lastTrackerCountShownURI !== this.#uri.spec
     ) {
-      browser.lastTrackerCountShownURI = this.#uri?.spec;
+      browser.lastTrackerCountShownURI = this.#uri.spec;
       this.#isFirstVisit(this.#uri.host).then(isFirstVisit => {
         Glean.trustpanel.trackerCountShown.record({
           first_site_load_in_tab: targetClasses.has("entry-page"),
@@ -858,6 +863,12 @@ class TrustPanel {
       { host: this.#displayHost }
     );
 
+    let trackerCountToggle = document.getElementById("trackercount-toggle");
+    trackerCountToggle.toggleAttribute(
+      "pressed",
+      UrlbarPrefs.get("trackerCount.enabled")
+    );
+
     let hostElement = document.getElementById("trustpanel-popup-host");
     hostElement.setAttribute("value", this.#displayHost);
     hostElement.setAttribute("tooltiptext", this.#displayHost);
@@ -887,6 +898,11 @@ class TrustPanel {
       document.getElementById("trustpanel-toggle-section"),
       "disabled",
       !ContentBlockingAllowList.canHandle(window.gBrowser.selectedBrowser)
+    );
+    this.#updateAttribute(
+      document.getElementById("trackercount-toggle-section"),
+      "hidden",
+      !UrlbarPrefs.get("trackerCountFeatureGate")
     );
 
     
@@ -1383,6 +1399,37 @@ class TrustPanel {
     this.#closingReason = CLOSING_REASONS.ETP_TOGGLED;
     PanelMultiView.hidePopup(this.#popup);
     window.BrowserCommands.reload();
+  }
+
+  #toggleTrackerCount() {
+    const enabled = !UrlbarPrefs.get("trackerCount.enabled");
+    Glean.trustpanel.trackerCountToggled.record({ enabled });
+    
+    
+    UrlbarPrefs.set("trackerCount.enabled", enabled);
+  }
+
+  onPrefChanged(pref) {
+    if (pref == "trackerCount.enabled") {
+      this.#onTrackerCountToggle();
+    }
+  }
+
+  onNimbusChanged(name) {
+    if (name == "trackerCountFeatureGate") {
+      this.#onTrackerCountToggle();
+    }
+  }
+
+  #onTrackerCountToggle() {
+    if (this.#trackerCountEnabled) {
+      this.#updateToolbarTrackerCount();
+      return;
+    }
+    document.l10n.setArgs(document.getElementById("trust-icon-container"), {
+      count: 0,
+    });
+    this.#updateUrlbarIcon();
   }
 
   #isHttpsOnlyModeActive(isWindowPrivate) {
