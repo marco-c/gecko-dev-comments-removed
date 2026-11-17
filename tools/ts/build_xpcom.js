@@ -10,7 +10,9 @@
 
 
 
+
 const fs = require("fs");
+const path = require("path");
 const URL = "https://searchfox.org/firefox-main/source/";
 
 const HEADER = `/**
@@ -38,48 +40,63 @@ type Callable<iface> = iface | Extract<iface[keyof iface], Function>
 export {};
 `;
 
-const PLATFORM_SPECIFIC = new Set([
-  "nsIAboutThirdParty.idl",
-  "nsIAboutWindowsMessages.idl",
-  "nsIAccessibleMacInterface.idl",
-  "nsIApplicationChooser.idl",
-  "nsIDefaultAgent.idl",
-  "nsIGeolocationUIUtilsWin.idl",
-  "nsIGtkTaskbarProgress.idl",
-  "nsIGNOMEShellService.idl",
-  "nsIJumpListBuilder.idl",
-  "nsIKeychainMigrationUtils.idl",
-  "nsILocalFileMac.idl",
-  "nsIMacDockSupport.idl",
-  "nsIMacFinderProgress.idl",
-  "nsIMacPreferencesReader.idl",
-  "nsIMacSharingService.idl",
-  "nsIMacShellService.idl",
-  "nsIMacUserActivityUpdater.idl",
-  "nsIMacWebAppUtils.idl",
-  "nsINamedPipeService.idl",
-  "nsIOpenTabsProvider.idl",
-  "nsIPrintSettingsWin.idl",
-  "nsIStandaloneNativeMenu.idl",
-  "nsITaskbarOverlayIconController.idl",
-  "nsITaskbarPreview.idl",
-  "nsITaskbarPreviewButton.idl",
-  "nsITaskbarPreviewController.idl",
-  "nsITaskbarProgress.idl",
-  "nsITaskbarTabPreview.idl",
-  "nsITaskbarWindowPreview.idl",
-  "nsITouchBarHelper.idl",
-  "nsITouchBarInput.idl",
-  "nsITouchBarUpdater.idl",
-  "nsIWinAppHelper.idl",
-  "nsIWinTaskbar.idl",
-  "nsIWinTaskSchedulerService.idl",
-  "nsIWindowsAlertsService.idl",
-  "nsIWindowsMutex.idl",
-  "nsIWindowsPackageManager.idl",
-  "nsIWindowsRegKey.idl",
-  "nsIWindowsShellService.idl",
-  "nsIWindowsUIUtils.idl",
+const PLATFORMS = ["darwin", "linux", "win32"];
+
+
+const PLATFORM_SPECIFIC = new Map([
+  ["mozISandboxReporter.idl", ["linux"]],
+  ["nsIAboutThirdParty.idl", ["win32"]],
+  ["nsIAboutWindowsMessages.idl", ["win32"]],
+  ["nsIAccessibleMacInterface.idl", ["darwin"]],
+  ["nsIAlertsServiceRust.idl", ["win32"]],
+  ["nsIApplicationChooser.idl", ["linux"]],
+  ["nsIASWebAuthSessionRequest.idl", ["darwin"]],
+  ["nsIAvailableMemoryWatcherTestingLinux.idl", ["linux"]],
+  ["nsICocoaAppShellTestUtils.idl", ["darwin"]],
+  ["nsIDefaultAgent.idl", ["win32"]],
+  ["nsIGeckoViewBridge.idl", []],
+  ["nsIGtkTaskbarProgress.idl", ["linux"]],
+  ["nsIGNOMEShellService.idl", ["linux"]],
+  ["nsIInstallationDirLayout.idl", ["win32"]],
+  ["nsIJumpListBuilder.idl", ["win32"]],
+  ["nsIKeychainMigrationUtils.idl", ["darwin"]],
+  ["nsILimitedAccessFeature.idl", ["win32"]],
+  ["nsILocalFileMac.idl", ["darwin"]],
+  ["nsIMacDockSupport.idl", ["darwin"]],
+  ["nsIMacFinderProgress.idl", ["darwin"]],
+  ["nsIMacPreferencesReader.idl", ["darwin"]],
+  ["nsIMacSharingService.idl", ["darwin"]],
+  ["nsIMacShellService.idl", ["darwin"]],
+  ["nsIMacUserActivityUpdater.idl", ["darwin"]],
+  ["nsIMacWebAppUtils.idl", ["darwin"]],
+  ["nsIMediaDrmProvisioning.idl", []],
+  ["nsINamedPipeService.idl", ["win32"]],
+  ["nsIOhttpClientTest.idl", []],
+  ["nsIOpenTabsProvider.idl", ["linux"]],
+  ["nsIPrintSettingsWin.idl", ["win32"]],
+  ["nsISecondaryTile.idl", ["win32"]],
+  ["nsIStandaloneNativeMenu.idl", ["darwin"]],
+  ["nsITaskbarOverlayIconController.idl", ["win32"]],
+  ["nsITaskbarPreview.idl", ["win32"]],
+  ["nsITaskbarPreviewButton.idl", ["win32"]],
+  ["nsITaskbarPreviewController.idl", ["win32"]],
+  ["nsITaskbarProgress.idl", ["darwin", "linux", "win32"]],
+  ["nsITaskbarTabPreview.idl", ["win32"]],
+  ["nsITaskbarWindowPreview.idl", ["win32"]],
+  ["nsITouchBarHelper.idl", ["darwin"]],
+  ["nsITouchBarInput.idl", ["darwin"]],
+  ["nsITouchBarUpdater.idl", ["darwin"]],
+  ["nsIWinAppHelper.idl", ["win32"]],
+  ["nsIWinBackgroundTaskRegistrar.idl", ["win32"]],
+  ["nsIWinTaskbar.idl", ["win32"]],
+  ["nsIWinTaskSchedulerService.idl", ["win32"]],
+  ["nsIWindowsAlertsService.idl", ["win32"]],
+  ["nsIWindowsMutex.idl", ["win32"]],
+  ["nsIWindowsPackageManager.idl", ["win32"]],
+  ["nsIWindowsRegKey.idl", ["win32"]],
+  ["nsIWindowsShellService.idl", ["win32"]],
+  ["nsIWindowsTestDebug.idl", ["win32"]],
+  ["nsIWindowsUIUtils.idl", ["win32"]],
 ]);
 
 
@@ -100,8 +117,14 @@ function ts_interface(iface) {
     lines.push("}  // global\n");
 
     for (let e of iface.enums) {
+      lines.push(
+        `/** <!-- binding_to(idl, class, XPIDL_${iface.id}_${e.id}) --> */`
+      );
       lines.push(`declare enum ${iface.id}_${e.id} {`);
       for (let v of e.variants) {
+        lines.push(
+          `  /** <!-- binding_to(idl, const, XPIDL_${iface.id}_${e.id}_${v.name}) --> */`
+        );
         lines.push(`  ${v.name} = ${v.value},`);
       }
       lines.push("}\n");
@@ -118,12 +141,21 @@ function ts_interface(iface) {
 
   
   if (iface.callable) {
+    lines.push(
+      `/** <!-- binding_to(idl, interface_name, XPIDL_${iface.id}) --> */`
+    );
     lines.push(`type ${iface.id} = Callable<{`);
   } else {
+    lines.push(
+      `/** <!-- binding_to(idl, interface_name, XPIDL_${iface.id}) --> */`
+    );
     lines.push(`interface ${iface.id} ${base ? `extends ${base} ` : ""}{`);
   }
 
   for (let c of iface.consts) {
+    lines.push(
+      `  /** <!-- binding_to(idl, const, XPIDL_${iface.id}_${c.name}) --> */`
+    );
     lines.push(`  readonly ${c.name}?: ${c.value};`);
   }
 
@@ -134,8 +166,14 @@ function ts_interface(iface) {
 
   for (let m of iface.members) {
     if (!m.args) {
+      lines.push(
+        `  /** <!-- binding_to(idl, attribute, XPIDL_${iface.id}_${m.name}) --> */`
+      );
       lines.push(`  ${m.readonly ? "readonly " : ""}${m.name}: ${m.type};`);
     } else {
+      lines.push(
+        `  /** <!-- binding_to(idl, method, XPIDL_${iface.id}_${m.name}) --> */`
+      );
       let args = [];
       for (let arg of m.args) {
         
@@ -198,10 +236,17 @@ function main(lib_xpcom, djson_dir, ...djson_files) {
   console.log(`[INFO] ${lib_xpcom} (${dts.length.toLocaleString()} bytes)`);
   fs.writeFileSync(lib_xpcom, dts);
 
-  let lib_plat = lib_xpcom.replace("xpcom", process.platform);
-  let spec = ts_link(djson_dir, djson_files, m => PLATFORM_SPECIFIC.has(m));
-  console.log(`[INFO] ${lib_plat} (${spec.length.toLocaleString()} bytes)`);
-  fs.writeFileSync(lib_plat, spec);
+  for (let platform of PLATFORMS) {
+    let lib_plat = path.join(
+      path.dirname(lib_xpcom),
+      `lib.gecko.${platform}.d.ts`
+    );
+    let spec = ts_link(djson_dir, djson_files, m =>
+      PLATFORM_SPECIFIC.get(m)?.includes(platform)
+    );
+    console.log(`[INFO] ${lib_plat} (${spec.length.toLocaleString()} bytes)`);
+    fs.writeFileSync(lib_plat, spec);
+  }
 }
 
 if (require.main === module) {
