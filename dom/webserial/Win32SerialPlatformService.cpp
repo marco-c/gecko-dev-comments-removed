@@ -149,15 +149,33 @@ nsresult EnumeratePortsWin32(SerialPortList& aPorts) {
         deviceInfoSet, &deviceInfo, &deviceDescriptionPropKey,
         &unusedPropertyType, reinterpret_cast<PBYTE>(friendlyName),
         friendlyNameSize, nullptr, 0);
-    if (!(succeeded && *friendlyName)) {
+    if (!(succeeded && friendlyName[0] != L'\0')) {
       deviceDescriptionPropKey = DEVPKEY_Device_FriendlyName;
       succeeded = SetupDiGetDevicePropertyW(
           deviceInfoSet, &deviceInfo, &deviceDescriptionPropKey,
           &unusedPropertyType, reinterpret_cast<PBYTE>(friendlyName),
           friendlyNameSize, nullptr, 0);
     }
-    if (!(succeeded && *friendlyName)) {
-      wcscpy_s(friendlyName, portName);
+
+    IPCSerialPortInfo info;
+    info.id() = nsString(portName);
+
+    if (succeeded && friendlyName[0] != L'\0') {
+      
+      
+      
+      if (wcsstr(friendlyName, portName) == nullptr) {
+        nsString name(friendlyName);
+        name.AppendLiteral(u" (");
+        name.Append(portName);
+        name.Append(u')');
+        info.friendlyName() = name;
+      } else {
+        info.friendlyName() = nsString(friendlyName);
+      }
+    } else {
+      
+      info.friendlyName() = nsString(portName);
     }
     
     
@@ -166,10 +184,6 @@ nsresult EnumeratePortsWin32(SerialPortList& aPorts) {
     SetupDiGetDeviceRegistryPropertyW(
         deviceInfoSet, &deviceInfo, SPDRP_HARDWAREID, nullptr,
         reinterpret_cast<PBYTE>(hardwareId), sizeof(hardwareId), nullptr);
-
-    IPCSerialPortInfo info;
-    info.id() = nsString(portName);
-    info.friendlyName() = nsString(friendlyName);
 
     {
       nsString path(kDevicePathPrefix);
