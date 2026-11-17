@@ -1,70 +1,12 @@
 
 
 
-"use strict";
-
-add_setup(async function () {
-  do_get_profile();
-});
-
-add_task(function test_storage_in_sandbox() {
-  const sb = new Cu.Sandbox("http://www.example.com", {
-    wantGlobalProperties: ["storage"],
-  });
+function run_test() {
+  var sb = new Cu.Sandbox('http://www.example.com',
+                          { wantGlobalProperties: ["storage"] });
   sb.ok = ok;
-  Cu.evalInSandbox("ok(storage instanceof StorageManager);", sb);
-});
-
-
-
-
-
-add_task(function test_storage_is_a_global() {
-  Assert.ok(storage instanceof StorageManager, "storage is a StorageManager");
-});
-
-
-
-
-
-add_task(function test_storage_re_resolves_after_delete() {
-  Assert.ok(delete globalThis.storage, "storage property was deleted");
-  Assert.ok(storage instanceof StorageManager, "storage resolves again");
-});
-
-
-
-
-add_task(async function test_get_directory_without_a_window() {
-  const root = await storage.getDirectory();
-  Assert.ok(root, "Got the OPFS root directory handle");
-
-  const fileHandle = await root.getFileHandle("test.txt", { create: true });
-  const writable = await fileHandle.createWritable();
-  await writable.write("chrome");
-  await writable.close();
-
-  const file = await fileHandle.getFile();
-  Assert.equal(await file.text(), "chrome", "Read back what was written");
-
-  await root.removeEntry("test.txt");
-
-  
-  await awaitRequest(
-    Services.qms.clearStoragesForPrincipal(
-      Services.scriptSecurityManager.getSystemPrincipal()
-    )
-  );
-});
-
-function awaitRequest(request) {
-  return new Promise(function (resolve, reject) {
-    request.callback = function () {
-      if (request.resultCode == Cr.NS_OK) {
-        resolve(request.result);
-      } else {
-        reject(new Error(request.resultName));
-      }
-    };
-  });
+  Cu.evalInSandbox('ok(storage instanceof StorageManager);',
+                   sb);
+  Cu.importGlobalProperties(["storage"]);
+  Assert.ok(storage instanceof StorageManager);
 }

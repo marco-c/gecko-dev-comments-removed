@@ -36,6 +36,12 @@ function createBlob(size = 8) {
   return createRandomBlob(size);
 }
 
+function stripLastUsed(data) {
+  return data.map(({ lastUsed: _unusedLastUsed, ...rest }) => {
+    return rest;
+  });
+}
+
 
 
 

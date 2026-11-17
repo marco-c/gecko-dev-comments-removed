@@ -19,11 +19,6 @@ const E2E_TEST_BASE_URL =
   "chrome://mochitests/content/browser/toolkit/components/ml/tests/browser/";
 
 
-registerCleanupFunction(() => {
-  Services.env.set("MOZ_ALLOW_EXTERNAL_ML_HUB", "");
-});
-
-
 
 
 add_task(async function test_e2e_engine_can_be_cancelled() {

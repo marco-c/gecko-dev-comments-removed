@@ -26,9 +26,6 @@ declare namespace ChromeUtils {
 
 declare var locks: LockManager;
 
-
-declare var storage: StorageManager;
-
 interface ChromeWindow extends Window {
   isChromeWindow: true;
 }
