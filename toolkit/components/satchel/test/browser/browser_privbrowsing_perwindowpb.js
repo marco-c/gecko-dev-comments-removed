@@ -8,6 +8,10 @@ var { FormHistory } = ChromeUtils.importESModule(
 
 
 add_task(async function test() {
+  registerCleanupFunction(() =>
+    FormHistory.update({ op: "remove", fieldname: "field", value: "value" })
+  );
+
   
   let windowsToClose = [];
   let testURI =
