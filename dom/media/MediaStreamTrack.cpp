@@ -56,67 +56,6 @@ auto MediaStreamTrackSource::ApplyConstraints(
       __func__);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class MediaStreamTrack::MTGListener : public MediaTrackListener {
- public:
-  explicit MTGListener(MediaStreamTrack* aTrack) : mTrack(aTrack) {}
-
-  void DoNotifyPrincipalHandleChanged(
-      const PrincipalHandle& aNewPrincipalHandle) {
-    MOZ_ASSERT(NS_IsMainThread());
-
-    if (!mTrack) {
-      return;
-    }
-
-    mTrack->NotifyPrincipalHandleChanged(aNewPrincipalHandle);
-  }
-
-  void NotifyPrincipalHandleChanged(
-      MediaTrackGraph* aGraph,
-      const PrincipalHandle& aNewPrincipalHandle) override {
-    aGraph->DispatchToMainThreadStableState(
-        NewRunnableMethod<StoreCopyPassByConstLRef<PrincipalHandle>>(
-            "dom::MediaStreamTrack::MTGListener::"
-            "DoNotifyPrincipalHandleChanged",
-            this, &MTGListener::DoNotifyPrincipalHandleChanged,
-            aNewPrincipalHandle));
-  }
-
-  void NotifyRemoved(MediaTrackGraph* aGraph) override {
-    
-    
-    
-    aGraph->DispatchToMainThreadStableState(
-        NS_NewRunnableFunction("MediaStreamTrack::MTGListener::mTrackReleaser",
-                               [self = RefPtr<MTGListener>(this)]() {}));
-  }
-
- protected:
-  
-  WeakPtr<MediaStreamTrack> mTrack;
-};
-
 class MediaStreamTrack::TrackSink : public MediaStreamTrackSource::Sink {
  public:
   explicit TrackSink(MediaStreamTrack* aTrack) : mTrack(aTrack) {}
@@ -179,7 +118,9 @@ MediaStreamTrack::MediaStreamTrack(nsPIDOMWindowInner* aWindow,
       mConstraints(aConstraints),
       mWatchManager(this, AbstractThread::MainThread()),
       mTrackEnded(AbstractThread::MainThread(), false,
-                  "MediaStreamTrack::mTrackEnded") {
+                  "MediaStreamTrack::mTrackEnded"),
+      mTrackPrincipalHandle(AbstractThread::MainThread(), PRINCIPAL_HANDLE_NONE,
+                            "MediaStreamTrack::mTrackPrincipalHandle") {
   if (!Ended()) {
     GetSource().RegisterSink(mSink.get());
 
@@ -200,10 +141,11 @@ MediaStreamTrack::MediaStreamTrack(nsPIDOMWindowInner* aWindow,
     mTrack = graph->CreateForwardedInputTrack(
         mInputTrack->mType, mozilla::MediaTrack::Flag::EnableCanonicals);
     mPort = mTrack->AllocateInputPort(mInputTrack);
-    mMTGListener = new MTGListener(this);
-    AddListener(mMTGListener);
     mTrackEnded.Connect(&mTrack->CanonicalEnded());
     mWatchManager.Watch(mTrackEnded, &MediaStreamTrack::OnTrackEnded);
+    mTrackPrincipalHandle.Connect(&mTrack->CanonicalPrincipalHandle());
+    mWatchManager.Watch(mTrackPrincipalHandle,
+                        &MediaStreamTrack::OnPrincipalHandleChanged);
   }
 
   nsresult rv;
@@ -418,15 +360,35 @@ void MediaStreamTrack::PrincipalChanged() {
   }
 }
 
-void MediaStreamTrack::NotifyPrincipalHandleChanged(
-    const PrincipalHandle& aNewPrincipalHandle) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void MediaStreamTrack::OnPrincipalHandleChanged() {
+  MOZ_ASSERT(NS_IsMainThread());
+  const PrincipalHandle& newPrincipalHandle = mTrackPrincipalHandle;
   LOG(LogLevel::Info,
       ("MediaStreamTrack {} principalHandle changed on "
        "MediaTrackGraph thread to {}. Current principal: {}, "
        "pending: {}",
-       fmt::ptr(this), fmt::ptr(GetPrincipalFromHandle(aNewPrincipalHandle)),
+       fmt::ptr(this), fmt::ptr(GetPrincipalFromHandle(newPrincipalHandle)),
        fmt::ptr(mPrincipal.get()), fmt::ptr(mPendingPrincipal.get())));
-  if (PrincipalHandleMatches(aNewPrincipalHandle, mPendingPrincipal)) {
+  if (PrincipalHandleMatches(newPrincipalHandle, mPendingPrincipal)) {
     SetPrincipal(mPendingPrincipal);
     mPendingPrincipal = nullptr;
   }
@@ -540,11 +502,9 @@ void MediaStreamTrack::SetReadyState(MediaStreamTrackState aState) {
     if (mSource) {
       mSource->UnregisterSink(mSink.get());
     }
-    if (mMTGListener) {
-      RemoveListener(mMTGListener);
-    }
     mWatchManager.Shutdown();
     mTrackEnded.DisconnectIfConnected();
+    mTrackPrincipalHandle.DisconnectIfConnected();
     if (mPort) {
       mPort->Destroy();
     }
@@ -553,7 +513,6 @@ void MediaStreamTrack::SetReadyState(MediaStreamTrackState aState) {
     }
     mPort = nullptr;
     mTrack = nullptr;
-    mMTGListener = nullptr;
   }
 
   mReadyState = aState;

@@ -442,7 +442,6 @@ class MediaStreamTrack : public DOMEventTargetHelper, public SupportsWeakPtr {
   friend class mozilla::SourceStreamInfo;
   friend class mozilla::RemoteSourceStreamInfo;
 
-  class MTGListener;
   class TrackSink;
 
  public:
@@ -611,7 +610,8 @@ class MediaStreamTrack : public DOMEventTargetHelper, public SupportsWeakPtr {
 
 
 
-  void NotifyPrincipalHandleChanged(const PrincipalHandle& aNewPrincipalHandle);
+
+  void OnPrincipalHandleChanged();
 
   
 
@@ -702,7 +702,6 @@ class MediaStreamTrack : public DOMEventTargetHelper, public SupportsWeakPtr {
   const UniquePtr<TrackSink> mSink;
   nsCOMPtr<nsIPrincipal> mPrincipal;
   nsCOMPtr<nsIPrincipal> mPendingPrincipal;
-  RefPtr<MTGListener> mMTGListener;
   
   
   nsTArray<RefPtr<MediaTrackListener>> mTrackListeners;
@@ -715,6 +714,8 @@ class MediaStreamTrack : public DOMEventTargetHelper, public SupportsWeakPtr {
   WatchManager<MediaStreamTrack> mWatchManager;
   
   Mirror<bool> mTrackEnded;
+  
+  Mirror<PrincipalHandle> mTrackPrincipalHandle;
 };
 
 }  
