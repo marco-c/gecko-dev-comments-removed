@@ -1965,23 +1965,11 @@ void DocumentLoadListener::SerializeRedirectData(
       }
 
       
-      constexpr auto prepareInfo =
-          [](nsIPrincipal* aPrincipal) -> Maybe<ipc::PrincipalInfo> {
-        if (aPrincipal == nullptr) {
-          return Nothing();
-        }
-        ipc::PrincipalInfo data;
-        return NS_SUCCEEDED(PrincipalToPrincipalInfo(aPrincipal, &data))
-                   ? Some(std::move(data))
-                   : Nothing();
-      };
-
-      
       
       auto& ancestorOrigins = aArgs.loadInfo().ancestorOrigins();
       for (const auto& ancestorPrincipal :
            bc->Canonical()->GetPossiblyRedactedAncestorOriginsList()) {
-        ancestorOrigins.AppendElement(prepareInfo(ancestorPrincipal));
+        ancestorOrigins.AppendElement(ancestorPrincipal);
       }
     }
   }
