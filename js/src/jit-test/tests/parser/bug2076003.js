@@ -1,3 +1,5 @@
+
+
 const labels = [];
 for (let value = 0; value <= 32766; value += 2) {
   labels.push('case ' + value + ':');
