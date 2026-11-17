@@ -37,6 +37,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   AddressComponent: "resource://gre/modules/shared/AddressComponent.sys.mjs",
+  CreditCardRecord: "resource://gre/modules/shared/CreditCardRecord.sys.mjs",
   AutocompleteRemoveRecord:
     "resource://gre/modules/AutocompleteRemoveRecord.sys.mjs",
   FormAutofillML: "resource://gre/modules/shared/FormAutofillML.sys.mjs",
@@ -128,7 +129,6 @@ export let FormAutofillStatus = {
     this._initialized = true;
 
     Services.obs.addObserver(this, "passwordsAutofill-pane-loaded");
-    Services.obs.addObserver(this, "privacy-pane-loaded");
 
     // Observing the pref and storage changes
     Services.prefs.addObserver(ENABLED_AUTOFILL_ADDRESSES_PREF, this);
@@ -155,7 +155,6 @@ export let FormAutofillStatus = {
 
     this._active = null;
 
-    Services.obs.removeObserver(this, "privacy-pane-loaded");
     Services.obs.removeObserver(this, "passwordsAutofill-pane-loaded");
     Services.prefs.removeObserver(ENABLED_AUTOFILL_ADDRESSES_PREF, this);
     Services.obs.removeObserver(this, "formautofill-storage-changed");
@@ -276,20 +275,6 @@ export let FormAutofillStatus = {
     }
 
     switch (topic) {
-      case "privacy-pane-loaded": {
-        if (
-          !Services.prefs.getBoolPref(
-            "browser.settings-redesign.enabled",
-            false
-          )
-        ) {
-          let formAutofillPreferences = new lazy.FormAutofillPreferences();
-          let document = subject.document;
-          formAutofillPreferences.init(document);
-        }
-        break;
-      }
-
       case "passwordsAutofill-pane-loaded": {
         let formAutofillPreferences = new lazy.FormAutofillPreferences();
         formAutofillPreferences.init(subject.document);
@@ -658,6 +643,32 @@ export class FormAutofillParent extends JSWindowActorParent {
 
     await this.runMLInference(fieldDetails);
 
+    // If none of the detected fields belong to a known data type, don't
+    // set up autofill, but send the FormAutofill:onFieldsDetectedNone message
+    // to the original focused frame so that it can reset state. This
+    // optimization prevents processing fields further and adding unneeded
+    // mutation listeners.
+    if (
+      !fieldDetails.some(
+        fd => AutofillDataTypes.typeIdForFieldName(fd.fieldName) != null
+      )
+    ) {
+      const detailsByBC =
+        lazy.FormAutofillSection.groupFieldDetailsByBrowsingContext(
+          fieldDetails
+        );
+      for (const [bcId, fds] of Object.entries(detailsByBC)) {
+        if (bcId == this.browsingContext.id) {
+          FormAutofillParent.getActor(this.browsingContext).sendQuery(
+            "FormAutofill:onFieldsDetectedNone",
+            { fds }
+          );
+          break;
+        }
+      }
+      return;
+    }
+
     // Now we have collected all the fields for the form, run parsing heuristics
     // to update the field name based on surrounding fields.
     const sections = FormAutofillParent.parseAndClassifyFields(fieldDetails);
@@ -905,10 +916,15 @@ export class FormAutofillParent extends JSWindowActorParent {
       return records;
     }
 
-    // We don't filter "cc-number"
+    // We don't filter "cc-number" or "cc-csc".
     if (collectionName == CREDITCARDS_COLLECTION_NAME) {
       if (fieldName == "cc-number") {
         return records.filter(record => !!record["cc-number"]);
+      }
+      if (fieldName == "cc-csc") {
+        return records.filter(record =>
+          lazy.CreditCardRecord.hasSecurityCode(record)
+        );
       }
     }
 

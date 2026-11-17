@@ -53,6 +53,11 @@ const errorTextOf = e =>
     .replace(GUID_LIKE, "<id>")
     .slice(0, 200);
 
+// Encoding a string for the Rust store replaces each lone surrogate with U+FFFD,
+// so a value is compared in that form: the replacement is not a divergence.
+const wellFormed = value =>
+  typeof value == "string" ? value.toWellFormed() : value;
+
 /**
  * Copy a profile's records from one store to the other, and check field by
  * field that they came out the same. A dry run does the copy only to measure it,
@@ -371,8 +376,7 @@ export class AutofillStorageMigrator {
       // without one answers a raw read instead and has no tombstones to give --
       // raw because a store may hide a stored field on read, and copying from
       // the filtered read would write that field out of existence here.
-      const raw =
-        source._data ?? (await source.getAll({ rawData: true, prompt: false }));
+      const raw = source._data ?? (await source.getAll({ rawData: true }));
       const records = raw.filter(record => !record.deleted);
       const tombstones = raw
         .filter(record => record.deleted)
@@ -415,12 +419,7 @@ export class AutofillStorageMigrator {
       // What the target already holds decides how each record gets there. A
       // wipe leaves nothing, so everything is an insert.
       const heldRecords = new Map(
-        wipe
-          ? []
-          : (await target.getAll({ prompt: false })).map(record => [
-              record.guid,
-              record,
-            ])
+        wipe ? [] : (await target.getAll()).map(record => [record.guid, record])
       );
       const held = new Set(heldRecords.keys());
       const fresh = exportable.filter(record => !held.has(record.guid));
@@ -501,7 +500,7 @@ export class AutofillStorageMigrator {
 
       // Only a store that caches its count has anything to prime.
       await target.refreshCount?.();
-      const stored = await target.getAll({ prompt: false });
+      const stored = await target.getAll();
       targetTotal = stored.length;
       divergences = await this.#verify(source, target, stored);
 
@@ -600,7 +599,7 @@ export class AutofillStorageMigrator {
     const byGUID = new Map(stored.map(record => [record.guid, record]));
     const divergences = [];
 
-    for (let record of await source.getAll({ prompt: false })) {
+    for (let record of await source.getAll()) {
       let copy = byGUID.get(record.guid);
       if (!copy) {
         // A record that never arrived is a count mismatch, not a divergence.
@@ -629,7 +628,11 @@ export class AutofillStorageMigrator {
       ].filter(
         field =>
           this.isStoredField(field) &&
-          this.fieldDiffers(field, record[field], copy[field])
+          this.fieldDiffers(
+            field,
+            wellFormed(record[field]),
+            wellFormed(copy[field])
+          )
       );
       if (!differing.length) {
         continue;
@@ -680,12 +683,12 @@ export class AutofillStorageMigrator {
 }
 
 const addressLogger = console.createInstance({
-  prefix: "AddressStorageMigrator",
+  logModule: "AddressStorageMigrator",
   maxLogLevelPref: "extensions.formautofill.loglevel",
 });
 
 const creditCardLogger = console.createInstance({
-  prefix: "CreditCardStorageMigrator",
+  logModule: "CreditCardStorageMigrator",
   maxLogLevelPref: "extensions.formautofill.loglevel",
 });
 

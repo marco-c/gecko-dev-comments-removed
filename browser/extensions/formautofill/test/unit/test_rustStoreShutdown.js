@@ -167,7 +167,6 @@ function makeAuthenticator(answers) {
 
 add_task(async function a_read_nothing_asked_for_is_never_prompted() {
   
-  
   const authenticator = makeAuthenticator(["secret"]);
   await Assert.rejects(
     authenticator.getPrimaryPassword(),

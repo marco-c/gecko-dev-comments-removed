@@ -33,6 +33,9 @@ const { formAutofillStorage } = ChromeUtils.importESModule(
   "resource://autofill/FormAutofillStorage.sys.mjs"
 );
 
+const { CreditCardRecord } = ChromeUtils.importESModule(
+  "resource://gre/modules/shared/CreditCardRecord.sys.mjs"
+);
 const { FormAutofillUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/shared/FormAutofillUtils.sys.mjs"
 );
@@ -1089,13 +1092,34 @@ async function decryptCreditCardNumber(record) {
   return formAutofillStorage.creditCards.decryptField(record, "cc-number");
 }
 
+
+
+
+
+
+
+
+async function decryptCreditCardSecurityCode(record) {
+  return formAutofillStorage.creditCards.decryptField(record, "cc-csc");
+}
+
 async function testDialog(url, testFn, arg = undefined) {
-  if (url == EDIT_CREDIT_CARD_DIALOG_URL && arg?.record) {
-    
-    const number = await decryptCreditCardNumber(arg.record);
-    if (number) {
-      arg.record = Object.assign({}, arg.record, { "cc-number": number });
-    }
+  
+  
+  if (
+    url == EDIT_CREDIT_CARD_DIALOG_URL &&
+    arg?.record?.guid &&
+    (await formAutofillStorage.creditCards.get(arg.record.guid))
+  ) {
+    const { FormAutofillPreferences } = ChromeUtils.importESModule(
+      "resource://autofill/FormAutofillPreferences.sys.mjs"
+    );
+    arg = {
+      ...arg,
+      record: await FormAutofillPreferences.decryptCreditCardForEditing(
+        arg.record
+      ),
+    };
   }
   const win = window.openDialog(url, null, "width=600,height=600", {
     ...arg,
