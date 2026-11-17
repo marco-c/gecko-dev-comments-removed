@@ -51,7 +51,10 @@ class RDDProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   
   
   
-  RefPtr<GenericNonExclusivePromise> LaunchPromise();
+  RefPtr<GenericNonExclusivePromise> LaunchPromise() {
+    MOZ_ASSERT(NS_IsMainThread());
+    return mLaunchPromise;
+  }
 
   
   
@@ -82,9 +85,6 @@ class RDDProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   
   
   TimeStamp GetLaunchTime() const { return mLaunchTime; }
-
-  
-  void OnChannelConnected() override;
 
   void SetListener(Listener* aListener);
 

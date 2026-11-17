@@ -106,9 +106,6 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   
   TimeStamp GetLaunchTime() const { return mLaunchTime; }
 
-  
-  void OnChannelConnected() override;
-
   void SetListener(Listener* aListener);
 
   
