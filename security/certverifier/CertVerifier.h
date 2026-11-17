@@ -322,13 +322,22 @@ mozilla::pkix::Result CertListContainsExpectedKeys(const CERTCertList* certList,
 
 
 
+
+
 mozilla::pkix::Result VerifySignedDataWithCache(
     mozilla::pkix::der::PublicKeyAlgorithm publicKeyAlg,
     mozilla::glean::impl::DenominatorMetric telemetryDenominator,
     mozilla::glean::impl::NumeratorMetric telemetryNumerator,
-    mozilla::pkix::Input data, mozilla::pkix::DigestAlgorithm digestAlgorithm,
+    mozilla::pkix::Input data,
+    const Maybe<mozilla::pkix::DigestAlgorithm>& digestAlgorithm,
     mozilla::pkix::Input signature, mozilla::pkix::Input subjectPublicKeyInfo,
     SignatureCache* signatureCache, void* pinArg);
+
+
+
+
+mozilla::pkix::Result CheckMLDSAParameterSetIsEnabled(
+    mozilla::pkix::MLDSAParameterSet parameterSet);
 
 }  
 }  

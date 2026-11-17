@@ -195,6 +195,18 @@ pkix::Result PDFTrustDomain::VerifyECDSASignedData(
                                   subjectPublicKeyInfo, nullptr);
 }
 
+pkix::Result PDFTrustDomain::CheckMLDSAParameterSetIsAcceptable(
+    EndEntityOrCA , MLDSAParameterSet parameterSet) {
+  return CheckMLDSAParameterSetIsEnabled(parameterSet);
+}
+
+pkix::Result PDFTrustDomain::VerifyMLDSASignedData(
+    Input data, MLDSAParameterSet parameterSet, Input signature,
+    Input subjectPublicKeyInfo) {
+  return VerifyMLDSASignedDataNSS(data, parameterSet, signature,
+                                  subjectPublicKeyInfo, nullptr);
+}
+
 pkix::Result PDFTrustDomain::CheckValidityIsAcceptable(
     Time , Time , EndEntityOrCA ,
     KeyPurposeId ) {

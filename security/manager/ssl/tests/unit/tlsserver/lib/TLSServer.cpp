@@ -503,7 +503,9 @@ SECStatus ConfigSecureServerWithNamedCert(
   }
 
   SSL_OptionSet(fd, SSL_NO_CACHE, false);
-  SSL_OptionSet(fd, SSL_ENABLE_SESSION_TICKETS, true);
+  
+  
+  SSL_OptionSet(fd, SSL_ENABLE_SESSION_TICKETS, key->keyType != mldsaKey);
   
   SSL_OptionSet(fd, SSL_ENABLE_0RTT_DATA, !!PR_GetEnv("MOZ_TLS_SERVER_0RTT"));
 
