@@ -514,7 +514,11 @@ async function promiseNativeTouchpadPanEventAndWaitForObserver(
   aDeltaY,
   aPhase
 ) {
-  if (getPlatform() != "windows" && getPlatform() != "linux") {
+  if (
+    getPlatform() != "windows" &&
+    getPlatform() != "linux" &&
+    getPlatform() != "mac"
+  ) {
     throw new Error(
       `promiseNativeTouchpadPanEventAndWaitForObserver doesn't work on ${getPlatform()}`
     );
@@ -1764,32 +1768,7 @@ async function doubleTapOn(element, x, y, useTouchpad) {
   await promiseApzFlushedRepaints();
 }
 
-const NativePanHandlerForLinux = {
-  beginPhase: SpecialPowers.DOMWindowUtils.PHASE_BEGIN,
-  updatePhase: SpecialPowers.DOMWindowUtils.PHASE_UPDATE,
-  endPhase: SpecialPowers.DOMWindowUtils.PHASE_END,
-  promiseNativePanEvent: promiseNativeTouchpadPanEventAndWaitForObserver,
-  delta: -50,
-};
-
-const NativePanHandlerForWindows = {
-  beginPhase: SpecialPowers.DOMWindowUtils.PHASE_BEGIN,
-  updatePhase: SpecialPowers.DOMWindowUtils.PHASE_UPDATE,
-  endPhase: SpecialPowers.DOMWindowUtils.PHASE_END,
-  promiseNativePanEvent: promiseNativeTouchpadPanEventAndWaitForObserver,
-  delta: 50,
-};
-
-const NativePanHandlerForMac = {
-  
-  beginPhase: 1, 
-  updatePhase: 2, 
-  endPhase: 4, 
-  promiseNativePanEvent: promiseNativePanGestureEventAndWaitForObserver,
-  delta: -50,
-};
-
-const NativePanHandlerForHeadless = {
+const DefaultNativePanHandler = {
   beginPhase: SpecialPowers.DOMWindowUtils.PHASE_BEGIN,
   updatePhase: SpecialPowers.DOMWindowUtils.PHASE_UPDATE,
   endPhase: SpecialPowers.DOMWindowUtils.PHASE_END,
@@ -1799,16 +1778,14 @@ const NativePanHandlerForHeadless = {
 
 function getPanHandler() {
   if (SpecialPowers.isHeadless) {
-    return NativePanHandlerForHeadless;
+    return DefaultNativePanHandler;
   }
 
   switch (getPlatform()) {
     case "linux":
-      return NativePanHandlerForLinux;
     case "windows":
-      return NativePanHandlerForWindows;
     case "mac":
-      return NativePanHandlerForMac;
+      return DefaultNativePanHandler;
     default:
       throw new Error(
         "There's no native pan handler on platform " + getPlatform()

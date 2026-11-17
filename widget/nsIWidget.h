@@ -1731,6 +1731,8 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
 
+
+
   virtual nsresult SynthesizeNativeMouseScrollEvent(
       LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage, double aDeltaX,
       double aDeltaY, double aDeltaZ, nsIWidget::NativeModifiers aModifierFlags,
