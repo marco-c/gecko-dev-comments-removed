@@ -28,6 +28,10 @@ NSString* GetTruncatedCocoaLabel(const nsString& aLabel, nsIContent* aContent);
 
 NSString* TruncateLabelToWidth(NSString* aLabel, NSFont* aFont,
                                CGFloat aMaxWidth);
+
+
+bool EventMatchesKeyEquivalent(NSEvent* aEvent, NSString* aKeyEquivalent,
+                               NSEventModifierFlags aModifierMask);
 uint8_t GeckoModifiersForNodeAttribute(const nsString& modifiersAttribute);
 unsigned int MacModifiersForGeckoModifiers(uint8_t geckoModifiers);
 already_AddRefed<nsMenuBarX> GetHiddenWindowMenuBar();

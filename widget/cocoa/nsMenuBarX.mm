@@ -1267,54 +1267,10 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
 @end
 
 
-
-
-
-
-
-static bool EventMatchesKeyEquivalent(NSEvent* aEvent, NSString* aKeyEquivalent,
-                                      NSEventModifierFlags aModifierMask) {
-  if (aKeyEquivalent.length != 1) {
-    return false;
-  }
-  uint32_t key = [aKeyEquivalent characterAtIndex:0];
-  uint32_t lowercaseKey = ToLowerCase(key);
-
-  const NSEventModifierFlags relevantFlags =
-      NSEventModifierFlagCommand | NSEventModifierFlagOption |
-      NSEventModifierFlagControl | NSEventModifierFlagShift;
-  NSEventModifierFlags eventFlags = aEvent.modifierFlags & relevantFlags;
-  NSEventModifierFlags requiredFlags = aModifierMask & relevantFlags;
-  if (lowercaseKey != key) {
-    
-    requiredFlags |= NSEventModifierFlagShift;
-  }
-
-  mozilla::widget::TISInputSourceWrapper& inputSource =
-      mozilla::widget::TISInputSourceWrapper::CurrentInputSource();
-  uint32_t unshifted = inputSource.CharForKeyCode(aEvent.keyCode, 0);
-  uint32_t shifted = inputSource.CharForKeyCode(aEvent.keyCode, shiftKey);
-  if (!unshifted && !shifted) {
-    
-    
-    NSString* characters = aEvent.charactersIgnoringModifiers;
-    return characters.length == 1 && [characters characterAtIndex:0] == key &&
-           eventFlags == requiredFlags;
-  }
-  if (unshifted && ToLowerCase(unshifted) == lowercaseKey) {
-    return eventFlags == requiredFlags;
-  }
-  if (shifted && shifted == key) {
-    return eventFlags == (requiredFlags | NSEventModifierFlagShift);
-  }
-  return false;
-}
-
-
 static bool IsUserAssignedShortcut(NSEvent* aEvent, NSMenuItem* aItem) {
   return aItem.userKeyEquivalent.length > 0 &&
-         EventMatchesKeyEquivalent(aEvent, aItem.keyEquivalent,
-                                   aItem.keyEquivalentModifierMask);
+         nsMenuUtilsX::EventMatchesKeyEquivalent(
+             aEvent, aItem.keyEquivalent, aItem.keyEquivalentModifierMask);
 }
 
 
@@ -1328,7 +1284,7 @@ static bool IsReplacedInternalShortcut(NSEvent* aEvent, NSMenuItem* aItem) {
   }
   nsMenuItemX* menuItem = MenuItemForNativeMenuItem(aItem);
   return menuItem && menuItem->HasInternalShortcut() &&
-         EventMatchesKeyEquivalent(
+         nsMenuUtilsX::EventMatchesKeyEquivalent(
              aEvent, menuItem->BuiltInKeyEquivalent(),
              menuItem->BuiltInKeyEquivalentModifierMask());
 }

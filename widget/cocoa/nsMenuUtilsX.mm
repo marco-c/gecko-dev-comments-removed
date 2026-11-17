@@ -6,6 +6,7 @@
 #include <unordered_set>
 
 #include "NativeMenuMac.h"
+#include "TextInputHandler.h"
 #include "gfxPlatform.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/dom/Document.h"
@@ -24,6 +25,7 @@
 #include "nsPIDOMWindow.h"
 #include "nsPresContext.h"
 #include "nsQueryObject.h"
+#include "nsUnicharUtils.h"
 
 using namespace mozilla;
 
@@ -52,6 +54,51 @@ void nsMenuUtilsX::DispatchCommandTo(nsIContent* aTargetContent,
     event->SetTrusted(true);
     aTargetContent->DispatchEvent(*event);
   }
+}
+
+
+
+
+
+
+
+bool nsMenuUtilsX::EventMatchesKeyEquivalent(
+    NSEvent* aEvent, NSString* aKeyEquivalent,
+    NSEventModifierFlags aModifierMask) {
+  if (aKeyEquivalent.length != 1) {
+    return false;
+  }
+  uint32_t key = [aKeyEquivalent characterAtIndex:0];
+  uint32_t lowercaseKey = ToLowerCase(key);
+
+  const NSEventModifierFlags relevantFlags =
+      NSEventModifierFlagCommand | NSEventModifierFlagOption |
+      NSEventModifierFlagControl | NSEventModifierFlagShift;
+  NSEventModifierFlags eventFlags = aEvent.modifierFlags & relevantFlags;
+  NSEventModifierFlags requiredFlags = aModifierMask & relevantFlags;
+  if (lowercaseKey != key) {
+    
+    requiredFlags |= NSEventModifierFlagShift;
+  }
+
+  mozilla::widget::TISInputSourceWrapper& inputSource =
+      mozilla::widget::TISInputSourceWrapper::CurrentInputSource();
+  uint32_t unshifted = inputSource.CharForKeyCode(aEvent.keyCode, 0);
+  uint32_t shifted = inputSource.CharForKeyCode(aEvent.keyCode, shiftKey);
+  if (!unshifted && !shifted) {
+    
+    
+    NSString* characters = aEvent.charactersIgnoringModifiers;
+    return characters.length == 1 && [characters characterAtIndex:0] == key &&
+           eventFlags == requiredFlags;
+  }
+  if (unshifted && ToLowerCase(unshifted) == lowercaseKey) {
+    return eventFlags == requiredFlags;
+  }
+  if (shifted && shifted == key) {
+    return eventFlags == (requiredFlags | NSEventModifierFlagShift);
+  }
+  return false;
 }
 
 NSString* nsMenuUtilsX::TruncateLabelToWidth(NSString* aLabel, NSFont* aFont,
