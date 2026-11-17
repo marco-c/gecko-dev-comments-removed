@@ -394,6 +394,13 @@ add_task(async function test_full_run() {
       memories_after: 5, 
       outcome: "success",
     });
+
+    
+    Assert.equal(
+      Glean.smartWindow.memoryRemovedPanel.testGetValue(),
+      null,
+      "Merge deletions should not be recorded as user removals."
+    );
   });
 });
 
