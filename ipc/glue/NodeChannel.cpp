@@ -288,7 +288,13 @@ void NodeChannel::OnChannelConnected(base::ProcessId aPeerPid) {
   
   RefPtr<GeckoChildProcessHost> host(mChildProcessHost);
   if (host) {
-    host->OnChannelConnected(aPeerPid);
+    host->WhenProcessHandleReady()->Then(
+        XRE_GetAsyncIOEventTarget(), __func__,
+        [host](const ProcessHandlePromise::ResolveOrRejectValue& aResult) {
+          if (aResult.IsResolve()) {
+            host->OnChannelConnected();
+          }
+        });
   }
 }
 
