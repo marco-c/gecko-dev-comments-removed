@@ -210,7 +210,7 @@ var gBrowserInit = {
 
     
     
-    window.TabBarVisibility.update();
+    TabBarVisibility.update();
 
     if (
       Services.prefs.getBoolPref(
