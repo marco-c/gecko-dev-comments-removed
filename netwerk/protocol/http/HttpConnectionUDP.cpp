@@ -1099,9 +1099,12 @@ void HttpConnectionUDP::CloseTransaction(nsAHttpTransaction* trans,
 
   
   
+  
+  
+  
   if (((reason == NS_ERROR_NET_RESET) ||
        (NS_ERROR_GET_MODULE(reason) == NS_ERROR_MODULE_SECURITY)) &&
-      mConnInfo && !(mTransactionCaps & NS_HTTP_ERROR_SOFTLY)) {
+      mConnInfo && !mIsInTunnel && !(mTransactionCaps & NS_HTTP_ERROR_SOFTLY)) {
     gHttpHandler->ClearHostMapping(mConnInfo);
   }
 
