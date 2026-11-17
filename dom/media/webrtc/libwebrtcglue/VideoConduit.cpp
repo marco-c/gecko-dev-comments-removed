@@ -221,11 +221,17 @@ ConfigureVideoEncoderSettings(const VideoCodecConfig& aConfig,
   if (aConfig.mName == kVp9CodecName) {
     webrtc::VideoCodecVP9 vp9_settings =
         webrtc::VideoEncoder::GetDefaultVp9Settings();
+    vp9_settings.automaticResizeOn = automatic_resize;
     if (!is_screencast) {
       
       
       
       vp9_settings.numberOfSpatialLayers = aConduit->SpatialLayers();
+      
+      
+      if (vp9_settings.numberOfSpatialLayers > 1) {
+        vp9_settings.automaticResizeOn = false;
+      }
     }
     
     vp9_settings.denoisingOn = codec_default_denoising ? false : denoising;
