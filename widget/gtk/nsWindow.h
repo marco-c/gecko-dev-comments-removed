@@ -101,14 +101,6 @@ struct _GdkEventTouchpadPinch;
 typedef struct _GdkEventTouchpadPinch GdkEventTouchpadPinch;
 #endif
 
-
-
-
-
-
-
-extern bool gUseStableRounding;
-
 #if !GTK_CHECK_VERSION(3, 22, 0)
 typedef enum {
   GDK_ANCHOR_FLIP_X = 1 << 0,
@@ -139,7 +131,6 @@ namespace mozilla {
 enum class NativeKeyBindingsType : uint8_t;
 
 class TimeStamp;
-class WaylandVsyncSource;
 #ifdef MOZ_X11
 class CurrentX11TimeGetter;
 #endif
@@ -223,6 +214,10 @@ class nsWindow : public nsIWidget {
   nsresult GetRestoredBounds(LayoutDeviceIntRect&) override;
   bool PersistClientBounds() const override { return true; }
   LayoutDeviceIntMargin NormalSizeModeClientToWindowMargin() override;
+
+  
+  
+  virtual LayoutDeviceIntSize GetRoundedClientSize();
 
   bool WorkspaceManagementDisabled();
   bool ConstrainSizeWithScale(int* aWidth, int* aHeight, double aScale);
@@ -558,6 +553,10 @@ class nsWindow : public nsIWidget {
 
   
   virtual void OnMapNative() {}
+  virtual void OnUnmapNative() {}
+
+  virtual void CreateVSyncSource() {}
+  virtual void DeleteVSyncSource() {}
 
   virtual void EnableVSyncSource() {}
   virtual void DisableVSyncSource() {}

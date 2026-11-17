@@ -5,18 +5,19 @@
 #ifndef _nsWindowWayland_h_
 #define _nsWindowWayland_h_
 
+#include "WaylandVsyncSource.h"
 #include "nsWindow.h"
 
 namespace mozilla::widget {
 
 class nsWindowWaylandToplevel;
 class nsWindowWaylandPopup;
+class nsWindowWaylandToplevelGtk;
+class nsWindowWaylandPopupGtk;
 
 
 class nsWindowWayland : public nsWindow {
  public:
-  nsWindowWayland();
-
   nsWindowWayland* AsWayland() override { return this; }
 
   MOZ_CAN_RUN_SCRIPT void WaylandDragWorkaround(GdkEventButton* aEvent);
@@ -35,13 +36,23 @@ class nsWindowWayland : public nsWindow {
   void UnlockNativePointer() override;
 
   virtual bool ApplyEnterLeaveMutterWorkaround() = 0;
+
   void SetToplevelOpaqueRegion(cairo_region_t* aRegion);
   void ForceToplevelCommit();
 
   void AppendToLastWindow(nsWindowWayland* aWindow);
   void RemoveFromList();
+
+  nsWindowWayland* FindLastWindow(nsWindowWayland* aWindow);
   nsWindowWayland* GetNextWindow() { return mWaylandWindowNext; }
   nsWindowWayland* GetPrevWindow() { return mWaylandWindowPrev; }
+
+  nsCString GenerateWorkspaceID();
+
+  LayoutDeviceIntSize GetRoundedClientSize() override;
+
+  static void InitPrefs();
+  static bool UseStableRounding() { return sUseStableRounding; }
 
  protected:
   virtual ~nsWindowWayland() = default;
@@ -56,42 +67,46 @@ class nsWindowWayland : public nsWindow {
 
   
   
-  RefPtr<nsWindowWayland> mWaylandToplevel;
+  RefPtr<nsWindowWaylandToplevel> mWaylandToplevel;
 
   
   
   
   RefPtr<nsWindowWayland> mWaylandWindowPrev;
   RefPtr<nsWindowWayland> mWaylandWindowNext;
+
+  
+  
+  
+  
+  
+  
+  static bool sUseStableRounding;
 };
 
-class nsWindowWaylandToplevel final : public nsWindowWayland {
+class nsWindowWaylandToplevel : public nsWindowWayland {
  public:
-  nsWindowWaylandToplevel();
-
   nsWindowWaylandToplevel* AsWaylandToplevel() override { return this; }
-
-  void GetWorkspaceID(nsAString& aWorkspaceID) override;
-  void MoveToWorkspace(const nsAString& aWorkspaceIDStr) override;
-  void RestoreXdgToplevel();
+  virtual nsWindowWaylandToplevelGtk* AsGtk() { return nullptr; }
 
   
   void TransferFocusTo();
-  void FocusWaylandWindow(const char* aTokenID);
+  virtual void FocusWaylandWindow(const char* aTokenID) = 0;
+
+  void GetWorkspaceID(nsAString& aWorkspaceID) override;
+  void MoveToWorkspace(const nsAString& aWorkspaceIDStr) override;
+
+  
+  
+  virtual bool CreateRestoreSession(bool aRestoreWindow) = 0;
 
   void CreateCompositorVsyncDispatcher() override;
   RefPtr<mozilla::VsyncDispatcher> GetVsyncDispatcher() override;
 
-  void CreateNative() override;
-  void DestroyNative() override;
-
-  bool PIPMove();
-  bool PIPResize(GdkWindowEdge aEdge);
-
-  void MaybeCreatePipResources();
-  void ClearPipResources();
-
-  bool ApplyEnterLeaveMutterWorkaround() override;
+  bool IsPipWindow() const;
+  virtual bool PIPMove() = 0;
+  virtual bool PIPResize(GdkWindowEdge aEdge) = 0;
+  virtual void ClearPipResources() = 0;
 
   
   
@@ -99,57 +114,39 @@ class nsWindowWaylandToplevel final : public nsWindowWayland {
     return mWaylandWindowNext ? mWaylandWindowNext->AsWaylandPopup() : nullptr;
   }
 
-  bool IsPipWindow() const;
-
  protected:
-  virtual ~nsWindowWaylandToplevel() = default;
+  virtual ~nsWindowWaylandToplevel();
 
-  void ConfigureToplevelWindowNative() override;
-  void OnMapNative() override;
-
-  void NativeShow(bool aAction) override;
-  void HideAndRemoveAppPopups();
-
+  void CreateVSyncSource() override;
+  void DeleteVSyncSource() override;
   void EnableVSyncSource() override;
   void DisableVSyncSource() override;
   void WatchHiddenVSyncSource() override;
 
-  bool CreateRestoreSession(bool aRestoreWindow);
+  void FocusWaylandWindowImpl(const char* aTokenID, wl_surface* aSurface);
+
+  
+  
+  bool CreateRestoreSessionImpl(bool aRestoreWindow, xdg_toplevel* aToplevel);
 
   RefPtr<mozilla::WaylandVsyncSource> mWaylandVsyncSource;
   RefPtr<mozilla::VsyncDispatcher> mWaylandVsyncDispatcher;
   xdg_toplevel_session_v1* mSessionRestoreToken = nullptr;
   nsCString mWorkspaceID;
-
-  gulong mXdgToplevelRealizedID = 0;
-
-  struct {
-    struct xdg_surface* mXdgSurface = nullptr;
-    struct xx_pip_v1* mPipSurface = nullptr;
-    LayoutDeviceIntSize mConfigureSize;
-  } mPipResources;
 };
 
-class nsWindowWaylandPopup final : public nsWindowWayland {
+class nsWindowWaylandPopup : public nsWindowWayland {
  public:
   nsWindowWaylandPopup();
 
-  nsWindow* GetEffectiveParent() const;
   nsWindowWaylandPopup* AsWaylandPopup() override { return this; }
+  virtual nsWindowWaylandPopupGtk* AsGtk() { return nullptr; }
 
   LayoutDeviceIntSize GetMoveToRectPopupSize() override;
 
-  void NativeMoveResizeWaylandPopup(bool aMove, bool aResize);
-  void NativeMoveResizeWaylandPopupCallback(const GdkRectangle* aFinalSize,
-                                            bool aFlippedX, bool aFlippedY);
-  bool ApplyEnterLeaveMutterWorkaround() override;
-
-  void CreateNative() override;
-  void DestroyNative() override;
-
-  void NativeShow(bool aAction) override;
-
-  void HidePopupWindow(bool aTemporaryHidden, bool aRemoveFromPopupList);
+  virtual void NativeMoveResizeWaylandPopup(bool aMove, bool aResize) = 0;
+  virtual void HidePopupWindow(bool aTemporaryHidden,
+                               bool aRemoveFromPopupList) = 0;
 
   bool IsLastPopup() const { return !mWaylandWindowNext; }
   nsWindowWaylandPopup* GetNextPopup() const {
@@ -160,6 +157,10 @@ class nsWindowWaylandPopup final : public nsWindowWayland {
   }
   bool IsPopupClosed() const { return mPopupClosed; }
   void RemoveClosedPopups();
+
+  void GetLayoutPopupWidgetChain(nsTArray<nsIWidget*>* aLayoutWidgetHierarchy);
+
+  nsWindow* GetEffectiveParent() const;
 
  protected:
   virtual ~nsWindowWaylandPopup() = default;
@@ -190,19 +191,8 @@ class nsWindowWaylandPopup final : public nsWindowWayland {
 
 
 
-
-
-
-
-
   bool mPopupTrackInHierarchy : 1;
   bool mPopupTrackInHierarchyConfigured : 1;
-
-  
-
-
-
-  bool mWaylandApplyPopupPositionBeforeShow : 1;
 
   
   bool mPopupAnchored : 1;
@@ -215,8 +205,7 @@ class nsWindowWaylandPopup final : public nsWindowWayland {
   bool mPopupMatchesLayout : 1;
 
   
-
-
+  
   bool mPopupChanged : 1;
 
   
@@ -251,11 +240,11 @@ class nsWindowWaylandPopup final : public nsWindowWayland {
   WaylandPopupMoveToRectParams mPopupMoveToRectParams;
 
   
+  
+  
+  DesktopIntSize mMoveToRectPopupSize;
 
   
-  DesktopIntPoint WaylandGetParentPosition() const;
-
-  bool WaylandPopupConfigure();
   bool WaylandPopupIsAnchored();
   bool WaylandPopupIsContextMenu();
   bool WaylandPopupIsPermanent();
@@ -263,48 +252,26 @@ class nsWindowWaylandPopup final : public nsWindowWayland {
   bool WaylandPopupIsFirst();
   bool IsWidgetOverflowWindow();
   void RemovePopupFromHierarchyList();
-  void ShowWaylandPopupWindow();
   void WaylandPopupHideTooltips();
   void WaylandPopupCloseOrphanedPopups();
   void AppendPopupToHierarchyList(nsWindowWaylandToplevel* aToplevelWindow);
-  void WaylandPopupHierarchyHideTemporary();
-  void WaylandPopupHierarchyShowTemporaryHidden();
-  void WaylandPopupHierarchyCalculatePositions();
   bool IsInPopupHierarchy();
   void AddWindowToPopupHierarchy();
-  void UpdateWaylandPopupHierarchy();
-  void WaylandPopupHierarchyHideByLayout(
-      nsTArray<nsIWidget*>* aLayoutWidgetHierarchy);
   void WaylandPopupHierarchyValidateByLayout(
       nsTArray<nsIWidget*>* aLayoutWidgetHierarchy);
   void CloseAllPopupsBeforeRemotePopup();
-  void WaylandPopupPrepareForMove();
-  void WaylandPopupMoveImpl();
-  void WaylandPopupMovePlain(int aX, int aY);
-  bool WaylandPopupRemoveNegativePosition(int* aX = nullptr, int* aY = nullptr);
-  bool WaylandPopupCheckAndGetAnchor(GdkRectangle* aPopupAnchor,
-                                     GdkPoint* aOffset);
-  bool WaylandPopupAnchorAdjustForParentPopup(GdkRectangle* aPopupAnchor,
-                                              GdkPoint* aOffset);
   bool IsPopupInLayoutPopupChain(nsTArray<nsIWidget*>* aLayoutWidgetHierarchy,
                                  bool aMustMatchParent);
   void WaylandPopupMarkAsClosed();
-  void WaylandPopupSetDirectPosition();
-  bool WaylandPopupFitsToplevelWindow();
   const WaylandPopupMoveToRectParams WaylandPopupGetPositionFromLayout();
   void WaylandPopupPropagateChangesToLayout(bool aMove, bool aResize);
   bool IsPopupDirectionRTL();
 
 #ifdef MOZ_LOGGING
-  static void LogPopupHierarchy(nsWindowWaylandPopup* aFirstPopup);
   void LogPopupAnchorHints(int aHints);
   void LogPopupGravity(GdkGravity aGravity);
+  static void LogPopupHierarchy(nsWindowWaylandPopup* aFirstPopup);
 #endif
-
-  
-  
-  
-  DesktopIntSize mMoveToRectPopupSize;
 };
 
 }  

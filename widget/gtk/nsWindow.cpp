@@ -584,6 +584,8 @@ void nsWindow::Destroy() {
   MOZ_ASSERT(!gtk_widget_get_mapped(mShell));
   MOZ_ASSERT(!gtk_widget_get_mapped(GTK_WIDGET(mContainer)));
 
+  DeleteVSyncSource();
+
   DestroyLayerManager();
 
   
@@ -4515,6 +4517,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
 
   CreateNative();
   ConfigureToplevelWindow();
+  CreateVSyncSource();
 
   
   if (shouldFocus) {
@@ -7451,12 +7454,6 @@ void nsWindow::OnMap() {
 void nsWindow::OnUnmap() {
   LOG("nsWindow::OnUnmap");
 
-#ifdef MOZ_WAYLAND
-  if (auto* toplevel = AsWaylandToplevel()) {
-    toplevel->ClearPipResources();
-  }
-#endif
-
   {
     mIsMapped = false;
     mHasReceivedSizeAllocate = false;
@@ -7484,6 +7481,8 @@ void nsWindow::OnUnmap() {
   if (mWindowType == WindowType::Popup && !mPopupTemporaryHidden) {
     DestroyLayerManager();
   }
+
+  OnUnmapNative();
 }
 
 void nsWindow::NotifyOcclusionState(OcclusionState aState) {
