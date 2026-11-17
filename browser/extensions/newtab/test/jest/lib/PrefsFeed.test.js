@@ -1334,7 +1334,6 @@ describe("PrefsFeed", () => {
           type: "widgetPictureOfTheDay",
           payload: {
             enabled: true,
-            setAsWallpaperEnabled: true,
             size: "large",
           },
         },
@@ -1354,9 +1353,6 @@ describe("PrefsFeed", () => {
       );
       expect(calledNames(setBoolPref)).not.toContain(
         "widgets.system.pictureOfTheDay.enabled"
-      );
-      expect(calledNames(setBoolPref)).not.toContain(
-        "widgets.pictureOfTheDay.setAsWallpaper.enabled"
       );
     });
 
