@@ -712,7 +712,7 @@ NSS_SMIMEUtil_KeyDecodingAllowed(SECAlgorithmID *algid, SECKEYPrivateKey *key)
 }
 
 static SECOidTag
-nss_SMIME_FindCipherForSMIMECap(NSSSMIMECapability *cap)
+nss_SMIME_FindCipherForSMIMECap(PLArenaPool *poolp, NSSSMIMECapability *cap)
 {
     SECOidTag capIDTag;
 
@@ -726,13 +726,19 @@ nss_SMIME_FindCipherForSMIMECap(NSSSMIMECapability *cap)
         unsigned long key_bits;
         SECItem keyItem = { siBuffer, NULL, 0 };
 
-        rv = SEC_ASN1DecodeItem(NULL, &keyItem,
-                                SEC_ASN1_GET(SEC_IntegerTemplate), &cap->parameters);
+        
+
+
+
+
+
+        rv = SEC_QuickDERDecodeItem(poolp, &keyItem,
+                                    SEC_ASN1_GET(SEC_IntegerTemplate),
+                                    &cap->parameters);
         if (rv != SECSuccess) {
             return SEC_OID_UNKNOWN;
         }
         rv = SEC_ASN1DecodeInteger(&keyItem, &key_bits);
-        SECITEM_FreeItem(&keyItem, PR_FALSE);
         if (rv != SECSuccess) {
             return SEC_OID_UNKNOWN;
         }
@@ -836,7 +842,7 @@ smime_choose_cipher(CERTCertificate **rcerts)
                 int i;
                 
                 for (i = 0; caps[i] != NULL; i++) {
-                    cipher = nss_SMIME_FindCipherForSMIMECap(caps[i]);
+                    cipher = nss_SMIME_FindCipherForSMIMECap(poolp, caps[i]);
                     c_index = smime_list_index_find(smime_algorithm_list, cipher);
                     if (c_index < cipher_count) {
                         

@@ -170,7 +170,6 @@ TEST_F(DecodeCertsTest, ImportCert) {
 const uint8_t kIdEcPublicKeyOID[] = {0x06, 0x07, 0x2a, 0x86, 0x48,
                                      0xce, 0x3d, 0x02, 0x01};
 
-
 TEST_F(DecodeCertsTest, NewTempCertificateWithUnsupportedKeyAlgorithm) {
   
   
@@ -181,11 +180,21 @@ TEST_F(DecodeCertsTest, NewTempCertificateWithUnsupportedKeyAlgorithm) {
   ASSERT_TRUE(spki != der.end());
   spki[sizeof(kIdEcPublicKeyOID) - 1] = 0x7f;
 
+  
   SECItem certDER = {siBuffer, der.data(),
                      static_cast<unsigned int>(der.size())};
   ScopedCERTCertificate cert(CERT_NewTempCertificate(
       CERT_GetDefaultCertDB(), &certDER, nullptr, PR_TRUE, PR_TRUE));
-  EXPECT_EQ(nullptr, cert.get());
+  EXPECT_NE(nullptr, cert.get());
+
+  
+  
+  char nickname[] = "test import cert with unknown key type";
+  ScopedPK11SlotInfo slot(PK11_GetInternalKeySlot());
+  SECStatus rv = PK11_ImportCert(slot.get(), cert.get(), CK_INVALID_HANDLE,
+                                 nickname, PR_TRUE);
+  EXPECT_EQ(SECFailure, rv);
+  EXPECT_EQ(SEC_ERROR_UNSUPPORTED_KEYALG, PR_GetError());
 }
 
 

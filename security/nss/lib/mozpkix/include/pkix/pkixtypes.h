@@ -52,6 +52,17 @@ enum class NamedCurve {
   secp256r1 = 3,
 };
 
+enum class MLDSAParameterSet {
+  
+  ml_dsa_44 = 1,
+
+  
+  ml_dsa_65 = 2,
+
+  
+  ml_dsa_87 = 3,
+};
+
 enum class EndEntityOrCA { MustBeEndEntity = 0, MustBeCA = 1 };
 
 enum class KeyUsage : uint8_t {
@@ -336,6 +347,26 @@ class TrustDomain {
   
   virtual Result VerifyECDSASignedData(Input data,
                                        DigestAlgorithm digestAlgorithm,
+                                       Input signature,
+                                       Input subjectPublicKeyInfo) = 0;
+
+  
+  
+  
+  
+  
+  virtual Result CheckMLDSAParameterSetIsAcceptable(
+      EndEntityOrCA endEntityOrCA, MLDSAParameterSet parameterSet) = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  virtual Result VerifyMLDSASignedData(Input data,
+                                       MLDSAParameterSet parameterSet,
                                        Input signature,
                                        Input subjectPublicKeyInfo) = 0;
 

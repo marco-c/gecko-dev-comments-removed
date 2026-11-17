@@ -156,6 +156,11 @@ Result VerifyEncodedOCSPResponse(
 
 Result CheckTLSFeaturesAreSatisfied(Input& cert,
                                     const Input* stapledOCSPResponse);
+
+
+
+Result FindSubjectPublicKeyInfo(Input certDER,
+                                 Input& subjectPublicKeyInfo);
 }  
 }  
 

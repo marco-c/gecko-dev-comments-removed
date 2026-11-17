@@ -37,6 +37,8 @@
 
 
 
+#include <optional>
+
 #include "mozpkix/Input.h"
 #include "mozpkix/pkixtypes.h"
 
@@ -51,7 +53,7 @@ enum Class : uint8_t {
   
 };
 
-enum Constructed { CONSTRUCTED = 1 << 5 };
+enum Constructed : uint8_t { CONSTRUCTED = 1 << 5 };
 
 enum Tag : uint8_t {
   BOOLEAN = UNIVERSAL | 0x01,
@@ -488,12 +490,33 @@ inline Result OptionalExtensions(Reader& input, uint8_t tag,
 Result DigestAlgorithmIdentifier(Reader& input,
                                   DigestAlgorithm& algorithm);
 
-enum class PublicKeyAlgorithm { RSA_PKCS1, RSA_PSS, ECDSA };
+enum class PublicKeyAlgorithm {
+  RSA_PKCS1,
+  RSA_PSS,
+  ECDSA,
+  MLDSA_44,
+  MLDSA_65,
+  MLDSA_87
+};
+
+inline bool IsMLDSA(PublicKeyAlgorithm publicKeyAlgorithm) {
+  return publicKeyAlgorithm == PublicKeyAlgorithm::MLDSA_44 ||
+         publicKeyAlgorithm == PublicKeyAlgorithm::MLDSA_65 ||
+         publicKeyAlgorithm == PublicKeyAlgorithm::MLDSA_87;
+}
+
+
+
+inline bool HasConsistentDigest(
+    PublicKeyAlgorithm publicKeyAlgorithm,
+    const std::optional<DigestAlgorithm>& digestAlgorithm) {
+  return digestAlgorithm.has_value() != IsMLDSA(publicKeyAlgorithm);
+}
 
 Result SignatureAlgorithmIdentifierValue(
     Reader& input,
      PublicKeyAlgorithm& publicKeyAlgorithm,
-     DigestAlgorithm& digestAlgorithm);
+     std::optional<DigestAlgorithm>& digestAlgorithm);
 
 struct SignedDataWithSignature final {
  public:

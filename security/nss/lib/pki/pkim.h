@@ -163,8 +163,11 @@ nssCertificate_SetCertTrust(
     NSSCertificate *c,
     NSSTrust *trust);
 
+
+
+
 NSS_EXTERN PRStatus
-nssCertificate_SetCertKeyID(
+nssCertificate_TryToSetCertKeyID(
     NSSCertificate *c);
 
 NSS_EXTERN nssDecodedCert *
@@ -198,14 +201,8 @@ nssCRL_AddRef(NSSCRL *crl);
 NSS_EXTERN PRStatus
 nssCRL_Destroy(NSSCRL *crl);
 
-NSS_EXTERN PRStatus
-nssCRL_DeleteStoredObject(
-    NSSCRL *crl,
-    NSSCallback *uhh);
-
 NSS_EXTERN NSSDER *
 nssCRL_GetEncoding(NSSCRL *crl);
-
 
 
 
@@ -250,17 +247,6 @@ nssCertificateArray_FindBestCertificate(
     NSSTime *timeOpt,
     const NSSUsage *usage,
     NSSPolicies *policiesOpt);
-
-
-
-
-
-
-NSS_EXTERN PRStatus
-nssCertificateArray_Traverse(
-    NSSCertificate **certs,
-    PRStatus (*callback)(NSSCertificate *c, void *arg),
-    void *arg);
 
 NSS_EXTERN void
 nssCRLArray_Destroy(NSSCRL **crls);

@@ -22,6 +22,7 @@
 
 
 
+#include "mozpkix/pkix.h"
 #include "mozpkix/pkixutil.h"
 
 namespace mozilla { namespace pkix {
@@ -162,6 +163,19 @@ BackCert::Init()
   }
 
   return der::End(tbsCertificate);
+}
+
+Result
+FindSubjectPublicKeyInfo(Input certDER,  Input& subjectPublicKeyInfo)
+{
+  
+  
+  BackCert cert(certDER, EndEntityOrCA::MustBeEndEntity, nullptr);
+  Result rv = cert.Init();
+  if (rv != Success) {
+    return rv;
+  }
+  return subjectPublicKeyInfo.Init(cert.GetSubjectPublicKeyInfo());
 }
 
 Result

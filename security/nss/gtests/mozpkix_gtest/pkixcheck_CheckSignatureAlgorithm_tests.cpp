@@ -93,6 +93,21 @@ static const uint8_t rsaPSSWithSHA256[] = {
   0xa2, 0x03, 0x02, 0x01, 0x20
 };
 
+
+static const uint8_t tlv_id_ml_dsa_44[] = {
+  0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x03, 0x11
+};
+
+
+static const uint8_t tlv_id_ml_dsa_65[] = {
+  0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x03, 0x12
+};
+
+
+static const uint8_t tlv_id_ml_dsa_87[] = {
+  0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x03, 0x13
+};
+
 static const CheckSignatureAlgorithmTestParams
   CHECKSIGNATUREALGORITHM_TEST_PARAMS[] =
 {
@@ -217,6 +232,32 @@ static const CheckSignatureAlgorithmTestParams
     2048 / 8,
     Result::ERROR_SIGNATURE_ALGORITHM_MISMATCH
   },
+  { 
+    BS(tlv_id_ml_dsa_44),
+    BS(tlv_sha256WithRSAEncryption),
+    0,
+    Result::ERROR_SIGNATURE_ALGORITHM_MISMATCH
+  },
+  { 
+    BS(tlv_sha256WithRSAEncryption),
+    BS(tlv_id_ml_dsa_44),
+    0,
+    Result::ERROR_SIGNATURE_ALGORITHM_MISMATCH
+  },
+  { 
+    
+    
+    BS(tlv_id_ml_dsa_44),
+    BS(tlv_id_ml_dsa_87),
+    0,
+    Result::ERROR_SIGNATURE_ALGORITHM_MISMATCH
+  },
+  { 
+    BS(tlv_id_ml_dsa_87),
+    BS(tlv_id_ml_dsa_44),
+    0,
+    Result::ERROR_SIGNATURE_ALGORITHM_MISMATCH
+  },
 };
 
 class pkixcheck_CheckSignatureAlgorithm
@@ -295,6 +336,77 @@ INSTANTIATE_TEST_SUITE_P(
   pkixcheck_CheckSignatureAlgorithm, pkixcheck_CheckSignatureAlgorithm,
   testing::ValuesIn(CHECKSIGNATUREALGORITHM_TEST_PARAMS));
 
+namespace {
+
+struct MLDSATestOutcome
+{
+  Result result;
+  bool checkedDigestAlgorithm;
+  bool checkedModulusSizeInBits;
+};
+
+MLDSATestOutcome CheckMLDSASignatureAlgorithm(
+                   const ByteString& outerSignatureAlgorithm,
+                   const ByteString& tbsSignatureAlgorithm)
+{
+  pkixcheck_CheckSignatureAlgorithm_TrustDomain trustDomain(0);
+
+  Input tbsSignatureAlgorithmInput;
+  EXPECT_EQ(Success,
+            tbsSignatureAlgorithmInput.Init(tbsSignatureAlgorithm.data(),
+                                            tbsSignatureAlgorithm.length()));
+
+  der::SignedDataWithSignature signedData;
+  EXPECT_EQ(Success,
+            signedData.algorithm.Init(outerSignatureAlgorithm.data(),
+                                      outerSignatureAlgorithm.length()));
+
+  MLDSATestOutcome outcome;
+  outcome.result =
+    CheckSignatureAlgorithm(trustDomain, EndEntityOrCA::MustBeEndEntity, Now(),
+                            signedData, tbsSignatureAlgorithmInput);
+  outcome.checkedDigestAlgorithm = trustDomain.checkedDigestAlgorithm;
+  outcome.checkedModulusSizeInBits = trustDomain.checkedModulusSizeInBits;
+  return outcome;
+}
+
+}  
+
+TEST_F(pkixcheck_CheckSignatureAlgorithm, MLDSAMatchingAlgorithms)
+{
+  static const ByteString kAlgorithms[] = {
+    BS(tlv_id_ml_dsa_44), BS(tlv_id_ml_dsa_65), BS(tlv_id_ml_dsa_87)
+  };
+  for (const ByteString& algorithm : kAlgorithms) {
+    MLDSATestOutcome outcome(
+      CheckMLDSASignatureAlgorithm(algorithm, algorithm));
+    EXPECT_EQ(Success, outcome.result);
+    EXPECT_FALSE(outcome.checkedDigestAlgorithm);
+    EXPECT_FALSE(outcome.checkedModulusSizeInBits);
+  }
+}
+
+
+
+
+TEST_F(pkixcheck_CheckSignatureAlgorithm, MLDSAParametersMustBeAbsent)
+{
+  const ByteString withoutParams(BS(tlv_id_ml_dsa_65));
+  static const ByteString kParameters[] = {
+    TLV(der::NULLTag, ByteString()),
+    TLV(der::INTEGER, ByteString(1, 0x00)),
+  };
+  for (const ByteString& parameters : kParameters) {
+    const ByteString withParams(withoutParams + parameters);
+    EXPECT_EQ(Result::ERROR_BAD_DER,
+              CheckMLDSASignatureAlgorithm(withParams, withoutParams).result);
+    EXPECT_EQ(Result::ERROR_BAD_DER,
+              CheckMLDSASignatureAlgorithm(withoutParams, withParams).result);
+    EXPECT_EQ(Result::ERROR_BAD_DER,
+              CheckMLDSASignatureAlgorithm(withParams, withParams).result);
+  }
+}
+
 class pkixcheck_CheckSignatureAlgorithm_BuildCertChain_TrustDomain
   : public DefaultCryptoTrustDomain
 {
@@ -329,7 +441,6 @@ public:
   }
 
   Result CheckRevocation(EndEntityOrCA, const CertID&, Time, Duration,
-                          const Input*,
                           const Input*,
                           const Input*) override
   {

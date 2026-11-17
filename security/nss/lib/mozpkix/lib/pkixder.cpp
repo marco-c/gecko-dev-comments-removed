@@ -22,8 +22,9 @@
 
 
 
-#include "mozpkix/pkixder.h"
+#include <optional>
 
+#include "mozpkix/pkixder.h"
 #include "mozpkix/pkixutil.h"
 
 namespace mozilla { namespace pkix { namespace der {
@@ -86,8 +87,12 @@ ReadTagAndGetValue(Reader& input,  uint8_t& tag,  Input& value)
 Result
 SignatureAlgorithmIdentifierValue(Reader& input,
                                   PublicKeyAlgorithm& publicKeyAlgorithm,
-                                  DigestAlgorithm& digestAlgorithm)
+                                  std::optional<DigestAlgorithm>& digestAlgorithm)
 {
+  
+  
+  
+  
   
   
   
@@ -213,6 +218,24 @@ SignatureAlgorithmIdentifierValue(Reader& input,
 
   
   
+  static const uint8_t id_ml_dsa_44[] = {
+      0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x03, 0x11
+  };
+
+  
+  
+  static const uint8_t id_ml_dsa_65[] = {
+      0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x03, 0x12
+  };
+
+  
+  
+  static const uint8_t id_ml_dsa_87[] = {
+      0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x03, 0x13
+  };
+
+  
+  
   if (algorithmID.MatchRest(sha256WithRSAEncryption)) {
     publicKeyAlgorithm = PublicKeyAlgorithm::RSA_PKCS1;
     digestAlgorithm = DigestAlgorithm::sha256;
@@ -252,13 +275,23 @@ SignatureAlgorithmIdentifierValue(Reader& input,
     } else {
       return Result::ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED;
     }
+  } else if (algorithmID.MatchRest(id_ml_dsa_44)) {
+    publicKeyAlgorithm = PublicKeyAlgorithm::MLDSA_44;
+    digestAlgorithm = std::nullopt;
+  } else if (algorithmID.MatchRest(id_ml_dsa_65)) {
+    publicKeyAlgorithm = PublicKeyAlgorithm::MLDSA_65;
+    digestAlgorithm = std::nullopt;
+  } else if (algorithmID.MatchRest(id_ml_dsa_87)) {
+    publicKeyAlgorithm = PublicKeyAlgorithm::MLDSA_87;
+    digestAlgorithm = std::nullopt;
   } else {
     return Result::ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED;
   }
 
   
+  
   if (publicKeyAlgorithm != PublicKeyAlgorithm::RSA_PSS) {
-    if (algorithmParams.Peek(NULLTag)) {
+    if (!IsMLDSA(publicKeyAlgorithm) && algorithmParams.Peek(NULLTag)) {
       rv = Null(algorithmParams);
       if (rv != Success) {
         return rv;

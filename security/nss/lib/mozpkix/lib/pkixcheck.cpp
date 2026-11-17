@@ -22,8 +22,9 @@
 
 
 
-#include "mozpkix/pkixcheck.h"
+#include <optional>
 
+#include "mozpkix/pkixcheck.h"
 #include "mozpkix/pkixder.h"
 #include "mozpkix/pkixutil.h"
 
@@ -41,7 +42,7 @@ CheckSignatureAlgorithm(TrustDomain& trustDomain,
 {
   
   der::PublicKeyAlgorithm publicKeyAlg;
-  DigestAlgorithm digestAlg;
+  std::optional<DigestAlgorithm> digestAlg = std::nullopt;
   Reader signatureAlgorithmReader(signedData.algorithm);
   Result rv = der::SignatureAlgorithmIdentifierValue(signatureAlgorithmReader,
                                                      publicKeyAlg, digestAlg);
@@ -52,10 +53,13 @@ CheckSignatureAlgorithm(TrustDomain& trustDomain,
   if (rv != Success) {
     return rv;
   }
+  if (!der::HasConsistentDigest(publicKeyAlg, digestAlg)) {
+    return Result::ERROR_INVALID_ALGORITHM;
+  }
 
   
   der::PublicKeyAlgorithm signedPublicKeyAlg;
-  DigestAlgorithm signedDigestAlg;
+  std::optional<DigestAlgorithm> signedDigestAlg = std::nullopt;
   Reader signedSignatureAlgorithmReader(signatureValue);
   rv = der::SignatureAlgorithmIdentifierValue(signedSignatureAlgorithmReader,
                                               signedPublicKeyAlg,
@@ -66,6 +70,9 @@ CheckSignatureAlgorithm(TrustDomain& trustDomain,
   rv = der::End(signedSignatureAlgorithmReader);
   if (rv != Success) {
     return rv;
+  }
+  if (!der::HasConsistentDigest(signedPublicKeyAlg, signedDigestAlg)) {
+    return Result::ERROR_INVALID_ALGORITHM;
   }
 
   
@@ -92,10 +99,13 @@ CheckSignatureAlgorithm(TrustDomain& trustDomain,
   
   
 
-  rv = trustDomain.CheckSignatureDigestAlgorithm(digestAlg, endEntityOrCA,
-                                                 notBefore);
-  if (rv != Success) {
-    return rv;
+  if (digestAlg.has_value()) {
+    rv = trustDomain.CheckSignatureDigestAlgorithm(digestAlg.value(),
+                                                   endEntityOrCA,
+                                                   notBefore);
+    if (rv != Success) {
+      return rv;
+    }
   }
 
   switch (publicKeyAlg) {
@@ -117,6 +127,11 @@ CheckSignatureAlgorithm(TrustDomain& trustDomain,
       
       
       
+      break;
+
+    case der::PublicKeyAlgorithm::MLDSA_44:  
+    case der::PublicKeyAlgorithm::MLDSA_65:  
+    case der::PublicKeyAlgorithm::MLDSA_87:
       break;
     MOZILLA_PKIX_UNREACHABLE_DEFAULT_ENUM
   }
@@ -197,6 +212,59 @@ CheckValidity(Time time, Time notBefore, Time notAfter)
 
 
 
+namespace {
+
+
+
+bool
+IsMLDSA(Reader& algorithmOID,  MLDSAParameterSet& parameterSet)
+{
+  
+  
+  static const uint8_t id_ml_dsa_44[] = {
+    0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x03, 0x11
+  };
+  
+  static const uint8_t id_ml_dsa_65[] = {
+    0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x03, 0x12
+  };
+  
+  static const uint8_t id_ml_dsa_87[] = {
+    0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x03, 0x13
+  };
+
+  if (algorithmOID.MatchRest(id_ml_dsa_44)) {
+    parameterSet = MLDSAParameterSet::ml_dsa_44;
+    return true;
+  }
+  if (algorithmOID.MatchRest(id_ml_dsa_65)) {
+    parameterSet = MLDSAParameterSet::ml_dsa_65;
+    return true;
+  }
+  if (algorithmOID.MatchRest(id_ml_dsa_87)) {
+    parameterSet = MLDSAParameterSet::ml_dsa_87;
+    return true;
+  }
+  return false;
+}
+
+
+Input::size_type
+MLDSAPublicKeyLength(MLDSAParameterSet parameterSet)
+{
+  switch (parameterSet) {
+    case MLDSAParameterSet::ml_dsa_44:
+      return 1312;
+    case MLDSAParameterSet::ml_dsa_65:
+      return 1952;
+    case MLDSAParameterSet::ml_dsa_87:
+      return 2592;
+    MOZILLA_PKIX_UNREACHABLE_DEFAULT_ENUM
+  }
+}
+
+} 
+
 Result
 CheckSubjectPublicKeyInfoContents(Reader& input, TrustDomain& trustDomain,
                                   EndEntityOrCA endEntityOrCA)
@@ -248,6 +316,7 @@ CheckSubjectPublicKeyInfoContents(Reader& input, TrustDomain& trustDomain,
     0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01
   };
 
+  MLDSAParameterSet mldsaParameterSet = MLDSAParameterSet::ml_dsa_44;
   if (algorithmOID.MatchRest(id_ecPublicKey)) {
     
     
@@ -360,6 +429,30 @@ CheckSubjectPublicKeyInfoContents(Reader& input, TrustDomain& trustDomain,
     });
     if (rv != Success) {
       return rv;
+    }
+  } else if (IsMLDSA(algorithmOID, mldsaParameterSet)) {
+    
+    
+    rv = der::End(algorithm);
+    if (rv != Success) {
+      return rv;
+    }
+
+    rv = trustDomain.CheckMLDSAParameterSetIsAcceptable(endEntityOrCA,
+                                                        mldsaParameterSet);
+    if (rv != Success) {
+      return rv;
+    }
+
+    
+    
+    Input publicKey;
+    rv = subjectPublicKeyReader.SkipToEnd(publicKey);
+    if (rv != Success) {
+      return rv;
+    }
+    if (publicKey.GetLength() != MLDSAPublicKeyLength(mldsaParameterSet)) {
+      return Result::ERROR_BAD_DER;
     }
   } else {
     return Result::ERROR_UNSUPPORTED_KEYALG;
