@@ -1440,7 +1440,8 @@ void CanvasRenderingContext2D::OnShutdown() {
 
 void CanvasRenderingContext2D::OnRemoteCanvasLost() {
   
-  if (!mBufferProvider || !mBufferProvider->IsRemote() || mIsContextLost) {
+  
+  if (!mBufferProvider || !mBufferProvider->IsAccelerated() || mIsContextLost) {
     return;
   }
 
@@ -1699,7 +1700,7 @@ bool CanvasRenderingContext2D::BorrowTarget(const IntRect& aPersistedRect,
   
   
   if (!mBufferProvider || mBufferProvider->RequiresRefresh() ||
-      (mBufferProvider->IsRemote() && UseSoftwareRendering())) {
+      (mBufferProvider->IsAccelerated() && UseSoftwareRendering())) {
     return false;
   }
   mTarget = mBufferProvider->BorrowDrawTarget(aPersistedRect);
@@ -2000,7 +2001,7 @@ bool CanvasRenderingContext2D::TryAcceleratedTarget(
     
     return false;
   }
-  if (mBufferProvider && mBufferProvider->IsRemote() &&
+  if (mBufferProvider && mBufferProvider->IsAccelerated() &&
       mBufferProvider->RequiresRefresh()) {
     
     
@@ -2020,7 +2021,7 @@ bool CanvasRenderingContext2D::TryAcceleratedTarget(
       return false;
     }
 
-    aOutProvider = PersistentBufferProviderRemote::Create(
+    aOutProvider = PersistentBufferProviderAccelerated::Create(
         GetSize(), GetSurfaceFormat(), renderer->AsKnowsCompositor());
   } else if (mOffscreenCanvas &&
              StaticPrefs::gfx_canvas_remote_allow_offscreen()) {
@@ -2029,7 +2030,7 @@ bool CanvasRenderingContext2D::TryAcceleratedTarget(
       return false;
     }
 
-    aOutProvider = PersistentBufferProviderRemote::Create(
+    aOutProvider = PersistentBufferProviderAccelerated::Create(
         GetSize(), GetSurfaceFormat(), imageBridge);
   }
 
@@ -6178,7 +6179,8 @@ void CanvasRenderingContext2D::DrawImage(const CanvasImageSource& aImage,
                         nsLayoutUtils::SFE_NO_RASTERIZING_VECTORS |
                         nsLayoutUtils::SFE_ALLOW_UNCROPPED_UNSCALED;
 
-    bool fastPath = mBufferProvider->IsRemote() && mTarget->IsRecording() &&
+    bool fastPath = mBufferProvider->IsAccelerated() &&
+                    mTarget->IsRecording() &&
                     !(NeedToApplyFilter() || NeedToDrawShadow());
 
     
