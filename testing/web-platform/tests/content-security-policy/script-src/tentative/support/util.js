@@ -6,10 +6,7 @@ const sha256ofURLBytes = async (url) => {
 
 
 const sha256ofURL = async (url) => {
-  return (await sha256ofURLBytes(url)).toBase64({
-    alphabet: "base64url",
-    omitPadding: true,
-  });
+  return (await sha256ofURLBytes(url)).toBase64({alphabet: "base64url"});
 };
 
 
