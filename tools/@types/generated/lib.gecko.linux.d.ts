@@ -8,56 +8,154 @@ declare global {
 
 
 
-interface nsIGNOMEShellService extends nsIShellService {
+}  
+
+
+declare enum nsIGNOMEShellService_DesktopEntryStatus {
+  
+  DESKTOP_ENTRY_ABSENT = 0,
+  
+  DESKTOP_ENTRY_INVISIBLE = 1,
+  
+  DESKTOP_ENTRY_VISIBLE = 2,
+}
+
+declare global {
+
+namespace nsIGNOMEShellService {
+  type DesktopEntryStatus = nsIGNOMEShellService_DesktopEntryStatus;
+}
+
+
+interface nsIGNOMEShellService extends nsIShellService, Enums<typeof nsIGNOMEShellService_DesktopEntryStatus> {
+  
   readonly canSetDesktopBackground: boolean;
+  
   isDefaultForScheme(aScheme: string): boolean;
+  
   getGSettingsString(aScheme: string, aKey: string): string;
+  
   setGSettingsString(aScheme: string, aKey: string, aValue: string): void;
+  
+  getArgv0(): string;
+  
+  getGlibPrgname(): string;
+  
+  getDesktopEntryStatus(aEntryId: string): nsIGNOMEShellService.DesktopEntryStatus;
+  
+  requestInstallDynamicLauncher(aEntryId: string, aDesktopEntry: nsIINIParserWriter, aWindow: mozIDOMWindowProxy): Promise<any>;
+  
+  requestUninstallDynamicLauncher(aEntryId: string): Promise<any>;
 }
 
 
 
+
 interface nsIOpenTabsProvider extends nsISupports {
+  
   getOpenTabs(): string[];
+  
   switchToOpenTab(url: string): void;
 }
 
 
 
+
+interface mozISandboxReport extends nsISupports {
+  
+  readonly msecAgo: u64;
+  
+  readonly pid: i32;
+  
+  readonly tid: i32;
+  
+  readonly procType: string;
+  
+  readonly syscall: u32;
+  
+  readonly numArgs: u32;
+  
+  getArg(aIndex: u32): string;
+}
+
+
+interface mozISandboxReportArray extends nsISupports {
+  
+  readonly begin: u64;
+  
+  readonly end: u64;
+  
+  getElement(aIndex: u64): mozISandboxReport;
+}
+
+
+interface mozISandboxReporter extends nsISupports {
+  
+  snapshot(): mozISandboxReportArray;
+}
+
+
+
+
 type nsIApplicationChooserFinishedCallback = Callable<{
+  
   done(handlerApp: nsIHandlerApp): void;
 }>
 
+
 interface nsIApplicationChooser extends nsISupports {
+  
   init(parent: mozIDOMWindowProxy, title: string): void;
+  
   open(contentType: string, applicationChooserFinishedCallback: nsIApplicationChooserFinishedCallback): void;
 }
 
 
 
+
 interface nsIGtkTaskbarProgress extends nsITaskbarProgress {
+  
   setPrimaryWindow(aWindow: mozIDOMWindowProxy): void;
 }
 
 
 
+
 interface nsITaskbarProgress extends nsISupports {
+  
   readonly STATE_NO_PROGRESS?: 0;
+  
   readonly STATE_INDETERMINATE?: 1;
+  
   readonly STATE_NORMAL?: 2;
+  
   readonly STATE_ERROR?: 3;
+  
   readonly STATE_PAUSED?: 4;
 
+  
   setProgressState(state: nsTaskbarProgressState, currentValue?: u64, maxValue?: u64): void;
 }
 
+
+
+
+interface nsIAvailableMemoryWatcherTestingLinux extends nsISupports {
+  
+  setPSIPathForTesting(aPSIPath: string): void;
+}
+
 interface nsIXPCComponents_Interfaces {
-  nsIGNOMEShellService: nsJSIID<nsIGNOMEShellService>;
+  nsIGNOMEShellService: nsJSIID<nsIGNOMEShellService, typeof nsIGNOMEShellService_DesktopEntryStatus>;
   nsIOpenTabsProvider: nsJSIID<nsIOpenTabsProvider>;
+  mozISandboxReport: nsJSIID<mozISandboxReport>;
+  mozISandboxReportArray: nsJSIID<mozISandboxReportArray>;
+  mozISandboxReporter: nsJSIID<mozISandboxReporter>;
   nsIApplicationChooserFinishedCallback: nsJSIID<nsIApplicationChooserFinishedCallback>;
   nsIApplicationChooser: nsJSIID<nsIApplicationChooser>;
   nsIGtkTaskbarProgress: nsJSIID<nsIGtkTaskbarProgress>;
   nsITaskbarProgress: nsJSIID<nsITaskbarProgress>;
+  nsIAvailableMemoryWatcherTestingLinux: nsJSIID<nsIAvailableMemoryWatcherTestingLinux>;
 }
 
 }  

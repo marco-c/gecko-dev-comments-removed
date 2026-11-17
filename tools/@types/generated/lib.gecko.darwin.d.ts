@@ -79,6 +79,42 @@ interface nsIMacShellService extends nsIShellService {
 
 
 
+interface nsIASWebAuthSessionRequest extends nsISupports {
+  
+  readonly uuid: string;
+  
+  readonly url: string;
+  
+  readonly callbackScheme: string;
+  
+  readonly hasCallback: boolean;
+  
+  readonly useEphemeralSession: boolean;
+  
+  readonly additionalHeaderNames: string[];
+  
+  getAdditionalHeader(name: string): string;
+  
+  matchesCallbackURL(url: string): boolean;
+  
+  complete(callbackURL: string): void;
+  
+  cancel(): void;
+}
+
+
+
+
+interface nsICocoaAppShellTestUtils extends nsISupports {
+  
+  postNativeTestEvent(): void;
+  
+  readonly lostNativeWakeups: u32;
+}
+
+
+
+
 interface nsIAppBundleLaunchOptions extends nsISupports {
   
   readonly addsToRecentItems: boolean;
@@ -123,13 +159,25 @@ interface nsIMacFinderProgress extends nsISupports {
 
 
 
+type nsIMacShareCustomItemHandler = Callable<{
+  
+  handle(): void;
+}>
+
+
+interface nsIMacShareCustomItem extends nsISupports {
+  
+  readonly label: string;
+  
+  readonly icon: string;
+  
+  readonly handler: nsIMacShareCustomItemHandler;
+}
+
+
 interface nsIMacSharingService extends nsISupports {
   
-  getSharingProviders(pageUrl: string): any;
-  
-  shareUrl(serviceName: string, pageUrl: string, pageTitle: string): void;
-  
-  openSharingPreferences(): void;
+  shareUrlWithPicker(anchor: Element, urls: string[], titles: string[], shareTitle: string, customItems: nsIMacShareCustomItem[], copyItem: nsIMacShareCustomItem): void;
 }
 
 
@@ -268,7 +316,7 @@ interface nsIMacPreferencesReader extends nsISupports {
   
   policiesEnabled(): boolean;
   
-  readPreferences(): any;
+  readPolicySources(): any;
 }
 
 
@@ -297,10 +345,14 @@ interface nsIXPCComponents_Interfaces {
   nsIAccessibleMacEvent: nsJSIID<nsIAccessibleMacEvent>;
   nsIKeychainMigrationUtils: nsJSIID<nsIKeychainMigrationUtils>;
   nsIMacShellService: nsJSIID<nsIMacShellService>;
+  nsIASWebAuthSessionRequest: nsJSIID<nsIASWebAuthSessionRequest>;
+  nsICocoaAppShellTestUtils: nsJSIID<nsICocoaAppShellTestUtils>;
   nsIAppBundleLaunchOptions: nsJSIID<nsIAppBundleLaunchOptions>;
   nsIMacDockSupport: nsJSIID<nsIMacDockSupport>;
   nsIMacFinderProgressCanceledCallback: nsJSIID<nsIMacFinderProgressCanceledCallback>;
   nsIMacFinderProgress: nsJSIID<nsIMacFinderProgress>;
+  nsIMacShareCustomItemHandler: nsJSIID<nsIMacShareCustomItemHandler>;
+  nsIMacShareCustomItem: nsJSIID<nsIMacShareCustomItem>;
   nsIMacSharingService: nsJSIID<nsIMacSharingService>;
   nsIMacUserActivityUpdater: nsJSIID<nsIMacUserActivityUpdater>;
   nsITrashAppCallback: nsJSIID<nsITrashAppCallback>;

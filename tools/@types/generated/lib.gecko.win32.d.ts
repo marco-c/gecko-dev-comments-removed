@@ -8,18 +8,83 @@ declare global {
 
 
 
+
+interface nsIInstallationDirLayout extends nsISupports {
+  
+  readonly isInstallationLayoutVersioned: boolean;
+}
+
+
+
+
+interface nsILimitedAccessFeature extends nsISupports {
+  
+  readonly featureId: string;
+  
+  readonly token: string;
+  
+  readonly attestation: string;
+  
+  unlock(): boolean;
+}
+
+
+interface nsILimitedAccessFeatureService extends nsISupports {
+  
+  readonly taskbarPinFeatureId: string;
+  
+  generateLimitedAccessFeature(featureId: string): nsILimitedAccessFeature;
+}
+
+
+
+
+interface nsISecondaryTileListener extends nsISupports {
+  
+  succeeded(accepted: boolean): void;
+  
+  failed(aHresult: i32): void;
+}
+
+
+interface nsISecondaryTileService extends nsISupports {
+  
+  requestCreateAndPin(aTileId: string, aName: string, aIconPath: string, aArguments: string[], aListener: nsISecondaryTileListener): void;
+  
+  requestDelete(aTileId: string, aListener: nsISecondaryTileListener): void;
+}
+
+
+
+
+interface nsIInstallShortcutInfo extends nsISupports {
+  
+  readonly path: string;
+  
+  readonly location: string;
+}
+
 }  
 
+
 declare enum nsIWindowsShellService_LaunchOnLoginEnabledEnumerator {
+  
   LAUNCH_ON_LOGIN_DISABLED_BY_SETTINGS = 0,
+  
   LAUNCH_ON_LOGIN_DISABLED = 1,
+  
   LAUNCH_ON_LOGIN_ENABLED = 2,
+  
   LAUNCH_ON_LOGIN_ENABLED_BY_POLICY = 3,
 }
 
+
 declare enum nsIWindowsShellService_PinResult {
+  
   PINNED = 0,
+  
   REJECTED = 1,
+  
   UNKNOWN = 2,
 }
 
@@ -30,37 +95,72 @@ namespace nsIWindowsShellService {
   type PinResult = nsIWindowsShellService_PinResult;
 }
 
+
 interface nsIWindowsShellService extends nsIShellService, Enums<typeof nsIWindowsShellService_LaunchOnLoginEnabledEnumerator & typeof nsIWindowsShellService_PinResult> {
+  
   readonly OPEN_WITH_SUPPRESS_OPEN?: 4;
+  
   readonly OPEN_WITH_PROTOCOL_MESSAGING?: 8;
+  
   readonly OPEN_WITH_OPEN_ONCE?: 64;
+  
   readonly OPEN_WITH_SET_HANDLER?: 128;
+  
   readonly OPEN_WITH_SET_HANDLER_WIN10?: 8192;
 
+  
   createShortcut(aBinary: nsIFile, aArguments: string[], aDescription: string, aIconFile: nsIFile, aIconIndex: u16, aAppUserModelId: string, aShortcutFolder: string, aShortcutRelativePath: string): Promise<any>;
+  
   deleteShortcut(aShortcutFolder: string, aShortcutRelativePath: string): Promise<any>;
+  
   getLaunchOnLoginShortcuts(): string[];
+  
   pinCurrentAppToStartMenu(): Promise<any>;
+  
   isCurrentAppPinnedToStartMenu(): Promise<any>;
+  
   enableLaunchOnLoginMSIX(aTaskId: string): Promise<any>;
+  
   disableLaunchOnLoginMSIX(aTaskId: string): Promise<any>;
+  
   getLaunchOnLoginEnabledMSIX(aTaskId: string): Promise<any>;
+  
   pinCurrentAppToTaskbar(aPrivateBrowsing: boolean, aFireAndForget?: boolean, aPromptOnly?: boolean): Promise<any>;
+  
   canPinToTaskbar(): void;
+  
   isCurrentAppPinnedToTaskbar(aumid: string): Promise<any>;
+  
   pinShortcutToTaskbar(aAppUserModelId: string, aShortcutFolder: string, aShortcutRelativePath: string): Promise<any>;
+  
   unpinShortcutFromTaskbar(aShortcutFolder: string, aShortcutRelativePath: string): void;
+  
   launchSetDefaultAppPicker(aTarget: string, aFlags: i32): void;
+  
   launchModernSettingsDialogDefaultApps(): void;
+  
   classifyShortcut(aPath: string): string;
+  
   hasPinnableShortcut(aAUMID: string, aPrivateBrowsing: boolean): Promise<any>;
+  
   canSetDefaultBrowserUserChoice(): boolean;
+  
   checkAllProgIDsExist(): boolean;
+  
   checkBrowserUserChoiceHashes(): boolean;
+  
+  isUserChoiceProtectionDriverRunning(): boolean;
+  
+  canRenameUserChoiceAssociationKey(aAssociation: string): boolean;
+  
   checkCurrentProcessAUMIDForTesting(): string;
+  
   isDefaultHandlerFor(aFileExtensionOrProtocol: string): boolean;
+  
   queryCurrentDefaultHandlerFor(aFileExtensionOrProtocol: string): string;
+  
   setShortcutsIcon(aShortcutPaths: string[], aIconPath: string, aIconResourceId: u16): Promise<any>;
+  
   enumerateInstallShortcuts(aAppUserModelId: string): Promise<any>;
 }
 
@@ -68,30 +168,48 @@ interface nsIWindowsShellService extends nsIShellService, Enums<typeof nsIWindow
 
 
 
+
 interface nsIInstalledApplication extends nsISupports {
+  
   readonly name: string;
+  
   readonly publisher: string;
 }
 
+
 interface nsIAboutThirdParty extends nsISupports {
+  
   readonly ModuleType_Unknown?: 1;
+  
   readonly ModuleType_IME?: 2;
+  
   readonly ModuleType_ShellExtension?: 4;
+  
   readonly ModuleType_BlockedByUser?: 8;
+  
   readonly ModuleType_BlockedByUserAtLaunch?: 16;
 
+  
   lookupModuleType(aLeafName: string): u32;
+  
   lookupApplication(aModulePath: string): nsIInstalledApplication;
+  
   readonly isDynamicBlocklistAvailable: boolean;
+  
   readonly isDynamicBlocklistDisabled: boolean;
+  
   updateBlocklist(aLeafName: string, aNewBlockStatus: boolean): Promise<any>;
+  
   collectSystemInfo(): Promise<any>;
+  
   loadModuleForTesting(aModulePath: string): void;
 }
 
 
 
+
 interface nsIAboutWindowsMessages extends nsISupports {
+  
   getMessages(currentWindow: mozIDOMWindowProxy, messages: OutParam<string[][]>, windowTitles: OutParam<string[]>): void;
 }
 
@@ -99,9 +217,13 @@ interface nsIAboutWindowsMessages extends nsISupports {
 
 }  
 
+
 declare enum nsIWindowsAlertNotification_ImagePlacement {
+  
   eInline = 0,
+  
   eHero = 1,
+  
   eIcon = 2,
 }
 
@@ -111,83 +233,147 @@ namespace nsIWindowsAlertNotification {
   type ImagePlacement = nsIWindowsAlertNotification_ImagePlacement;
 }
 
+
 interface nsIWindowsAlertNotification extends nsIAlertNotification, Enums<typeof nsIWindowsAlertNotification_ImagePlacement> {
+  
   imagePlacement: nsIWindowsAlertNotification.ImagePlacement;
+  
   imagePathUnchecked: string;
 }
 
+
 interface nsIWindowsAlertsService extends nsIAlertsService {
+  
   handleWindowsTag(aWindowsTag: string): Promise<any>;
+  
   getXmlStringForWindowsAlert(aAlert: nsIAlertNotification, aWindowsTag?: string): string;
+  
   removeAllNotificationsForInstall(): void;
 }
 
 
 
+
+interface nsIWinBackgroundTaskRegistrar extends nsISupports {
+  
+  registerTask(aId: string, aIntervalMinutes: u32): void;
+  
+  deleteTask(aId: string): void;
+  
+  deleteAllTasks(): void;
+  
+  taskExists(aId: string): boolean;
+}
+
+
+
+
 interface nsIWinTaskSchedulerService extends nsISupports {
+  
   registerTask(aFolderName: string, aTaskName: string, aDefinitionXML: string, aUpdateExisting?: boolean): void;
+  
   validateTaskDefinition(aDefinitionXML: string): i32;
+  
   getTaskXML(aFolderName: string, aTaskName: string): string;
+  
   getCurrentUserSid(): string;
+  
   deleteTask(aFolderName: string, aTaskName: string): void;
+  
   getFolderTasks(aFolderName: string): string[];
+  
   createFolder(aParentFolderName: string, aSubFolderName: string): void;
+  
   deleteFolder(aParentFolderName: string, aSubFolderName: string): void;
 }
 
 
 
+
 interface nsIDefaultAgent extends nsISupports {
+  
   registerTask(aUniqueToken: string): void;
+  
   updateTask(aUniqueToken: string): void;
+  
   unregisterTask(aUniqueToken: string): void;
+  
   uninstall(aUniqueToken: string): void;
+  
   secondsSinceLastAppRun(): i64;
+  
   getDefaultBrowser(): string;
+  
   getReplacePreviousDefaultBrowser(aCurrentBrowser: string): string;
+  
   getDefaultPdfHandler(): string;
-  sendPing(aCurrentBrowser: string, aPreviousBrowser: string, aPdfHandler: string, aNotificationShown: string, aNotificationAction: string, daysSinceLastAppLaunch: u32, aIsTaskbarPinned: string): void;
+  
+  sendPing(aCurrentBrowser: string, aPreviousBrowser: string, aPdfHandler: string, aNotificationShown: string, aNotificationAction: string, daysSinceLastAppLaunch: u32, aIsTaskbarPinned: string, aHasWinPackageId: boolean, aWinPackageFamilyName: string, aInstallerType: string, aInstallerFromMsi: boolean, aInstallerSilent: boolean): void;
+  
   setDefaultBrowserUserChoice(aAumid: string, aExtraFileExtensions: string[]): void;
+  
   setDefaultBrowserUserChoiceAsync(aAumid: string, aExtraFileExtensions: string[]): Promise<any>;
+  
   setDefaultExtensionHandlersUserChoice(aAumid: string, aFileExtensions: string[]): void;
+  
   agentDisabled(): boolean;
 }
 
 
 
+
 interface nsIWindowsMutex extends nsISupports {
+  
   tryLock(): void;
+  
   isLocked(): boolean;
+  
   unlock(): void;
 }
 
+
 interface nsIWindowsMutexFactory extends nsISupports {
+  
   createMutex(aName: string): nsIWindowsMutex;
 }
 
 
 
+
 interface nsIWindowsPackageManager extends nsISupports {
+  
   findUserInstalledPackages(prefix: string[]): string[];
+  
   getInstalledDate(): u64;
+  
   campaignId(): Promise<any>;
 }
 
 
 
+
 interface nsIWinAppHelper extends nsISupports {
+  
   readonly userCanElevate: boolean;
 }
 
 
 
+
 interface nsIJumpListBuilder extends nsISupports {
+  
   obtainAndCacheFavicon(faviconURL: nsIURI): string;
+  
   obtainAndCacheFaviconAsync(faviconURL: nsIURI): Promise<any>;
+  
   isAvailable(): Promise<any>;
+  
   checkForRemovals(): Promise<any>;
+  
   populateJumpList(aTaskDescriptions: any, aCustomTitle: string, aCustomDescriptions: any): Promise<any>;
+  
   clearRecentsList(): void;
+  
   clearJumpList(): Promise<any>;
 }
 
@@ -195,160 +381,301 @@ interface nsIJumpListBuilder extends nsISupports {
 
 
 
+
 interface nsITaskbarOverlayIconController extends nsISupports {
+  
   setOverlayIcon(statusIcon: imgIContainer, statusDescription: string, paintContext?: nsISVGPaintContext): void;
 }
 
 
 
+
 interface nsITaskbarPreview extends nsISupports {
+  
   controller: nsITaskbarPreviewController;
+  
   tooltip: string;
+  
   visible: boolean;
+  
   active: boolean;
+  
   invalidate(): void;
 }
 
 
 
+
 interface nsITaskbarPreviewButton extends nsISupports {
+  
   tooltip: string;
+  
   dismissOnClick: boolean;
+  
   hasBorder: boolean;
+  
   disabled: boolean;
+  
   image: imgIContainer;
+  
   visible: boolean;
 }
 
 
 
+
 type nsITaskbarPreviewCallback = Callable<{
+  
   done(aCanvas: nsISupports, aDrawBorder: boolean): void;
 }>
 
+
 interface nsITaskbarPreviewController extends nsISupports {
+  
   readonly width: u32;
+  
   readonly height: u32;
+  
   readonly thumbnailAspectRatio: float;
+  
   requestPreview(aCallback: nsITaskbarPreviewCallback): void;
+  
   requestThumbnail(aCallback: nsITaskbarPreviewCallback, width: u32, height: u32): void;
+  
   onClose(): void;
+  
   onActivate(): boolean;
+  
   onClick(button: nsITaskbarPreviewButton): void;
 }
 
 
 
+
 interface nsITaskbarProgress extends nsISupports {
+  
   readonly STATE_NO_PROGRESS?: 0;
+  
   readonly STATE_INDETERMINATE?: 1;
+  
   readonly STATE_NORMAL?: 2;
+  
   readonly STATE_ERROR?: 3;
+  
   readonly STATE_PAUSED?: 4;
 
+  
   setProgressState(state: nsTaskbarProgressState, currentValue?: u64, maxValue?: u64): void;
 }
 
 
 
+
 interface nsITaskbarTabPreview extends nsITaskbarPreview {
+  
   title: string;
+  
   icon: imgIContainer;
+  
   move(aNext: nsITaskbarTabPreview): void;
 }
 
 
 
+
 interface nsITaskbarWindowPreview extends nsITaskbarPreview {
+  
   readonly NUM_TOOLBAR_BUTTONS?: 7;
 
+  
   getButton(index: u32): nsITaskbarPreviewButton;
+  
   enableCustomDrawing: boolean;
 }
 
 
 
+
 interface nsIWinTaskbar extends nsISupports {
+  
   readonly available: boolean;
+  
   readonly defaultGroupId: string;
+  
   readonly defaultPrivateGroupId: string;
+  
   createTaskbarTabPreview(shell: nsIDocShell, controller: nsITaskbarPreviewController): nsITaskbarTabPreview;
+  
   getTaskbarWindowPreview(shell: nsIDocShell): nsITaskbarWindowPreview;
+  
   getTaskbarProgress(shell: nsIDocShell): nsITaskbarProgress;
+  
   getOverlayIconController(shell: nsIDocShell): nsITaskbarOverlayIconController;
+  
   createJumpListBuilder(aPrivateBrowsing: boolean): nsIJumpListBuilder;
+  
   getGroupIdForWindow(aParent: mozIDOMWindow): string;
+  
   setGroupIdForWindow(aParent: mozIDOMWindow, aIdentifier: string): void;
+  
   setAllWindowIcons(aIconResourceId: u16): void;
+  
+  refreshTaskbarButtons(): void;
 }
 
 
 
+
 interface nsIWindowsUIUtils extends nsISupports {
+  
   readonly systemSmallIconSize: i32;
+  
   readonly systemLargeIconSize: i32;
+  
   setWindowIcon(aWindow: mozIDOMWindowProxy, aSmallIcon: imgIContainer, aLargeIcon: imgIContainer): void;
+  
   setWindowIconFromExe(aWindow: mozIDOMWindowProxy, aExe: string, aIndex: u16): void;
+  
   setWindowIconNoData(aWindow: mozIDOMWindowProxy): void;
+  
   readonly inWin10TabletMode: boolean;
+  
   readonly inWin11TabletMode: boolean;
+  
+  readonly isTabletCapable: boolean;
+  
   shareUrl(urlToShare: string, shareTitle: string): void;
 }
 
 
 
+
+interface nsIAlertsServiceRust extends nsISupports {
+  
+  getHistory(aAumid: string): string[];
+}
+
+
+
+
+interface nsIWindowsDebugProcessData extends nsISupports {
+  
+  readonly name: string;
+  
+  readonly executablePath: string;
+  
+  readonly pid: u32;
+}
+
+
+interface nsIWindowsTestDebug extends nsISupports {
+  
+  processesThatOpenedFile(aFilename: string): nsIWindowsDebugProcessData[];
+}
+
+
+
+
 interface nsIWindowsRegKey extends nsISupports {
+  
   readonly ROOT_KEY_CLASSES_ROOT?: 2147483648;
+  
   readonly ROOT_KEY_CURRENT_USER?: 2147483649;
+  
   readonly ROOT_KEY_LOCAL_MACHINE?: 2147483650;
+  
   readonly ACCESS_BASIC?: 131072;
+  
   readonly ACCESS_QUERY_VALUE?: 1;
+  
   readonly ACCESS_SET_VALUE?: 2;
+  
   readonly ACCESS_CREATE_SUB_KEY?: 4;
+  
   readonly ACCESS_ENUMERATE_SUB_KEYS?: 8;
+  
   readonly ACCESS_NOTIFY?: 16;
+  
   readonly ACCESS_READ?: 131097;
+  
   readonly ACCESS_WRITE?: 131078;
+  
   readonly ACCESS_ALL?: 131103;
+  
   readonly WOW64_32?: 512;
+  
   readonly WOW64_64?: 256;
+  
   readonly TYPE_NONE?: 0;
+  
   readonly TYPE_STRING?: 1;
+  
   readonly TYPE_BINARY?: 3;
+  
   readonly TYPE_INT?: 4;
+  
   readonly TYPE_INT64?: 11;
 
+  
   close(): void;
+  
   open(rootKey: u32, relPath: string, mode: u32): void;
+  
   create(rootKey: u32, relPath: string, mode: u32): void;
+  
   openChild(relPath: string, mode: u32): nsIWindowsRegKey;
+  
   createChild(relPath: string, mode: u32): nsIWindowsRegKey;
+  
   readonly childCount: u32;
+  
   getChildName(index: u32): string;
+  
   hasChild(name: string): boolean;
+  
   readonly valueCount: u32;
+  
   getValueName(index: u32): string;
+  
   hasValue(name: string): boolean;
+  
   removeChild(relPath: string): void;
+  
   removeValue(name: string): void;
+  
   getValueType(name: string): u32;
+  
   readStringValue(name: string): string;
+  
   readIntValue(name: string): u32;
+  
   readInt64Value(name: string): u64;
+  
   readBinaryValue(name: string): string;
+  
   writeStringValue(name: string, data: string): void;
+  
   writeIntValue(name: string, data: u32): void;
+  
   writeInt64Value(name: string, data: u64): void;
+  
   writeBinaryValue(name: string, data: string): void;
 }
 
 interface nsIXPCComponents_Interfaces {
+  nsIInstallationDirLayout: nsJSIID<nsIInstallationDirLayout>;
+  nsILimitedAccessFeature: nsJSIID<nsILimitedAccessFeature>;
+  nsILimitedAccessFeatureService: nsJSIID<nsILimitedAccessFeatureService>;
+  nsISecondaryTileListener: nsJSIID<nsISecondaryTileListener>;
+  nsISecondaryTileService: nsJSIID<nsISecondaryTileService>;
+  nsIInstallShortcutInfo: nsJSIID<nsIInstallShortcutInfo>;
   nsIWindowsShellService: nsJSIID<nsIWindowsShellService, typeof nsIWindowsShellService_LaunchOnLoginEnabledEnumerator & typeof nsIWindowsShellService_PinResult>;
   nsIInstalledApplication: nsJSIID<nsIInstalledApplication>;
   nsIAboutThirdParty: nsJSIID<nsIAboutThirdParty>;
   nsIAboutWindowsMessages: nsJSIID<nsIAboutWindowsMessages>;
   nsIWindowsAlertNotification: nsJSIID<nsIWindowsAlertNotification, typeof nsIWindowsAlertNotification_ImagePlacement>;
   nsIWindowsAlertsService: nsJSIID<nsIWindowsAlertsService>;
+  nsIWinBackgroundTaskRegistrar: nsJSIID<nsIWinBackgroundTaskRegistrar>;
   nsIWinTaskSchedulerService: nsJSIID<nsIWinTaskSchedulerService>;
   nsIDefaultAgent: nsJSIID<nsIDefaultAgent>;
   nsIWindowsMutex: nsJSIID<nsIWindowsMutex>;
@@ -366,6 +693,9 @@ interface nsIXPCComponents_Interfaces {
   nsITaskbarWindowPreview: nsJSIID<nsITaskbarWindowPreview>;
   nsIWinTaskbar: nsJSIID<nsIWinTaskbar>;
   nsIWindowsUIUtils: nsJSIID<nsIWindowsUIUtils>;
+  nsIAlertsServiceRust: nsJSIID<nsIAlertsServiceRust>;
+  nsIWindowsDebugProcessData: nsJSIID<nsIWindowsDebugProcessData>;
+  nsIWindowsTestDebug: nsJSIID<nsIWindowsTestDebug>;
   nsIWindowsRegKey: nsJSIID<nsIWindowsRegKey>;
 }
 

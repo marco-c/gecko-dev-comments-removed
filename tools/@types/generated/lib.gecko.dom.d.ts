@@ -2345,6 +2345,11 @@ interface GetHTMLOptions {
     shadowRoots?: ShadowRoot[];
 }
 
+interface GetMenuItemsOptions {
+    
+    includeDisabled?: boolean;
+}
+
 interface GetNotificationOptions {
     
     tag?: string;
@@ -2554,6 +2559,11 @@ interface ImageBitmapOptions {
 interface ImageCaptureErrorEventInit extends EventInit {
     
     imageCaptureError?: ImageCaptureError | null;
+}
+
+interface ImageDataSettings {
+    
+    colorSpace?: PredefinedColorSpace;
 }
 
 interface ImageDecodeOptions {
@@ -5190,7 +5200,23 @@ interface QueuingStrategyInit {
     highWaterMark: number;
 }
 
+interface QuotaExceededErrorOptions {
+    
+    quota?: number;
+    
+    requested?: number;
+}
+
 interface RTCAnswerOptions extends RTCOfferAnswerOptions {
+}
+
+interface RTCAudioSourceStats extends RTCMediaSourceStats {
+    
+    audioLevel?: number;
+    
+    totalAudioEnergy?: number;
+    
+    totalSamplesDuration?: number;
 }
 
 interface RTCBandwidthEstimationInternal {
@@ -5244,6 +5270,8 @@ interface RTCConfiguration {
     
     certificates?: RTCCertificate[];
     
+    iceCandidatePoolSize?: number;
+    
     iceServers?: RTCIceServer[];
     
     iceTransportPolicy?: RTCIceTransportPolicy;
@@ -5262,6 +5290,8 @@ interface RTCConfigurationInternal {
     bundlePolicy?: RTCBundlePolicy;
     
     certificatesProvided: boolean;
+    
+    iceCandidatePoolSize?: number;
     
     iceServers?: RTCIceServerInternal[];
     
@@ -5372,6 +5402,11 @@ interface RTCEncodedVideoFrameOptions {
     metadata?: RTCEncodedVideoFrameMetadata;
 }
 
+interface RTCEncodingOptions {
+    
+    keyFrame?: boolean;
+}
+
 interface RTCErrorEventInit extends EventInit {
     
     error: RTCError;
@@ -5444,7 +5479,7 @@ interface RTCIceCandidatePairStats extends RTCStats {
 
 interface RTCIceCandidateStats extends RTCStats {
     
-    address?: string;
+    address?: string | null;
     
     candidateType?: RTCIceCandidateType;
     
@@ -5692,9 +5727,9 @@ interface RTCOutboundRtpStreamStats extends RTCSentRtpStreamStats {
     
     rtxSsrc?: number;
     
-    totalEncodeTime?: number;
+    targetBitrate?: number;
     
-    totalEncodedBytesTarget?: number;
+    totalEncodeTime?: number;
 }
 
 interface RTCPeerConnectionIceErrorEventInit extends EventInit {
@@ -5921,6 +5956,11 @@ interface RTCSessionDescriptionInit {
     type: RTCSdpType;
 }
 
+interface RTCSetParameterOptions {
+    
+    encodingOptions?: RTCEncodingOptions[];
+}
+
 interface RTCStats {
     
     id?: string;
@@ -5931,6 +5971,8 @@ interface RTCStats {
 }
 
 interface RTCStatsCollection {
+    
+    audioSourceStats?: RTCAudioSourceStats[];
     
     bandwidthEstimations?: RTCBandwidthEstimationInternal[];
     
@@ -6089,6 +6131,8 @@ interface ReadOptions extends ReadUTF8Options {
 interface ReadUTF8Options {
     
     decompress?: boolean;
+    
+    decrypt?: string;
 }
 
 interface ReadableStreamBYOBReaderReadOptions {
@@ -6144,6 +6188,21 @@ interface RedirectBlockedEventInit extends EventInit {
     requestingWindow?: Window | null;
 }
 
+interface RegisterableShortcutKey {
+    
+    altKey?: boolean;
+    
+    ctrlKey?: boolean;
+    
+    key?: string;
+    
+    keyCode?: number;
+    
+    metaKey?: boolean;
+    
+    shiftKey?: boolean;
+}
+
 interface RegistrationOptions {
     
     scope?: string;
@@ -6187,6 +6246,8 @@ interface RequestInit {
     cookieJarSettings?: nsICookieJarSettings;
     
     credentials?: RequestCredentials;
+    
+    duplex?: RequestDuplex;
     
     headers?: HeadersInit;
     
@@ -6258,7 +6319,7 @@ interface SVGPathSegmentInit {
     
     type: string;
     
-    values: number[] | Float32Array;
+    values: number[];
 }
 
 interface SanitizerAttributeNamespace {
@@ -6277,6 +6338,8 @@ interface SanitizerConfig {
     dataAttributes?: boolean;
     
     elements?: SanitizerElementWithAttributes[];
+    
+    javascriptURLs?: boolean;
     
     processingInstructions?: SanitizerPI[];
     
@@ -6657,6 +6720,8 @@ interface SupportsOptions {
     
     quirks?: boolean;
     
+    rule?: CSSRule | null;
+    
     userAgent?: boolean;
 }
 
@@ -6689,9 +6754,15 @@ interface SynthesizeMouseEventData extends SynthesizeEventData {
     
     clickCount?: number;
     
+    command?: string;
+    
     inputSource?: number;
     
     modifiers?: number;
+    
+    movementX?: number;
+    
+    movementY?: number;
 }
 
 interface SynthesizeMouseEventOptions extends SynthesizeEventOptions {
@@ -7579,15 +7650,46 @@ interface WebTransportCloseInfo {
     reason?: string;
 }
 
+interface WebTransportConnectionStats {
+    
+    atSendCapacity?: boolean;
+    
+    bytesAcknowledged?: number;
+    
+    bytesLost?: number;
+    
+    bytesReceived?: number;
+    
+    bytesSent?: number;
+    
+    bytesSentOverhead?: number;
+    
+    datagrams: WebTransportDatagramStats;
+    
+    estimatedSendRate?: number | null;
+    
+    minRtt?: DOMHighResTimeStamp;
+    
+    packetsLost?: number;
+    
+    packetsReceived?: number;
+    
+    packetsSent?: number;
+    
+    rttVariation?: DOMHighResTimeStamp;
+    
+    smoothedRtt?: DOMHighResTimeStamp;
+}
+
 interface WebTransportDatagramStats {
     
     droppedIncoming?: number;
     
+    expiredIncoming?: number;
+    
     expiredOutgoing?: number;
     
     lostOutgoing?: number;
-    
-    timestamp?: DOMHighResTimeStamp;
 }
 
 interface WebTransportErrorInit {
@@ -7595,6 +7697,13 @@ interface WebTransportErrorInit {
     message?: string;
     
     streamErrorCode?: number;
+}
+
+interface WebTransportErrorOptions {
+    
+    source?: WebTransportErrorSource;
+    
+    streamErrorCode?: number | null;
 }
 
 interface WebTransportHash {
@@ -7608,7 +7717,15 @@ interface WebTransportOptions {
     
     allowPooling?: boolean;
     
+    anticipatedConcurrentIncomingBidirectionalStreams?: number | null;
+    
+    anticipatedConcurrentIncomingUnidirectionalStreams?: number | null;
+    
     congestionControl?: WebTransportCongestionControl;
+    
+    datagramsReadableType?: ReadableStreamType;
+    
+    headers?: HeadersInit;
     
     protocols?: string[];
     
@@ -7622,8 +7739,6 @@ interface WebTransportReceiveStreamStats {
     bytesRead?: number;
     
     bytesReceived?: number;
-    
-    timestamp?: DOMHighResTimeStamp;
 }
 
 interface WebTransportSendOptions {
@@ -7643,35 +7758,6 @@ interface WebTransportSendStreamStats {
     bytesSent?: number;
     
     bytesWritten?: number;
-    
-    timestamp?: DOMHighResTimeStamp;
-}
-
-interface WebTransportStats {
-    
-    bytesReceived?: number;
-    
-    bytesSent?: number;
-    
-    datagrams?: WebTransportDatagramStats;
-    
-    minRtt?: DOMHighResTimeStamp;
-    
-    numIncomingStreamsCreated?: number;
-    
-    numOutgoingStreamsCreated?: number;
-    
-    packetsLost?: number;
-    
-    packetsReceived?: number;
-    
-    packetsSent?: number;
-    
-    rttVariation?: DOMHighResTimeStamp;
-    
-    smoothedRtt?: DOMHighResTimeStamp;
-    
-    timestamp?: DOMHighResTimeStamp;
 }
 
 interface WebrtcGlobalMediaContext {
@@ -7810,6 +7896,8 @@ interface WriteOptions {
     backupFile?: string;
     
     compress?: boolean;
+    
+    encrypt?: string;
     
     flush?: boolean;
     
@@ -9460,6 +9548,8 @@ interface BrowsingContext extends LoadContextMixin {
     
     prefersColorSchemeOverride: PrefersColorSchemeOverride;
     
+    prefersContrastOverride: PrefersContrastOverride;
+    
     prefersReducedMotionOverride: PrefersReducedMotionOverride;
     
     sandboxFlags: number;
@@ -10557,6 +10647,8 @@ interface CSSRule {
     
     readonly type: number;
     
+    supportsDeclarations(): boolean;
+    
     readonly STYLE_RULE: 1;
     
     readonly CHARSET_RULE: 2;
@@ -11070,6 +11162,8 @@ interface CSSStyleProperties extends CSSStyleDeclaration {
     
     borderRightWidth: string;
     
+    borderShape: string;
+    
     borderSpacing: string;
     
     borderStartEndRadius: string;
@@ -11237,6 +11331,8 @@ interface CSSStyleProperties extends CSSStyleDeclaration {
     fillRule: string;
     
     filter: string;
+    
+    fitTolerance: string;
     
     flex: string;
     
@@ -11467,8 +11563,6 @@ interface CSSStyleProperties extends CSSStyleDeclaration {
     maskSize: string;
     
     maskType: string;
-    
-    masonryAutoFlow: string;
     
     mathDepth: string;
     
@@ -11735,6 +11829,8 @@ interface CSSStyleProperties extends CSSStyleDeclaration {
     textAnchor: string;
     
     textAutospace: string;
+    
+    textAutospaceSize: string;
     
     textBox: string;
     
@@ -12471,10 +12567,10 @@ declare var CanvasGradient: {
 
 interface CanvasImageData {
     
-    createImageData(sw: number, sh: number): ImageData;
+    createImageData(sw: number, sh: number, settings?: ImageDataSettings): ImageData;
     createImageData(imagedata: ImageData): ImageData;
     
-    getImageData(sx: number, sy: number, sw: number, sh: number): ImageData;
+    getImageData(sx: number, sy: number, sw: number, sh: number, settings?: ImageDataSettings): ImageData;
     
     putImageData(imagedata: ImageData, dx: number, dy: number): void;
     putImageData(imagedata: ImageData, dx: number, dy: number, dirtyX: number, dirtyY: number, dirtyWidth: number, dirtyHeight: number): void;
@@ -13218,6 +13314,27 @@ declare var CompressionStream: {
     new(format: CompressionFormat): CompressionStream;
     
     isInstance: IsInstance<CompressionStream>;
+};
+
+
+interface ConnectionAllowlistViolationReportBody extends ReportBody {
+    
+    readonly allowlist: string[];
+    
+    readonly connection: string;
+    
+    readonly disposition: ConnectionAllowlistDisposition;
+    
+    readonly url: string;
+    
+    toJSON(): any;
+}
+
+declare var ConnectionAllowlistViolationReportBody: {
+    prototype: ConnectionAllowlistViolationReportBody;
+    new(): ConnectionAllowlistViolationReportBody;
+    
+    isInstance: IsInstance<ConnectionAllowlistViolationReportBody>;
 };
 
 
@@ -14524,6 +14641,8 @@ interface Document extends Node, ARIANotifyMixin, DocumentOrShadowRoot, FontFace
     
     readonly contentLanguage: string;
     
+    readonly contentLoaded: Promise<void>;
+    
     readonly contentType: string;
     
     cookie: string;
@@ -14562,7 +14681,7 @@ interface Document extends Node, ARIANotifyMixin, DocumentOrShadowRoot, FontFace
     
     readonly embeds: HTMLCollection;
     
-    readonly featurePolicy: FeaturePolicy;
+    readonly featurePolicy: PermissionsPolicy;
     
     fgColor: string;
     
@@ -14614,6 +14733,8 @@ interface Document extends Node, ARIANotifyMixin, DocumentOrShadowRoot, FontFace
     
     readonly links: HTMLCollection;
     
+    readonly loaded: Promise<void>;
+    
     readonly loadedFromPrototype: boolean;
     
     readonly location: Location | null;
@@ -14637,6 +14758,8 @@ interface Document extends Node, ARIANotifyMixin, DocumentOrShadowRoot, FontFace
     onreadystatechange: ((this: Document, ev: Event) => any) | null;
     
     onvisibilitychange: ((this: Document, ev: Event) => any) | null;
+    
+    readonly parsed: Promise<void>;
     
     readonly partitionedPrincipal: Principal;
     
@@ -14701,6 +14824,8 @@ interface Document extends Node, ARIANotifyMixin, DocumentOrShadowRoot, FontFace
     clear(): void;
     
     clearUserGestureActivation(): void;
+    
+    clearViewportSizeOverrideForMiniWindow(): void;
     
     close(): void;
     
@@ -14936,6 +15061,8 @@ interface Document extends Node, ARIANotifyMixin, DocumentOrShadowRoot, FontFace
     
     setSuppressedEventListener(aListener: EventListener | null): void;
     
+    setViewportSizeOverrideForMiniWindow(width: number, height: number): void;
+    
     startViewTransition(callbackOptions?: ViewTransitionUpdateCallback | StartViewTransitionOptions): ViewTransition;
     
     synchronouslyUpdateRemoteBrowserDimensions(aIncludeInactive?: boolean): void;
@@ -15161,6 +15288,24 @@ interface EXT_blend_minmax {
 }
 
 
+interface EXT_clip_control {
+    
+    clipControlEXT(origin: GLenum, depth: GLenum): void;
+    
+    readonly LOWER_LEFT_EXT: 0x8CA1;
+    
+    readonly UPPER_LEFT_EXT: 0x8CA2;
+    
+    readonly NEGATIVE_ONE_TO_ONE_EXT: 0x935E;
+    
+    readonly ZERO_TO_ONE_EXT: 0x935F;
+    
+    readonly CLIP_ORIGIN_EXT: 0x935C;
+    
+    readonly CLIP_DEPTH_MODE_EXT: 0x935D;
+}
+
+
 interface EXT_color_buffer_float {
 }
 
@@ -15225,6 +15370,14 @@ interface EXT_frag_depth {
 }
 
 
+interface EXT_polygon_offset_clamp {
+    
+    polygonOffsetClampEXT(factor: GLfloat, units: GLfloat, clamp: GLfloat): void;
+    
+    readonly POLYGON_OFFSET_CLAMP_EXT: 0x8E1B;
+}
+
+
 interface EXT_sRGB {
     
     readonly SRGB_EXT: 0x8C40;
@@ -15270,6 +15423,12 @@ interface EXT_texture_filter_anisotropic {
     readonly TEXTURE_MAX_ANISOTROPY_EXT: 0x84FE;
     
     readonly MAX_TEXTURE_MAX_ANISOTROPY_EXT: 0x84FF;
+}
+
+
+interface EXT_texture_mirror_clamp_to_edge {
+    
+    readonly MIRROR_CLAMP_TO_EDGE_EXT: 0x8743;
 }
 
 
@@ -15951,39 +16110,6 @@ interface External {
     
     IsSearchProviderInstalled(): void;
 }
-
-
-interface FeaturePolicy {
-    
-    allowedFeatures(): string[];
-    
-    allowsFeature(feature: string, origin?: string): boolean;
-    
-    features(): string[];
-    
-    getAllowlistForFeature(feature: string): string[];
-}
-
-
-interface FeaturePolicyViolationReportBody extends ReportBody {
-    
-    readonly columnNumber: number | null;
-    
-    readonly disposition: string;
-    
-    readonly featureId: string;
-    
-    readonly lineNumber: number | null;
-    
-    readonly sourceFile: string | null;
-}
-
-declare var FeaturePolicyViolationReportBody: {
-    prototype: FeaturePolicyViolationReportBody;
-    new(): FeaturePolicyViolationReportBody;
-    
-    isInstance: IsInstance<FeaturePolicyViolationReportBody>;
-};
 
 interface FetchObserverEventMap {
     "requestprogress": Event;
@@ -18969,6 +19095,8 @@ declare var HTMLCanvasElement: {
     new(): HTMLCanvasElement;
     
     isInstance: IsInstance<HTMLCanvasElement>;
+    
+    printToPDF(canvases: HTMLCanvasElement[], stream: OutputStream): void;
 };
 
 
@@ -19534,7 +19662,7 @@ interface HTMLIFrameElement extends HTMLElement, MozFrameLoaderOwner {
     
     readonly contentWindow: WindowProxy | null;
     
-    readonly featurePolicy: FeaturePolicy;
+    readonly featurePolicy: PermissionsPolicy;
     
     frameBorder: string;
     
@@ -20073,6 +20201,8 @@ interface HTMLMediaElement extends HTMLElement {
     
     readonly isVideoDecodingSuspended: boolean;
     
+    loading: string;
+    
     loop: boolean;
     
     readonly mediaKeys: MediaKeys | null;
@@ -20447,6 +20577,8 @@ interface HTMLOptionElement extends HTMLElement {
     
     label: string;
     
+    readonly renderedLabel: string;
+    
     selected: boolean;
     
     text: string;
@@ -20751,6 +20883,8 @@ interface HTMLSelectElement extends HTMLElement {
     checkValidity(): boolean;
     
     getAutocompleteInfo(): AutocompleteInfo;
+    
+    getListItems(group?: HTMLOptGroupElement | null): Element[];
     
     item(index: number): Element | null;
     
@@ -21105,6 +21239,8 @@ declare var HTMLTableSectionElement: {
 interface HTMLTemplateElement extends HTMLElement {
     
     readonly content: DocumentFragment;
+    
+    htmlFor: string;
     
     shadowRootClonable: boolean;
     
@@ -22072,6 +22208,8 @@ declare var ImageCaptureErrorEvent: {
 
 interface ImageData {
     
+    readonly colorSpace: PredefinedColorSpace;
+    
     readonly data: Uint8ClampedArray;
     
     readonly height: number;
@@ -22081,8 +22219,8 @@ interface ImageData {
 
 declare var ImageData: {
     prototype: ImageData;
-    new(sw: number, sh: number): ImageData;
-    new(data: Uint8ClampedArray, sw: number, sh?: number): ImageData;
+    new(sw: number, sh: number, settings?: ImageDataSettings): ImageData;
+    new(data: Uint8ClampedArray, sw: number, sh?: number, settings?: ImageDataSettings): ImageData;
     
     isInstance: IsInstance<ImageData>;
 };
@@ -23326,6 +23464,8 @@ interface KeyboardEvent extends UIEvent, KeyEventMixin {
     
     getModifierState(key: string): boolean;
     
+    getRegisterableShortcutKeys(): RegisterableShortcutKey[];
+    
     initKeyboardEvent(typeArg: string, bubblesArg?: boolean, cancelableArg?: boolean, viewArg?: Window | null, keyArg?: string, locationArg?: number, ctrlKey?: boolean, altKey?: boolean, shiftKey?: boolean, metaKey?: boolean): void;
     
     readonly DOM_KEY_LOCATION_STANDARD: 0x00;
@@ -24340,7 +24480,17 @@ declare var MatchPatternSet: {
 
 interface MathMLAnchorElement extends MathMLElement, HyperlinkElementUtils {
     
+    download: string;
+    
     href: string;
+    
+    ping: string;
+    
+    referrerPolicy: string;
+    
+    rel: string;
+    
+    readonly relList: DOMTokenList;
     
     target: string;
     addEventListener<K extends keyof MathMLElementEventMap>(type: K, listener: (this: MathMLAnchorElement, ev: MathMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
@@ -26018,6 +26168,8 @@ interface NavigationTransition {
     readonly from: NavigationHistoryEntry;
     
     readonly navigationType: NavigationType;
+    
+    readonly to: NavigationDestination;
 }
 
 declare var NavigationTransition: {
@@ -27788,6 +27940,39 @@ declare var Permissions: {
 };
 
 
+interface PermissionsPolicy {
+    
+    allowedFeatures(): string[];
+    
+    allowsFeature(feature: string, origin?: string): boolean;
+    
+    features(): string[];
+    
+    getAllowlistForFeature(feature: string): string[];
+}
+
+
+interface PermissionsPolicyViolationReportBody extends ReportBody {
+    
+    readonly columnNumber: number | null;
+    
+    readonly disposition: string;
+    
+    readonly featureId: string;
+    
+    readonly lineNumber: number | null;
+    
+    readonly sourceFile: string | null;
+}
+
+declare var PermissionsPolicyViolationReportBody: {
+    prototype: PermissionsPolicyViolationReportBody;
+    new(): PermissionsPolicyViolationReportBody;
+    
+    isInstance: IsInstance<PermissionsPolicyViolationReportBody>;
+};
+
+
 interface PictureInPictureEvent extends Event {
     
     readonly pictureInPictureWindow: PictureInPictureWindow;
@@ -28529,12 +28714,21 @@ interface PushManager {
 
 declare var PushManager: {
     prototype: PushManager;
-    new(scope: string): PushManager;
+    new(): PushManager;
     
     isInstance: IsInstance<PushManager>;
     
     readonly supportedContentEncodings: any;
 };
+
+
+
+
+
+interface PushManagerAttribute {
+    
+    readonly pushManager: PushManager;
+}
 
 
 interface PushManagerImpl {
@@ -28587,6 +28781,21 @@ declare var PushSubscriptionOptions: {
     new(): PushSubscriptionOptions;
     
     isInstance: IsInstance<PushSubscriptionOptions>;
+};
+
+
+interface QuotaExceededError extends DOMException {
+    
+    readonly quota: number | null;
+    
+    readonly requested: number | null;
+}
+
+declare var QuotaExceededError: {
+    prototype: QuotaExceededError;
+    new(message?: string, options?: QuotaExceededErrorOptions): QuotaExceededError;
+    
+    isInstance: IsInstance<QuotaExceededError>;
 };
 
 
@@ -29158,7 +29367,7 @@ interface RTCRtpSender {
     
     replaceTrack(withTrack: MediaStreamTrack | null): Promise<void>;
     
-    setParameters(parameters: RTCRtpSendParameters): Promise<void>;
+    setParameters(parameters: RTCRtpSendParameters, setParameterOptions?: RTCSetParameterOptions): Promise<void>;
     
     setStreams(...streams: MediaStream[]): void;
     
@@ -29241,9 +29450,9 @@ declare var RTCSctpTransport: {
 
 interface RTCSessionDescription {
     
-    sdp: string;
+    readonly sdp: string;
     
-    type: RTCSdpType;
+    readonly type: RTCSdpType;
     
     toJSON(): any;
 }
@@ -29571,11 +29780,15 @@ declare var ReportingObserver: {
 
 interface Request extends Body {
     
+    readonly body: ReadableStream | null;
+    
     readonly cache: RequestCache;
     
     readonly credentials: RequestCredentials;
     
     readonly destination: RequestDestination;
+    
+    readonly duplex: RequestDuplex;
     
     readonly headers: Headers;
     
@@ -29692,7 +29905,7 @@ interface Response extends Body {
 
 declare var Response: {
     prototype: Response;
-    new(body?: Blob | BufferSource | FormData | URLSearchParams | ReadableStream | string | null, init?: ResponseInit): Response;
+    new(body?: BodyInit | null, init?: ResponseInit): Response;
     
     isInstance: IsInstance<Response>;
     
@@ -30709,6 +30922,8 @@ interface SVGFEImageElement extends SVGElement, SVGFilterPrimitiveStandardAttrib
     fetchPriority: string;
     
     readonly preserveAspectRatio: SVGAnimatedPreserveAspectRatio;
+    
+    referrerPolicy: string;
     addEventListener<K extends keyof SVGElementEventMap>(type: K, listener: (this: SVGFEImageElement, ev: SVGElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
     addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
     removeEventListener<K extends keyof SVGElementEventMap>(type: K, listener: (this: SVGFEImageElement, ev: SVGElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
@@ -31141,6 +31356,8 @@ interface SVGImageElement extends SVGGraphicsElement, MozImageLoadingContent, SV
     readonly height: SVGAnimatedLength;
     
     readonly preserveAspectRatio: SVGAnimatedPreserveAspectRatio;
+    
+    referrerPolicy: string;
     
     readonly width: SVGAnimatedLength;
     
@@ -31890,6 +32107,8 @@ interface SVGScriptElement extends SVGElement, SVGURIReference {
     
     fetchPriority: string;
     
+    referrerPolicy: string;
+    
     type: string;
     addEventListener<K extends keyof SVGElementEventMap>(type: K, listener: (this: SVGScriptElement, ev: SVGElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
     addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
@@ -32405,6 +32624,8 @@ interface Sanitizer {
     setComments(allow: boolean): boolean;
     
     setDataAttributes(allow: boolean): boolean;
+    
+    setJavascriptURLs(allow: boolean): boolean;
 }
 
 declare var Sanitizer: {
@@ -33169,7 +33390,7 @@ interface SpeechGrammarList {
     
     addFromString(string: string, weight?: number): void;
     
-    addFromURI(src: string, weight?: number): void;
+    addFromUri(src: string, weight?: number): void;
     
     item(index: number): SpeechGrammar | null;
     [index: number]: SpeechGrammar;
@@ -40663,6 +40884,10 @@ declare var WebSocket: {
 
 interface WebTransport {
     
+    anticipatedConcurrentIncomingBidirectionalStreams: number | null;
+    
+    anticipatedConcurrentIncomingUnidirectionalStreams: number | null;
+    
     readonly closed: Promise<WebTransportCloseInfo>;
     
     readonly congestionControl: WebTransportCongestionControl;
@@ -40681,6 +40906,8 @@ interface WebTransport {
     
     readonly reliability: WebTransportReliabilityMode;
     
+    readonly responseHeaders: Headers | null;
+    
     close(closeInfo?: WebTransportCloseInfo): void;
     
     createBidirectionalStream(options?: WebTransportSendStreamOptions): Promise<WebTransportBidirectionalStream>;
@@ -40689,9 +40916,9 @@ interface WebTransport {
     
     createUnidirectionalStream(options?: WebTransportSendStreamOptions): Promise<WebTransportSendStream>;
     
-    exportKeyingMaterial(label: BufferSource, context?: BufferSource): Promise<Uint8Array>;
+    exportKeyingMaterial(label: BufferSource, context: BufferSource, outputLength: number): Promise<Uint8Array>;
     
-    getStats(): Promise<WebTransportStats>;
+    getStats(): Promise<WebTransportConnectionStats>;
 }
 
 declare var WebTransport: {
@@ -40699,6 +40926,8 @@ declare var WebTransport: {
     new(url: string | URL, options?: WebTransportOptions): WebTransport;
     
     isInstance: IsInstance<WebTransport>;
+    
+    readonly supportsReliableOnly: boolean;
 };
 
 
@@ -40725,15 +40954,15 @@ declare var WebTransportBidirectionalStream: {
 
 interface WebTransportDatagramDuplexStream {
     
-    incomingHighWaterMark: number;
+    incomingMaxAge: number | null;
     
-    incomingMaxAge: number;
+    incomingMaxBufferedDatagrams: number;
     
     readonly maxDatagramSize: number;
     
-    outgoingHighWaterMark: number;
+    outgoingMaxAge: number | null;
     
-    outgoingMaxAge: number;
+    outgoingMaxBufferedDatagrams: number;
     
     readonly readable: ReadableStream;
     
@@ -40780,7 +41009,7 @@ interface WebTransportError extends DOMException {
 
 declare var WebTransportError: {
     prototype: WebTransportError;
-    new(init?: WebTransportErrorInit): WebTransportError;
+    new(message?: string | WebTransportErrorInit, options?: WebTransportErrorOptions): WebTransportError;
     
     isInstance: IsInstance<WebTransportError>;
 };
@@ -40889,7 +41118,7 @@ interface WindowEventMap extends GlobalEventHandlersEventMap, OnErrorEventHandle
 }
 
 
-interface Window extends EventTarget, AnimationFrameProvider, GlobalCrypto, GlobalEventHandlers, OnErrorEventHandlerForWindow, SpeechSynthesisGetter, TouchEventHandlers, WindowEventHandlers, WindowLocalStorage, WindowOrWorkerGlobalScope, WindowSessionStorage {
+interface Window extends EventTarget, AnimationFrameProvider, GlobalCrypto, GlobalEventHandlers, OnErrorEventHandlerForWindow, PushManagerAttribute, SpeechSynthesisGetter, TouchEventHandlers, WindowEventHandlers, WindowLocalStorage, WindowOrWorkerGlobalScope, WindowSessionStorage {
     
     readonly Glean: GleanImpl;
     
@@ -41266,6 +41495,7 @@ interface WindowEventHandlersEventMap {
     "pagehide": Event;
     "pagereveal": Event;
     "pageshow": Event;
+    "pageswap": Event;
     "popstate": Event;
     "rejectionhandled": Event;
     "storage": Event;
@@ -41303,6 +41533,8 @@ interface WindowEventHandlers {
     onpagereveal: ((this: WindowEventHandlers, ev: Event) => any) | null;
     
     onpageshow: ((this: WindowEventHandlers, ev: Event) => any) | null;
+    
+    onpageswap: ((this: WindowEventHandlers, ev: Event) => any) | null;
     
     onpopstate: ((this: WindowEventHandlers, ev: Event) => any) | null;
     
@@ -42523,6 +42755,8 @@ interface XULPopupElement extends XULElement {
     
     activateItem(itemElement: Element, options?: ActivateMenuItemOptions): void;
     
+    getMenuItems(options?: GetMenuItemsOptions): Element[];
+    
     getOuterScreenRect(): DOMRect;
     
     hidePopup(cancel?: boolean): void;
@@ -42834,6 +43068,8 @@ declare namespace ChromeUtils {
     
     function androidMoveTaskToBack(): void;
     
+    function awakeNow(): number;
+    
     function base64URLDecode(string: string, options: Base64URLDecodeOptions): ArrayBuffer;
     
     function base64URLEncode(source: BufferSource, options: Base64URLEncodeOptions): string;
@@ -42894,7 +43130,7 @@ declare namespace ChromeUtils {
     
     function getBaseDomainFromPartitionKey(partitionKey: string): string;
     
-    function getCachedJavaScriptSource(key: string, uri: string, hintCharset: string): any;
+    function getCachedJavaScriptSource(key: string, uri: string): any;
     
     function getCallerLocation(principal: Principal): any;
     
@@ -43011,9 +43247,15 @@ declare namespace CollectorNodeFlags {
 
 declare namespace FuzzingFunctions {
     
+    var procId: number;
+    
+    var remoteType: string | null;
+    
     function crash(reason?: string): void;
     
     function cycleCollect(): void;
+    
+    function dump(aMessage: string): void;
     
     function enableAccessibility(): void;
     
@@ -43163,7 +43405,7 @@ declare namespace InspectorUtils {
     
     function getChildrenForNode(node: Node, showingAnonymousContent: boolean, includeAssignedNodes: boolean): Node[];
     
-    function getComputationSteps(expression: string, element: Element, pseudo?: string): string[];
+    function getComputationSteps(property: string, expression: string, element: Element, pseudo?: string): string[];
     
     function getComputationStepsSupportedCSSFunctions(): string[];
     
@@ -43192,6 +43434,8 @@ declare namespace InspectorUtils {
     function getStyleSheetRuleCountAndAtRules(sheet: CSSStyleSheet): InspectorStyleSheetRuleCountAndAtRulesResult;
     
     function getSubpropertiesForCSSProperty(property: string): string[];
+    
+    function getSubstitutedValue(expression: string, element: Element, pseudo?: string): string | null;
     
     function getUsedFontFaces(range: Range, maxRanges?: number, skipCollapsedWhitespace?: boolean): InspectorFontFace[];
     
@@ -43241,7 +43485,7 @@ declare namespace InspectorUtils {
     
     function supports(conditionText: string, options?: SupportsOptions): boolean;
     
-    function valueMatchesSyntax(document: Document, value: string, syntax: string): boolean;
+    function valueMatchesSyntax(document: Document, property: string, value: string, syntax: string): boolean;
 }
 
 
@@ -44526,6 +44770,8 @@ declare var onwheel: ((this: Window, ev: Event) => any) | null;
 
 declare var onerror: ((this: Window, ev: Event) => any) | null;
 
+declare var pushManager: PushManager;
+
 declare var speechSynthesis: SpeechSynthesis;
 
 declare var ontouchcancel: ((this: Window, ev: Event) => any) | null;
@@ -44563,6 +44809,8 @@ declare var onpagehide: ((this: Window, ev: Event) => any) | null;
 declare var onpagereveal: ((this: Window, ev: Event) => any) | null;
 
 declare var onpageshow: ((this: Window, ev: Event) => any) | null;
+
+declare var onpageswap: ((this: Window, ev: Event) => any) | null;
 
 declare var onpopstate: ((this: Window, ev: Event) => any) | null;
 
@@ -44633,7 +44881,7 @@ type BlobPart = BufferSource | Blob | string;
 
 type BluetoothServiceUUID = string | number;
 
-type BodyInit = XMLHttpRequestBodyInit;
+type BodyInit = ReadableStream | XMLHttpRequestBodyInit;
 
 type BufferSource = ArrayBufferView | ArrayBuffer;
 
@@ -44963,6 +45211,7 @@ type ColorGamut = "p3" | "rec2020" | "srgb";
 type ColorSpaceConversion = "default" | "none";
 type CompositeOperation = "accumulate" | "add" | "replace";
 type CompressionFormat = "brotli" | "deflate" | "deflate-raw" | "gzip" | "zstd";
+type ConnectionAllowlistDisposition = "enforce" | "report";
 type ConnectionType = "bluetooth" | "cellular" | "ethernet" | "none" | "other" | "unknown" | "wifi";
 type ConsoleLevel = "error" | "log" | "warning";
 type ConsoleLogLevel = "All" | "Clear" | "Debug" | "Dir" | "Dirxml" | "Error" | "Group" | "GroupEnd" | "Info" | "Log" | "Off" | "Profile" | "ProfileEnd" | "Time" | "TimeEnd" | "TimeLog" | "Trace" | "Warn";
@@ -45112,6 +45361,7 @@ type PopupBlockerState = "openAbused" | "openAllowed" | "openBlocked" | "openCon
 type PositionAlignSetting = "auto" | "center" | "line-left" | "line-right";
 type PredefinedColorSpace = "display-p3" | "srgb";
 type PrefersColorSchemeOverride = "dark" | "light" | "none";
+type PrefersContrastOverride = "custom" | "less" | "more" | "no-preference" | "none";
 type PrefersReducedMotionOverride = "no-preference" | "none" | "reduce";
 type PremultiplyAlpha = "default" | "none" | "premultiply";
 type PresentationStyle = "attachment" | "inline" | "unspecified";
@@ -45147,12 +45397,14 @@ type RTCSignalingState = "closed" | "have-local-offer" | "have-local-pranswer" |
 type RTCStatsIceCandidatePairState = "cancelled" | "failed" | "frozen" | "in-progress" | "succeeded" | "waiting";
 type RTCStatsType = "candidate-pair" | "certificate" | "codec" | "csrc" | "data-channel" | "inbound-rtp" | "local-candidate" | "media-source" | "outbound-rtp" | "peer-connection" | "remote-candidate" | "remote-inbound-rtp" | "remote-outbound-rtp" | "session" | "track" | "transport";
 type ReadableStreamReaderMode = "byob";
+type ReadableStreamType = "bytes";
 type RecordingState = "inactive" | "paused" | "recording";
 type ReferrerPolicy = "" | "no-referrer" | "no-referrer-when-downgrade" | "origin" | "origin-when-cross-origin" | "same-origin" | "strict-origin" | "strict-origin-when-cross-origin" | "unsafe-url";
 type RenderBlockingStatusType = "blocking" | "non-blocking";
 type RequestCache = "default" | "force-cache" | "no-cache" | "no-store" | "only-if-cached" | "reload";
 type RequestCredentials = "include" | "omit" | "same-origin";
 type RequestDestination = "" | "audio" | "audioworklet" | "document" | "embed" | "font" | "frame" | "iframe" | "image" | "json" | "manifest" | "object" | "paintworklet" | "report" | "script" | "sharedworker" | "style" | "text" | "track" | "video" | "worker" | "xslt";
+type RequestDuplex = "half";
 type RequestMode = "cors" | "navigate" | "no-cors" | "same-origin";
 type RequestPriority = "auto" | "high" | "low";
 type RequestRedirect = "error" | "follow" | "manual";
@@ -45208,7 +45460,7 @@ type VideoTransferCharacteristics = "bt709" | "hlg" | "iec61966-2-1" | "linear" 
 type VisibilityState = "hidden" | "visible";
 type WakeLockType = "screen";
 type WebGLPowerPreference = "default" | "high-performance" | "low-power";
-type WebIDLProcType = "browser" | "extension" | "file" | "forkServer" | "gmpPlugin" | "gpu" | "inference" | "ipdlUnitTest" | "preallocated" | "privilegedabout" | "privilegedmozilla" | "rdd" | "socket" | "unknown" | "utility" | "vr" | "web" | "webIsolated" | "webServiceWorker" | "withCoopCoep";
+type WebIDLProcType = "browser" | "extension" | "file" | "forkServer" | "gmpPlugin" | "gpu" | "inference" | "ipdlUnitTest" | "preallocated" | "privilegedabout" | "privilegedmozilla" | "rdd" | "unknown" | "utility" | "vr" | "web" | "webIsolated" | "webServiceWorker" | "withCoopCoep";
 type WebIDLUtilityActorName = "audioDecoder_AppleMedia" | "audioDecoder_Generic" | "audioDecoder_WMF" | "hwInference" | "jSOracle" | "mfMediaEngineCDM" | "pkcs11Module" | "unknown" | "windowsFileDialog" | "windowsUtils";
 type WebTransportCongestionControl = "default" | "low-latency" | "throughput";
 type WebTransportErrorSource = "session" | "stream";
