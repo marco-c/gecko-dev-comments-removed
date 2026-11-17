@@ -85,9 +85,12 @@ bool nsMenuUtilsX::EventMatchesKeyEquivalent(
       mozilla::widget::TISInputSourceWrapper::CurrentInputSource();
   uint32_t unshifted = inputSource.CharForKeyCode(aEvent.keyCode, 0);
   uint32_t shifted = inputSource.CharForKeyCode(aEvent.keyCode, shiftKey);
-  if (!unshifted && !shifted) {
-    
-    
+  
+  
+  
+  
+  if (mozilla::widget::IsControlChar(unshifted) &&
+      mozilla::widget::IsControlChar(shifted)) {
     NSString* characters = aEvent.charactersIgnoringModifiers;
     return characters.length == 1 && [characters characterAtIndex:0] == key &&
            eventFlags == requiredFlags;

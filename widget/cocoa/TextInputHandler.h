@@ -42,6 +42,9 @@ enum {
 };
 
 
+bool IsControlChar(uint32_t aCharCode);
+
+
 
 
 
