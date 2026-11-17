@@ -693,6 +693,13 @@ ClientWebGLContext::UseCompositableForwarder(
 void ClientWebGLContext::OnDestroyChild(dom::WebGLChild* aChild) {
   
   
+  if (mOffscreenCanvas && mRemoteTextureOwnerId) {
+    if (RefPtr<layers::ImageBridgeChild> imageBridge =
+            layers::ImageBridgeChild::GetSingleton()) {
+      
+      imageBridge->WaitFlushTasks();
+    }
+  }
   if (mRemoteTextureOwnerId && mFwdTransactionTracker &&
       mFwdTransactionTracker->IsUsed()) {
     (void)aChild->SendWaitForTxn(
@@ -4856,6 +4863,10 @@ void ClientWebGLContext::TexImage(uint8_t funcDims, GLenum imageTarget,
 
       if (StaticPrefs::webgl_disable_DOM_blit_uploads()) {
         return Some(std::string{"DOM blit uploads are disabled."});
+      }
+      if (!contextInfo.supportsDomBlitUploads) {
+        return Some(
+            std::string{"DOM blit uploads are not supported by this context."});
       }
       return {};
     }();
