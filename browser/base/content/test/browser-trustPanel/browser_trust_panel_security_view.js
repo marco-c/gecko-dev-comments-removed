@@ -499,6 +499,9 @@ add_task(async function test_override_ui_with_mixed_content() {
       "@mozilla.org/security/certoverride;1"
     ].getService(Ci.nsICertOverrideService);
     certOverrideService.clearValidityOverride("expired.example.com", 443, {});
+    
+    
+    Services.cache2.clear();
   });
 
   let url =
