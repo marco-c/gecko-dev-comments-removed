@@ -831,11 +831,6 @@ already_AddRefed<SourceSurface> ImageBitmap::PrepareForDrawTarget(
   if (!mPictureRect.IsEqualEdges(surfRect)) {
     IntRect surfPortion = surfRect.Intersect(mPictureRect);
 
-    
-    if (surfPortion.IsEmpty()) {
-      return nullptr;
-    }
-
     IntPoint dest(std::max(0, surfPortion.X() - mPictureRect.X()),
                   std::max(0, surfPortion.Y() - mPictureRect.Y()));
 
@@ -868,7 +863,11 @@ already_AddRefed<SourceSurface> ImageBitmap::PrepareForDrawTarget(
       return nullptr;
     }
 
-    cropped->CopySurface(surface, surfPortion, dest);
+    
+    
+    if (!surfPortion.IsEmpty()) {
+      cropped->CopySurface(surface, surfPortion, dest);
+    }
     surface = cropped->GetBackingSurface();
     hasCopied = true;
     if (NS_WARN_IF(!surface)) {
