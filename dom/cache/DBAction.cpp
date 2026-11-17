@@ -84,20 +84,19 @@ void DBAction::RunOnTarget(
 
   
   if (!conn) {
-    QM_TRY_UNWRAP(conn,
-                  OpenConnection(*aDirectoryMetadata, *dbDir, aMaybeCipherKey),
-                  QM_VOID, resolveErr);
-    MOZ_DIAGNOSTIC_ASSERT(conn);
+    QM_TRY_INSPECT(const auto& rawConn,
+                   OpenConnection(*aDirectoryMetadata, *dbDir, aMaybeCipherKey),
+                   QM_VOID, resolveErr);
+    MOZ_DIAGNOSTIC_ASSERT(rawConn);
 
     
     
+    conn = new Connection(rawConn);
+    
+    
+    
     if (aOptionalData) {
-      
-      
-      
-      
-      nsCOMPtr<mozIStorageConnection> wrapped = new Connection(conn);
-      aOptionalData->SetConnection(wrapped);
+      aOptionalData->SetConnection(conn);
     }
   }
 

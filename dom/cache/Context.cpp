@@ -994,7 +994,6 @@ Context::~Context() {
     auto destroyingDirectoryLockHandle = std::move(mDirectoryLockHandle);
   }
 
-  
   mManager->RemoveContext(*this);
 
   if (mDirectoryMetadata && mDirectoryMetadata->mDir && !mOrphanedData) {

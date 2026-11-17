@@ -285,29 +285,69 @@ nsresult BodyMaybeUpdatePaddingSize(
   return NS_OK;
 }
 
-nsresult BodyDeleteFiles(const CacheDirectoryMetadata& aDirectoryMetadata,
-                         nsIFile& aBaseDir, const nsTArray<nsID>& aIdList) {
-  for (const auto id : aIdList) {
-    bool exists;
+namespace {
+nsresult BodyDeleteFile(const CacheDirectoryMetadata& aDirectoryMetadata,
+                        nsIFile& aBaseDir, const nsID& aId,
+                        const BodyFileType aFileType, const bool aTrackQuota) {
+  QM_TRY_INSPECT(const auto& bodyfile, BodyIdToFile(aBaseDir, aId, aFileType));
+  bool exists = false;
+  QM_TRY(MOZ_TO_RESULT(bodyfile->Exists(&exists)));
+  if (!exists) {
+    return NS_OK;
+  }
 
-    QM_TRY_INSPECT(const auto& finalFile,
-                   BodyIdToFile(aBaseDir, id, BODY_FILE_FINAL));
-    QM_TRY(MOZ_TO_RESULT(finalFile->Exists(&exists)));
-    if (exists) {
-      QM_TRY(MOZ_TO_RESULT(RemoveNsIFile(aDirectoryMetadata, *finalFile,
-                                          true)));
-    }
-
-    QM_TRY_INSPECT(const auto& tempFile,
-                   BodyIdToFile(aBaseDir, id, BODY_FILE_TMP));
-    QM_TRY(MOZ_TO_RESULT(tempFile->Exists(&exists)));
-    if (exists) {
-      QM_TRY(MOZ_TO_RESULT(RemoveNsIFile(aDirectoryMetadata, *tempFile,
-                                          true)));
+  if (aTrackQuota) {
+    
+    
+    
+    int64_t fileSize = 0;
+    QM_TRY(MOZ_TO_RESULT(bodyfile->GetFileSize(&fileSize)));
+    if (fileSize > 0) {
+      DecreaseUsageForDirectoryMetadata(aDirectoryMetadata, fileSize);
     }
   }
 
+  QM_TRY(MOZ_TO_RESULT(
+      RemoveNsIFile(aDirectoryMetadata, *bodyfile,  false)));
   return NS_OK;
+}
+}  
+
+void BodyDeleteFiles(const CacheDirectoryMetadata& aDirectoryMetadata,
+                     nsIFile& aBaseDir, const nsTArray<nsID>& aIdList,
+                     const bool aTrackQuota, bool* aHasOrphanData) {
+  MOZ_ASSERT(aHasOrphanData);
+  const auto noteOrphan = [aHasOrphanData](const nsresult) {
+    *aHasOrphanData = true;
+  };
+  for (const auto& id : aIdList) {
+    QM_WARNONLY_TRY(
+        MOZ_TO_RESULT(BodyDeleteFile(aDirectoryMetadata, aBaseDir, id,
+                                     BODY_FILE_FINAL, aTrackQuota)),
+        noteOrphan);
+    QM_WARNONLY_TRY(
+        MOZ_TO_RESULT(BodyDeleteFile(aDirectoryMetadata, aBaseDir, id,
+                                     BODY_FILE_TMP, aTrackQuota)),
+        noteOrphan);
+
+    
+    
+    
+    
+    
+    QM_WARNONLY_TRY_UNWRAP(const auto maybeBodyDir,
+                           BodyGetCacheDir(aBaseDir, id,
+                                            false));
+    if (maybeBodyDir) {
+      QM_WARNONLY_TRY(QM_OR_ELSE_LOG_VERBOSE_IF(
+          
+          MOZ_TO_RESULT(maybeBodyDir.ref()->Remove( false)),
+          
+          IsSpecificError<NS_ERROR_FILE_DIR_NOT_EMPTY>,
+          
+          ErrToDefaultOk<>));
+    }
+  }
 }
 
 namespace {
@@ -404,8 +444,8 @@ nsresult BodyDeleteOrphanedFiles(
               
               
               auto cleanup = MakeScopeExit([&dirMetaData, &bodyFile] {
-                DebugOnly<nsresult> result =
-                    RemoveNsIFile(dirMetaData, bodyFile);
+                DebugOnly<nsresult> result = RemoveNsIFile(
+                    dirMetaData, bodyFile,  false);
                 MOZ_ASSERT(NS_SUCCEEDED(result));
               });
 

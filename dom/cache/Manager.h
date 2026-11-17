@@ -153,6 +153,9 @@ class Manager final : public SafeRefCounted<Manager>, public Stringifyable {
   void RemoveContext(Context& aContext);
 
   
+  void NoteOrphanedData();
+
+  
   
   void NoteClosing();
 

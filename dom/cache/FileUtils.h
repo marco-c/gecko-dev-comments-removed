@@ -51,8 +51,17 @@ nsresult BodyMaybeUpdatePaddingSize(
     const CacheDirectoryMetadata& aDirectoryMetadata, nsIFile& aBaseDir,
     const nsID& aId, uint32_t aPaddingInfo, int64_t* aPaddingSizeInOut);
 
-nsresult BodyDeleteFiles(const CacheDirectoryMetadata& aDirectoryMetadata,
-                         nsIFile& aBaseDir, const nsTArray<nsID>& aIdList);
+
+
+
+
+
+
+
+void BodyDeleteFiles(const CacheDirectoryMetadata& aDirectoryMetadata,
+                     nsIFile& aBaseDir, const nsTArray<nsID>& aIdList,
+                     bool aTrackQuota, bool* aHasOrphanData);
+
 
 
 

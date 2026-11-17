@@ -37,6 +37,34 @@ Result<DeletionInfo, nsresult> DeleteCacheId(mozIStorageConnection& aConn,
 Result<AutoTArray<CacheId, 8>, nsresult> FindOrphanedCacheIds(
     mozIStorageConnection& aConn);
 
+
+
+
+nsresult DeleteEmptyOrphanedCaches(mozIStorageConnection& aConn);
+
+struct OrphanedBodies {
+  nsTArray<nsID> mBodyIdList;
+  
+  
+  
+  int64_t mDiskSize = 0;
+};
+
+
+Result<OrphanedBodies, nsresult> FindOrphanedBodies(
+    mozIStorageConnection& aConn);
+
+
+
+nsresult DeleteAllOrphanedEntries(mozIStorageConnection& aConn);
+
+
+
+
+
+Result<int64_t, nsresult> DeleteOrphanedBodyIds(
+    mozIStorageConnection& aConn, const nsTArray<nsID>& aBodyIdList);
+
 Result<int64_t, nsresult> FindOverallPaddingSize(mozIStorageConnection& aConn);
 
 Result<int64_t, nsresult> GetTotalDiskUsage(mozIStorageConnection& aConn);
