@@ -156,6 +156,10 @@ async function runTest(aInput, aDesc, aExpectedScheme) {
 
 add_task(async function () {
   requestLongerTimeout(10);
+  
+  
+  await PlacesUtils.history.clear();
+  registerCleanupFunction(() => PlacesUtils.history.clear());
   Services.fog.testResetFOG();
 
   await SpecialPowers.pushPrefEnv({
