@@ -51,6 +51,21 @@ interface MozFindbar extends XULElement {
 interface MozToolbarbutton extends XULElement {
   readonly menupopup: XULPopupElement | null;
   readonly icon: Element | null;
+  disabled: boolean;
+}
+
+
+
+interface MozCheckbox extends HTMLElement {
+  label: string;
+  iconSrc: string;
+  checked: boolean;
+}
+
+
+
+interface MozVisualPickerItem extends HTMLElement {
+  value: string;
 }
 
 
