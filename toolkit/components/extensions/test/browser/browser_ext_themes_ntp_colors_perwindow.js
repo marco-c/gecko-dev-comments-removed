@@ -2,13 +2,7 @@
 
 
 
-
-const outerWrapperClass = Services.prefs.getBoolPref(
-  "browser.newtabpage.activity-stream.nova.enabled",
-  false
-)
-  ? ".nova-outer-wrapper"
-  : ".outer-wrapper";
+const outerWrapperClass = ".nova-outer-wrapper";
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({

@@ -23,42 +23,34 @@ const { sinon } = ChromeUtils.importESModule(
 
 add_setup(async function () {
   
-  const novaEnabled = Services.prefs.getBoolPref(
-    "browser.newtabpage.activity-stream.nova.enabled",
-    false
-  );
-
   
-  
-  if (novaEnabled) {
-    let sandbox = sinon.createSandbox();
-    sandbox
-      .stub(DiscoveryStreamFeed.prototype, "generateFeedUrl")
-      .returns(
-        "https://example.com/browser/browser/extensions/newtab/test/browser/topstories.json"
-      );
+  let sandbox = sinon.createSandbox();
+  sandbox
+    .stub(DiscoveryStreamFeed.prototype, "generateFeedUrl")
+    .returns(
+      "https://example.com/browser/browser/extensions/newtab/test/browser/topstories.json"
+    );
 
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        ["browser.newtabpage.activity-stream.feeds.discoverystreamfeed", true],
-        [
-          "browser.newtabpage.activity-stream.discoverystream.config",
-          PREFS_CONFIG.get("discoverystream.config").getValue({
-            geo: "US",
-            locale: "en-US",
-          }),
-        ],
-        [
-          "browser.newtabpage.activity-stream.discoverystream.endpoints",
-          "https://example.com",
-        ],
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.newtabpage.activity-stream.feeds.discoverystreamfeed", true],
+      [
+        "browser.newtabpage.activity-stream.discoverystream.config",
+        PREFS_CONFIG.get("discoverystream.config").getValue({
+          geo: "US",
+          locale: "en-US",
+        }),
       ],
-    });
+      [
+        "browser.newtabpage.activity-stream.discoverystream.endpoints",
+        "https://example.com",
+      ],
+    ],
+  });
 
-    registerCleanupFunction(() => {
-      sandbox.restore();
-    });
-  }
+  registerCleanupFunction(() => {
+    sandbox.restore();
+  });
 
   await SpecialPowers.pushPrefEnv({
     set: [

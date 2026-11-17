@@ -7,11 +7,6 @@ const HOMEPAGE_PREF = "browser.startup.homepage";
 const NEWTAB_ENABLED_PREF = "browser.newtabpage.enabled";
 const BLANK_HOMEPAGE_URL = "chrome://browser/content/blanktab.html";
 
-const NOVA_ENABLED_PREF = "browser.newtabpage.activity-stream.nova.enabled";
-
-const CLASSIC_WEATHER_SYSTEM_PREF =
-  "browser.newtabpage.activity-stream.system.showWeather";
-
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -47,9 +42,6 @@ async function assertSectionDisabled(win) {
   );
 
   
-  
-  
-  const novaEnabled = Services.prefs.getBoolPref(NOVA_ENABLED_PREF, false);
   for (let settingId of [
     "webSearch",
     "widgets",
@@ -57,7 +49,7 @@ async function assertSectionDisabled(win) {
     "stories",
     "supportFirefox",
     "recentActivity",
-    ...(novaEnabled ? ["firefoxLogo"] : ["weatherStandalone"]),
+    "firefoxLogo",
   ]) {
     let control = await settingControlRenders(settingId, win);
     ok(
@@ -91,16 +83,25 @@ add_task(async function test_firefox_home_disabled_when_both_off() {
   BrowserTestUtils.removeTab(tab);
 });
 
-
-add_task(async function test_firefox_home_disabled_when_both_off_classic() {
+add_task(async function test_weather_standalone_disabled_when_both_off() {
+  
   await SpecialPowers.pushPrefEnv({
     set: [
-      [NOVA_ENABLED_PREF, false],
-      [CLASSIC_WEATHER_SYSTEM_PREF, true],
+      ["browser.newtabpage.activity-stream.widgets.system.enabled", false],
+      [
+        "browser.newtabpage.activity-stream.widgets.system.weather.enabled",
+        true,
+      ],
     ],
   });
 
   let { win, tab } = await openHomePreferences();
-  await assertSectionDisabled(win);
+  let control = await settingControlRenders("weatherStandalone", win);
+  ok(
+    control.controlEl.disabled,
+    "weatherStandalone is disabled when Firefox Home is not active"
+  );
+
   BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
 });

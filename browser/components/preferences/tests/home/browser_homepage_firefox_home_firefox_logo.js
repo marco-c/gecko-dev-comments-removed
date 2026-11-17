@@ -4,15 +4,11 @@
 "use strict";
 
 const HIDE_LOGO_PREF = "browser.newtabpage.activity-stream.hideLogo";
-const NOVA_PREF = "browser.newtabpage.activity-stream.nova.enabled";
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["identity.fxaccounts.account.device.name", ""],
-      
-      
-      [NOVA_PREF, true],
       
       [HIDE_LOGO_PREF, false],
     ],
