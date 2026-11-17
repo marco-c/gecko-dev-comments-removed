@@ -139,6 +139,8 @@
 
 
 
+
+
     async appendNotification(
       aType,
       aNotification,
@@ -607,7 +609,11 @@
           }
 
           if (localeId) {
-            document.l10n.setAttributes(buttonElem, localeId);
+            document.l10n.setAttributes(
+              buttonElem,
+              localeId,
+              button["l10n-args"]
+            );
           } else {
             buttonElem.setAttribute(link ? "value" : "label", button.label);
             if (typeof button.accessKey == "string") {
