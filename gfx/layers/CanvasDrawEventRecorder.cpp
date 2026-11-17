@@ -260,13 +260,12 @@ gfx::ContiguousBuffer& CanvasDrawEventRecorder::GetContiguousBuffer(
 }
 
 void CanvasDrawEventRecorder::DropFreeBuffers() {
-  while (mRecycledBuffers.size() > 1 &&
+  
+  
+  
+  while (mCurrentBuffer.IsValid() && mRecycledBuffers.size() > 1 &&
          mRecycledBuffers.front().eventCount < mHeader->processedCount) {
-    
-    
-    if (mCurrentBuffer.IsValid()) {
-      WriteInternalEvent(DROP_BUFFER);
-    }
+    WriteInternalEvent(DROP_BUFFER);
     mCurrentBuffer = CanvasBuffer(std::move(mRecycledBuffers.front().shmem));
     mRecycledBuffers.pop();
   }

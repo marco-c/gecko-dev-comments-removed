@@ -133,6 +133,12 @@ class CanvasDrawEventRecorder final : public gfx::DrawEventRecorderPrivate,
 
   TextureType GetTextureType() { return mTextureType; }
 
+  
+
+
+
+  bool HasFailed() { return !mCurrentBuffer.IsValid(); }
+
   void DropFreeBuffers();
 
   void ClearProcessedExternalSurfaces();

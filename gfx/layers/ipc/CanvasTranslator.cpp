@@ -826,6 +826,12 @@ bool CanvasTranslator::TranslateRecording() {
       }
     }
 
+    
+    
+    if (mHeader->readerState == State::Failed) {
+      return false;
+    }
+
     mHeader->processedCount++;
 
     if (mHeader->readerState == State::Paused || PauseUntilSync()) {
