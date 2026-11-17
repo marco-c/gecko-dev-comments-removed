@@ -1683,6 +1683,9 @@ Tester.prototype = {
     
     
     if (window.gBrowser) {
+      
+      
+      gBrowser.selectedBrowser.focus();
       gBrowser.addTab("about:blank", {
         skipAnimation: true,
         triggeringPrincipal:
