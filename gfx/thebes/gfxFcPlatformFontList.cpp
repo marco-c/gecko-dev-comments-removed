@@ -488,8 +488,19 @@ gfxFontconfigFontEntry::AutoHBFace gfxFontconfigFontEntry::GetHBFace() {
       }
       
       
-      index &= 0xFFFF;
+      
+      
+      
+      
+#if HB_VERSION_ATLEAST(15, 1, 0)
       face = hb_face_create_from_file_or_fail((const char*)filename, index);
+#else
+      face = hb_face_create_from_file_or_fail((const char*)filename,
+                                              index & 0xFFFF);
+      if (face) {
+        hb_face_set_index(face, index);
+      }
+#endif
     } else {
       
       if (const auto* ufd = GetUserFontData()) {
