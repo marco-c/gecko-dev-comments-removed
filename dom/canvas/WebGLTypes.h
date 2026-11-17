@@ -684,7 +684,7 @@ struct PaddedBase {
   T val = {};
 
  private:
-  uint8_t padding[Padding] = {};
+  [[maybe_unused]] uint8_t padding[Padding] = {};
 };
 
 template <class T>
@@ -758,7 +758,8 @@ struct InitContextResult final {
   WebGLContextOptions options;
   gl::GLVendor vendor;
   OptionalRenderableFormatBits optionalRenderableFormatBits;
-  std::array<uint8_t, 2> _padding = {};
+  bool supportsDomBlitUploads = true;
+  std::array<uint8_t, 1> _padding = {};
   Limits limits;
   EnumMask<layers::SurfaceDescriptor::Type> uploadableSdTypes;
   
@@ -769,7 +770,8 @@ struct InitContextResult final {
 
   auto MutTiedFields() {
     return std::tie(error, options, vendor, optionalRenderableFormatBits,
-                    _padding, limits, uploadableSdTypes, shaderPrecisions);
+                    supportsDomBlitUploads, _padding, limits, uploadableSdTypes,
+                    shaderPrecisions);
   }
 };
 
