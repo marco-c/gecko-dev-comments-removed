@@ -43,10 +43,8 @@ nsresult UDPSocketChild::Bind(nsIUDPSocketInternal* aSocket,
     if (!backgroundManager) {
       return NS_ERROR_NOT_AVAILABLE;
     }
-    
-    
     MOZ_ASSERT(!aPrincipal);
-    if (!backgroundManager->SendPUDPSocketConstructor(this, Nothing(),
+    if (!backgroundManager->SendPUDPSocketConstructor(this, nullptr,
                                                       mFilterName)) {
       return NS_ERROR_FAILURE;
     }
