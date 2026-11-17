@@ -162,13 +162,20 @@
      */
     add_task(async function test_new_file_selected() {
       let restoreFromBackup = document.getElementById("test-restore-from-backup");
-
       let content = document.getElementById("content");
+
+      // Simulate parent setting backupFileToRestore via setBackupFileToRestore.
+      restoreFromBackup.backupServiceState = {
+        ...restoreFromBackup.backupServiceState,
+        backupFileToRestore: "/Some/User/Documents/Firefox Backup/backup-default.html",
+        backupFileInfo: null,
+      };
+      await restoreFromBackup.updateComplete;
+
       let promise = BrowserTestUtils.waitForEvent(content, "BackupUI:GetBackupFileInfo");
 
       let selectEvent = new CustomEvent("BackupUI:SelectNewFilepickerPath", {
         detail: {
-          path: "/Some/User/Documents/Firefox Backup/backup-default.html",
           iconURL: "chrome://global/skin/icons/document.svg"
         }
       });
@@ -188,16 +195,27 @@
       let path = "/Some/User/Documents/Firefox Backup/backup-default.html";
 
       for (let i = 0; i < 2; i++) {
+        // Simulate parent setting backupFileToRestore via setBackupFileToRestore.
+        restoreFromBackup.backupServiceState = {
+          ...restoreFromBackup.backupServiceState,
+          backupFileToRestore: path,
+          backupFileInfo: null,
+        };
+        await restoreFromBackup.updateComplete;
+
         let promise = BrowserTestUtils.waitForEvent(content, "BackupUI:GetBackupFileInfo");
 
+        // SelectNewFilepickerPath resets dedup, getBackupFileInfo() reads path
+        // from state and dispatches GetBackupFileInfo.
         let selectEvent = new CustomEvent("BackupUI:SelectNewFilepickerPath", {
           detail: {
-            path,
             iconURL: "chrome://global/skin/icons/document.svg"
           }
         });
         restoreFromBackup.dispatchEvent(selectEvent);
         await promise;
+
+        ok(true, "GetBackupFileInfo dispatched after SelectNewFilepickerPath");
 
         let inTest = true;
         BrowserTestUtils.waitForEvent(content, "BackupUI:GetBackupFileInfo").then(() => {
@@ -587,6 +605,39 @@
 
       referencedElement = restoreFromBackup.shadowRoot.querySelector("#backup-generic-file-error");
       ok(referencedElement, "Referenced element should exist");
+
+      restoreFromBackup.remove();
+    });
+
+    add_task(async function test_center_large_path_keeps_ltr_order() {
+      let content = document.getElementById("content");
+      let restoreFromBackup = document.createElement("restore-from-backup");
+      content.appendChild(restoreFromBackup);
+
+      const path = "/Some/User/Documents/Firefox Backup/backup.html";
+      restoreFromBackup.aboutWelcomeEmbedded = true;
+      restoreFromBackup.backupServiceState = {
+        ...restoreFromBackup.backupServiceState,
+        backupFileToRestore: path,
+      };
+      await restoreFromBackup.updateComplete;
+
+      let textarea = restoreFromBackup.shadowRoot.querySelector("#backup-filepicker-input");
+      is(textarea.value, path, "Path is unchanged without the center-large layout");
+
+      restoreFromBackup.layout = "center-large";
+      await restoreFromBackup.updateComplete;
+
+      is(textarea.value, "‎" + path,
+        "Path is prefixed with a left-to-right mark in the center-large layout");
+
+      restoreFromBackup.backupServiceState = {
+        ...restoreFromBackup.backupServiceState,
+        backupFileToRestore: null,
+      };
+      await restoreFromBackup.updateComplete;
+
+      is(textarea.value, "", "No mark is added when no file is selected");
 
       restoreFromBackup.remove();
     });
