@@ -795,7 +795,7 @@ Result NSSCertDBTrustDomain::CheckRevocationByCRLite(
   
   if (GetCertificateTransparencyMode() ==
       CertVerifier::CertificateTransparencyMode::Disabled) {
-    size_t decodingErrors;
+    size_t decodingErrors = 0;
     std::vector<SignedCertificateTimestamp> decodedSCTsFromExtension;
     DecodeSCTs(GetSCTListFromCertificate(), decodedSCTsFromExtension,
                decodingErrors);
