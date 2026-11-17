@@ -344,7 +344,7 @@ void MacroAssemblerCompat::handleFailureWithHandlerTail(
   asMasm().callWithABI<Fn, HandleException>(
       ABIType::General, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
 
-  *returnValueCheckOffset = asMasm().currentOffset();
+  *returnValueCheckOffset = asMasm().indirectTarget(TargetKind::Jump).offset();
 
   Label entryFrame;
   Label catch_;
@@ -1770,10 +1770,54 @@ void MacroAssembler::patchCall(uint32_t callerOffset, uint32_t calleeOffset) {
   bl(inst, relTarget00);
 }
 
+
+
+
+void MacroAssembler::tailJump(Register reg) {
+#ifdef JS_HW_INDIRECT_TARGETS
+  
+  
+  
+  if (reg != ScratchReg && reg != ScratchReg2) {
+    vixl::UseScratchRegisterScope temps(this);
+    const Register scratch = temps.AcquireX().asUnsized();
+    MOZ_ASSERT(scratch == ScratchReg || scratch == ScratchReg2);
+    movePtr(reg, scratch);
+    jump(scratch);
+    return;
+  }
+#endif
+  jump(reg);
+}
+
+void MacroAssembler::tailJump(const Address& addr) {
+  
+  
+  vixl::UseScratchRegisterScope temps(this);
+  temps.Exclude(toARMRegister(addr.base, 64));
+  const Register scratch = temps.AcquireX().asUnsized();
+  MOZ_ASSERT(scratch == ScratchReg || scratch == ScratchReg2);
+  loadPtr(addr, scratch);
+  jump(scratch);
+}
+
+
+
+void MacroAssembler::tailJump(TrampolinePtr code) { jump(code); }
+
+void MacroAssembler::tailJump(JitCode* code) { jump(code); }
+
+
+
+
 CodeOffset MacroAssembler::farJumpWithPatch() {
+  
+  
   vixl::UseScratchRegisterScope temps(this);
   const ARMRegister scratch = temps.AcquireX();
   const ARMRegister scratch2 = temps.AcquireX();
+  MOZ_ASSERT(scratch2.asUnsized() == ScratchReg ||
+             scratch2.asUnsized() == ScratchReg2);
 
   AutoForbidPoolsAndNops afp(this,
                               7);

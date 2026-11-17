@@ -150,6 +150,8 @@ BufferOffset Assembler::emitExtendedJumpTable() {
     
     
 
+    
+    
     ldr(ScratchReg64, ptrdiff_t(8 / vixl::kInstructionSize));
     br(ScratchReg64);
 

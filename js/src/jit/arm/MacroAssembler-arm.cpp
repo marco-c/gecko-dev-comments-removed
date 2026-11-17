@@ -4388,6 +4388,20 @@ void MacroAssembler::patchCall(uint32_t callerOffset, uint32_t calleeOffset) {
   as_bl(off, Always, inst);
 }
 
+
+
+
+void MacroAssembler::tailJump(Register reg) { jump(reg); }
+
+void MacroAssembler::tailJump(const Address& addr) { jump(addr); }
+
+void MacroAssembler::tailJump(TrampolinePtr code) { jump(code); }
+
+void MacroAssembler::tailJump(JitCode* code) { jump(code); }
+
+
+
+
 CodeOffset MacroAssembler::farJumpWithPatch() {
   static_assert(32 * 1024 * 1024 - JumpImmediateRange >
                     wasm::MaxFuncs * 3 * sizeof(Instruction),

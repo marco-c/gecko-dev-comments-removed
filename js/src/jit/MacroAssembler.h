@@ -651,6 +651,23 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void reserveVMFunctionOutParamSpace(const VMFunctionData& f);
   void loadVMFunctionOutParam(const VMFunctionData& f, const Address& addr);
 
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void tailJump(Register reg) PER_SHARED_ARCH;
+  void tailJump(const Address& addr) PER_SHARED_ARCH;
+  void tailJump(TrampolinePtr code) PER_SHARED_ARCH;
+  void tailJump(JitCode* code) PER_SHARED_ARCH;
+
  public:
   
   
