@@ -128,6 +128,13 @@ async function stubRemoteSettingsDenyList(
   return rsSandbox;
 }
 
+
+
+registerCleanupFunction(async () => {
+  await lazy.RemoteSettings("fxrelay-allowlist").emit("sync");
+  await lazy.RemoteSettings("fxrelay-denylist").emit("sync");
+});
+
 add_setup(async function () {
   gRelayACOptionsTitles = await new Localization([
     "browser/firefoxRelay.ftl",
