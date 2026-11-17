@@ -770,6 +770,7 @@ static Result<CombinedBufferLayout, MediaResult> ComputeLayoutAndAllocationSize(
     MOZ_RELEASE_ASSERT(sourceTop.isValid());
 
     CheckedUint32 sourceHeight(aRect.Height());
+    sourceHeight += sampleSize.Height() - 1;
     sourceHeight /= sampleSize.Height();
     MOZ_RELEASE_ASSERT(sourceHeight.isValid());
 
@@ -786,6 +787,7 @@ static Result<CombinedBufferLayout, MediaResult> ComputeLayoutAndAllocationSize(
     }
 
     CheckedUint32 sourceWidthBytes(aRect.Width());
+    sourceWidthBytes += sampleSize.Width() - 1;
     sourceWidthBytes /= sampleSize.Width();
     MOZ_RELEASE_ASSERT(sourceWidthBytes.isValid());
     sourceWidthBytes *= aFormat.SampleBytes(p);
@@ -851,24 +853,6 @@ static Result<CombinedBufferLayout, MediaResult> ComputeLayoutAndAllocationSize(
 }
 
 
-static MediaResult VerifyRectSizeAlignment(const VideoFrame::Format& aFormat,
-                                           const gfx::IntRect& aRect) {
-  for (const VideoFrame::Format::Plane& p : aFormat.Planes()) {
-    const gfx::IntSize sample = aFormat.SampleSize(p);
-    if (aRect.Width() % sample.Width() != 0) {
-      return MediaResult(NS_ERROR_INVALID_ARG,
-                         "Mismatch between format and given rect's width"_ns);
-    }
-
-    if (aRect.Height() % sample.Height() != 0) {
-      return MediaResult(NS_ERROR_INVALID_ARG,
-                         "Mismatch between format and given rect's height"_ns);
-    }
-  }
-  return MediaResult(NS_OK);
-}
-
-
 static Result<CombinedBufferLayout, MediaResult> ParseVideoFrameCopyToOptions(
     const VideoFrameCopyToOptions& aOptions, const gfx::IntRect& aVisibleRect,
     const gfx::IntSize& aCodedSize, const VideoFrame::Format& aFormat) {
@@ -882,11 +866,6 @@ static Result<CombinedBufferLayout, MediaResult> ParseVideoFrameCopyToOptions(
           error.Insert("rect's ", 0);
           return MediaResult(NS_ERROR_INVALID_ARG, error);
         })));
-
-    MediaResult r = VerifyRectSizeAlignment(aFormat, overrideRect.ref());
-    if (NS_FAILED(r.Code())) {
-      return Err(r);
-    }
   }
 
   gfx::IntRect parsedRect = MOZ_TRY(
@@ -1160,17 +1139,12 @@ InitializeFrameWithResourceAndSize(nsIGlobalObject* aGlobal,
   MOZ_ASSERT(image);
 
   const Maybe<VideoPixelFormat> pixelFormat = GuessVideoPixelFormat(image);
-  Maybe<VideoFrame::Format> format = ToInternalFormat(pixelFormat);
-  if (format && aInit.mAlpha == AlphaOption::Discard) {
-    format->MakeOpaque();
-    
-    
-    
-    
-  }
-  VideoFrame::Resource resource = MOZ_TRY(
-      VideoFrame::ValidateImage(image, format)
+  const VideoFrame::Resource validated = MOZ_TRY(
+      VideoFrame::ValidateImage(image, ToInternalFormat(pixelFormat))
           .mapErr([](const MediaResult& aError) { return aError.Message(); }));
+  const VideoFrame::Resource resource = aInit.mAlpha == AlphaOption::Discard
+                                            ? validated.CreateOpaque()
+                                            : validated;
 
   std::pair<Maybe<gfx::IntRect>, Maybe<gfx::IntSize>> init = MOZ_TRY(
       ValidateVideoFrameInit(aInit, resource.mFormat, resource.mCodedSize));
@@ -1201,10 +1175,6 @@ InitializeFrameFromOtherFrame(nsIGlobalObject* aGlobal,
                               const VideoFrameInit& aInit) {
   MOZ_ASSERT(aGlobal);
 
-  
-  
-  
-  
   const VideoFrame::Resource resource = aInit.mAlpha == AlphaOption::Discard
                                             ? aData.mResource.CreateOpaque()
                                             : aData.mResource;
@@ -2779,6 +2749,10 @@ VideoFrame::Resource::Resource(const RefPtr<layers::Image>& aImage,
 }
 
 VideoFrame::Resource VideoFrame::Resource::CreateOpaque() const {
+  
+  
+  
+  
   Maybe<Format> format = mFormat;
   if (format) {
     format->MakeOpaque();
