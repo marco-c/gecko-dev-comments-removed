@@ -371,6 +371,8 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
 
   AbstractCanonical<TrackTime>& CanonicalCurrentTime();
   AbstractCanonical<bool>& CanonicalEnded();
+  
+  AbstractCanonical<PrincipalHandle>& CanonicalPrincipalHandle();
 
   bool IsDestroyed() const {
     NS_ASSERTION(NS_IsMainThread(), "Call only on main thread");
@@ -616,13 +618,17 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
 
 
   struct Canonicals {
-    Canonicals(AbstractThread* aGraphThread, TrackTime aCurrentTime)
+    Canonicals(AbstractThread* aGraphThread, TrackTime aCurrentTime,
+               const PrincipalHandle& aPrincipalHandle)
         : mCurrentTime(aGraphThread, aCurrentTime,
                        "MediaTrack::Canonicals::mCurrentTime"),
-          mEnded(aGraphThread, false, "MediaTrack::Canonicals::mEnded") {}
+          mEnded(aGraphThread, false, "MediaTrack::Canonicals::mEnded"),
+          mPrincipalHandle(aGraphThread, aPrincipalHandle,
+                           "MediaTrack::Canonicals::mPrincipalHandle") {}
 
     Canonical<TrackTime> mCurrentTime;
     Canonical<bool> mEnded;
+    Canonical<PrincipalHandle> mPrincipalHandle;
   };
   
   
