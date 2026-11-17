@@ -109,6 +109,57 @@ this.VideoControlsWidget = class {
   
   static SEEK_TIME_SECS = 5;
 
+  
+
+
+
+
+
+  static controlWidthCache = new Map();
+
+  
+
+
+
+
+
+  static templateCache = new WeakMap();
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static parseTemplate(document, key, markup, fixup) {
+    let templates = this.templateCache.get(document);
+    if (!templates) {
+      templates = new Map();
+      this.templateCache.set(document, templates);
+    }
+    let template = templates.get(key);
+    if (!template) {
+      const parser = new document.defaultView.DOMParser();
+      template = parser.parseFromSafeString(
+        markup,
+        "application/xml"
+      ).documentElement;
+      fixup?.(template);
+      templates.set(key, template);
+    }
+    return template;
+  }
+
   static isPictureInPictureVideo(someVideo) {
     return someVideo.isCloningElementVisually;
   }
@@ -504,6 +555,16 @@ this.VideoControlsImplWidget = class {
               if (control.modifier) {
                 propertyName += "-" + control.modifier;
               }
+
+              
+              
+              let cacheKey = `${this.isTouchControls}:${propertyName}`;
+              let cachedWidths = VideoControlsWidget.controlWidthCache;
+              let width = cachedWidths.get(cacheKey);
+              if (width !== undefined) {
+                return width;
+              }
+
               let preDefinedSize =
                 this.controlBarComputedStyles.getPropertyValue(propertyName);
 
@@ -516,7 +577,9 @@ this.VideoControlsImplWidget = class {
                 return 0;
               }
 
-              return parseInt(preDefinedSize, 10);
+              width = parseInt(preDefinedSize, 10);
+              cachedWidths.set(cacheKey, width);
+              return width;
             },
           },
           offsetLeft: throwOnGet,
@@ -1510,9 +1573,6 @@ this.VideoControlsImplWidget = class {
           options: {
             easing: "ease",
             duration: 400,
-            
-            
-            fill: "both",
           },
         },
         controlBar: {
@@ -1520,7 +1580,6 @@ this.VideoControlsImplWidget = class {
           options: {
             easing: "ease",
             duration: 200,
-            fill: "both",
           },
         },
         statusOverlay: {
@@ -1531,7 +1590,6 @@ this.VideoControlsImplWidget = class {
           ],
           options: {
             duration: 1050,
-            fill: "both",
           },
         },
       },
@@ -1546,8 +1604,10 @@ this.VideoControlsImplWidget = class {
           );
         }
 
+        
+        
         let animation = this.animationMap.get(element);
-        if (!animation) {
+        if (!animation && !immediate) {
           animation = new this.window.Animation(
             new this.window.KeyframeEffect(
               element,
@@ -1638,24 +1698,17 @@ this.VideoControlsImplWidget = class {
           }
         } else {
           
-          animation.cancel();
+          animation?.cancel();
           finishedPromise = Promise.resolve();
         }
         finishedPromise.then(
-          animation => {
+          () => {
             if (element == this.controlBar) {
               this.onControlBarAnimationFinished();
             }
             element.classList.remove(fadeIn ? "fadein" : "fadeout");
             if (!fadeIn) {
               element.hidden = true;
-            }
-            if (animation) {
-              
-              
-              
-              
-              animation.cancel();
             }
           },
           () => {
@@ -2266,8 +2319,7 @@ this.VideoControlsImplWidget = class {
         
         
         
-        
-        videocontrolsWidth: 0,
+        videocontrolsWidth: 300,
 
         
         
@@ -2765,11 +2817,14 @@ this.VideoControlsImplWidget = class {
   }
 
   generateContent() {
-    const parser = new this.window.DOMParser();
-    let parserDoc = parser.parseFromSafeString(
+    const tabToAllControls =
+      this.prefs["media.videocontrols.keyboard-tab-to-all-controls"];
+    let template = VideoControlsWidget.parseTemplate(
+      this.document,
+      tabToAllControls ? "controls-tab-to-all" : "controls",
       `<div class="videocontrols" xmlns="http://www.w3.org/1999/xhtml" role="none">
-        <link rel="stylesheet" href="chrome://global/skin/media/videocontrols.css" />
-        <link rel="stylesheet" href="chrome://global/skin/media/pipToggle.css" />
+        <link rel="stylesheet" href="resource://content-accessible/media/videocontrols.css" />
+        <link rel="stylesheet" href="resource://content-accessible/media/pipToggle.css" />
 
         <div id="controlsContainer" class="controlsContainer" role="none">
           <div id="statusOverlay" class="statusOverlay stackItem" hidden="true">
@@ -2848,26 +2903,21 @@ this.VideoControlsImplWidget = class {
           </div>
         </div>
       </div>`,
-      "application/xml"
+      template => {
+        if (tabToAllControls) {
+          
+          for (const el of template.querySelectorAll('[tabindex="-1"]')) {
+            el.removeAttribute("tabindex");
+          }
+        }
+      }
     );
     this.l10n = new this.window.DOMLocalization(
       ["branding/brand.ftl", "toolkit/global/videocontrols.ftl"],
       true
     );
     this.l10n.connectRoot(this.shadowRoot);
-    if (this.prefs["media.videocontrols.keyboard-tab-to-all-controls"]) {
-      
-      for (const el of parserDoc.documentElement.querySelectorAll(
-        '[tabindex="-1"]'
-      )) {
-        el.removeAttribute("tabindex");
-      }
-    }
-    this.shadowRoot.importNodeAndAppendChildAt(
-      this.shadowRoot,
-      parserDoc.documentElement,
-      true
-    );
+    this.shadowRoot.importNodeAndAppendChildAt(this.shadowRoot, template, true);
     this.l10n.translateRoots();
   }
 
@@ -3047,10 +3097,11 @@ this.NoControlsMobileImplWidget = class {
   }
 
   generateContent() {
-    const parser = new this.window.DOMParser();
-    let parserDoc = parser.parseFromSafeString(
+    let template = VideoControlsWidget.parseTemplate(
+      this.document,
+      "nocontrols-mobile",
       `<div class="videocontrols" xmlns="http://www.w3.org/1999/xhtml" role="none">
-        <link rel="stylesheet" href="chrome://global/skin/media/videocontrols.css" />
+        <link rel="stylesheet" href="resource://content-accessible/media/videocontrols.css" />
         <div id="controlsContainer" class="controlsContainer" role="none" hidden="true">
           <div class="controlsOverlay stackItem">
             <div class="controlsSpacerStack">
@@ -3058,14 +3109,9 @@ this.NoControlsMobileImplWidget = class {
             </div>
           </div>
         </div>
-      </div>`,
-      "application/xml"
+      </div>`
     );
-    this.shadowRoot.importNodeAndAppendChildAt(
-      this.shadowRoot,
-      parserDoc.documentElement,
-      true
-    );
+    this.shadowRoot.importNodeAndAppendChildAt(this.shadowRoot, template, true);
   }
 };
 
@@ -3093,10 +3139,11 @@ this.NoControlsPictureInPictureImplWidget = class {
   }
 
   generateContent() {
-    const parser = new this.window.DOMParser();
-    let parserDoc = parser.parseFromSafeString(
+    let template = VideoControlsWidget.parseTemplate(
+      this.document,
+      "nocontrols-pip",
       `<div class="videocontrols" xmlns="http://www.w3.org/1999/xhtml" role="none">
-        <link rel="stylesheet" href="chrome://global/skin/media/videocontrols.css" />
+        <link rel="stylesheet" href="resource://content-accessible/media/videocontrols.css" />
         <div id="controlsContainer" class="controlsContainer" role="none">
           <div class="pictureInPictureOverlay stackItem" status="pictureInPicture">
             <div id="statusIcon" class="statusIcon" type="pictureInPicture"></div>
@@ -3104,14 +3151,9 @@ this.NoControlsPictureInPictureImplWidget = class {
           </div>
           <div class="controlsOverlay stackItem"></div>
         </div>
-      </div>`,
-      "application/xml"
+      </div>`
     );
-    this.shadowRoot.importNodeAndAppendChildAt(
-      this.shadowRoot,
-      parserDoc.documentElement,
-      true
-    );
+    this.shadowRoot.importNodeAndAppendChildAt(this.shadowRoot, template, true);
     let isMobile = this.window.navigator.appVersion.includes("Android");
     if (isMobile) {
       this.shadowRoot
@@ -3280,11 +3322,12 @@ this.NoControlsDesktopImplWidget = class {
   }
 
   generateContent() {
-    const parser = new this.window.DOMParser();
-    let parserDoc = parser.parseFromSafeString(
+    let template = VideoControlsWidget.parseTemplate(
+      this.document,
+      "nocontrols-desktop",
       `<div class="videocontrols" xmlns="http://www.w3.org/1999/xhtml" role="none">
-        <link rel="stylesheet" href="chrome://global/skin/media/videocontrols.css" />
-        <link rel="stylesheet" href="chrome://global/skin/media/pipToggle.css" />
+        <link rel="stylesheet" href="resource://content-accessible/media/videocontrols.css" />
+        <link rel="stylesheet" href="resource://content-accessible/media/pipToggle.css" />
 
         <div id="controlsContainer" class="controlsContainer" role="none">
           <div class="controlsOverlay stackItem">
@@ -3301,14 +3344,9 @@ this.NoControlsDesktopImplWidget = class {
             </button>
           </div>
         </div>
-      </div>`,
-      "application/xml"
+      </div>`
     );
-    this.shadowRoot.importNodeAndAppendChildAt(
-      this.shadowRoot,
-      parserDoc.documentElement,
-      true
-    );
+    this.shadowRoot.importNodeAndAppendChildAt(this.shadowRoot, template, true);
     this.l10n = new this.window.DOMLocalization([
       "branding/brand.ftl",
       "toolkit/global/videocontrols.ftl",
