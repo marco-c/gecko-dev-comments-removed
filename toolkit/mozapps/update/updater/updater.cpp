@@ -5668,6 +5668,10 @@ int DoUpdate() {
   options.logDestructorMarker = EnvHasValue("MOZ_TEST_ZUCCHINI_DTOR_MARKER");
   options.triggerBadAlloc = EnvHasValue("MOZ_TEST_ZUCCHINI_BAD_ALLOC");
   options.triggerCheckFailure = EnvHasValue("MOZ_TEST_ZUCCHINI_CHECK_FAILURE");
+  options.triggerReadPageError =
+      EnvHasValue("MOZ_TEST_ZUCCHINI_READ_PAGE_ERROR");
+  options.triggerWritePageError =
+      EnvHasValue("MOZ_TEST_ZUCCHINI_WRITE_PAGE_ERROR");
   zucchini::mozilla::SetTestOptions(options);
 #  endif  
 
@@ -5696,6 +5700,11 @@ int DoUpdate() {
       
       if (NS_tstrcmp(token, NS_T("type")) == 0) {
         const NS_tchar* type = mstrtok(kQuote, &line);
+        if (!type) {
+          LOG(("DoUpdate: type value not found in manifest"));
+          free(buf);
+          return PARSE_ERROR;
+        }
         LOG(("UPDATE TYPE " LOG_S, type));
         if (NS_tstrcmp(type, NS_T("complete")) == 0) {
           rv = AddPreCompleteActions(&list);
