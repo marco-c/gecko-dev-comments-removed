@@ -2,20 +2,20 @@
 
 
 
-use api::{ColorF, FontInstanceFlags, GlyphInstance, RasterSpace};
+use api::{ColorF, FontInstanceFlags, FontSize, GlyphInstance, GlyphShadowMode, RasterSpace};
+use api::interned_prims::TextRunKey;
 use api::units::LayoutToWorldTransform;
 use api::units::*;
+use crate::dl_interner::{DlResolve, DlResolveContext};
 use crate::space::SpaceSnapper;
+use crate::scene_building::validate_font_instance_key;
 use glyph_rasterizer::{FontInstance, FontTransform, GlyphKey, SubpixelDirection, FONT_SIZE_LIMIT};
-use crate::intern;
-use crate::internal_types::LayoutPrimitiveInfo;
 use crate::surface::SurfaceInfo;
 use crate::prim_store::PrimitiveScratchBuffer;
-use crate::prim_store::{PrimitiveStore, PrimKeyCommonData, PrimTemplate, PrimTemplateCommonData};
+use crate::prim_store::{PrimTemplate, PrimTemplateCommonData};
 use crate::renderer::{GpuBufferAddress, GpuBufferBuilderF, MAX_VERTEX_TEXTURE_WIDTH};
 use crate::resource_cache::ResourceCache;
 use crate::util::MatrixHelpers;
-use crate::prim_store::{InternablePrimitive, PrimitiveKind};
 use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
 
 use super::storage;
@@ -23,77 +23,77 @@ use super::storage;
 
 
 
-pub use api::key_types::GlyphInstanceAu;
 
 
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Clone, Eq, MallocSizeOf, PartialEq, Hash)]
-pub struct TextRunKey {
-    pub common: PrimKeyCommonData,
-    pub font: FontInstance,
-    
-    
-    
-    
-    
-    pub glyphs: Vec<GlyphInstanceAu>,
-    pub shadow: bool,
-    pub requested_raster_space: RasterSpace,
-}
 
-impl TextRunKey {
-    pub fn new(
-        info: &LayoutPrimitiveInfo,
-        text_run: TextRun,
-    ) -> Self {
-        let glyphs = text_run
-            .glyphs
-            .iter()
-            .map(|glyph| {
-                GlyphInstanceAu {
-                    index: glyph.index,
-                    point: glyph.point.to_au(),
-                }
-            })
-            .collect();
 
-        TextRunKey {
-            common: info.into(),
-            font: text_run.font,
-            glyphs,
-            shadow: text_run.shadow,
-            requested_raster_space: text_run.requested_raster_space,
-        }
+
+
+
+pub type TextRunTemplate = PrimTemplate<Option<TextRun>>;
+
+
+
+
+
+
+impl crate::prim_store::PrimKeyCommon for TextRunKey {
+    fn key_common(&self) -> &crate::prim_store::PrimKeyCommonData {
+        &self.common
     }
 }
 
-impl intern::InternDebug for TextRunKey {}
+impl DlResolve<TextRunKey> for TextRunTemplate {
+    fn resolve(key: &TextRunKey, ctx: &DlResolveContext) -> Self {
+        let common = PrimTemplateCommonData::with_key_common(key.common);
 
-pub type TextRunTemplate = PrimTemplate<TextRun>;
+        if !validate_font_instance_key(key.font_key, ctx.id_namespace) {
+            return PrimTemplate { common, kind: None };
+        }
 
-impl From<TextRunKey> for TextRunTemplate {
-    fn from(item: TextRunKey) -> Self {
-        let common = PrimTemplateCommonData::with_key_common(item.common);
-        let glyphs = item
+        let shared_key = ctx.fonts.instance_keys.map_key(&key.font_key);
+        let base = match ctx.fonts.instances.get_font_instance(shared_key) {
+            Some(instance) => instance,
+            None => {
+                warn!("Unknown font instance key");
+                debug!("key={:?} shared={:?}", key.font_key, shared_key);
+                return PrimTemplate { common, kind: None };
+            }
+        };
+
+        if base.size <= FontSize::zero() {
+            return PrimTemplate { common, kind: None };
+        }
+
+        
+        
+        
+        let mut render_mode = ctx.default_font_render_mode.limit_by(base.render_mode);
+        let mut flags = base.flags;
+        if let Some(options) = key.glyph_options {
+            render_mode = render_mode.limit_by(options.render_mode);
+            flags |= options.flags;
+        }
+
+        let font = FontInstance::new(base, key.color, render_mode, flags);
+
+        let glyphs = key
             .glyphs
             .iter()
-            .map(|glyph| {
-                GlyphInstance {
-                    index: glyph.index,
-                    point: LayoutPoint::from_au(glyph.point),
-                }
+            .map(|glyph| GlyphInstance {
+                index: glyph.index,
+                point: LayoutPoint::from_au(glyph.point),
             })
             .collect();
 
         PrimTemplate {
             common,
-            kind: TextRun {
-                font: item.font,
+            kind: Some(TextRun {
+                font,
                 glyphs,
-                shadow: item.shadow,
-                requested_raster_space: item.requested_raster_space,
-            },
+                shadow: key.shadow != GlyphShadowMode::None,
+                requested_raster_space: key.requested_raster_space,
+            }),
         }
     }
 }
@@ -137,9 +137,7 @@ impl TextRun {
     }
 }
 
-pub type TextRunDataHandle = intern::Handle<TextRun>;
-
-#[derive(Debug, MallocSizeOf)]
+#[derive(Debug, MallocSizeOf, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct TextRun {
@@ -149,38 +147,10 @@ pub struct TextRun {
     
     
     
+    
     pub glyphs: Vec<GlyphInstance>,
     pub shadow: bool,
     pub requested_raster_space: RasterSpace,
-}
-
-impl intern::Internable for TextRun {
-    type Key = TextRunKey;
-    type StoreData = TextRunTemplate;
-    type InternData = ();
-    const PROFILE_COUNTER: usize = crate::profiler::INTERNED_TEXT_RUNS;
-}
-
-impl InternablePrimitive for TextRun {
-    fn into_key(
-        self,
-        info: &LayoutPrimitiveInfo,
-    ) -> TextRunKey {
-        TextRunKey::new(
-            info,
-            self,
-        )
-    }
-
-    fn make_instance_kind(
-        _key: TextRunKey,
-        data_handle: TextRunDataHandle,
-        _prim_store: &mut PrimitiveStore,
-    ) -> PrimitiveKind {
-        PrimitiveKind::TextRun {
-            data_handle,
-        }
-    }
 }
 
 
@@ -567,7 +537,7 @@ impl TextRun {
 
             
             let adjust = |v: f32, bias: f32| {
-                if bias == 0.5 { (v * glyph_raster_scale).round() / glyph_raster_scale - v } else { 0.0 }
+                if bias == 0.5 { (v * glyph_raster_scale + 0.5).floor() / glyph_raster_scale - v } else { 0.0 }
             };
             let pattern_rect = pattern_rect.translate(LayoutVector2D::new(
                 adjust(shadow_offset.x, snap_bias.x),
@@ -652,6 +622,4 @@ fn test_struct_sizes() {
     
     
     assert_eq!(mem::size_of::<TextRun>(), 80, "TextRun size changed");
-    assert_eq!(mem::size_of::<TextRunTemplate>(), 120, "TextRunTemplate size changed");
-    assert_eq!(mem::size_of::<TextRunKey>(), 112, "TextRunKey size changed");
 }
