@@ -9,241 +9,6 @@ declare global {
 
 
 
-interface nsIBits extends nsISupports {
-  
-  readonly ERROR_TYPE_SUCCESS?: 0;
-  
-  readonly ERROR_TYPE_UNKNOWN?: 1;
-  
-  readonly ERROR_TYPE_METHOD_THREW?: 2;
-  
-  readonly ERROR_TYPE_METHOD_TIMEOUT?: 3;
-  
-  readonly ERROR_TYPE_NULL_ARGUMENT?: 4;
-  
-  readonly ERROR_TYPE_INVALID_ARGUMENT?: 5;
-  
-  readonly ERROR_TYPE_NOT_INITIALIZED?: 6;
-  
-  readonly ERROR_TYPE_NO_UTF8_CONVERSION?: 7;
-  
-  readonly ERROR_TYPE_INVALID_GUID?: 8;
-  
-  readonly ERROR_TYPE_PIPE_NOT_CONNECTED?: 9;
-  
-  readonly ERROR_TYPE_PIPE_TIMEOUT?: 10;
-  
-  readonly ERROR_TYPE_PIPE_BAD_WRITE_COUNT?: 11;
-  
-  readonly ERROR_TYPE_PIPE_API_ERROR?: 12;
-  
-  readonly ERROR_TYPE_FAILED_TO_CREATE_BITS_JOB?: 13;
-  
-  readonly ERROR_TYPE_FAILED_TO_ADD_FILE_TO_JOB?: 14;
-  
-  readonly ERROR_TYPE_FAILED_TO_APPLY_BITS_JOB_SETTINGS?: 15;
-  
-  readonly ERROR_TYPE_FAILED_TO_RESUME_BITS_JOB?: 16;
-  
-  readonly ERROR_TYPE_OTHER_BITS_ERROR?: 17;
-  
-  readonly ERROR_TYPE_OTHER_BITS_CLIENT_ERROR?: 18;
-  
-  readonly ERROR_TYPE_BITS_JOB_NOT_FOUND?: 19;
-  
-  readonly ERROR_TYPE_FAILED_TO_GET_BITS_JOB?: 20;
-  
-  readonly ERROR_TYPE_FAILED_TO_SUSPEND_BITS_JOB?: 21;
-  
-  readonly ERROR_TYPE_FAILED_TO_COMPLETE_BITS_JOB?: 22;
-  
-  readonly ERROR_TYPE_PARTIALLY_COMPLETED_BITS_JOB?: 23;
-  
-  readonly ERROR_TYPE_FAILED_TO_CANCEL_BITS_JOB?: 24;
-  
-  readonly ERROR_TYPE_MISSING_RESULT_DATA?: 25;
-  
-  readonly ERROR_TYPE_MISSING_CALLBACK?: 26;
-  
-  readonly ERROR_TYPE_CALLBACK_ON_WRONG_THREAD?: 27;
-  
-  readonly ERROR_TYPE_MISSING_BITS_SERVICE?: 28;
-  
-  readonly ERROR_TYPE_BITS_SERVICE_ON_WRONG_THREAD?: 29;
-  
-  readonly ERROR_TYPE_MISSING_BITS_REQUEST?: 30;
-  
-  readonly ERROR_TYPE_BITS_REQUEST_ON_WRONG_THREAD?: 31;
-  
-  readonly ERROR_TYPE_MISSING_OBSERVER?: 32;
-  
-  readonly ERROR_TYPE_OBSERVER_ON_WRONG_THREAD?: 33;
-  
-  readonly ERROR_TYPE_MISSING_CONTEXT?: 34;
-  
-  readonly ERROR_TYPE_CONTEXT_ON_WRONG_THREAD?: 35;
-  
-  readonly ERROR_TYPE_FAILED_TO_START_THREAD?: 36;
-  
-  readonly ERROR_TYPE_FAILED_TO_CONSTRUCT_TASK_RUNNABLE?: 37;
-  
-  readonly ERROR_TYPE_FAILED_TO_DISPATCH_RUNNABLE?: 38;
-  
-  readonly ERROR_TYPE_TRANSFER_ALREADY_COMPLETE?: 39;
-  
-  readonly ERROR_TYPE_OPERATION_ALREADY_IN_PROGRESS?: 40;
-  
-  readonly ERROR_TYPE_MISSING_BITS_CLIENT?: 41;
-  
-  readonly ERROR_TYPE_FAILED_TO_GET_JOB_STATUS?: 42;
-  
-  readonly ERROR_TYPE_BITS_STATE_ERROR?: 43;
-  
-  readonly ERROR_TYPE_BITS_STATE_TRANSIENT_ERROR?: 44;
-  
-  readonly ERROR_TYPE_BITS_STATE_CANCELLED?: 45;
-  
-  readonly ERROR_TYPE_BITS_STATE_UNEXPECTED?: 46;
-  
-  readonly ERROR_TYPE_VERIFICATION_FAILURE?: 47;
-  
-  readonly ERROR_TYPE_ACCESS_DENIED_EXPECTED?: 48;
-  
-  readonly ERROR_TYPE_FAILED_TO_CONNECT_TO_BCM?: 49;
-  
-  readonly ERROR_TYPE_USE_AFTER_REQUEST_SHUTDOWN?: 50;
-  
-  readonly ERROR_TYPE_BROWSER_SHUTTING_DOWN?: 51;
-  
-  readonly ERROR_ACTION_UNKNOWN?: 1;
-  
-  readonly ERROR_ACTION_NONE?: 2;
-  
-  readonly ERROR_ACTION_START_DOWNLOAD?: 3;
-  
-  readonly ERROR_ACTION_MONITOR_DOWNLOAD?: 4;
-  
-  readonly ERROR_ACTION_CHANGE_MONITOR_INTERVAL?: 5;
-  
-  readonly ERROR_ACTION_CANCEL?: 6;
-  
-  readonly ERROR_ACTION_SET_PRIORITY?: 7;
-  
-  readonly ERROR_ACTION_COMPLETE?: 8;
-  
-  readonly ERROR_ACTION_SUSPEND?: 9;
-  
-  readonly ERROR_ACTION_RESUME?: 10;
-  
-  readonly ERROR_ACTION_SET_NO_PROGRESS_TIMEOUT?: 11;
-  
-  readonly ERROR_STAGE_UNKNOWN?: 1;
-  
-  readonly ERROR_STAGE_PRETASK?: 2;
-  
-  readonly ERROR_STAGE_COMMAND_THREAD?: 3;
-  
-  readonly ERROR_STAGE_AGENT_COMMUNICATION?: 4;
-  
-  readonly ERROR_STAGE_BITS_CLIENT?: 5;
-  
-  readonly ERROR_STAGE_MAIN_THREAD?: 6;
-  
-  readonly ERROR_STAGE_MONITOR?: 7;
-  
-  readonly ERROR_STAGE_VERIFICATION?: 8;
-  
-  readonly ERROR_CODE_TYPE_NONE?: 1;
-  
-  readonly ERROR_CODE_TYPE_NSRESULT?: 2;
-  
-  readonly ERROR_CODE_TYPE_HRESULT?: 3;
-  
-  readonly ERROR_CODE_TYPE_STRING?: 4;
-  
-  readonly ERROR_CODE_TYPE_EXCEPTION?: 5;
-  
-  readonly PROXY_NONE?: 1;
-  
-  readonly PROXY_PRECONFIG?: 2;
-  
-  readonly PROXY_AUTODETECT?: 3;
-
-  
-  readonly initialized: boolean;
-  
-  init(jobName: string, savePathPrefix: string, monitorTimeoutMs: u32): void;
-  
-  startDownload(downloadURL: string, saveRelativePath: string, proxy: nsProxyUsage, noProgressTimeoutSecs: u32, monitorIntervalMs: u32, customHeaders: string, observer: nsIRequestObserver, context: nsISupports, callback: nsIBitsNewRequestCallback): void;
-  
-  monitorDownload(id: string, monitorIntervalMs: u32, observer: nsIRequestObserver, context: nsISupports, callback: nsIBitsNewRequestCallback): void;
-}
-
-
-interface nsIBitsNewRequestCallback extends nsISupports {
-  
-  success(request: nsIBitsRequest): void;
-  
-  failure(errorType: nsBitsErrorType, errorAction: nsBitsErrorAction, errorStage: nsBitsErrorStage): void;
-  
-  failureNsresult(errorType: nsBitsErrorType, errorAction: nsBitsErrorAction, errorStage: nsBitsErrorStage, errorCode: nsresult): void;
-  
-  failureHresult(errorType: nsBitsErrorType, errorAction: nsBitsErrorAction, errorStage: nsBitsErrorStage, errorCode: i32): void;
-  
-  failureString(errorType: nsBitsErrorType, errorAction: nsBitsErrorAction, errorStage: nsBitsErrorStage, errorMessage: string): void;
-}
-
-
-interface nsIBitsRequest extends nsIRequest {
-  
-  readonly bitsId: string;
-  
-  readonly transferError: nsBitsErrorType;
-  
-  readonly transferErrorCode: i32;
-  
-  changeMonitorInterval(monitorIntervalMs: u32, callback: nsIBitsCallback): void;
-  
-  cancelAsync(status: nsresult, callback: nsIBitsCallback): void;
-  
-  setPriorityHigh(callback: nsIBitsCallback): void;
-  
-  setPriorityLow(callback: nsIBitsCallback): void;
-  
-  setNoProgressTimeout(timeoutSecs: u32, callback: nsIBitsCallback): void;
-  
-  complete(callback: nsIBitsCallback): void;
-  
-  suspendAsync(callback: nsIBitsCallback): void;
-  
-  resumeAsync(callback: nsIBitsCallback): void;
-}
-
-
-interface nsIBitsCallback extends nsISupports {
-  
-  success(): void;
-  
-  failure(errorType: nsBitsErrorType, errorAction: nsBitsErrorAction, errorStage: nsBitsErrorStage): void;
-  
-  failureNsresult(errorType: nsBitsErrorType, errorAction: nsBitsErrorAction, errorStage: nsBitsErrorStage, errorCode: nsresult): void;
-  
-  failureHresult(errorType: nsBitsErrorType, errorAction: nsBitsErrorAction, errorStage: nsBitsErrorStage, errorCode: i32): void;
-  
-  failureString(errorType: nsBitsErrorType, errorAction: nsBitsErrorAction, errorStage: nsBitsErrorStage, errorMessage: string): void;
-}
-
-
-
-
-interface nsISiteCategory extends nsISupports {
-  
-  getCategory(aPrincipal: nsIPrincipal): string;
-}
-
-
-
-
 interface nsIAccessibilityService extends nsISupports {
   
   getApplicationAccessible(): nsIAccessible;
@@ -1451,632 +1216,9 @@ interface nsIAccessibleValue extends nsISupports {
 
 
 
-interface nsIAlertAction extends nsISupports {
+interface nsIEdgeMigrationUtils extends nsISupports {
   
-  readonly action: string;
-  
-  readonly title: string;
-  
-  readonly iconURL: string;
-  
-  readonly navigate: nsIURI;
-  
-  readonly windowsSystemActivationType: boolean;
-  
-  readonly opaqueRelaunchData: string;
-}
-
-
-interface nsIAlertNotification extends nsISupports {
-  
-  init(aName?: string, aImageURL?: string, aTitle?: string, aText?: string, aTextClickable?: boolean, aCookie?: string, aDir?: string, aLang?: string, aData?: string, aPrincipal?: nsIPrincipal, aInPrivateBrowsing?: boolean, aRequireInteraction?: boolean, aSilent?: boolean, aVibrate?: u32[]): void;
-  
-  initWithObject(aAlertNotification: nsIAlertNotification): void;
-  
-  readonly id: string;
-  
-  readonly name: string;
-  
-  readonly countId: u64;
-  
-  readonly imageURL: string;
-  
-  image: imgIContainer;
-  
-  readonly title: string;
-  
-  readonly text: string;
-  
-  readonly textClickable: boolean;
-  
-  readonly cookie: string;
-  
-  readonly dir: string;
-  
-  readonly lang: string;
-  
-  readonly data: string;
-  
-  readonly principal: nsIPrincipal;
-  
-  readonly URI: nsIURI;
-  
-  readonly inPrivateBrowsing: boolean;
-  
-  readonly requireInteraction: boolean;
-  
-  readonly silent: boolean;
-  
-  readonly vibrate: u32[];
-  
-  actions: nsIAlertAction[];
-  
-  readonly actionable: boolean;
-  
-  readonly source: string;
-  
-  readonly origin: string;
-  
-  opaqueRelaunchData: string;
-  
-  getAction(aName: string): nsIAlertAction;
-}
-
-
-interface nsIAlertCallbacks extends nsISupports {
-  
-  onAlertShow(): void;
-  
-  onAlertClick(aAction?: nsIAlertAction): void;
-  
-  onAlertDismissedFromForeground(): void;
-  
-  onAlertClosed(): void;
-  
-  onAlertFinished(): void;
-  
-  onAlertSettings(): void;
-  
-  onAlertDisable(): void;
-}
-
-
-interface nsIAlertsService extends nsISupports {
-  
-  showAlert(aAlert: nsIAlertNotification, aAlertListener?: nsIObserver): void;
-  
-  showAlertWithCallbacks(aAlert: nsIAlertNotification, aAlertCallbacks: nsIAlertCallbacks): void;
-  
-  closeAlert(aName?: string, aContextClosed?: boolean): void;
-  
-  getHistory(): string[];
-  
-  teardown(): void;
-  
-  pbmTeardown(): void;
-  
-  isFullscreen(): boolean;
-}
-
-
-interface nsIAlertsDoNotDisturb extends nsISupports {
-  
-  manualDoNotDisturb: boolean;
-  
-  suppressForScreenSharing: boolean;
-}
-
-
-
-
-interface nsIAppShellService extends nsISupports {
-  
-  readonly SIZE_TO_CONTENT?: -1;
-
-  
-  createTopLevelWindow(aParent: nsIAppWindow, aUrl: nsIURI, aChromeMask: u32, aInitialWidth: i32, aInitialHeight: i32): nsIAppWindow;
-  
-  createWindowlessBrowser(aIsChrome?: boolean, aChromeMask?: u32): nsIWindowlessBrowser;
-  
-  readonly hiddenWindow: nsIAppWindow;
-  
-  readonly hiddenDOMWindow: mozIDOMWindowProxy;
-  
-  registerTopLevelWindow(aWindow: nsIAppWindow): void;
-  
-  unregisterTopLevelWindow(aWindow: nsIAppWindow): void;
-  
-  readonly hasHiddenWindow: boolean;
-}
-
-
-
-
-interface nsIAppWindow extends nsISupports {
-  
-  readonly docShell: nsIDocShell;
-  
-  intrinsicallySized: boolean;
-  
-  readonly primaryContentShell: nsIDocShellTreeItem;
-  
-  readonly primaryRemoteTab: nsIRemoteTab;
-  
-  readonly primaryContentBrowsingContext: BrowsingContext;
-  
-  remoteTabAdded(aTab: nsIRemoteTab, aPrimary: boolean): void;
-  
-  remoteTabRemoved(aTab: nsIRemoteTab): void;
-  
-  readonly outerToInnerHeightDifferenceInCSSPixels: u32;
-  
-  readonly outerToInnerWidthDifferenceInCSSPixels: u32;
-  
-  center(aRelative: nsIAppWindow, aScreen: boolean, aAlert: boolean): void;
-  
-  showModal(): void;
-  
-  lockAspectRatio(aShouldLock: boolean): void;
-  
-  readonly chromeFlags: u32;
-  
-  createNewWindow(aChromeFlags: i32, aOpenWindowInfo: nsIOpenWindowInfo): nsIAppWindow;
-  
-  XULBrowserWindow: nsIXULBrowserWindow;
-  
-  readonly initialOpenWindowInfo: nsIOpenWindowInfo;
-  
-  needFastSnaphot(): void;
-  
-  rollupAllPopups(): void;
-  
-  showInitialViewer(): void;
-}
-
-
-
-
-interface nsIWindowMediator extends nsISupports {
-  
-  getEnumerator(aWindowType: string): nsISimpleEnumerator;
-  
-  getAppWindowEnumerator(aWindowType: string): nsISimpleEnumerator;
-  
-  getZOrderAppWindowEnumerator(aWindowType: string, aFrontToBack: boolean): nsISimpleEnumerator;
-  
-  getMostRecentWindow(aWindowType: string): mozIDOMWindowProxy;
-  
-  getMostRecentBrowserWindow(): mozIDOMWindowProxy;
-  
-  getMostRecentNonPBWindow(aWindowType: string): mozIDOMWindowProxy;
-  
-  getMostRecentWindowBy(aWindowType: string, aFilter: u8): mozIDOMWindowProxy;
-  
-  getOuterWindowWithId(aOuterWindowID: u64): mozIDOMWindowProxy;
-  
-  getCurrentInnerWindowWithId(aInnerWindowID: u64): mozIDOMWindow;
-  
-  addListener(aListener: nsIWindowMediatorListener): void;
-  
-  removeListener(aListener: nsIWindowMediatorListener): void;
-}
-
-
-
-
-interface nsIWindowMediatorListener extends nsISupports {
-  
-  onOpenWindow(window: nsIAppWindow): void;
-  
-  onCloseWindow(window: nsIAppWindow): void;
-}
-
-
-
-
-interface nsIWindowlessBrowser extends nsIWebNavigation {
-  
-  close(): void;
-  
-  readonly docShell: nsIDocShell;
-  
-  readonly browsingContext: BrowsingContext;
-}
-
-
-
-
-interface nsIXULBrowserWindow extends nsISupports {
-  
-  setOverLink(link: string): void;
-  
-  showTooltip(x: i32, y: i32, tooltip: string, direction: string, browser: Element): void;
-  
-  hideTooltip(): void;
-}
-
-
-
-}  
-
-
-declare enum nsIAppStartup_IDLShutdownPhase {
-  
-  SHUTDOWN_PHASE_NOTINSHUTDOWN = 0,
-  
-  SHUTDOWN_PHASE_APPSHUTDOWNCONFIRMED = 1,
-  
-  SHUTDOWN_PHASE_APPSHUTDOWNNETTEARDOWN = 2,
-  
-  SHUTDOWN_PHASE_APPSHUTDOWNTEARDOWN = 3,
-  
-  SHUTDOWN_PHASE_APPSHUTDOWN = 4,
-  
-  SHUTDOWN_PHASE_APPSHUTDOWNQM = 5,
-  
-  SHUTDOWN_PHASE_APPSHUTDOWNTELEMETRY = 6,
-  
-  SHUTDOWN_PHASE_XPCOMWILLSHUTDOWN = 7,
-  
-  SHUTDOWN_PHASE_XPCOMSHUTDOWN = 8,
-}
-
-declare global {
-
-namespace nsIAppStartup {
-  type IDLShutdownPhase = nsIAppStartup_IDLShutdownPhase;
-}
-
-
-interface nsIAppStartup extends nsISupports, Enums<typeof nsIAppStartup_IDLShutdownPhase> {
-  
-  readonly eConsiderQuit?: 1;
-  
-  readonly eAttemptQuit?: 2;
-  
-  readonly eForceQuit?: 3;
-  
-  readonly eRestart?: 16;
-  
-  readonly eSilently?: 256;
-
-  
-  run(): void;
-  
-  enterLastWindowClosingSurvivalArea(): void;
-  
-  exitLastWindowClosingSurvivalArea(): void;
-  
-  readonly automaticSafeModeNecessary: boolean;
-  
-  restartInSafeMode(aQuitMode: u32): void;
-  
-  createInstanceWithProfile(aProfile: nsIToolkitProfile, aArgs?: string[]): void;
-  
-  trackStartupCrashBegin(): boolean;
-  
-  trackStartupCrashEnd(): void;
-  
-  quit(aMode: u32, aExitCode?: i32): void;
-  
-  advanceShutdownPhase(aPhase: nsIAppStartup.IDLShutdownPhase): void;
-  
-  setImpendingShutdown(): void;
-  
-  isInOrBeyondShutdownPhase(aPhase: nsIAppStartup.IDLShutdownPhase): boolean;
-  
-  readonly shuttingDown: boolean;
-  
-  readonly attemptingQuit: boolean;
-  
-  readonly startingUp: boolean;
-  
-  readonly restarting: boolean;
-  
-  readonly wasRestarted: boolean;
-  
-  readonly wasSilentlyStarted: boolean;
-  
-  readonly secondsSinceLastOSRestart: i64;
-  
-  readonly showedPreXULSkeletonUI: boolean;
-  
-  getStartupInfo(): any;
-}
-
-
-
-
-interface nsIAutoCompleteController extends nsISupports {
-  
-  readonly STATUS_NONE?: 1;
-  
-  readonly STATUS_SEARCHING?: 2;
-  
-  readonly STATUS_COMPLETE_NO_MATCH?: 3;
-  
-  readonly STATUS_COMPLETE_MATCH?: 4;
-
-  
-  input: nsIAutoCompleteInput;
-  
-  readonly searchStatus: u16;
-  
-  readonly matchCount: u32;
-  
-  startSearch(searchString: string): void;
-  
-  stopSearch(): void;
-  
-  handleText(): boolean;
-  
-  handleEnter(aIsPopupSelection: boolean, aEvent?: Event): boolean;
-  
-  handleEscape(): boolean;
-  
-  handleStartComposition(): void;
-  
-  handleEndComposition(): void;
-  
-  handleTab(): void;
-  
-  handleKeyNavigation(key: u32): boolean;
-  
-  handleDelete(): boolean;
-  
-  getValueAt(index: i32): string;
-  
-  getLabelAt(index: i32): string;
-  
-  getCommentAt(index: i32): string;
-  
-  getStyleAt(index: i32): string;
-  
-  getImageAt(index: i32): string;
-  
-  getFinalCompleteValueAt(index: i32): string;
-  
-  searchString: string;
-  
-  setInitiallySelectedIndex(index: i32): void;
-  
-  resetInternalState(): void;
-}
-
-
-
-
-interface nsIAutoCompleteInput extends nsISupports {
-  
-  readonly popupElement: Element;
-  
-  readonly popup: nsIAutoCompletePopup;
-  
-  readonly controller: nsIAutoCompleteController;
-  
-  popupOpen: boolean;
-  
-  disableAutoComplete: boolean;
-  
-  completeDefaultIndex: boolean;
-  
-  completeSelectedIndex: boolean;
-  
-  forceComplete: boolean;
-  
-  minResultsForPopup: u32;
-  
-  maxRows: u32;
-  
-  timeout: u32;
-  
-  searchParam: string;
-  
-  readonly searchCount: u32;
-  
-  getSearchAt(index: u32): string;
-  
-  textValue: string;
-  
-  readonly selectionStart: i32;
-  
-  readonly selectionEnd: i32;
-  
-  selectTextRange(startIndex: i32, endIndex: i32): void;
-  
-  onSearchBegin(): void;
-  
-  onSearchComplete(): void;
-  
-  onTextEntered(aEvent?: Event): void;
-  
-  onTextReverted(): boolean;
-  
-  readonly consumeRollupEvent: boolean;
-  
-  readonly inPrivateContext: boolean;
-  
-  readonly noRollupOnCaretMove: boolean;
-  
-  readonly noRollupOnEmptySearch: boolean;
-  
-  readonly userContextId: u32;
-  
-  readonly invalidatePreviousResult: boolean;
-}
-
-
-
-
-interface nsIAutoCompletePopup extends nsISupports {
-  
-  readonly INVALIDATE_REASON_NEW_RESULT?: 0;
-  
-  readonly INVALIDATE_REASON_DELETE?: 1;
-
-  
-  readonly input: nsIAutoCompleteInput;
-  
-  readonly overrideValue: string;
-  
-  selectedIndex: i32;
-  
-  readonly popupOpen: boolean;
-  
-  getNoRollupOnEmptySearch(element: Element): boolean;
-  
-  openAutocompletePopup(input: nsIAutoCompleteInput, element: Element): void;
-  
-  closePopup(): void;
-  
-  invalidate(reason: u16): void;
-  
-  selectBy(reverse: boolean, page: boolean): void;
-  
-  startSearch(searchString: string, element: Element, listener: nsIFormFillCompleteObserver): void;
-  
-  stopSearch(): void;
-  
-  selectEntry(): void;
-  
-  navigateSecondaryAction(reverse: boolean): boolean;
-  
-  maybeActivateSecondaryAction(): boolean;
-}
-
-
-
-
-interface nsIAutoCompleteResult extends nsISupports {
-  
-  readonly RESULT_IGNORED?: 1;
-  
-  readonly RESULT_FAILURE?: 2;
-  
-  readonly RESULT_NOMATCH?: 3;
-  
-  readonly RESULT_SUCCESS?: 4;
-  
-  readonly RESULT_NOMATCH_ONGOING?: 5;
-  
-  readonly RESULT_SUCCESS_ONGOING?: 6;
-
-  
-  readonly searchString: string;
-  
-  readonly searchResult: u16;
-  
-  readonly defaultIndex: i32;
-  
-  readonly errorDescription: string;
-  
-  readonly matchCount: u32;
-  
-  getValueAt(index: i32): string;
-  
-  getLabelAt(index: i32): string;
-  
-  getCommentAt(index: i32): string;
-  
-  getStyleAt(index: i32): string;
-  
-  getImageAt(index: i32): string;
-  
-  getFinalCompleteValueAt(index: i32): string;
-  
-  isRemovableAt(rowIndex: i32): boolean;
-  
-  removeValueAt(rowIndex: i32): void;
-}
-
-
-
-
-interface nsIAutoCompleteSearch extends nsISupports {
-  
-  startSearch(searchString: string, searchParam: string, previousResult: nsIAutoCompleteResult, listener: nsIAutoCompleteObserver): void;
-  
-  stopSearch(): void;
-}
-
-
-interface nsIAutoCompleteObserver extends nsISupports {
-  
-  onSearchResult(search: nsIAutoCompleteSearch, result: nsIAutoCompleteResult): void;
-}
-
-
-
-
-interface nsIAutoCompleteSimpleResult extends nsIAutoCompleteResult {
-  
-  setSearchString(aSearchString: string): void;
-  
-  setErrorDescription(aErrorDescription: string): void;
-  
-  setDefaultIndex(aDefaultIndex: i32): void;
-  
-  setSearchResult(aSearchResult: u16): void;
-  
-  insertMatchAt(aIndex: i32, aValue: string, aComment: string, aImage?: string, aStyle?: string, aFinalCompleteValue?: string, aLabel?: string): void;
-  
-  appendMatch(aValue: string, aComment: string, aImage?: string, aStyle?: string, aFinalCompleteValue?: string, aLabel?: string): void;
-  
-  removeMatchAt(aIndex: i32): void;
-  
-  getListener(): nsIAutoCompleteSimpleResultListener;
-  
-  setListener(aListener: nsIAutoCompleteSimpleResultListener): void;
-}
-
-
-interface nsIAutoCompleteSimpleResultListener extends nsISupports {
-  
-  onValueRemoved(aResult: nsIAutoCompleteSimpleResult, aValue: string): void;
-}
-
-
-
-
-interface nsIAutoCompleteSimpleSearch extends nsIAutoCompleteSearch {
-  
-  overrideNextResult(values: nsIAutoCompleteResult): void;
-}
-
-
-
-
-interface nsIAutoplay extends nsISupports {
-  
-  readonly ALLOWED?: 0;
-  
-  readonly BLOCKED?: 1;
-  
-  readonly BLOCKED_ALL?: 5;
-}
-
-
-
-
-interface nsIHangDetails extends nsISupports {
-  
-  readonly wasPersisted: boolean;
-  
-  readonly duration: double;
-  
-  readonly thread: string;
-  
-  readonly runnableName: string;
-  
-  readonly process: string;
-  
-  readonly remoteType: string;
-  
-  readonly stack: any;
-  
-  readonly modules: any;
-  
-  readonly annotations: any;
+  isDbLocked(aFile: nsIFile): Promise<any>;
 }
 
 
@@ -2097,6 +1239,33 @@ interface nsIBrowserHandler extends nsISupports {
   firstRunProfile: boolean;
   
   getFeatures(aCmdLine: nsICommandLine): string;
+}
+
+
+
+
+interface nsIShellService extends nsISupports {
+  
+  readonly BACKGROUND_TILE?: 1;
+  
+  readonly BACKGROUND_STRETCH?: 2;
+  
+  readonly BACKGROUND_CENTER?: 3;
+  
+  readonly BACKGROUND_FILL?: 4;
+  
+  readonly BACKGROUND_FIT?: 5;
+  
+  readonly BACKGROUND_SPAN?: 6;
+
+  
+  isDefaultBrowser(aForAllTypes?: boolean): boolean;
+  
+  setDefaultBrowser(aForAllUsers: boolean): void;
+  
+  setDesktopBackground(aElement: Element, aPosition: i32, aImageName: string): void;
+  
+  desktopBackgroundColor: u32;
 }
 
 
@@ -2372,38 +1541,6 @@ interface nsIScriptSecurityManager extends nsISupports {
 
 
 
-interface nsICaptivePortalCallback extends nsISupports {
-  
-  prepare(): void;
-  
-  complete(success: boolean): void;
-}
-
-
-interface nsICaptivePortalDetector extends nsISupports {
-  
-  checkCaptivePortal(ifname: string, callback: nsICaptivePortalCallback): void;
-  
-  abort(ifname: string): void;
-  
-  cancelLogin(eventId: string): void;
-  
-  finishPreparation(ifname: string): void;
-}
-
-
-
-
-interface nsICascadeFilter extends nsISupports {
-  
-  setFilterData(data: u8[]): void;
-  
-  has(key: string): boolean;
-}
-
-
-
-
 interface nsIChromeRegistry extends nsISupports {
   
   readonly NONE?: 0;
@@ -2439,348 +1576,23 @@ interface nsIToolkitChromeRegistry extends nsIXULChromeRegistry {
 
 
 
-interface nsICommandManager extends nsISupports {
+interface IJSDebugger extends nsISupports {
   
-  addCommandObserver(aCommandObserver: nsIObserver, aCommandToObserve: string): void;
-  
-  removeCommandObserver(aCommandObserver: nsIObserver, aCommandObserved: string): void;
-  
-  isCommandSupported(aCommandName: string, aTargetWindow: mozIDOMWindowProxy): boolean;
-  
-  isCommandEnabled(aCommandName: string, aTargetWindow: mozIDOMWindowProxy): boolean;
-  
-  getCommandState(aCommandName: string, aTargetWindow: mozIDOMWindowProxy, aCommandParams: nsICommandParams): void;
-  
-  doCommand(aCommandName: string, aCommandParams: nsICommandParams, aTargetWindow: mozIDOMWindowProxy): void;
+  addClass(global: any): void;
 }
 
 
 
 
-interface nsICommandParams extends nsISupports {
+interface nsIJSInspector extends nsISupports {
   
-  readonly eNoType?: 0;
+  enterNestedEventLoop(requestor: any): u32;
   
-  readonly eBooleanType?: 1;
+  exitNestedEventLoop(): u32;
   
-  readonly eLongType?: 2;
+  readonly eventLoopNestLevel: u32;
   
-  readonly eDoubleType?: 3;
-  
-  readonly eWStringType?: 4;
-  
-  readonly eISupportsType?: 5;
-  
-  readonly eStringType?: 6;
-
-  
-  getValueType(name: string): i16;
-  
-  getBooleanValue(name: string): boolean;
-  
-  getLongValue(name: string): i32;
-  
-  getDoubleValue(name: string): double;
-  
-  getStringValue(name: string): string;
-  
-  getCStringValue(name: string): string;
-  
-  getISupportsValue(name: string): nsISupports;
-  
-  setBooleanValue(name: string, value: boolean): void;
-  
-  setLongValue(name: string, value: i32): void;
-  
-  setDoubleValue(name: string, value: double): void;
-  
-  setStringValue(name: string, value: string): void;
-  
-  setCStringValue(name: string, value: string): void;
-  
-  setISupportsValue(name: string, value: nsISupports): void;
-  
-  removeValue(name: string): void;
-}
-
-
-
-
-interface nsICommandLine extends nsISupports {
-  
-  readonly STATE_INITIAL_LAUNCH?: 0;
-  
-  readonly STATE_REMOTE_AUTO?: 1;
-  
-  readonly STATE_REMOTE_EXPLICIT?: 2;
-
-  
-  readonly length: i32;
-  
-  getArgument(aIndex: i32): string;
-  
-  findFlag(aFlag: string, aCaseSensitive: boolean): i32;
-  
-  removeArguments(aStart: i32, aEnd: i32): void;
-  
-  handleFlag(aFlag: string, aCaseSensitive: boolean): boolean;
-  
-  handleFlagWithParam(aFlag: string, aCaseSensitive: boolean): string;
-  
-  readonly state: u32;
-  
-  preventDefault: boolean;
-  
-  readonly workingDirectory: nsIFile;
-  
-  resolveFile(aArgument: string): nsIFile;
-  
-  resolveURI(aArgument: string): nsIURI;
-}
-
-
-
-
-interface nsICommandLineHandler extends nsISupports {
-  
-  handle(aCommandLine: nsICommandLine): void;
-  
-  readonly helpInfo: string;
-}
-
-
-
-
-
-
-interface nsICommandLineValidator extends nsISupports {
-  
-  validate(aCommandLine: nsICommandLine): void;
-}
-
-
-
-
-interface nsIEditingSession extends nsISupports {
-  
-  readonly eEditorOK?: 0;
-  
-  readonly eEditorCreationInProgress?: 1;
-  
-  readonly eEditorErrorCantEditMimeType?: 2;
-  
-  readonly eEditorErrorFileNotFound?: 3;
-  
-  readonly eEditorErrorCantEditFramesets?: 8;
-  
-  readonly eEditorErrorUnknown?: 9;
-
-  
-  readonly editorStatus: u32;
-  
-  makeWindowEditable(window: mozIDOMWindowProxy, aEditorType: string, doAfterUriLoad: boolean, aMakeWholeDocumentEditable: boolean, aInteractive: boolean): void;
-  
-  windowIsEditable(window: mozIDOMWindowProxy): boolean;
-  
-  getEditorForWindow(window: mozIDOMWindowProxy): nsIEditor;
-}
-
-
-
-
-interface nsIContentClassifierRemoteSettingsClient extends nsISupports {
-  
-  init(aService: nsIContentClassifierService): Promise<any>;
-  
-  shutdown(): void;
-  
-  getListBytes(aName: string): Promise<any>;
-}
-
-
-
-
-interface nsIContentClassifierProbeRequest extends nsISupports {
-  
-  readonly url: string;
-  
-  readonly sourceUrl: string;
-  
-  readonly topWindowUrl: string;
-  
-  readonly requestType: string;
-  
-  readonly privateBrowsing: boolean;
-  
-  readonly forceThirdPartyToTop: boolean;
-  
-  readonly isNonRecommendedAddon: boolean;
-}
-
-
-interface nsIContentClassifierProbeResult extends nsISupports {
-  
-  readonly featureName: string;
-  
-  readonly matched: boolean;
-  
-  readonly exception: boolean;
-  
-  readonly important: boolean;
-  
-  readonly engineResult: nsresult;
-}
-
-}  
-
-
-declare enum nsIContentClassifierService_ProbeStatus {
-  
-  Miss = 0,
-  
-  Hit = 1,
-  
-  Exception = 2,
-  
-  ImportantHit = 3,
-  
-  ImportantException = 4,
-}
-
-declare global {
-
-namespace nsIContentClassifierService {
-  type ProbeStatus = nsIContentClassifierService_ProbeStatus;
-}
-
-
-interface nsIContentClassifierService extends nsISupports, Enums<typeof nsIContentClassifierService_ProbeStatus> {
-  
-  onListsChanged(aUpdated: string[], aRemoved: string[]): void;
-  
-  getFeatureNames(): string[];
-  
-  probeBlocking(aRequest: nsIContentClassifierProbeRequest): Promise<any>;
-  
-  probeAnnotate(aRequest: nsIContentClassifierProbeRequest): Promise<any>;
-  
-  probeFeature(aFeatureName: string, aRequest: nsIContentClassifierProbeRequest): Promise<any>;
-}
-
-
-interface nsIContentClassifierProbeReport extends nsISupports {
-  
-  readonly status: nsIContentClassifierService.ProbeStatus;
-  
-  readonly results: nsIContentClassifierProbeResult[];
-}
-
-
-
-
-interface nsIEventListenerChange extends nsISupports {
-  
-  readonly target: EventTarget;
-}
-
-
-type nsIListenerChangeListener = Callable<{
-  
-  listenersChanged(aEventListenerChanges: nsIArray): void;
-}>
-
-
-interface nsIEventListenerInfo extends nsISupports {
-  
-  readonly type: string;
-  
-  readonly capturing: boolean;
-  
-  readonly allowsUntrusted: boolean;
-  
-  readonly inSystemEventGroup: boolean;
-  
-  enabled: boolean;
-  
-  readonly listenerObject: any;
-  
-  toSource(): string;
-}
-
-
-interface nsIEventListenerService extends nsISupports {
-  
-  getListenerInfoFor(aEventTarget: EventTarget): nsIEventListenerInfo[];
-  
-  hasListenersFor(aEventTarget: EventTarget, aType: string): boolean;
-  
-  addListenerForAllEvents(target: EventTarget, listener: any, aUseCapture?: boolean, aWantsUntrusted?: boolean, aSystemEventGroup?: boolean): void;
-  
-  removeListenerForAllEvents(target: EventTarget, listener: any, aUseCapture?: boolean, aSystemEventGroup?: boolean): void;
-  
-  addListenerChangeListener(aListener: nsIListenerChangeListener): void;
-  
-  removeListenerChangeListener(aListener: nsIListenerChangeListener): void;
-}
-
-
-
-
-interface mozIGeckoMediaPluginChromeService extends nsISupports {
-  
-  addPluginDirectory(directory: string): void;
-  
-  removePluginDirectory(directory: string): void;
-  
-  removeAndDeletePluginDirectory(directory: string, defer?: boolean): void;
-  
-  forgetThisSite(site: string, aPattern: string): void;
-  
-  forgetThisBaseDomain(baseDomain: string): void;
-  
-  isPersistentStorageAllowed(nodeId: string): boolean;
-  
-  getStorageDir(): nsIFile;
-}
-
-
-
-
-interface mozIGeckoMediaPluginService extends nsISupports {
-  
-  readonly thread: nsIThread;
-  
-  RunPluginCrashCallbacks(pluginId: u32, pluginName: string): void;
-}
-
-
-
-
-interface nsISiteContainerService extends nsISupports {
-  
-  lookup(aHost: string): u32;
-  
-  containerForNavigation(aURI: nsIURI, aBaselineUserContextId: u32): u32;
-}
-
-
-
-
-interface nsICrashReporterTestUtils extends nsISupports {
-  
-  getCrashHelperPid(): u32;
-}
-
-
-
-
-interface nsIDAPTelemetry extends nsISupports {
-  
-  GetReportPrioSum(leaderHpkeConfig: u8[], helperHpkeConfig: u8[], measurement: u32, task_id: u8[], bits: u32, time_precision: u64, report: OutParam<u8[]>): void;
-  
-  GetReportPrioSumVec(leaderHpkeConfig: u8[], helperHpkeConfig: u8[], measurement: u32[], task_id: u8[], bits: u32, time_precision: u64, report: OutParam<u8[]>): void;
-  
-  GetReportPrioHistogram(leaderHpkeConfig: u8[], helperHpkeConfig: u8[], measurement: u32, task_id: u8[], length: u32, time_precision: u64, report: OutParam<u8[]>): void;
+  readonly lastNestRequestor: any;
 }
 
 
@@ -3446,6 +2258,202 @@ interface nsIWebPageDescriptor extends nsISupports {
 
 
 
+interface nsIBFCacheEntry extends nsISupports {
+  
+  RemoveFromBFCacheSync(): void;
+  
+  RemoveFromBFCacheAsync(): void;
+}
+
+
+
+
+interface nsISHEntry extends nsISupports {
+  
+  URI: nsIURI;
+  
+  originalURI: nsIURI;
+  
+  resultPrincipalURI: nsIURI;
+  
+  unstrippedURI: nsIURI;
+  
+  loadReplace: boolean;
+  
+  title: string;
+  
+  name: string;
+  
+  isSubFrame: boolean;
+  
+  hasUserInteraction: boolean;
+  
+  hasUserActivation: boolean;
+  
+  referrerInfo: nsIReferrerInfo;
+  
+  readonly isInBFCache: boolean;
+  
+  sticky: boolean;
+  
+  postData: nsIInputStream;
+  
+  readonly hasPostData: boolean;
+  
+  layoutHistoryState: nsILayoutHistoryState;
+  
+  parent: nsISHEntry;
+  
+  loadType: u32;
+  
+  ID: u32;
+  
+  cacheKey: u32;
+  
+  saveLayoutStateFlag: boolean;
+  
+  contentType: string;
+  
+  URIWasModified: boolean;
+  
+  triggeringPrincipal: nsIPrincipal;
+  
+  principalToInherit: nsIPrincipal;
+  
+  partitionedPrincipalToInherit: nsIPrincipal;
+  
+  policyContainer: nsIPolicyContainer;
+  
+  stateData: nsIStructuredCloneContainer;
+  
+  docshellID: nsID;
+  
+  readonly isSrcdocEntry: boolean;
+  
+  srcdocData: string;
+  
+  baseURI: nsIURI;
+  
+  scrollRestorationIsManual: boolean;
+  
+  readonly loadedInThisProcess: boolean;
+  
+  readonly childCount: i32;
+  
+  isTransient(): boolean;
+  
+  setTransient(): void;
+  
+  setScrollPosition(x: i32, y: i32): void;
+  
+  getScrollPosition(x: OutParam<i32>, y: OutParam<i32>): void;
+  
+  initLayoutHistoryState(): nsILayoutHistoryState;
+  
+  clone(): nsISHEntry;
+  
+  hasDynamicallyAddedChild(): boolean;
+  
+  adoptBFCacheEntry(aEntry: nsISHEntry): void;
+  
+  sharesDocumentWith(aEntry: nsISHEntry): boolean;
+  
+  setLoadTypeAsHistory(): void;
+  
+  AddChild(aChild: nsISHEntry, aOffset: i32, aUseRemoteSubframes?: boolean): void;
+  
+  GetChildAt(aIndex: i32): nsISHEntry;
+  
+  readonly bfcacheID: u64;
+  
+  wireframe: any;
+  
+  navigationKey: nsID;
+  
+  navigationId: nsID;
+}
+
+
+
+
+interface nsISHistory extends nsISupports {
+  
+  readonly count: i32;
+  
+  index: i32;
+  
+  readonly requestedIndex: i32;
+  
+  getEntryAtIndex(aIndex: i32): nsISHEntry;
+  
+  purgeHistory(aNumEntries: i32): void;
+  
+  addSHistoryListener(aListener: nsISHistoryListener): void;
+  
+  removeSHistoryListener(aListener: nsISHistoryListener): void;
+  
+  reloadCurrentEntry(): void;
+  
+  addEntry(aEntry: nsISHEntry): void;
+  
+  updateIndex(): void;
+  
+  replaceEntry(aIndex: i32, aReplaceEntry: nsISHEntry): void;
+  
+  notifyOnHistoryReload(): boolean;
+  
+  notifyOnHistoryCommit(): void;
+  
+  notifyOnEntryUpdated(aEntry: nsISHEntry): void;
+  
+  evictOutOfRangeDocumentViewers(aIndex: i32): void;
+  
+  evictAllDocumentViewers(): void;
+  
+  reload(aReloadFlags: u32): void;
+  
+  createEntry(): nsISHEntry;
+  
+  canGoBackFromEntryAtIndex(aIndex: i32): boolean;
+}
+
+
+
+
+interface nsISHistoryListener extends nsISupports {
+  
+  OnHistoryNewEntry(aNewURI: nsIURI, aOldIndex: i32): void;
+  
+  OnHistoryReload(): boolean;
+  
+  OnHistoryGotoIndex(): void;
+  
+  OnHistoryPurge(aNumEntries: i32): void;
+  
+  OnHistoryTruncate(aNumEntries: i32): void;
+  
+  OnHistoryReplaceEntry(): void;
+  
+  OnDocumentViewerEvicted(aNumEvicted: u32): void;
+  
+  OnHistoryCommit(): void;
+  
+  OnEntryUpdated(aEntry: nsISHEntry): void;
+}
+
+
+
+
+interface nsISuspendedTypes extends nsISupports {
+  
+  readonly NONE_SUSPENDED?: 0;
+  
+  readonly SUSPENDED_BLOCK?: 1;
+}
+
+
+
+
 interface mozIDOMWindow extends nsISupports {
 }
 
@@ -3981,6 +2989,158 @@ interface nsISlowScriptDebug extends nsISupports {
 
 
 
+interface nsIScriptErrorNote extends nsISupports {
+  
+  readonly errorMessage: string;
+  
+  readonly sourceName: string;
+  
+  readonly sourceId: u32;
+  
+  readonly lineNumber: u32;
+  
+  readonly columnNumber: u32;
+  
+  toString(): string;
+}
+
+
+interface nsIScriptError extends nsIConsoleMessage {
+  
+  readonly errorFlag?: 0;
+  
+  readonly warningFlag?: 1;
+  
+  readonly infoFlag?: 8;
+
+  
+  readonly errorMessage: string;
+  
+  readonly sourceName: string;
+  
+  readonly sourceId: u32;
+  
+  readonly lineNumber: u32;
+  
+  readonly columnNumber: u32;
+  
+  readonly flags: u32;
+  
+  readonly category: string;
+  
+  readonly outerWindowID: u64;
+  
+  readonly innerWindowID: u64;
+  
+  readonly isFromPrivateWindow: boolean;
+  
+  readonly isFromChromeContext: boolean;
+  
+  readonly isPromiseRejection: boolean;
+  
+  exception: any;
+  
+  readonly hasException: boolean;
+  
+  stack: any;
+  
+  errorMessageName: string;
+  
+  readonly notes: nsIArray;
+  
+  cssSelectors: string;
+  
+  init(message: string, sourceName: string, lineNumber: u32, columnNumber: u32, flags: u32, category: string, fromPrivateWindow?: boolean, fromChromeContext?: boolean): void;
+  
+  initWithWindowID(message: string, sourceName: string, lineNumber: u32, columnNumber: u32, flags: u32, category: string, innerWindowID: u64, fromChromeContext?: boolean): void;
+  
+  initWithSanitizedSource(message: string, sourceName: string, lineNumber: u32, columnNumber: u32, flags: u32, category: string, innerWindowID: u64, fromChromeContext?: boolean): void;
+  
+  initWithSourceURI(message: string, sourceURI: nsIURI, lineNumber: u32, columnNumber: u32, flags: u32, category: string, innerWindowID: u64, fromChromeContext?: boolean): void;
+  
+  initSourceId(sourceId: u32): void;
+}
+
+
+
+
+interface mozITestInterfaceJS extends nsISupports {
+  
+  testThrowNsresult(): void;
+  
+  testThrowNsresultFromNative(): void;
+}
+
+
+
+
+interface nsICommandManager extends nsISupports {
+  
+  addCommandObserver(aCommandObserver: nsIObserver, aCommandToObserve: string): void;
+  
+  removeCommandObserver(aCommandObserver: nsIObserver, aCommandObserved: string): void;
+  
+  isCommandSupported(aCommandName: string, aTargetWindow: mozIDOMWindowProxy): boolean;
+  
+  isCommandEnabled(aCommandName: string, aTargetWindow: mozIDOMWindowProxy): boolean;
+  
+  getCommandState(aCommandName: string, aTargetWindow: mozIDOMWindowProxy, aCommandParams: nsICommandParams): void;
+  
+  doCommand(aCommandName: string, aCommandParams: nsICommandParams, aTargetWindow: mozIDOMWindowProxy): void;
+}
+
+
+
+
+interface nsICommandParams extends nsISupports {
+  
+  readonly eNoType?: 0;
+  
+  readonly eBooleanType?: 1;
+  
+  readonly eLongType?: 2;
+  
+  readonly eDoubleType?: 3;
+  
+  readonly eWStringType?: 4;
+  
+  readonly eISupportsType?: 5;
+  
+  readonly eStringType?: 6;
+
+  
+  getValueType(name: string): i16;
+  
+  getBooleanValue(name: string): boolean;
+  
+  getLongValue(name: string): i32;
+  
+  getDoubleValue(name: string): double;
+  
+  getStringValue(name: string): string;
+  
+  getCStringValue(name: string): string;
+  
+  getISupportsValue(name: string): nsISupports;
+  
+  setBooleanValue(name: string, value: boolean): void;
+  
+  setLongValue(name: string, value: i32): void;
+  
+  setDoubleValue(name: string, value: double): void;
+  
+  setStringValue(name: string, value: string): void;
+  
+  setCStringValue(name: string, value: string): void;
+  
+  setISupportsValue(name: string, value: nsISupports): void;
+  
+  removeValue(name: string): void;
+}
+
+
+
+
 interface nsIConsoleAPIStorage extends nsISupports {
   
   getEvents(aId?: string): any;
@@ -3997,97 +3157,81 @@ interface nsIConsoleAPIStorage extends nsISupports {
 
 
 
+interface nsIEventListenerChange extends nsISupports {
+  
+  readonly target: EventTarget;
+}
+
+
+type nsIListenerChangeListener = Callable<{
+  
+  listenersChanged(aEventListenerChanges: nsIArray): void;
+}>
+
+
+interface nsIEventListenerInfo extends nsISupports {
+  
+  readonly type: string;
+  
+  readonly capturing: boolean;
+  
+  readonly allowsUntrusted: boolean;
+  
+  readonly inSystemEventGroup: boolean;
+  
+  enabled: boolean;
+  
+  readonly listenerObject: any;
+  
+  toSource(): string;
+}
+
+
+interface nsIEventListenerService extends nsISupports {
+  
+  getListenerInfoFor(aEventTarget: EventTarget): nsIEventListenerInfo[];
+  
+  hasListenersFor(aEventTarget: EventTarget, aType: string): boolean;
+  
+  addListenerForAllEvents(target: EventTarget, listener: any, aUseCapture?: boolean, aWantsUntrusted?: boolean, aSystemEventGroup?: boolean): void;
+  
+  removeListenerForAllEvents(target: EventTarget, listener: any, aUseCapture?: boolean, aSystemEventGroup?: boolean): void;
+  
+  addListenerChangeListener(aListener: nsIListenerChangeListener): void;
+  
+  removeListenerChangeListener(aListener: nsIListenerChangeListener): void;
+}
+
+
+
+
 interface mozIRemoteLazyInputStream extends nsISupports {
 }
 
 
 
 
-interface nsIDOMProcessChild extends nsISupports {
+interface nsIGeolocationUIUtils extends nsISupports {
   
-  readonly childID: u64;
-  
-  getActor(name: string): JSProcessActorChild;
-  
-  getExistingActor(name: string): JSProcessActorChild;
-  
-  readonly canSend: boolean;
+  dismissPrompts(aBC: BrowsingContext): void;
 }
 
 
 
 
-interface nsIDOMProcessParent extends nsISupports {
+interface nsIIDBPermissionsRequest extends nsISupports {
   
-  readonly childID: u64;
+  readonly browserElement: Element;
   
-  readonly osPid: i32;
-  
-  getActor(name: string): JSProcessActorParent;
-  
-  getExistingActor(name: string): JSProcessActorParent;
-  
-  readonly canSend: boolean;
-  
-  aboutToLoadOrigin(principal: nsIPrincipal): void;
-  
-  readonly remoteType: string;
-  
-  validatePrincipal(principal: nsIPrincipal): boolean;
-}
-
-
-interface nsIContentParentKeepAlive extends nsISupports {
-  
-  readonly domProcess: nsIDOMProcessParent;
-  
-  invalidateKeepAlive(): void;
+  readonly responseObserver: nsIObserver;
 }
 
 
 
 
-interface nsIHangReport extends nsISupports {
+interface nsIIndexedDatabaseManager extends nsISupports {
   
-  readonly scriptBrowser: Element;
-  
-  readonly scriptFileName: string;
-  
-  readonly hangDuration: double;
-  
-  readonly addonId: string;
-  
-  readonly childID: u64;
-  
-  userCanceled(): void;
-  
-  terminateScript(): void;
-  
-  beginStartingDebugger(): void;
-  
-  endStartingDebugger(): void;
-  
-  isReportForBrowserOrChildren(aFrameLoader: FrameLoader): boolean;
-}
-
-
-
-
-interface nsILoginDetectionService extends nsISupports {
-  
-  init(): void;
-  
-  isLoginsLoaded(): boolean;
-}
-
-
-
-
-interface nsISuspendedTypes extends nsISupports {
-  
-  readonly NONE_SUSPENDED?: 0;
-  
-  readonly SUSPENDED_BLOCK?: 1;
+  doMaintenance(): Promise<any>;
 }
 
 
@@ -5513,99 +4657,6 @@ interface nsITextInputProcessorListener extends nsITextInputProcessorCallback {
 
 
 
-interface nsIScriptErrorNote extends nsISupports {
-  
-  readonly errorMessage: string;
-  
-  readonly sourceName: string;
-  
-  readonly sourceId: u32;
-  
-  readonly lineNumber: u32;
-  
-  readonly columnNumber: u32;
-  
-  toString(): string;
-}
-
-
-interface nsIScriptError extends nsIConsoleMessage {
-  
-  readonly errorFlag?: 0;
-  
-  readonly warningFlag?: 1;
-  
-  readonly infoFlag?: 8;
-
-  
-  readonly errorMessage: string;
-  
-  readonly sourceName: string;
-  
-  readonly sourceId: u32;
-  
-  readonly lineNumber: u32;
-  
-  readonly columnNumber: u32;
-  
-  readonly flags: u32;
-  
-  readonly category: string;
-  
-  readonly outerWindowID: u64;
-  
-  readonly innerWindowID: u64;
-  
-  readonly isFromPrivateWindow: boolean;
-  
-  readonly isFromChromeContext: boolean;
-  
-  readonly isPromiseRejection: boolean;
-  
-  exception: any;
-  
-  readonly hasException: boolean;
-  
-  stack: any;
-  
-  errorMessageName: string;
-  
-  readonly notes: nsIArray;
-  
-  cssSelectors: string;
-  
-  init(message: string, sourceName: string, lineNumber: u32, columnNumber: u32, flags: u32, category: string, fromPrivateWindow?: boolean, fromChromeContext?: boolean): void;
-  
-  initWithWindowID(message: string, sourceName: string, lineNumber: u32, columnNumber: u32, flags: u32, category: string, innerWindowID: u64, fromChromeContext?: boolean): void;
-  
-  initWithSanitizedSource(message: string, sourceName: string, lineNumber: u32, columnNumber: u32, flags: u32, category: string, innerWindowID: u64, fromChromeContext?: boolean): void;
-  
-  initWithSourceURI(message: string, sourceURI: nsIURI, lineNumber: u32, columnNumber: u32, flags: u32, category: string, innerWindowID: u64, fromChromeContext?: boolean): void;
-  
-  initSourceId(sourceId: u32): void;
-}
-
-
-
-
-interface mozITestInterfaceJS extends nsISupports {
-  
-  testThrowNsresult(): void;
-  
-  testThrowNsresultFromNative(): void;
-}
-
-
-
-
-
-
-interface nsIGeolocationUIUtils extends nsISupports {
-  
-  dismissPrompts(aBC: BrowsingContext): void;
-}
-
-
 
 
 interface nsIDOMGeoPosition extends nsISupports {
@@ -5650,263 +4701,6 @@ type nsIDOMGeoPositionErrorCallback = Callable<{
   
   handleEvent(positionError: GeolocationPositionError): void;
 }>
-
-
-
-
-interface nsICredentialChooserService extends nsISupports {
-  
-  fetchImageToDataURI(window: mozIDOMWindow, uri: nsIURI): Promise<any>;
-  
-  fetchWellKnown(uri: nsIURI, triggeringPrincipal: nsIPrincipal): Promise<any>;
-  
-  fetchConfig(uri: nsIURI, triggeringPrincipal: nsIPrincipal): Promise<any>;
-  
-  fetchAccounts(uri: nsIURI, triggeringPrincipal: nsIPrincipal): Promise<any>;
-  
-  fetchToken(uri: nsIURI, body: string, triggeringPrincipal: nsIPrincipal): Promise<any>;
-  
-  fetchDisconnect(uri: nsIURI, body: string, triggeringPrincipal: nsIPrincipal): Promise<any>;
-}
-
-
-
-
-type nsICredentialChosenCallback = Callable<{
-  
-  notify(aChosenID: string): void;
-}>
-
-
-
-
-interface nsIIdentityCredentialPromptService extends nsISupports {
-  
-  showProviderPrompt(browsingContext: BrowsingContext, identityProviders: any, identityManifests: any): Promise<any>;
-  
-  showAccountListPrompt(browsingContext: BrowsingContext, accountList: any, identityProvider: any, identityManifest: any): Promise<any>;
-  
-  close(browsingContext: BrowsingContext): void;
-}
-
-
-
-
-interface nsIIdentityCredentialStorageService extends nsISupports {
-  
-  setState(rpPrincipal: nsIPrincipal, idpPrincipal: nsIPrincipal, credentialID: string, registered: boolean, allowLogout: boolean): void;
-  
-  getState(rpPrincipal: nsIPrincipal, idpPrincipal: nsIPrincipal, credentialID: string, registered: OutParam<boolean>, allowLogout: OutParam<boolean>): void;
-  
-  delete(rpPrincipal: nsIPrincipal, idpPrincipal: nsIPrincipal, credentialID: string): void;
-  
-  connected(rpPrincipal: nsIPrincipal, idpPrincipal: nsIPrincipal, connected: OutParam<boolean>): void;
-  
-  disconnect(rpPrincipal: nsIPrincipal, idpPrincipal: nsIPrincipal): void;
-  
-  clear(): void;
-  
-  deleteFromBaseDomain(baseDomain: string): void;
-  
-  deleteFromPrincipal(rpPrincipal: nsIPrincipal): void;
-  
-  deleteFromTimeRange(aFrom: PRTime, aTo: PRTime): void;
-  
-  deleteFromOriginAttributesPattern(aPattern: string): void;
-}
-
-
-
-
-interface nsIIDBPermissionsRequest extends nsISupports {
-  
-  readonly browserElement: Element;
-  
-  readonly responseObserver: nsIObserver;
-}
-
-
-
-
-interface nsIIndexedDatabaseManager extends nsISupports {
-  
-  doMaintenance(): Promise<any>;
-}
-
-
-
-
-interface nsILocalStorageManager extends nsISupports {
-  
-  readonly nextGenLocalStorageEnabled: boolean;
-  
-  preload(aPrincipal: nsIPrincipal): Promise<any>;
-  
-  isPreloaded(aPrincipal: nsIPrincipal): Promise<any>;
-  
-  getState(aPrincipal: nsIPrincipal): Promise<any>;
-}
-
-
-
-
-interface nsIAudioDeviceInfo extends nsISupports {
-  
-  readonly TYPE_UNKNOWN?: 0;
-  
-  readonly TYPE_INPUT?: 1;
-  
-  readonly TYPE_OUTPUT?: 2;
-  
-  readonly STATE_DISABLED?: 0;
-  
-  readonly STATE_UNPLUGGED?: 1;
-  
-  readonly STATE_ENABLED?: 2;
-  
-  readonly PREF_NONE?: 0;
-  
-  readonly PREF_MULTIMEDIA?: 1;
-  
-  readonly PREF_VOICE?: 2;
-  
-  readonly PREF_NOTIFICATION?: 4;
-  
-  readonly PREF_ALL?: 15;
-  
-  readonly FMT_S16LE?: 16;
-  
-  readonly FMT_S16BE?: 32;
-  
-  readonly FMT_F32LE?: 4096;
-  
-  readonly FMT_F32BE?: 8192;
-
-  
-  readonly name: string;
-  
-  readonly groupId: string;
-  
-  readonly vendor: string;
-  
-  readonly type: u16;
-  
-  readonly state: u16;
-  
-  readonly preferred: u16;
-  
-  readonly supportedFormat: u16;
-  
-  readonly defaultFormat: u16;
-  
-  readonly maxChannels: u32;
-  
-  readonly defaultRate: u32;
-  
-  readonly maxRate: u32;
-  
-  readonly minRate: u32;
-  
-  readonly maxLatency: u32;
-  
-  readonly minLatency: u32;
-}
-
-
-
-
-interface nsIMediaDevice extends nsISupports {
-  
-  readonly type: string;
-  
-  readonly mediaSource: string;
-  
-  readonly rawId: string;
-  
-  readonly id: string;
-  
-  readonly scary: boolean;
-  
-  readonly canRequestOsLevelPrompt: boolean;
-  
-  readonly rawName: string;
-}
-
-
-
-
-interface nsIMediaManagerService extends nsISupports {
-  
-  readonly STATE_NOCAPTURE?: 0;
-  
-  readonly STATE_CAPTURE_ENABLED?: 1;
-  
-  readonly STATE_CAPTURE_DISABLED?: 2;
-
-  
-  readonly activeMediaCaptureWindows: nsIArray;
-  
-  mediaCaptureWindowState(aWindow: nsIDOMWindow, aCamera: OutParam<u16>, aMicrophone: OutParam<u16>, aScreenShare: OutParam<u16>, aWindowShare: OutParam<u16>, aBrowserShare: OutParam<u16>, devices: OutParam<nsIMediaDevice[]>): void;
-  
-  sanitizeDeviceIds(sinceWhen: i64): void;
-}
-
-
-
-
-interface nsIMediaPictureInPictureProvider extends nsISupports {
-  
-  openMediaPictureInPictureWindow(videoElement: Element, pictureInPictureWindow: PictureInPictureWindow): Promise<any>;
-  
-  closeMediaPictureInPictureWindow(videoElement: Element): Promise<any>;
-}
-
-
-
-
-interface nsIModelContextService extends nsISupports {
-  
-  getToolsForWindow(innerWindowId: u64): Promise<any>;
-  
-  invokeTool(innerWindowId: u64, toolName: string, input?: any): Promise<any>;
-}
-
-
-
-
-interface nsITCPSocketCallback extends nsISupports {
-  
-  readonly BUFFER_SIZE?: 65536;
-
-  
-  fireErrorEvent(name: string, type: string, errorCode: nsresult): void;
-  
-  fireDataStringEvent(type: string, data: string): void;
-  
-  fireDataArrayEvent(type: string, data: u8[]): void;
-  
-  fireEvent(type: string): void;
-  
-  updateReadyState(readystate: u32): void;
-  
-  updateBufferedAmount(bufferedAmount: u32, trackingNumber: u32): void;
-}
-
-
-
-
-interface nsIUDPSocketInternal extends nsISupports {
-  
-  callListenerOpened(): void;
-  
-  callListenerConnected(): void;
-  
-  callListenerClosed(): void;
-  
-  callListenerReceivedData(host: string, port: u16, data: u8[]): void;
-  
-  callListenerError(message: string, filename: string, lineNumber: u32): void;
-}
 
 
 
@@ -5968,14 +4762,6 @@ interface nsINotificationStorage extends nsISupports {
   delete(origin: string, id: string): void;
   
   deleteAllExcept(ids: string[]): void;
-}
-
-
-
-
-interface nsINotificationHandler extends nsISupports {
-  
-  respondOnClick(aPrincipal: nsIPrincipal, aNotificationId: string, aActionName: string, aAutoClosed: boolean): Promise<any>;
 }
 
 
@@ -6305,6 +5091,907 @@ interface nsIPaymentUIService extends nsISupports {
   updatePayment(requestId: string): void;
   
   closePayment(requestId: string): void;
+}
+
+
+
+
+interface nsIContentSecurityManager extends nsISupports {
+  
+  performSecurityCheck(aChannel: nsIChannel, aStreamListener: nsIStreamListener): nsIStreamListener;
+}
+
+
+
+}  
+
+
+declare enum nsIContentSecurityPolicy_CSPDirective {
+  
+  NO_DIRECTIVE = 0,
+  
+  DEFAULT_SRC_DIRECTIVE = 1,
+  
+  SCRIPT_SRC_DIRECTIVE = 2,
+  
+  OBJECT_SRC_DIRECTIVE = 3,
+  
+  STYLE_SRC_DIRECTIVE = 4,
+  
+  IMG_SRC_DIRECTIVE = 5,
+  
+  MEDIA_SRC_DIRECTIVE = 6,
+  
+  FRAME_SRC_DIRECTIVE = 7,
+  
+  FONT_SRC_DIRECTIVE = 8,
+  
+  CONNECT_SRC_DIRECTIVE = 9,
+  
+  REPORT_URI_DIRECTIVE = 10,
+  
+  FRAME_ANCESTORS_DIRECTIVE = 11,
+  
+  REFLECTED_XSS_DIRECTIVE = 12,
+  
+  BASE_URI_DIRECTIVE = 13,
+  
+  FORM_ACTION_DIRECTIVE = 14,
+  
+  WEB_MANIFEST_SRC_DIRECTIVE = 15,
+  
+  UPGRADE_IF_INSECURE_DIRECTIVE = 16,
+  
+  CHILD_SRC_DIRECTIVE = 17,
+  
+  BLOCK_ALL_MIXED_CONTENT = 18,
+  
+  SANDBOX_DIRECTIVE = 19,
+  
+  WORKER_SRC_DIRECTIVE = 20,
+  
+  SCRIPT_SRC_ELEM_DIRECTIVE = 21,
+  
+  SCRIPT_SRC_ATTR_DIRECTIVE = 22,
+  
+  STYLE_SRC_ELEM_DIRECTIVE = 23,
+  
+  STYLE_SRC_ATTR_DIRECTIVE = 24,
+  
+  REQUIRE_TRUSTED_TYPES_FOR_DIRECTIVE = 25,
+  
+  TRUSTED_TYPES_DIRECTIVE = 26,
+  
+  REPORT_TO_DIRECTIVE = 27,
+}
+
+
+declare enum nsIContentSecurityPolicy_RequireTrustedTypesForDirectiveState {
+  
+  NONE = 0,
+  
+  REPORT_ONLY = 1,
+  
+  ENFORCE = 2,
+}
+
+declare global {
+
+namespace nsIContentSecurityPolicy {
+  type CSPDirective = nsIContentSecurityPolicy_CSPDirective;
+  type RequireTrustedTypesForDirectiveState = nsIContentSecurityPolicy_RequireTrustedTypesForDirectiveState;
+}
+
+
+interface nsIContentSecurityPolicy extends nsISerializable, Enums<typeof nsIContentSecurityPolicy_CSPDirective & typeof nsIContentSecurityPolicy_RequireTrustedTypesForDirectiveState> {
+  
+  readonly VIOLATION_TYPE_EVAL?: 1;
+  
+  readonly VIOLATION_TYPE_WASM_EVAL?: 2;
+
+  
+  getPolicy(index: u32): string;
+  
+  readonly policyCount: u32;
+  
+  readonly upgradeInsecureRequests: boolean;
+  
+  readonly blockAllMixedContent: boolean;
+  
+  readonly enforcesFrameAncestors: boolean;
+  
+  appendPolicy(policyString: string, reportOnly: boolean, deliveredViaMetaTag: boolean): void;
+  
+  readonly requireTrustedTypesForDirectiveState: nsIContentSecurityPolicy.RequireTrustedTypesForDirectiveState;
+  
+  getAllowsInline(aDirective: nsIContentSecurityPolicy.CSPDirective, aHasUnsafeHash: boolean, aNonce: string, aParserCreated: boolean, aTriggeringElement: Element, aCSPEventListener: nsICSPEventListener, aSourceText: string, aLineNumber: u32, aColumnNumber: u32): boolean;
+  
+  getAllowsEval(shouldReportViolations: OutParam<boolean>): boolean;
+  
+  getAllowsWasmEval(shouldReportViolations: OutParam<boolean>): boolean;
+  
+  getCSPSandboxFlags(): u32;
+  
+  logViolationDetails(violationType: u16, triggeringElement: Element, aCSPEventListener: nsICSPEventListener, sourceFile: string, scriptSample: string, lineNum: i32, columnNum: i32, nonce?: string, content?: string): void;
+  
+  setRequestContextWithDocument(aDocument: Document): void;
+  
+  setRequestContextWithPrincipal(aRequestPrincipal: nsIPrincipal, aSelfURI: nsIURI, aReferrer: string, aInnerWindowId: u64): void;
+  
+  permitsAncestry(aLoadInfo: nsILoadInfo): boolean;
+  
+  permits(aTriggeringElement: Element, aCSPEventListener: nsICSPEventListener, aURI: nsIURI, aDir: nsIContentSecurityPolicy.CSPDirective, aSpecific: boolean, aSendViolationReports: boolean): boolean;
+  
+  shouldLoad(aContentType: nsContentPolicyType, aCSPEventListener: nsICSPEventListener, aLoadInfo: nsILoadInfo, aContentLocation: nsIURI, aOriginalURIIfRedirect: nsIURI, aSendViolationReports: boolean): i16;
+  
+  toJSON(): string;
+}
+
+
+type nsICSPEventListener = Callable<{
+  
+  onCSPViolationEvent(aJSON: string, aReportGroupName: string): void;
+}>
+
+
+
+
+interface nsIIntegrityPolicy extends nsISerializable {
+}
+
+
+
+
+interface nsIPolicyContainer extends nsISerializable {
+  
+  readonly csp: nsIContentSecurityPolicy;
+  
+  initFromCSP(aCSP: nsIContentSecurityPolicy): void;
+}
+
+
+
+}  
+
+
+declare enum nsIReferrerInfo_ReferrerPolicyIDL {
+  
+  EMPTY = 0,
+  
+  NO_REFERRER_WHEN_DOWNGRADE = 1,
+  
+  NO_REFERRER = 2,
+  
+  ORIGIN = 3,
+  
+  ORIGIN_WHEN_CROSS_ORIGIN = 4,
+  
+  UNSAFE_URL = 5,
+  
+  SAME_ORIGIN = 6,
+  
+  STRICT_ORIGIN = 7,
+  
+  STRICT_ORIGIN_WHEN_CROSS_ORIGIN = 8,
+}
+
+declare global {
+
+namespace nsIReferrerInfo {
+  type ReferrerPolicyIDL = nsIReferrerInfo_ReferrerPolicyIDL;
+}
+
+
+interface nsIReferrerInfo extends nsISerializable, Enums<typeof nsIReferrerInfo_ReferrerPolicyIDL> {
+  
+  readonly originalReferrer: nsIURI;
+  
+  readonly referrerPolicy: nsIReferrerInfo.ReferrerPolicyIDL;
+  
+  getReferrerPolicyString(): string;
+  
+  readonly sendReferrer: boolean;
+  
+  readonly computedReferrerSpec: string;
+  
+  equals(other: nsIReferrerInfo): boolean;
+  
+  init(aReferrerPolicy: nsIReferrerInfo.ReferrerPolicyIDL, aSendReferrer?: boolean, aOriginalReferrer?: nsIURI): void;
+  
+  initWithDocument(aDocument: Document): void;
+  
+  initWithElement(aNode: Element): void;
+}
+
+
+
+
+interface nsIWebProtocolHandlerRegistrar extends nsISupports {
+  
+  registerProtocolHandler(protocol: string, uri: nsIURI, title: string, documentURI: nsIURI, windowOrBrowser: nsISupports): void;
+  
+  removeProtocolHandler(protocol: string, uri: string): void;
+}
+
+
+
+
+interface nsIDOMStorageManager extends nsISupports {
+  
+  precacheStorage(aPrincipal: nsIPrincipal, aStoragePrincipal: nsIPrincipal): Storage;
+  
+  createStorage(aWindow: mozIDOMWindow, aPrincipal: nsIPrincipal, aStoragePrincipal: nsIPrincipal, aDocumentURI: string, aPrivate?: boolean): Storage;
+  
+  getStorage(aWindow: mozIDOMWindow, aPrincipal: nsIPrincipal, aStoragePrincipal: nsIPrincipal, aPrivate?: boolean): Storage;
+  
+  cloneStorage(aStorageToCloneFrom: Storage): void;
+  
+  checkStorage(aPrincipal: nsIPrincipal, aStorage: Storage): boolean;
+}
+
+
+
+
+interface nsIStorageActivityService extends nsISupports {
+  
+  getActiveOrigins(from: PRTime, to: PRTime): nsIArray;
+  
+  moveOriginInTime(origin: nsIPrincipal, when: PRTime): void;
+  
+  testOnlyReset(): void;
+}
+
+
+
+
+interface nsIDOMXULButtonElement extends nsIDOMXULControlElement {
+  
+  type: string;
+  
+  open: boolean;
+  
+  checked: boolean;
+  
+  group: string;
+}
+
+
+
+
+interface nsIDOMXULCommandDispatcher extends nsISupports {
+  
+  focusedElement: Element;
+  
+  focusedWindow: mozIDOMWindowProxy;
+  
+  addCommandUpdater(updater: Element, events: string, targets: string): void;
+  
+  removeCommandUpdater(updater: Element): void;
+  
+  updateCommands(eventName: string): void;
+  
+  getControllerForCommand(command: string): nsIController;
+  
+  getControllers(): nsIControllers;
+  
+  advanceFocus(): void;
+  
+  rewindFocus(): void;
+  
+  advanceFocusIntoSubtree(elt: Element): void;
+  
+  lock(): void;
+  
+  unlock(): void;
+}
+
+
+
+
+interface nsIDOMXULContainerItemElement extends nsISupports {
+  
+  readonly parentContainer: Element;
+}
+
+
+interface nsIDOMXULContainerElement extends nsIDOMXULContainerItemElement {
+}
+
+
+
+
+interface nsIDOMXULControlElement extends nsISupports {
+  
+  disabled: boolean;
+}
+
+
+
+
+interface nsIDOMXULMenuListElement extends nsIDOMXULSelectControlElement {
+  
+  editable: boolean;
+  
+  open: boolean;
+  
+  readonly label: string;
+  
+  image: string;
+}
+
+
+
+
+interface nsIDOMXULMultiSelectControlElement extends nsIDOMXULSelectControlElement {
+  
+  selType: string;
+  
+  currentItem: Element;
+  
+  currentIndex: i32;
+  
+  readonly selectedItems: NodeList;
+  
+  addItemToSelection(item: nsIDOMXULSelectControlItemElement): void;
+  
+  removeItemFromSelection(item: nsIDOMXULSelectControlItemElement): void;
+  
+  toggleItemSelection(item: nsIDOMXULSelectControlItemElement): void;
+  
+  selectItem(item: nsIDOMXULSelectControlItemElement): void;
+  
+  selectItemRange(startItem: nsIDOMXULSelectControlItemElement, item: nsIDOMXULSelectControlItemElement): void;
+  
+  selectAll(): void;
+  
+  clearSelection(): void;
+  
+  readonly selectedCount: i32;
+  
+  getSelectedItem(index: i32): Element;
+}
+
+
+
+
+interface nsIDOMXULRadioGroupElement extends nsISupports {
+  
+  focusedItem: Element;
+}
+
+
+
+
+interface nsIDOMXULRelatedElement extends nsISupports {
+  
+  getRelatedElement(aElement: Node): Element;
+}
+
+
+
+
+interface nsIDOMXULSelectControlElement extends nsIDOMXULControlElement {
+  
+  selectedItem: Element;
+  
+  selectedIndex: i32;
+  
+  value: string;
+  
+  readonly itemCount: u32;
+  
+  getIndexOfItem(item: nsIDOMXULSelectControlItemElement): i32;
+  
+  getItemAtIndex(index: i32): Element;
+}
+
+
+
+
+interface nsIDOMXULSelectControlItemElement extends nsISupports {
+  
+  disabled: boolean;
+  
+  image: string;
+  
+  label: string;
+  
+  accessKey: string;
+  
+  command: string;
+  
+  value: string;
+  
+  readonly selected: boolean;
+  
+  readonly control: Element;
+}
+
+
+
+
+interface nsIDOMProcessChild extends nsISupports {
+  
+  readonly childID: u64;
+  
+  getActor(name: string): JSProcessActorChild;
+  
+  getExistingActor(name: string): JSProcessActorChild;
+  
+  readonly canSend: boolean;
+}
+
+
+
+
+interface nsIDOMProcessParent extends nsISupports {
+  
+  readonly childID: u64;
+  
+  readonly osPid: i32;
+  
+  getActor(name: string): JSProcessActorParent;
+  
+  getExistingActor(name: string): JSProcessActorParent;
+  
+  readonly canSend: boolean;
+  
+  aboutToLoadOrigin(principal: nsIPrincipal): void;
+  
+  readonly remoteType: string;
+  
+  validatePrincipal(principal: nsIPrincipal): boolean;
+}
+
+
+interface nsIContentParentKeepAlive extends nsISupports {
+  
+  readonly domProcess: nsIDOMProcessParent;
+  
+  invalidateKeepAlive(): void;
+}
+
+
+
+
+interface nsIHangReport extends nsISupports {
+  
+  readonly scriptBrowser: Element;
+  
+  readonly scriptFileName: string;
+  
+  readonly hangDuration: double;
+  
+  readonly addonId: string;
+  
+  readonly childID: u64;
+  
+  userCanceled(): void;
+  
+  terminateScript(): void;
+  
+  beginStartingDebugger(): void;
+  
+  endStartingDebugger(): void;
+  
+  isReportForBrowserOrChildren(aFrameLoader: FrameLoader): boolean;
+}
+
+
+
+
+interface nsILoginDetectionService extends nsISupports {
+  
+  init(): void;
+  
+  isLoginsLoaded(): boolean;
+}
+
+
+
+
+interface nsILocalStorageManager extends nsISupports {
+  
+  readonly nextGenLocalStorageEnabled: boolean;
+  
+  preload(aPrincipal: nsIPrincipal): Promise<any>;
+  
+  isPreloaded(aPrincipal: nsIPrincipal): Promise<any>;
+  
+  getState(aPrincipal: nsIPrincipal): Promise<any>;
+}
+
+
+
+
+interface nsIAutoplay extends nsISupports {
+  
+  readonly ALLOWED?: 0;
+  
+  readonly BLOCKED?: 1;
+  
+  readonly BLOCKED_ALL?: 5;
+}
+
+
+
+
+interface IPeerConnectionObserver extends nsISupports {
+}
+
+
+interface IPeerConnection extends nsISupports {
+  
+  readonly kHintAudio?: 1;
+  
+  readonly kHintVideo?: 2;
+  
+  readonly kActionNone?: -1;
+  
+  readonly kActionOffer?: 0;
+  
+  readonly kActionAnswer?: 1;
+  
+  readonly kActionPRAnswer?: 2;
+  
+  readonly kActionRollback?: 3;
+  
+  readonly kIceGathering?: 0;
+  
+  readonly kIceWaiting?: 1;
+  
+  readonly kIceChecking?: 2;
+  
+  readonly kIceConnected?: 3;
+  
+  readonly kIceFailed?: 4;
+  
+  readonly kNew?: 0;
+  
+  readonly kNegotiating?: 1;
+  
+  readonly kActive?: 2;
+  
+  readonly kClosing?: 3;
+  
+  readonly kClosed?: 4;
+  
+  readonly kDataChannelReliable?: 0;
+  
+  readonly kDataChannelPartialReliableRexmit?: 1;
+  
+  readonly kDataChannelPartialReliableTimed?: 2;
+  
+  readonly kNoError?: 0;
+  
+  readonly kInvalidCandidate?: 2;
+  
+  readonly kInvalidMediastreamTrack?: 3;
+  
+  readonly kInvalidState?: 4;
+  
+  readonly kInvalidSessionDescription?: 5;
+  
+  readonly kIncompatibleSessionDescription?: 6;
+  
+  readonly kIncompatibleMediaStreamTrack?: 8;
+  
+  readonly kInternalError?: 9;
+  
+  readonly kTypeError?: 10;
+  
+  readonly kOperationError?: 11;
+  
+  readonly kMaxErrorType?: 11;
+}
+
+
+
+
+interface mozIGeckoMediaPluginChromeService extends nsISupports {
+  
+  addPluginDirectory(directory: string): void;
+  
+  removePluginDirectory(directory: string): void;
+  
+  removeAndDeletePluginDirectory(directory: string, defer?: boolean): void;
+  
+  forgetThisSite(site: string, aPattern: string): void;
+  
+  forgetThisBaseDomain(baseDomain: string): void;
+  
+  isPersistentStorageAllowed(nodeId: string): boolean;
+  
+  getStorageDir(): nsIFile;
+}
+
+
+
+
+interface mozIGeckoMediaPluginService extends nsISupports {
+  
+  readonly thread: nsIThread;
+  
+  RunPluginCrashCallbacks(pluginId: u32, pluginName: string): void;
+}
+
+
+
+
+interface nsIAudioDeviceInfo extends nsISupports {
+  
+  readonly TYPE_UNKNOWN?: 0;
+  
+  readonly TYPE_INPUT?: 1;
+  
+  readonly TYPE_OUTPUT?: 2;
+  
+  readonly STATE_DISABLED?: 0;
+  
+  readonly STATE_UNPLUGGED?: 1;
+  
+  readonly STATE_ENABLED?: 2;
+  
+  readonly PREF_NONE?: 0;
+  
+  readonly PREF_MULTIMEDIA?: 1;
+  
+  readonly PREF_VOICE?: 2;
+  
+  readonly PREF_NOTIFICATION?: 4;
+  
+  readonly PREF_ALL?: 15;
+  
+  readonly FMT_S16LE?: 16;
+  
+  readonly FMT_S16BE?: 32;
+  
+  readonly FMT_F32LE?: 4096;
+  
+  readonly FMT_F32BE?: 8192;
+
+  
+  readonly name: string;
+  
+  readonly groupId: string;
+  
+  readonly vendor: string;
+  
+  readonly type: u16;
+  
+  readonly state: u16;
+  
+  readonly preferred: u16;
+  
+  readonly supportedFormat: u16;
+  
+  readonly defaultFormat: u16;
+  
+  readonly maxChannels: u32;
+  
+  readonly defaultRate: u32;
+  
+  readonly maxRate: u32;
+  
+  readonly minRate: u32;
+  
+  readonly maxLatency: u32;
+  
+  readonly minLatency: u32;
+}
+
+
+
+
+interface nsIMediaDevice extends nsISupports {
+  
+  readonly type: string;
+  
+  readonly mediaSource: string;
+  
+  readonly rawId: string;
+  
+  readonly id: string;
+  
+  readonly scary: boolean;
+  
+  readonly canRequestOsLevelPrompt: boolean;
+  
+  readonly rawName: string;
+}
+
+
+
+
+interface nsIMediaManagerService extends nsISupports {
+  
+  readonly STATE_NOCAPTURE?: 0;
+  
+  readonly STATE_CAPTURE_ENABLED?: 1;
+  
+  readonly STATE_CAPTURE_DISABLED?: 2;
+
+  
+  readonly activeMediaCaptureWindows: nsIArray;
+  
+  mediaCaptureWindowState(aWindow: nsIDOMWindow, aCamera: OutParam<u16>, aMicrophone: OutParam<u16>, aScreenShare: OutParam<u16>, aWindowShare: OutParam<u16>, aBrowserShare: OutParam<u16>, devices: OutParam<nsIMediaDevice[]>): void;
+  
+  sanitizeDeviceIds(sinceWhen: i64): void;
+}
+
+
+
+
+interface nsIMediaPictureInPictureProvider extends nsISupports {
+  
+  openMediaPictureInPictureWindow(videoElement: Element, pictureInPictureWindow: PictureInPictureWindow): Promise<any>;
+  
+  closeMediaPictureInPictureWindow(videoElement: Element): Promise<any>;
+}
+
+
+
+
+interface nsIRddProcessTest extends nsISupports {
+  
+  testTelemetryProbes(): Promise<any>;
+  
+  stopProcess(): void;
+}
+
+
+
+
+interface nsISpeechTaskCallback extends nsISupports {
+  
+  onPause(): void;
+  
+  onResume(): void;
+  
+  onCancel(): void;
+  
+  onVolumeChanged(aVolume: float): void;
+}
+
+
+interface nsISpeechTask extends nsISupports {
+  
+  setup(aCallback: nsISpeechTaskCallback): void;
+  
+  dispatchStart(): void;
+  
+  dispatchEnd(aElapsedTime: float, aCharIndex: u32): void;
+  
+  dispatchPause(aElapsedTime: float, aCharIndex: u32): void;
+  
+  dispatchResume(aElapsedTime: float, aCharIndex: u32): void;
+  
+  dispatchError(aElapsedTime: float, aCharIndex: u32): void;
+  
+  dispatchBoundary(aName: string, aElapsedTime: float, aCharIndex: u32, aCharLength?: u32): void;
+  
+  dispatchMark(aName: string, aElapsedTime: float, aCharIndex: u32): void;
+}
+
+
+interface nsISpeechService extends nsISupports {
+  
+  speak(aText: string, aUri: string, aVolume: float, aRate: float, aPitch: float, aTask: nsISpeechTask): void;
+}
+
+
+
+
+interface nsISynthVoiceRegistry extends nsISupports {
+  
+  addVoice(aService: nsISpeechService, aUri: string, aName: string, aLang: string, aLocalService: boolean, aQueuesUtterances: boolean): void;
+  
+  removeVoice(aService: nsISpeechService, aUri: string): void;
+  
+  notifyVoicesChanged(): void;
+  
+  notifyVoicesError(aError: string): void;
+  
+  setDefaultVoice(aUri: string, aIsDefault: boolean): void;
+  
+  readonly voiceCount: u32;
+  
+  getVoice(aIndex: u32): string;
+  
+  isDefaultVoice(aUri: string): boolean;
+  
+  isLocalVoice(aUri: string): boolean;
+  
+  getVoiceLang(aUri: string): string;
+  
+  getVoiceName(aUri: string): string;
+}
+
+
+
+
+interface nsIWebVTTListener extends nsISupports {
+  
+  onCue(cue: any): void;
+  
+  onRegion(region: any): void;
+  
+  onParsingError(errorCode: i32): void;
+}
+
+
+
+
+interface nsIWebVTTParserWrapper extends nsISupports {
+  
+  loadParser(window: mozIDOMWindow): void;
+  
+  parse(data: string): void;
+  
+  flush(): void;
+  
+  watch(callback: nsIWebVTTListener): void;
+  
+  cancel(): void;
+  
+  convertCueToDOMTree(window: mozIDOMWindow, cue: nsISupports): DocumentFragment;
+  
+  processCues(window: mozIDOMWindow, cues: nsIVariant, overlay: nsISupports, controls: nsISupports): void;
+}
+
+
+
+
+interface nsIModelContextService extends nsISupports {
+  
+  getToolsForWindow(innerWindowId: u64): Promise<any>;
+  
+  invokeTool(innerWindowId: u64, toolName: string, input?: any): Promise<any>;
+}
+
+
+
+
+interface nsITCPSocketCallback extends nsISupports {
+  
+  readonly BUFFER_SIZE?: 65536;
+
+  
+  fireErrorEvent(name: string, type: string, errorCode: nsresult): void;
+  
+  fireDataStringEvent(type: string, data: string): void;
+  
+  fireDataArrayEvent(type: string, data: u8[]): void;
+  
+  fireEvent(type: string): void;
+  
+  updateReadyState(readystate: u32): void;
+  
+  updateBufferedAmount(bufferedAmount: u32, trackingNumber: u32): void;
+}
+
+
+
+
+interface nsIUDPSocketInternal extends nsISupports {
+  
+  callListenerOpened(): void;
+  
+  callListenerConnected(): void;
+  
+  callListenerClosed(): void;
+  
+  callListenerReceivedData(host: string, port: u16, data: u8[]): void;
+  
+  callListenerError(message: string, filename: string, lineNumber: u32): void;
+}
+
+
+
+
+interface nsINotificationHandler extends nsISupports {
+  
+  respondOnClick(aPrincipal: nsIPrincipal, aNotificationId: string, aActionName: string, aAutoClosed: boolean): Promise<any>;
 }
 
 
@@ -6709,216 +6396,6 @@ interface nsIQuotaUtilsService extends nsISupports {
 
 
 
-interface nsIContentSecurityManager extends nsISupports {
-  
-  performSecurityCheck(aChannel: nsIChannel, aStreamListener: nsIStreamListener): nsIStreamListener;
-}
-
-
-
-}  
-
-
-declare enum nsIContentSecurityPolicy_CSPDirective {
-  
-  NO_DIRECTIVE = 0,
-  
-  DEFAULT_SRC_DIRECTIVE = 1,
-  
-  SCRIPT_SRC_DIRECTIVE = 2,
-  
-  OBJECT_SRC_DIRECTIVE = 3,
-  
-  STYLE_SRC_DIRECTIVE = 4,
-  
-  IMG_SRC_DIRECTIVE = 5,
-  
-  MEDIA_SRC_DIRECTIVE = 6,
-  
-  FRAME_SRC_DIRECTIVE = 7,
-  
-  FONT_SRC_DIRECTIVE = 8,
-  
-  CONNECT_SRC_DIRECTIVE = 9,
-  
-  REPORT_URI_DIRECTIVE = 10,
-  
-  FRAME_ANCESTORS_DIRECTIVE = 11,
-  
-  REFLECTED_XSS_DIRECTIVE = 12,
-  
-  BASE_URI_DIRECTIVE = 13,
-  
-  FORM_ACTION_DIRECTIVE = 14,
-  
-  WEB_MANIFEST_SRC_DIRECTIVE = 15,
-  
-  UPGRADE_IF_INSECURE_DIRECTIVE = 16,
-  
-  CHILD_SRC_DIRECTIVE = 17,
-  
-  BLOCK_ALL_MIXED_CONTENT = 18,
-  
-  SANDBOX_DIRECTIVE = 19,
-  
-  WORKER_SRC_DIRECTIVE = 20,
-  
-  SCRIPT_SRC_ELEM_DIRECTIVE = 21,
-  
-  SCRIPT_SRC_ATTR_DIRECTIVE = 22,
-  
-  STYLE_SRC_ELEM_DIRECTIVE = 23,
-  
-  STYLE_SRC_ATTR_DIRECTIVE = 24,
-  
-  REQUIRE_TRUSTED_TYPES_FOR_DIRECTIVE = 25,
-  
-  TRUSTED_TYPES_DIRECTIVE = 26,
-  
-  REPORT_TO_DIRECTIVE = 27,
-}
-
-
-declare enum nsIContentSecurityPolicy_RequireTrustedTypesForDirectiveState {
-  
-  NONE = 0,
-  
-  REPORT_ONLY = 1,
-  
-  ENFORCE = 2,
-}
-
-declare global {
-
-namespace nsIContentSecurityPolicy {
-  type CSPDirective = nsIContentSecurityPolicy_CSPDirective;
-  type RequireTrustedTypesForDirectiveState = nsIContentSecurityPolicy_RequireTrustedTypesForDirectiveState;
-}
-
-
-interface nsIContentSecurityPolicy extends nsISerializable, Enums<typeof nsIContentSecurityPolicy_CSPDirective & typeof nsIContentSecurityPolicy_RequireTrustedTypesForDirectiveState> {
-  
-  readonly VIOLATION_TYPE_EVAL?: 1;
-  
-  readonly VIOLATION_TYPE_WASM_EVAL?: 2;
-
-  
-  getPolicy(index: u32): string;
-  
-  readonly policyCount: u32;
-  
-  readonly upgradeInsecureRequests: boolean;
-  
-  readonly blockAllMixedContent: boolean;
-  
-  readonly enforcesFrameAncestors: boolean;
-  
-  appendPolicy(policyString: string, reportOnly: boolean, deliveredViaMetaTag: boolean): void;
-  
-  readonly requireTrustedTypesForDirectiveState: nsIContentSecurityPolicy.RequireTrustedTypesForDirectiveState;
-  
-  getAllowsInline(aDirective: nsIContentSecurityPolicy.CSPDirective, aHasUnsafeHash: boolean, aNonce: string, aParserCreated: boolean, aTriggeringElement: Element, aCSPEventListener: nsICSPEventListener, aSourceText: string, aLineNumber: u32, aColumnNumber: u32): boolean;
-  
-  getAllowsEval(shouldReportViolations: OutParam<boolean>): boolean;
-  
-  getAllowsWasmEval(shouldReportViolations: OutParam<boolean>): boolean;
-  
-  getCSPSandboxFlags(): u32;
-  
-  logViolationDetails(violationType: u16, triggeringElement: Element, aCSPEventListener: nsICSPEventListener, sourceFile: string, scriptSample: string, lineNum: i32, columnNum: i32, nonce?: string, content?: string): void;
-  
-  setRequestContextWithDocument(aDocument: Document): void;
-  
-  setRequestContextWithPrincipal(aRequestPrincipal: nsIPrincipal, aSelfURI: nsIURI, aReferrer: string, aInnerWindowId: u64): void;
-  
-  permitsAncestry(aLoadInfo: nsILoadInfo): boolean;
-  
-  permits(aTriggeringElement: Element, aCSPEventListener: nsICSPEventListener, aURI: nsIURI, aDir: nsIContentSecurityPolicy.CSPDirective, aSpecific: boolean, aSendViolationReports: boolean): boolean;
-  
-  shouldLoad(aContentType: nsContentPolicyType, aCSPEventListener: nsICSPEventListener, aLoadInfo: nsILoadInfo, aContentLocation: nsIURI, aOriginalURIIfRedirect: nsIURI, aSendViolationReports: boolean): i16;
-  
-  toJSON(): string;
-}
-
-
-type nsICSPEventListener = Callable<{
-  
-  onCSPViolationEvent(aJSON: string, aReportGroupName: string): void;
-}>
-
-
-
-
-interface nsIIntegrityPolicy extends nsISerializable {
-}
-
-
-
-
-interface nsIPolicyContainer extends nsISerializable {
-  
-  readonly csp: nsIContentSecurityPolicy;
-  
-  initFromCSP(aCSP: nsIContentSecurityPolicy): void;
-}
-
-
-
-}  
-
-
-declare enum nsIReferrerInfo_ReferrerPolicyIDL {
-  
-  EMPTY = 0,
-  
-  NO_REFERRER_WHEN_DOWNGRADE = 1,
-  
-  NO_REFERRER = 2,
-  
-  ORIGIN = 3,
-  
-  ORIGIN_WHEN_CROSS_ORIGIN = 4,
-  
-  UNSAFE_URL = 5,
-  
-  SAME_ORIGIN = 6,
-  
-  STRICT_ORIGIN = 7,
-  
-  STRICT_ORIGIN_WHEN_CROSS_ORIGIN = 8,
-}
-
-declare global {
-
-namespace nsIReferrerInfo {
-  type ReferrerPolicyIDL = nsIReferrerInfo_ReferrerPolicyIDL;
-}
-
-
-interface nsIReferrerInfo extends nsISerializable, Enums<typeof nsIReferrerInfo_ReferrerPolicyIDL> {
-  
-  readonly originalReferrer: nsIURI;
-  
-  readonly referrerPolicy: nsIReferrerInfo.ReferrerPolicyIDL;
-  
-  getReferrerPolicyString(): string;
-  
-  readonly sendReferrer: boolean;
-  
-  readonly computedReferrerSpec: string;
-  
-  equals(other: nsIReferrerInfo): boolean;
-  
-  init(aReferrerPolicy: nsIReferrerInfo.ReferrerPolicyIDL, aSendReferrer?: boolean, aOriginalReferrer?: nsIURI): void;
-  
-  initWithDocument(aDocument: Document): void;
-  
-  initWithElement(aNode: Element): void;
-}
-
-
-
-
 interface nsIHttpsOnlyModePermission extends nsISupports {
   
   readonly LOAD_INSECURE_DEFAULT?: 0;
@@ -7026,16 +6503,6 @@ interface nsIDocumentEncoder extends nsISupports {
 
 
 
-interface nsIWebProtocolHandlerRegistrar extends nsISupports {
-  
-  registerProtocolHandler(protocol: string, uri: nsIURI, title: string, documentURI: nsIURI, windowOrBrowser: nsISupports): void;
-  
-  removeProtocolHandler(protocol: string, uri: string): void;
-}
-
-
-
-
 type nsISDBCallback = Callable<{
   
   onComplete(aRequest: nsISDBRequest): void;
@@ -7089,34 +6556,6 @@ interface nsISDBResult extends nsISupports {
   getAsArray(): u8[];
   
   getAsArrayBuffer(): any;
-}
-
-
-
-
-interface nsIDOMStorageManager extends nsISupports {
-  
-  precacheStorage(aPrincipal: nsIPrincipal, aStoragePrincipal: nsIPrincipal): Storage;
-  
-  createStorage(aWindow: mozIDOMWindow, aPrincipal: nsIPrincipal, aStoragePrincipal: nsIPrincipal, aDocumentURI: string, aPrivate?: boolean): Storage;
-  
-  getStorage(aWindow: mozIDOMWindow, aPrincipal: nsIPrincipal, aStoragePrincipal: nsIPrincipal, aPrivate?: boolean): Storage;
-  
-  cloneStorage(aStorageToCloneFrom: Storage): void;
-  
-  checkStorage(aPrincipal: nsIPrincipal, aStorage: Storage): boolean;
-}
-
-
-
-
-interface nsIStorageActivityService extends nsISupports {
-  
-  getActiveOrigins(from: PRTime, to: PRTime): nsIArray;
-  
-  moveOriginInTime(origin: nsIPrincipal, when: PRTime): void;
-  
-  testOnlyReset(): void;
 }
 
 
@@ -7285,69 +6724,170 @@ interface nsIWebAuthnService extends nsISupports {
 
 
 
-interface nsISpeechTaskCallback extends nsISupports {
+interface nsIWebBrowserPersist extends nsICancelable {
   
-  onPause(): void;
+  readonly PERSIST_FLAGS_NONE?: 0;
   
-  onResume(): void;
+  readonly PERSIST_FLAGS_FROM_CACHE?: 1;
   
-  onCancel(): void;
+  readonly PERSIST_FLAGS_BYPASS_CACHE?: 2;
   
-  onVolumeChanged(aVolume: float): void;
+  readonly PERSIST_FLAGS_IGNORE_REDIRECTED_DATA?: 4;
+  
+  readonly PERSIST_FLAGS_IGNORE_IFRAMES?: 8;
+  
+  readonly PERSIST_FLAGS_NO_CONVERSION?: 16;
+  
+  readonly PERSIST_FLAGS_REPLACE_EXISTING_FILES?: 32;
+  
+  readonly PERSIST_FLAGS_NO_BASE_TAG_MODIFICATIONS?: 64;
+  
+  readonly PERSIST_FLAGS_FIXUP_ORIGINAL_DOM?: 128;
+  
+  readonly PERSIST_FLAGS_FIXUP_LINKS_TO_DESTINATION?: 256;
+  
+  readonly PERSIST_FLAGS_DONT_FIXUP_LINKS?: 512;
+  
+  readonly PERSIST_FLAGS_SERIALIZE_OUTPUT?: 1024;
+  
+  readonly PERSIST_FLAGS_DONT_CHANGE_FILENAMES?: 2048;
+  
+  readonly PERSIST_FLAGS_FAIL_ON_BROKEN_LINKS?: 4096;
+  
+  readonly PERSIST_FLAGS_CLEANUP_ON_FAILURE?: 8192;
+  
+  readonly PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION?: 16384;
+  
+  readonly PERSIST_FLAGS_APPEND_TO_FILE?: 32768;
+  
+  readonly PERSIST_FLAGS_DISABLE_HTTPS_ONLY?: 65536;
+  
+  readonly PERSIST_STATE_READY?: 1;
+  
+  readonly PERSIST_STATE_SAVING?: 2;
+  
+  readonly PERSIST_STATE_FINISHED?: 3;
+  
+  readonly ENCODE_FLAGS_SELECTION_ONLY?: 1;
+  
+  readonly ENCODE_FLAGS_FORMATTED?: 2;
+  
+  readonly ENCODE_FLAGS_RAW?: 4;
+  
+  readonly ENCODE_FLAGS_BODY_ONLY?: 8;
+  
+  readonly ENCODE_FLAGS_PREFORMATTED?: 16;
+  
+  readonly ENCODE_FLAGS_WRAP?: 32;
+  
+  readonly ENCODE_FLAGS_FORMAT_FLOWED?: 64;
+  
+  readonly ENCODE_FLAGS_ABSOLUTE_LINKS?: 128;
+  
+  readonly ENCODE_FLAGS_CR_LINEBREAKS?: 512;
+  
+  readonly ENCODE_FLAGS_LF_LINEBREAKS?: 1024;
+  
+  readonly ENCODE_FLAGS_NOSCRIPT_CONTENT?: 2048;
+  
+  readonly ENCODE_FLAGS_NOFRAMES_CONTENT?: 4096;
+  
+  readonly ENCODE_FLAGS_ENCODE_BASIC_ENTITIES?: 8192;
+  
+  readonly ENCODE_FLAGS_DISALLOW_LINE_BREAKING?: 16384;
+
+  
+  persistFlags: u32;
+  
+  readonly currentState: u32;
+  
+  readonly result: nsresult;
+  
+  progressListener: nsIWebProgressListener;
+  
+  saveURI(aURI: nsIURI, aTriggeringPrincipal: nsIPrincipal, aCacheKey: u32, aReferrerInfo: nsIReferrerInfo, aCookieJarSettings: nsICookieJarSettings, aPostData: nsIInputStream, aExtraHeaders: string, aFile: nsISupports, aContentPolicyType: nsContentPolicyType, aIsPrivate: boolean): void;
+  
+  saveChannel(aChannel: nsIChannel, aFile: nsISupports): void;
+  
+  saveDocument(aDocument: nsISupports, aFile: nsISupports, aDataPath: nsISupports, aOutputContentType: string, aEncodingFlags: u32, aWrapColumn: u32): void;
+  
+  cancelSave(): void;
 }
 
 
-interface nsISpeechTask extends nsISupports {
+
+
+interface nsIWebBrowserPersistURIMap extends nsISupports {
   
-  setup(aCallback: nsISpeechTaskCallback): void;
+  readonly numMappedURIs: u32;
   
-  dispatchStart(): void;
+  getURIMapping(aIndex: u32, aMapFrom: OutParam<string>, aMapTo: OutParam<string>): void;
   
-  dispatchEnd(aElapsedTime: float, aCharIndex: u32): void;
-  
-  dispatchPause(aElapsedTime: float, aCharIndex: u32): void;
-  
-  dispatchResume(aElapsedTime: float, aCharIndex: u32): void;
-  
-  dispatchError(aElapsedTime: float, aCharIndex: u32): void;
-  
-  dispatchBoundary(aName: string, aElapsedTime: float, aCharIndex: u32, aCharLength?: u32): void;
-  
-  dispatchMark(aName: string, aElapsedTime: float, aCharIndex: u32): void;
+  readonly targetBaseURI: string;
 }
 
 
-interface nsISpeechService extends nsISupports {
+interface nsIWebBrowserPersistDocument extends nsISupports {
   
-  speak(aText: string, aUri: string, aVolume: float, aRate: float, aPitch: float, aTask: nsISpeechTask): void;
+  readonly isClosed: boolean;
+  
+  close(): void;
+  
+  readonly isPrivate: boolean;
+  
+  readonly documentURI: string;
+  
+  readonly baseURI: string;
+  
+  readonly contentType: string;
+  
+  readonly characterSet: string;
+  
+  readonly title: string;
+  
+  readonly referrerInfo: nsIReferrerInfo;
+  
+  readonly cookieJarSettings: nsICookieJarSettings;
+  
+  readonly contentDisposition: string;
+  
+  readonly postData: nsIInputStream;
+  
+  readonly principal: nsIPrincipal;
+  
+  readonly cacheKey: u32;
+  
+  persistFlags: u32;
+  
+  readResources(aVisitor: nsIWebBrowserPersistResourceVisitor): void;
+  
+  writeContent(aStream: nsIOutputStream, aURIMap: nsIWebBrowserPersistURIMap, aRequestedContentType: string, aEncoderFlags: u32, aWrapColumn: u32, aCompletion: nsIWebBrowserPersistWriteCompletion): void;
 }
 
 
+interface nsIWebBrowserPersistResourceVisitor extends nsISupports {
+  
+  visitResource(aDocument: nsIWebBrowserPersistDocument, aURI: string, aContentPolicyType: nsContentPolicyType): void;
+  
+  visitDocument(aDocument: nsIWebBrowserPersistDocument, aSubDocument: nsIWebBrowserPersistDocument): void;
+  
+  visitBrowsingContext(aDocument: nsIWebBrowserPersistDocument, aContext: BrowsingContext): void;
+  
+  endVisit(aDocument: nsIWebBrowserPersistDocument, aStatus: nsresult): void;
+}
 
 
-interface nsISynthVoiceRegistry extends nsISupports {
+type nsIWebBrowserPersistWriteCompletion = Callable<{
   
-  addVoice(aService: nsISpeechService, aUri: string, aName: string, aLang: string, aLocalService: boolean, aQueuesUtterances: boolean): void;
+  onFinish(aDocument: nsIWebBrowserPersistDocument, aStream: nsIOutputStream, aContentType: string, aStatus: nsresult): void;
+}>
+
+
+interface nsIWebBrowserPersistDocumentReceiver extends nsISupports {
   
-  removeVoice(aService: nsISpeechService, aUri: string): void;
+  onDocumentReady(aDocument: nsIWebBrowserPersistDocument): void;
   
-  notifyVoicesChanged(): void;
-  
-  notifyVoicesError(aError: string): void;
-  
-  setDefaultVoice(aUri: string, aIsDefault: boolean): void;
-  
-  readonly voiceCount: u32;
-  
-  getVoice(aIndex: u32): string;
-  
-  isDefaultVoice(aUri: string): boolean;
-  
-  isLocalVoice(aUri: string): boolean;
-  
-  getVoiceLang(aUri: string): string;
-  
-  getVoiceName(aUri: string): string;
+  onError(aFailure: nsresult): void;
 }
 
 
@@ -7462,177 +7002,84 @@ interface txIEXSLTFunctions extends nsISupports {
 
 
 
-interface nsIDOMXULButtonElement extends nsIDOMXULControlElement {
+interface nsIBrowserController extends nsISupports {
   
-  type: string;
-  
-  open: boolean;
-  
-  checked: boolean;
-  
-  group: string;
+  enableDisableCommands(action: string, enabledCommands: string[], disabledCommands: string[]): void;
 }
 
 
 
 
-interface nsIDOMXULCommandDispatcher extends nsISupports {
+interface nsIController extends nsISupports {
   
-  focusedElement: Element;
+  isCommandEnabled(command: string): boolean;
   
-  focusedWindow: mozIDOMWindowProxy;
+  supportsCommand(command: string): boolean;
   
-  addCommandUpdater(updater: Element, events: string, targets: string): void;
+  doCommand(command: string): void;
   
-  removeCommandUpdater(updater: Element): void;
+  onEvent(eventName: string): void;
+}
+
+
+interface nsICommandController extends nsISupports {
   
-  updateCommands(eventName: string): void;
+  getCommandStateWithParams(command: string, aCommandParams: nsICommandParams): void;
+  
+  doCommandWithParams(command: string, aCommandParams: nsICommandParams): void;
+  
+  getSupportedCommands(): string[];
+}
+
+
+
+
+interface nsIControllers extends nsISupports {
   
   getControllerForCommand(command: string): nsIController;
   
-  getControllers(): nsIControllers;
+  insertControllerAt(index: u32, controller: nsIController): void;
   
-  advanceFocus(): void;
+  removeControllerAt(index: u32): nsIController;
   
-  rewindFocus(): void;
+  getControllerAt(index: u32): nsIController;
   
-  advanceFocusIntoSubtree(elt: Element): void;
+  appendController(controller: nsIController): void;
   
-  lock(): void;
+  removeController(controller: nsIController): void;
   
-  unlock(): void;
+  getControllerId(controller: nsIController): u32;
+  
+  getControllerById(controllerID: u32): nsIController;
+  
+  getControllerCount(): u32;
 }
 
 
 
 
-interface nsIDOMXULContainerItemElement extends nsISupports {
+interface nsIEditingSession extends nsISupports {
   
-  readonly parentContainer: Element;
-}
+  readonly eEditorOK?: 0;
+  
+  readonly eEditorCreationInProgress?: 1;
+  
+  readonly eEditorErrorCantEditMimeType?: 2;
+  
+  readonly eEditorErrorFileNotFound?: 3;
+  
+  readonly eEditorErrorCantEditFramesets?: 8;
+  
+  readonly eEditorErrorUnknown?: 9;
 
-
-interface nsIDOMXULContainerElement extends nsIDOMXULContainerItemElement {
-}
-
-
-
-
-interface nsIDOMXULControlElement extends nsISupports {
   
-  disabled: boolean;
-}
-
-
-
-
-interface nsIDOMXULMenuListElement extends nsIDOMXULSelectControlElement {
+  readonly editorStatus: u32;
   
-  editable: boolean;
+  makeWindowEditable(window: mozIDOMWindowProxy, aEditorType: string, doAfterUriLoad: boolean, aMakeWholeDocumentEditable: boolean, aInteractive: boolean): void;
   
-  open: boolean;
+  windowIsEditable(window: mozIDOMWindowProxy): boolean;
   
-  readonly label: string;
-  
-  image: string;
-}
-
-
-
-
-interface nsIDOMXULMultiSelectControlElement extends nsIDOMXULSelectControlElement {
-  
-  selType: string;
-  
-  currentItem: Element;
-  
-  currentIndex: i32;
-  
-  readonly selectedItems: NodeList;
-  
-  addItemToSelection(item: nsIDOMXULSelectControlItemElement): void;
-  
-  removeItemFromSelection(item: nsIDOMXULSelectControlItemElement): void;
-  
-  toggleItemSelection(item: nsIDOMXULSelectControlItemElement): void;
-  
-  selectItem(item: nsIDOMXULSelectControlItemElement): void;
-  
-  selectItemRange(startItem: nsIDOMXULSelectControlItemElement, item: nsIDOMXULSelectControlItemElement): void;
-  
-  selectAll(): void;
-  
-  clearSelection(): void;
-  
-  readonly selectedCount: i32;
-  
-  getSelectedItem(index: i32): Element;
-}
-
-
-
-
-interface nsIDOMXULRadioGroupElement extends nsISupports {
-  
-  focusedItem: Element;
-}
-
-
-
-
-interface nsIDOMXULRelatedElement extends nsISupports {
-  
-  getRelatedElement(aElement: Node): Element;
-}
-
-
-
-
-interface nsIDOMXULSelectControlElement extends nsIDOMXULControlElement {
-  
-  selectedItem: Element;
-  
-  selectedIndex: i32;
-  
-  value: string;
-  
-  readonly itemCount: u32;
-  
-  getIndexOfItem(item: nsIDOMXULSelectControlItemElement): i32;
-  
-  getItemAtIndex(index: i32): Element;
-}
-
-
-
-
-interface nsIDOMXULSelectControlItemElement extends nsISupports {
-  
-  disabled: boolean;
-  
-  image: string;
-  
-  label: string;
-  
-  accessKey: string;
-  
-  command: string;
-  
-  value: string;
-  
-  readonly selected: boolean;
-  
-  readonly control: Element;
-}
-
-
-
-
-interface mozIDownloadPlatform extends nsISupports {
-  
-  downloadDone(aSource: nsIURI, aReferrer: nsIURI, aTarget: nsIFile, aContentType: string, aIsPrivate: boolean): Promise<any>;
-  
-  maybeWriteDownloadOriginInformation(aTargetFile: nsIFile, aSourceUrl: nsIURI, aReferrerInfo: nsIReferrerInfo, aIsPrivate: boolean): Promise<any>;
+  getEditorForWindow(window: mozIDOMWindowProxy): nsIEditor;
 }
 
 
@@ -8087,351 +7534,145 @@ interface nsITableEditor extends nsISupports {
 
 
 
-interface nsIEnterprisePolicies extends nsISupports {
+interface nsIInlineSpellChecker extends nsISupports {
   
-  readonly UNINITIALIZED?: -1;
+  readonly spellChecker: nsIEditorSpellCheck;
   
-  readonly INACTIVE?: 0;
+  init(aEditor: nsIEditor): void;
   
-  readonly ACTIVE?: 1;
+  cleanup(aDestroyingFrames: boolean): void;
   
-  readonly FAILED?: 2;
-
+  enableRealTimeSpell: boolean;
   
-  readonly status: i16;
+  spellCheckRange(aSelection: Range): void;
   
-  readonly isEnterprise: boolean;
+  getMisspelledWord(aNode: Node, aOffset: u32): Range;
   
-  isAllowed(feature: string): boolean;
+  replaceWord(aNode: Node, aOffset: u32, aNewword: string): void;
   
-  isAllowedForURI(feature: string, uri: nsIURI): boolean;
+  addWordToDictionary(aWord: string): void;
   
-  getActivePolicies(): any;
+  removeWordFromDictionary(aWord: string): void;
   
-  getSupportMenu(): any;
+  ignoreWord(aWord: string): void;
   
-  getExtensionPolicy(extensionID: string): any;
+  ignoreWords(aWordsToIgnore: string[]): void;
   
-  getExtensionSettings(extensionID: string): any;
+  updateCurrentDictionary(): void;
   
-  mayInstallAddon(addon: any): boolean;
-  
-  isAddonRequiredByPolicy(addonID: string): boolean;
-  
-  allowedInstallSource(uri: nsIURI): boolean;
-  
-  isExemptExecutableExtension(url: string, extension: string): boolean;
+  readonly spellCheckPending: boolean;
 }
 
 
 
 
-interface amIAddonManagerStartup extends nsISupports {
+interface nsITransaction extends nsISupports {
   
-  readStartupData(): any;
+  doTransaction(): void;
   
-  registerChrome(manifestURI: nsIURI, entries: any): nsIJSRAIIHelper;
+  undoTransaction(): void;
   
-  encodeBlob(value: any): any;
+  redoTransaction(): void;
   
-  decodeBlob(value: any): any;
+  readonly isTransient: boolean;
   
-  enumerateJAR(uri: nsIURI, pattern: string): string[];
-  
-  enumerateJARSubtree(uri: nsIURI): string[];
-  
-  initializeURLPreloader(): void;
+  merge(aTransaction: nsITransaction): boolean;
 }
 
 
 
 
-interface amIWebInstallPrompt extends nsISupports {
+interface nsITransactionManager extends nsISupports {
   
-  confirm(aBrowser: Element, aUri: nsIURI, aInstalls: nsIVariant[]): void;
+  doTransaction(aTransaction: nsITransaction): void;
+  
+  undoTransaction(): void;
+  
+  redoTransaction(): void;
+  
+  clear(): void;
+  
+  clearUndoStack(): void;
+  
+  clearRedoStack(): void;
+  
+  beginBatch(aData: nsISupports): void;
+  
+  endBatch(aAllowEmpty: boolean): void;
+  
+  readonly numberOfUndoItems: i32;
+  
+  readonly numberOfRedoItems: i32;
+  
+  maxTransactionCount: i32;
+  
+  batchTopUndo(): void;
+  
+  removeTopUndo(): void;
+  
+  peekUndoStack(): nsITransaction;
+  
+  peekRedoStack(): nsITransaction;
 }
 
 
 
 
-
-
-interface nsIContentDispatchChooser extends nsISupports {
+interface nsIRemotePermissionService extends nsISupports {
   
-  handleURI(aHandler: nsIHandlerInfo, aURI: nsIURI, aTriggeringPrincipal: nsIPrincipal, aBrowsingContext: BrowsingContext, aWasTriggeredExternally?: boolean, aHasValidUserGestureActivation?: boolean): void;
+  init(): void;
+  
+  readonly isInitialized: Promise<any>;
+  
+  testAllowedPermissionValues: any;
 }
 
 
 
 
-interface nsIExternalHelperAppService extends nsISupports {
+interface mozIPersonalDictionary extends nsISupports {
   
-  doContent(aMimeContentType: string, aChannel: nsIChannel, aContentContext: nsIInterfaceRequestor, aForceSave: boolean, aWindowContext?: nsIInterfaceRequestor): nsIStreamListener;
+  load(): void;
   
-  createListener(aMimeContentType: string, aChannel: nsIChannel, aContentContext: BrowsingContext, aForceSave: boolean, aWindowContext?: nsIInterfaceRequestor): nsIStreamListener;
+  save(): void;
   
-  applyDecodingForExtension(aExtension: string, aEncodingType: string): boolean;
+  readonly wordList: nsIStringEnumerator;
   
-  getPreferredDownloadsDirectory(): nsIFile;
-}
-
-
-interface nsPIExternalAppLauncher extends nsISupports {
+  check(word: string): boolean;
   
-  deleteTemporaryFileOnExit(aTemporaryFile: nsIFile): void;
+  addWord(word: string): void;
   
-  deleteTemporaryPrivateFileWhenPossible(aTemporaryFile: nsIFile): void;
+  removeWord(word: string): void;
   
-  deletePrivateFileWhenPossible(aPrivateFile: nsIFile): void;
-}
-
-
-interface nsIHelperAppLauncher extends nsICancelable {
+  ignoreWord(word: string): void;
   
-  readonly MIMEInfo: nsIMIMEInfo;
-  
-  readonly source: nsIURI;
-  
-  readonly suggestedFileName: string;
-  
-  promptForSaveDestination(): void;
-  
-  setDownloadToLaunch(aHandleInternally: boolean, aFile: nsIFile): void;
-  
-  launchLocalFile(): void;
-  
-  saveDestinationAvailable(aFile: nsIFile, aDialogWasShown?: boolean): void;
-  
-  setWebProgressListener(aWebProgressListener: nsIWebProgressListener2): void;
-  
-  readonly targetFile: nsIFile;
-  
-  readonly targetFileIsExecutable: boolean;
-  
-  readonly timeDownloadStarted: PRTime;
-  
-  readonly contentLength: i64;
-  
-  readonly browsingContextId: u64;
+  endSession(): void;
 }
 
 
 
 
-interface nsIExternalProtocolService extends nsISupports {
+interface mozISpellCheckingEngine extends nsISupports {
   
-  externalProtocolHandlerExists(aProtocolScheme: string): boolean;
+  dictionaries: string[];
   
-  isExposedProtocol(aProtocolScheme: string): boolean;
+  personalDictionary: mozIPersonalDictionary;
   
-  getProtocolHandlerInfo(aProtocolScheme: string): nsIHandlerInfo;
+  getDictionaryList(): string[];
   
-  getProtocolHandlerInfoFromOS(aProtocolScheme: string, aFound: OutParam<boolean>): nsIHandlerInfo;
+  check(word: string): boolean;
   
-  setProtocolHandlerDefaults(aHandlerInfo: nsIHandlerInfo, aOSHandlerExists: boolean): void;
+  suggest(word: string): string[];
   
-  loadURI(aURI: nsIURI, aTriggeringPrincipal?: nsIPrincipal, aRedirectPrincipal?: nsIPrincipal, aBrowsingContext?: BrowsingContext, aWasTriggeredExternally?: boolean, aHasValidUserGestureActivation?: boolean, aNewWindowTarget?: boolean): void;
+  loadDictionariesFromDir(dir: nsIFile): void;
   
-  getApplicationDescription(aScheme: string): string;
+  addDirectory(dir: nsIFile): void;
   
-  isCurrentAppOSDefaultForProtocol(aScheme: string): boolean;
-}
-
-
-
-
-interface nsIHandlerService extends nsISupports {
+  removeDirectory(dir: nsIFile): void;
   
-  asyncInit(): void;
+  addDictionary(lang: string, file: nsIURI): void;
   
-  enumerate(): nsISimpleEnumerator;
-  
-  fillHandlerInfo(aHandlerInfo: nsIHandlerInfo, aOverrideType: string): void;
-  
-  store(aHandlerInfo: nsIHandlerInfo): void;
-  
-  exists(aHandlerInfo: nsIHandlerInfo): boolean;
-  
-  remove(aHandlerInfo: nsIHandlerInfo): void;
-  
-  getTypeFromExtension(aFileExtension: string): string;
-  
-  existsForProtocolOS(aProtocolScheme: string): boolean;
-  
-  existsForProtocol(aProtocolScheme: string): boolean;
-  
-  getApplicationDescription(aProtocolScheme: string): string;
-}
-
-
-
-}  
-
-
-declare enum nsIHelperAppLauncherDialog_reason {
-  
-  REASON_CANTHANDLE = 0,
-  
-  REASON_SERVERREQUEST = 1,
-  
-  REASON_TYPESNIFFED = 2,
-}
-
-declare global {
-
-namespace nsIHelperAppLauncherDialog {
-  type reason = nsIHelperAppLauncherDialog_reason;
-}
-
-
-interface nsIHelperAppLauncherDialog extends nsISupports, Enums<typeof nsIHelperAppLauncherDialog_reason> {
-  
-  show(aLauncher: nsIHelperAppLauncher, aWindowContext: nsIInterfaceRequestor, aReason: nsIHelperAppLauncherDialog.reason): void;
-  
-  promptForSaveToFileAsync(aLauncher: nsIHelperAppLauncher, aWindowContext: nsIInterfaceRequestor, aDefaultFileName: string, aSuggestedFileExtension: string, aForcePrompt: boolean): void;
-}
-
-
-
-
-interface nsISharingHandlerApp extends nsIHandlerApp {
-  
-  share(data: string, title?: string): void;
-}
-
-
-
-
-interface nsITypeAheadFind extends nsISupports {
-  
-  readonly FIND_INITIAL?: 0;
-  
-  readonly FIND_NEXT?: 1;
-  
-  readonly FIND_PREVIOUS?: 2;
-  
-  readonly FIND_FIRST?: 3;
-  
-  readonly FIND_LAST?: 4;
-  
-  readonly FIND_FOUND?: 0;
-  
-  readonly FIND_NOTFOUND?: 1;
-  
-  readonly FIND_WRAPPED?: 2;
-  
-  readonly FIND_PENDING?: 3;
-
-  
-  init(aDocShell: nsIDocShell): void;
-  
-  find(aSearchString: string, aLinksOnly: boolean, aMode: u32, aDontIterateFrames: boolean): u16;
-  
-  getFoundRange(): Range;
-  
-  setDocShell(aDocShell: nsIDocShell): void;
-  
-  setSelectionModeAndRepaint(toggle: i16): void;
-  
-  collapseSelection(): void;
-  
-  isRangeVisible(aRange: Range, aMustBeInViewPort: boolean): boolean;
-  
-  isRangeRendered(aRange: Range): boolean;
-  
-  readonly searchString: string;
-  
-  caseSensitive: boolean;
-  
-  matchDiacritics: boolean;
-  
-  entireWord: boolean;
-  
-  readonly foundLink: Element;
-  
-  readonly foundEditable: Element;
-  
-  readonly currentWindow: mozIDOMWindow;
-}
-
-
-
-
-interface nsIFOG extends nsISupports {
-  
-  initializeFOG(aDataPathOverride?: string, aAppIdOverride?: string, aDisableInternalPings?: boolean): void;
-  
-  readonly initialized: boolean;
-  
-  registerCustomPings(): void;
-  
-  setLogPings(aEnableLogPings: boolean): void;
-  
-  setTagPings(aDebugTag: string): void;
-  
-  sendPing(aPingName: string): void;
-  
-  setExperimentActive(aExperimentId: string, aBranch: string, aExtra?: any): void;
-  
-  setExperimentInactive(aExperimentId: string): void;
-  
-  testGetExperimentData(aExperimentId: string): any;
-  
-  applyServerKnobsConfig(aJsonConfig: string): void;
-  
-  testFlushAllChildren(): Promise<any>;
-  
-  testResetFOG(aDataPathOverride?: string, aAppIdOverride?: string): void;
-  
-  testShutdownFOG(): void;
-  
-  testTriggerMetrics(aProcessType: u32): Promise<any>;
-  
-  testRegisterRuntimeMetric(aType: string, aCategory: string, aName: string, aPings: string[], aLifetime: string, aDisabled: boolean, aInSession: boolean, aExtraArgs?: string): u32;
-  
-  testRegisterRuntimePing(aName: string, aIncludeClientId: boolean, aSendIfEmpty: boolean, aPreciseTimestamps: boolean, aIncludeInfoSections: boolean, aEnabled: boolean, aSchedulesPings: string[], aReasonCodes: string[], aFollowsCollectionEnabled: boolean, aUploaderCapabilities: string[]): u32;
-  
-  clearAttribution(): void;
-  
-  updateAttribution(aSource: string, aMedium: string, aCampaign: string, aTerm: string, aContent: string): void;
-  
-  testGetAttribution(): any;
-  
-  clearDistribution(): void;
-  
-  updateDistribution(aName: string): void;
-  
-  testGetDistribution(): any;
-  
-  registerRuntimeMetric(aType: string, aCategory: string, aName: string, aPings: string[], aLifetime: string, aDisabled: boolean, aInSession: boolean, aExtraArgs?: string): void;
-  
-  registerRuntimePing(aName: string, aIncludeClientId: boolean, aSendIfEmpty: boolean, aPreciseTimestamps: boolean, aIncludeInfoSections: boolean, aEnabled: boolean, aSchedulesPings: string[], aReasonCodes: string[], aFollowsCollectionEnabled: boolean, aUploaderCapabilities: string[]): void;
-}
-
-
-
-
-type nsIGleanPingTestCallback = Callable<{
-  
-  call(aReason: string): void;
-}>
-
-
-type nsIGleanPingSubmitCallback = Callable<{
-  
-  call(): Promise<any>;
-}>
-
-
-interface nsIGleanPing extends nsISupports {
-  
-  submit(aReason?: string): void;
-  
-  testBeforeNextSubmit(aCallback: nsIGleanPingTestCallback): void;
-  
-  setEnabled(aValue: boolean): void;
-  
-  testSubmission(aTestCallback: nsIGleanPingTestCallback, aSubmitCallback: nsIGleanPingSubmitCallback, aSubmitTimeoutMs?: u32): Promise<any>;
+  removeDictionary(lang: string, file: nsIURI): boolean;
 }
 
 
@@ -8455,212 +7696,6 @@ interface nsIFontEnumerator extends nsISupports {
 }
 
 
-
-
-
-
-interface nsIParserUtils extends nsISupports {
-  
-  readonly SanitizerAllowComments?: 1;
-  
-  readonly SanitizerAllowStyle?: 2;
-  
-  readonly SanitizerCidEmbedsOnly?: 4;
-  
-  readonly SanitizerDropNonCSSPresentation?: 8;
-  
-  readonly SanitizerDropForms?: 16;
-  
-  readonly SanitizerDropMedia?: 32;
-  
-  readonly SanitizerLogRemovals?: 64;
-
-  
-  sanitize(src: string, flags: u32): string;
-  
-  removeConditionalCSS(src: string): string;
-  
-  convertToPlainText(src: string, flags: u32, wrapCol: u32): string;
-  
-  parseFragment(fragment: string, flags: u32, isXML: boolean, baseURI: nsIURI, element: Element): DocumentFragment;
-}
-
-
-
-
-interface nsIExpatSink extends nsISupports {
-  
-  HandleStartElement(aName: string, aAtts: string[], aAttsCount: u32, aLineNumber: u32, aColumnNumber: u32): void;
-  
-  HandleEndElement(aName: string): void;
-  
-  HandleComment(aCommentText: string): void;
-  
-  HandleCDataSection(aData: string, aLength: u32): void;
-  
-  HandleDoctypeDecl(aSubset: string, aName: string, aSystemId: string, aPublicId: string, aCatalogData: nsISupports): void;
-  
-  HandleCharacterData(aData: string, aLength: u32): void;
-  
-  HandleProcessingInstruction(aTarget: string, aData: string): void;
-  
-  HandleXMLDeclaration(aVersion: string, aEncoding: string, aStandalone: i32): void;
-  
-  ReportError(aErrorText: string, aSourceText: string, aError: nsIScriptError): boolean;
-}
-
-
-
-
-interface nsISFVBareItem extends nsISupports {
-  
-  readonly BOOL?: 1;
-  
-  readonly STRING?: 2;
-  
-  readonly DECIMAL?: 3;
-  
-  readonly INTEGER?: 4;
-  
-  readonly TOKEN?: 5;
-  
-  readonly BYTE_SEQUENCE?: 6;
-
-  
-  readonly type: i32;
-}
-
-
-interface nsISFVInteger extends nsISFVBareItem {
-  
-  value: i64;
-}
-
-
-interface nsISFVString extends nsISFVBareItem {
-  
-  value: string;
-}
-
-
-interface nsISFVBool extends nsISFVBareItem {
-  
-  value: boolean;
-}
-
-
-interface nsISFVDecimal extends nsISFVBareItem {
-  
-  value: double;
-}
-
-
-interface nsISFVToken extends nsISFVBareItem {
-  
-  value: string;
-}
-
-
-interface nsISFVByteSeq extends nsISFVBareItem {
-  
-  value: string;
-}
-
-
-interface nsISFVParams extends nsISupports {
-  
-  get(key: string): nsISFVBareItem;
-  
-  set(key: string, item: nsISFVBareItem): void;
-  
-  delete(key: string): void;
-  
-  keys(): string[];
-}
-
-
-interface nsISFVParametrizable extends nsISupports {
-  
-  readonly params: nsISFVParams;
-}
-
-
-interface nsISFVItemOrInnerList extends nsISFVParametrizable {
-}
-
-
-interface nsISFVSerialize extends nsISupports {
-  
-  serialize(): string;
-}
-
-
-interface nsISFVItem extends nsISFVItemOrInnerList {
-  
-  readonly value: nsISFVBareItem;
-  
-  serialize(): string;
-}
-
-
-interface nsISFVInnerList extends nsISFVItemOrInnerList {
-  
-  items: nsISFVItem[];
-}
-
-
-interface nsISFVList extends nsISFVSerialize {
-  
-  members: nsISFVItemOrInnerList[];
-  
-  parseMore(header: string): void;
-}
-
-
-interface nsISFVDictionary extends nsISFVSerialize {
-  
-  get(key: string): nsISFVItemOrInnerList;
-  
-  set(key: string, member_value: nsISFVItemOrInnerList): void;
-  
-  delete(key: string): void;
-  
-  keys(): string[];
-  
-  parseMore(header: string): void;
-}
-
-
-interface nsISFVService extends nsISupports {
-  
-  parseDictionary(header: string): nsISFVDictionary;
-  
-  parseList(header: string): nsISFVList;
-  
-  parseItem(header: string): nsISFVItem;
-  
-  newInteger(value: i64): nsISFVInteger;
-  
-  newBool(value: boolean): nsISFVBool;
-  
-  newDecimal(value: double): nsISFVDecimal;
-  
-  newString(value: string): nsISFVString;
-  
-  newByteSequence(value: string): nsISFVByteSeq;
-  
-  newToken(value: string): nsISFVToken;
-  
-  newParameters(): nsISFVParams;
-  
-  newInnerList(items: nsISFVItem[], params: nsISFVParams): nsISFVInnerList;
-  
-  newItem(value: nsISFVBareItem, params: nsISFVParams): nsISFVItem;
-  
-  newList(members: nsISFVItemOrInnerList[]): nsISFVList;
-  
-  newDictionary(): nsISFVDictionary;
-}
 
 
 
@@ -9123,6 +8158,673 @@ interface nsIMozIconURI extends nsIURI {
 
 
 
+interface mozILocaleService extends nsISupports {
+  
+  readonly langNegStrategyFiltering?: 0;
+  
+  readonly langNegStrategyMatching?: 1;
+  
+  readonly langNegStrategyLookup?: 2;
+
+  
+  readonly defaultLocale: string;
+  
+  readonly lastFallbackLocale: string;
+  
+  readonly appLocalesAsLangTags: string[];
+  
+  readonly appLocalesAsBCP47: string[];
+  
+  readonly regionalPrefsLocales: string[];
+  
+  readonly webExposedLocales: string[];
+  
+  negotiateLanguages(aRequested: string[], aAvailable: string[], aDefaultLocale?: string, langNegStrategy?: i32): string[];
+  
+  readonly appLocaleAsLangTag: string;
+  
+  readonly appLocaleAsBCP47: string;
+  
+  requestedLocales: string[];
+  
+  readonly requestedLocale: string;
+  
+  availableLocales: string[];
+  
+  readonly isAppLocaleRTL: boolean;
+  
+  readonly packagedLocales: string[];
+  
+  readonly ellipsis: string;
+  
+  readonly alwaysAppendAccesskeys: boolean;
+  
+  readonly insertSeparatorBeforeAccesskeys: boolean;
+  
+  readonly acceptLanguages: string;
+  
+  readonly fontLanguageGroup: string;
+  
+  readonly urlFixupSuffix: string;
+  
+  isLocalizedEnough(aFtlPath: string, aOverridePref: string, aMinCoverage: double): boolean;
+  
+  areMessagesLocalized(aFtlPath: string, aRequiredIds: string[], aOverridePref: string): boolean;
+}
+
+
+
+
+interface mozIOSPreferences extends nsISupports {
+  
+  readonly dateTimeFormatStyleNone?: 0;
+  
+  readonly dateTimeFormatStyleShort?: 1;
+  
+  readonly dateTimeFormatStyleMedium?: 2;
+  
+  readonly dateTimeFormatStyleLong?: 3;
+  
+  readonly dateTimeFormatStyleFull?: 4;
+
+  
+  readonly systemLocales: string[];
+  
+  readonly regionalPrefsLocales: string[];
+  
+  readonly systemLocale: string;
+  
+  getDateTimePattern(timeFormatStyle: i32, dateFormatStyle: i32, locale?: string): string;
+}
+
+
+
+
+interface nsIStringBundle extends nsISupports {
+  
+  GetStringFromID(aID: i32): string;
+  
+  GetStringFromName(aName: string): string;
+  
+  formatStringFromName(aName: string, params: string[]): string;
+  
+  getSimpleEnumeration(): nsISimpleEnumerator;
+  
+  asyncPreload(): void;
+}
+
+
+interface nsIStringBundleService extends nsISupports {
+  
+  createBundle(aURLSpec: string): nsIStringBundle;
+  
+  flushBundles(): void;
+}
+
+
+
+
+interface nsIScriptableUnicodeConverter extends nsISupports {
+  
+  ConvertFromUnicode(aSrc: string): string;
+  
+  Finish(): string;
+  
+  ConvertToUnicode(aSrc: string): string;
+  
+  charset: string;
+  
+  isInternal: boolean;
+}
+
+
+
+
+interface nsITextToSubURI extends nsISupports {
+  
+  ConvertAndEscape(charset: string, text: string): string;
+  
+  UnEscapeAndConvert(charset: string, text: string): string;
+  
+  unEscapeURIForUI(aURIFragment: string, aDontEscape?: boolean): string;
+  
+  unEscapeNonAsciiURI(aCharset: string, aURIFragment: string): string;
+}
+
+
+
+
+interface nsIUtilityProcessTest extends nsISupports {
+  
+  startProcess(actorsToAdd?: string[]): Promise<any>;
+  
+  untilChildProcessDead(pid: u32): Promise<any>;
+  
+  noteIntentionalCrash(pid: u32): void;
+  
+  stopProcess(utilityActorName?: string): void;
+  
+  testTelemetryProbes(): void;
+}
+
+
+
+
+interface mozIJSSubScriptLoader extends nsISupports {
+  
+  loadSubScript(url: string, obj?: any): any;
+  
+  loadSubScriptWithOptions(url: string, options: any): any;
+}
+
+
+
+
+
+
+interface xpcIJSWeakReference extends nsISupports {
+  
+  get(): any;
+}
+
+
+
+
+interface nsIXPCComponents_Classes extends nsISupports {
+}
+
+
+interface nsIXPCComponents_Results extends nsISupports {
+}
+
+
+interface nsIXPCComponents_ID extends nsISupports {
+}
+
+
+interface nsIXPCComponents_Exception extends nsISupports {
+}
+
+
+interface nsIXPCComponents_Constructor extends nsISupports {
+}
+
+
+interface nsIXPCComponents_utils_Sandbox extends nsISupports {
+}
+
+
+type nsIScheduledGCCallback = Callable<{
+  
+  callback(): void;
+}>
+
+
+interface nsIXPCComponents_Utils extends nsISupports {
+  
+  printStderr(message: string): void;
+  
+  reportError(error: any, stack?: any): void;
+  
+  readonly Sandbox: nsIXPCComponents_utils_Sandbox;
+  
+  evalInSandbox(source: string, sandbox: any, version?: any, filename?: string, lineNo?: i32, enforceFilenameRestrictions?: boolean): any;
+  
+  getUAWidgetScope(principal: nsIPrincipal): any;
+  
+  getSandboxMetadata(sandbox: any): any;
+  
+  setSandboxMetadata(sandbox: any, metadata: any): void;
+  
+  setSandboxLocaleOverride(sandbox: any, locale: string): void;
+  
+  setSandboxTimezoneOverride(sandbox: any, timezone: string): void;
+  
+  isESModuleLoaded(aResourceURI: string): boolean;
+  
+  importGlobalProperties(aPropertyList: any): void;
+  
+  getWeakReference(obj: any): xpcIJSWeakReference;
+  
+  forceGC(): void;
+  
+  forceCC(aListener?: nsICycleCollectorListener): void;
+  
+  createCCLogger(): nsICycleCollectorListener;
+  
+  finishCC(): void;
+  
+  ccSlice(budget: i64): void;
+  
+  getMaxCCSliceTimeSinceClear(): i32;
+  
+  clearMaxCCTime(): void;
+  
+  forceShrinkingGC(): void;
+  
+  schedulePreciseGC(callback: nsIScheduledGCCallback): void;
+  
+  schedulePreciseShrinkingGC(callback: nsIScheduledGCCallback): void;
+  
+  unlinkGhostWindows(): void;
+  
+  intentionallyLeak(): void;
+  
+  getJSTestingFunctions(): any;
+  
+  getFunctionSourceLocation(func: any): any;
+  
+  callFunctionWithAsyncStack(func: any, stack: nsIStackFrame, asyncCause: string): any;
+  
+  getGlobalForObject(obj: any): any;
+  
+  isProxy(vobject: any): boolean;
+  
+  exportFunction(vfunction: any, vscope: any, voptions?: any): any;
+  
+  createObjectIn(vobj: any, voptions?: any): any;
+  
+  makeObjectPropsNormal(vobj: any): void;
+  
+  isDeadWrapper(obj: any): boolean;
+  
+  isRemoteProxy(val: any): boolean;
+  
+  recomputeWrappers(vobj?: any): void;
+  
+  setWantXrays(vscope: any): void;
+  
+  dispatch(runnable: any, scope?: any): void;
+  
+  readonly isInAutomation: boolean;
+  
+  exitIfInAutomation(): void;
+  
+  crashIfNotInAutomation(): void;
+  
+  setGCZeal(zeal: i32): void;
+  
+  nukeSandbox(obj: any): void;
+  
+  blockScriptForGlobal(global: any): void;
+  
+  unblockScriptForGlobal(global: any): void;
+  
+  isOpaqueWrapper(obj: any): boolean;
+  
+  isXrayWrapper(obj: any): boolean;
+  
+  waiveXrays(aVal: any): any;
+  
+  unwaiveXrays(aVal: any): any;
+  
+  getClassName(aObj: any, aUnwrap: boolean): string;
+  
+  getIncumbentGlobal(callback?: any): any;
+  
+  getDebugName(obj: any): string;
+  
+  getWatchdogTimestamp(aCategory: string): PRTime;
+  
+  getJSEngineTelemetryValue(): any;
+  
+  cloneInto(value: any, scope: any, options?: any): any;
+  
+  getWebIDLCallerPrincipal(): nsIPrincipal;
+  
+  getObjectPrincipal(obj: any): nsIPrincipal;
+  
+  getRealmLocation(obj: any): string;
+  
+  readUTF8File(file: nsIFile): string;
+  
+  readUTF8URI(url: nsIURI): string;
+  
+  createSpellChecker(): nsIEditorSpellCheck;
+  
+  createCommandLine(args: string[], workingDir: nsIFile, state: u32): nsISupports;
+  
+  createCommandParams(): nsICommandParams;
+  
+  createLoadContext(): nsILoadContext;
+  
+  createPrivateLoadContext(): nsILoadContext;
+  
+  createPersistentProperties(): nsIPersistentProperties;
+  
+  createDocumentEncoder(contentType: string): nsIDocumentEncoder;
+  
+  createHTMLCopyEncoder(): nsIDocumentEncoder;
+  
+  readonly loadedESModules: string[];
+  
+  getModuleImportStack(aLocation: string): string;
+}
+
+
+interface nsIXPCComponents extends nsISupports {
+  
+  readonly interfaces: nsIXPCComponents_Interfaces;
+  
+  readonly results: nsIXPCComponents_Results;
+  
+  isSuccessCode(result: nsresult): boolean;
+  
+  readonly classes: nsIXPCComponents_Classes;
+  
+  readonly stack: nsIStackFrame;
+  
+  readonly manager: nsIComponentManager;
+  
+  readonly utils: nsIXPCComponents_Utils;
+  
+  readonly ID: nsIXPCComponents_ID;
+  
+  readonly Exception: nsIXPCComponents_Exception;
+  
+  readonly Constructor: nsIXPCComponents_Constructor;
+  
+  returnCode: any;
+}
+
+
+
+
+interface nsIXPCTestObjectReadOnly extends nsISupports {
+  
+  readonly strReadOnly: string;
+  
+  readonly boolReadOnly: boolean;
+  
+  readonly shortReadOnly: i16;
+  
+  readonly longReadOnly: i32;
+  
+  readonly floatReadOnly: float;
+  
+  readonly charReadOnly: string;
+  
+  readonly timeReadOnly: PRTime;
+}
+
+
+interface nsIXPCTestObjectReadWrite extends nsISupports {
+  
+  stringProperty: string;
+  
+  booleanProperty: boolean;
+  
+  shortProperty: i16;
+  
+  longProperty: i32;
+  
+  floatProperty: float;
+  
+  charProperty: string;
+  
+  timeProperty: PRTime;
+}
+
+
+
+
+interface nsIXPCTestBug809674 extends nsISupports {
+  
+  addArgs(x: u32, y: u32): u32;
+  
+  addSubMulArgs(x: u32, y: u32, subOut: OutParam<u32>, mulOut: OutParam<u32>): u32;
+  
+  addVals(x: any, y: any): any;
+  
+  methodNoArgs(): u32;
+  
+  methodNoArgsNoRetVal(): void;
+  
+  addMany(x1: u32, x2: u32, x3: u32, x4: u32, x5: u32, x6: u32, x7: u32, x8: u32): u32;
+  
+  valProperty: any;
+  
+  uintProperty: u32;
+  
+  methodWithOptionalArgc(): void;
+}
+
+
+
+}  
+
+
+declare enum nsIXPCTestCEnums_testFlagsExplicit {
+  
+  shouldBe1Explicit = 1,
+  
+  shouldBe2Explicit = 2,
+  
+  shouldBe4Explicit = 4,
+  
+  shouldBe8Explicit = 8,
+  
+  shouldBe12Explicit = 12,
+}
+
+
+declare enum nsIXPCTestCEnums_testFlagsImplicit {
+  
+  shouldBe0Implicit = 0,
+  
+  shouldBe1Implicit = 1,
+  
+  shouldBe2Implicit = 2,
+  
+  shouldBe3Implicit = 3,
+  
+  shouldBe5Implicit = 5,
+  
+  shouldBe6Implicit = 6,
+  
+  shouldBe2AgainImplicit = 2,
+  
+  shouldBe3AgainImplicit = 3,
+}
+
+declare global {
+
+namespace nsIXPCTestCEnums {
+  type testFlagsExplicit = nsIXPCTestCEnums_testFlagsExplicit;
+  type testFlagsImplicit = nsIXPCTestCEnums_testFlagsImplicit;
+}
+
+
+interface nsIXPCTestCEnums extends nsISupports, Enums<typeof nsIXPCTestCEnums_testFlagsExplicit & typeof nsIXPCTestCEnums_testFlagsImplicit> {
+  
+  readonly testConst?: 1;
+
+  
+  testCEnumInput(abc: nsIXPCTestCEnums.testFlagsExplicit): void;
+  
+  testCEnumOutput(): nsIXPCTestCEnums.testFlagsExplicit;
+}
+
+
+
+
+interface nsIXPCTestInterfaceA extends nsISupports {
+  
+  name: string;
+}
+
+
+interface nsIXPCTestInterfaceB extends nsISupports {
+  
+  name: string;
+}
+
+
+interface nsIXPCTestInterfaceC extends nsISupports {
+  
+  someInteger: i32;
+}
+
+
+
+
+interface nsIXPCTestParams extends nsISupports {
+  
+  testBoolean(a: boolean, b: InOutParam<boolean>): boolean;
+  
+  testOctet(a: u8, b: InOutParam<u8>): u8;
+  
+  testShort(a: i16, b: InOutParam<i16>): i16;
+  
+  testLong(a: i32, b: InOutParam<i32>): i32;
+  
+  testLongLong(a: i64, b: InOutParam<i64>): i64;
+  
+  testUnsignedShort(a: u16, b: InOutParam<u16>): u16;
+  
+  testUnsignedLong(a: u32, b: InOutParam<u32>): u32;
+  
+  testUnsignedLongLong(a: u64, b: InOutParam<u64>): u64;
+  
+  testFloat(a: float, b: InOutParam<float>): float;
+  
+  testDouble(a: double, b: InOutParam<float>): double;
+  
+  testChar(a: string, b: InOutParam<string>): string;
+  
+  testString(a: string, b: InOutParam<string>): string;
+  
+  testWchar(a: string, b: InOutParam<string>): string;
+  
+  testWstring(a: string, b: InOutParam<string>): string;
+  
+  testAString(a: string, b: InOutParam<string>): string;
+  
+  testAUTF8String(a: string, b: InOutParam<string>): string;
+  
+  testACString(a: string, b: InOutParam<string>): string;
+  
+  testJsval(a: any, b: InOutParam<any>): any;
+  
+  testShortSequence(a: i16[], b: InOutParam<i16[]>): i16[];
+  
+  testDoubleSequence(a: double[], b: InOutParam<double[]>): double[];
+  
+  testInterfaceSequence(a: nsIXPCTestInterfaceA[], b: InOutParam<nsIXPCTestInterfaceA[]>): nsIXPCTestInterfaceA[];
+  
+  testAStringSequence(a: string[], b: InOutParam<string[]>): string[];
+  
+  testACStringSequence(a: string[], b: InOutParam<string[]>): string[];
+  
+  testJsvalSequence(a: any[], b: InOutParam<any[]>): any[];
+  
+  testSequenceSequence(a: i16[][], b: InOutParam<i16[][]>): i16[][];
+  
+  testOptionalSequence(arr?: u8[]): u8[];
+  
+  testShortArray(aLength: u32, a: i16[], bLength: InOutParam<u32>, b: InOutParam<i16[]>, rvLength: OutParam<u32>): i16[];
+  
+  testDoubleArray(aLength: u32, a: double[], bLength: InOutParam<u32>, b: InOutParam<double[]>, rvLength: OutParam<u32>): double[];
+  
+  testStringArray(aLength: u32, a: string[], bLength: InOutParam<u32>, b: InOutParam<string[]>, rvLength: OutParam<u32>): string[];
+  
+  testWstringArray(aLength: u32, a: string[], bLength: InOutParam<u32>, b: InOutParam<string[]>, rvLength: OutParam<u32>): string[];
+  
+  testInterfaceArray(aLength: u32, a: nsIXPCTestInterfaceA[], bLength: InOutParam<u32>, b: InOutParam<nsIXPCTestInterfaceA[]>, rvLength: OutParam<u32>): nsIXPCTestInterfaceA[];
+  
+  testByteArrayOptionalLength(a: u8[], aLength?: u32): u32;
+  
+  testSizedString(aLength: u32, a: string, bLength: InOutParam<u32>, b: InOutParam<string>, rvLength: OutParam<u32>): string;
+  
+  testSizedWstring(aLength: u32, a: string, bLength: InOutParam<u32>, b: InOutParam<string>, rvLength: OutParam<u32>): string;
+  
+  testJsvalArray(aLength: u32, a: any[], bLength: InOutParam<u32>, b: InOutParam<any[]>, rvLength: OutParam<u32>): any[];
+  
+  testOutAString(o: OutParam<string>): void;
+  
+  testStringArrayOptionalSize(a: string[], aLength?: u32): string;
+  
+  testOmittedOptionalOut(aJSObj: nsIXPCTestParams, aOut?: OutParam<nsIURI>): void;
+  
+  readonly testNaN: double;
+}
+
+
+
+
+interface nsIXPCTestReturnCodeParent extends nsISupports {
+  
+  callChild(childBehavior: i32): nsresult;
+}
+
+
+interface nsIXPCTestReturnCodeChild extends nsISupports {
+  
+  readonly CHILD_SHOULD_THROW?: 0;
+  
+  readonly CHILD_SHOULD_RETURN_SUCCESS?: 1;
+  
+  readonly CHILD_SHOULD_RETURN_RESULTCODE?: 2;
+  
+  readonly CHILD_SHOULD_NEST_RESULTCODES?: 3;
+
+  
+  doIt(behavior: i32): void;
+}
+
+
+
+
+type nsIXPCTestFunctionInterface = Callable<{
+  
+  echo(arg: string): string;
+}>
+
+
+interface nsIXPCTestUtils extends nsISupports {
+  
+  doubleWrapFunction(f: nsIXPCTestFunctionInterface): nsIXPCTestFunctionInterface;
+}
+
+
+interface nsIXPCTestTypeScript extends nsISupports {
+  
+  exposedProp: i32;
+  
+  exposedMethod(arg: i32): void;
+}
+
+
+
+
+interface nsILayoutHistoryState extends nsISupports {
+  
+  readonly hasStates: boolean;
+  
+  getKeys(): string[];
+  
+  getPresState(aKey: string, aScrollX: OutParam<float>, aScrollY: OutParam<float>, aAllowScrollOriginDowngrade: OutParam<boolean>, aRes: OutParam<float>): void;
+  
+  addNewPresState(aKey: string, aScrollX: float, aScrollY: float, aAllowScrollOriginDowngrade: boolean, aRes: float): void;
+}
+
+
+
+
+interface nsISVGPaintContext extends nsISupports {
+  
+  readonly fillColor: string;
+  
+  readonly strokeColor: string;
+  
+  readonly fillOpacity: float;
+  
+  readonly strokeOpacity: float;
+}
+
+
+
+
 interface inIDeepTreeWalker extends nsISupports {
   
   showAnonymousContent: boolean;
@@ -9155,326 +8857,30 @@ interface inIDeepTreeWalker extends nsISupports {
 
 
 
-interface nsIStringBundle extends nsISupports {
-  
-  GetStringFromID(aID: i32): string;
-  
-  GetStringFromName(aName: string): string;
-  
-  formatStringFromName(aName: string, params: string[]): string;
-  
-  getSimpleEnumeration(): nsISimpleEnumerator;
-  
-  asyncPreload(): void;
-}
-
-
-interface nsIStringBundleService extends nsISupports {
-  
-  createBundle(aURLSpec: string): nsIStringBundle;
-  
-  flushBundles(): void;
+interface nsIPreloadedStyleSheet extends nsISupports {
 }
 
 
 
 
-interface nsIJARChannel extends nsIChannel {
+interface nsIStyleSheetService extends nsISupports {
   
-  jarFile: nsIFile;
+  readonly AGENT_SHEET?: 0;
   
-  readonly zipEntry: nsIZipEntry;
+  readonly USER_SHEET?: 1;
   
-  ensureCached(): boolean;
-}
+  readonly AUTHOR_SHEET?: 2;
 
-
-
-
-interface nsIJARURI extends nsIURL {
-  
-  readonly JARFile: nsIURI;
-  
-  readonly JAREntry: string;
-}
-
-
-
-
-interface nsIZipEntry extends nsISupports {
-  
-  readonly compression: u16;
-  
-  readonly size: u32;
-  
-  readonly realSize: u32;
-  
-  readonly CRC32: u32;
-  
-  readonly isDirectory: boolean;
-  
-  readonly lastModifiedTime: PRTime;
-  
-  readonly isSynthetic: boolean;
-  
-  readonly permissions: u32;
-}
-
-
-interface nsIZipReader extends nsISupports {
-  
-  open(zipFile: nsIFile): void;
-  
-  openInner(zipReader: nsIZipReader, zipEntry: string): void;
-  
-  readonly file: nsIFile;
-  
-  close(): void;
-  
-  test(aEntryName: string): void;
-  
-  extract(zipEntry: string, outFile: nsIFile): void;
-  
-  getEntry(zipEntry: string): nsIZipEntry;
-  
-  hasEntry(zipEntry: string): boolean;
-  
-  findEntries(aPattern: string): nsIUTF8StringEnumerator;
-  
-  getInputStream(zipEntry: string): nsIInputStream;
-}
-
-
-interface nsIZipReaderCache extends nsISupports {
-  
-  init(cacheSize: u32): void;
-  
-  getZip(zipFile: nsIFile): nsIZipReader;
-  
-  getZipIfCached(zipFile: nsIFile): nsIZipReader;
-  
-  isCached(zipFile: nsIFile): boolean;
-  
-  getInnerZip(zipFile: nsIFile, zipEntry: string): nsIZipReader;
-}
-
-
-
-
-interface IJSDebugger extends nsISupports {
-  
-  addClass(global: any): void;
-}
-
-
-
-
-interface nsIJSInspector extends nsISupports {
-  
-  enterNestedEventLoop(requestor: any): u32;
-  
-  exitNestedEventLoop(): u32;
-  
-  readonly eventLoopNestLevel: u32;
-  
-  readonly lastNestRequestor: any;
-}
-
-
-
-}  
-
-
-declare enum nsIKeyValueService_RecoveryStrategy {
-  
-  ERROR = 0,
-  
-  DISCARD = 1,
-  
-  RENAME = 2,
-}
-
-declare global {
-
-namespace nsIKeyValueService {
-  type RecoveryStrategy = nsIKeyValueService_RecoveryStrategy;
-}
-
-
-interface nsIKeyValueService extends nsISupports, Enums<typeof nsIKeyValueService_RecoveryStrategy> {
-  
-  getOrCreate(callback: nsIKeyValueDatabaseCallback, path: string, name: string): void;
-  
-  getOrCreateWithOptions(callback: nsIKeyValueDatabaseCallback, path: string, name: string, recoveryStrategy?: nsIKeyValueService.RecoveryStrategy): void;
-  
-  createImporter(type: string, path: string): nsIKeyValueImporter;
-}
-
-
-interface nsIKeyValueImportSourceSpec extends nsISupports {
-  
-  readonly path: string;
-  
-  addDatabase(name: string): nsIKeyValueDatabaseImportOptions;
-  
-  addAllDatabases(): nsIKeyValueDatabaseImportOptions;
-}
-
-}  
-
-
-declare enum nsIKeyValueImporter_ConflictPolicy {
-  
-  ERROR_ON_CONFLICT = 0,
-  
-  IGNORE_ON_CONFLICT = 1,
-  
-  REPLACE_ON_CONFLICT = 2,
-}
-
-
-declare enum nsIKeyValueImporter_CleanupPolicy {
-  
-  KEEP_AFTER_IMPORT = 0,
-  
-  DELETE_AFTER_IMPORT = 1,
-}
-
-declare global {
-
-namespace nsIKeyValueImporter {
-  type ConflictPolicy = nsIKeyValueImporter_ConflictPolicy;
-  type CleanupPolicy = nsIKeyValueImporter_CleanupPolicy;
-}
-
-
-interface nsIKeyValueImporter extends nsIKeyValueImportSourceSpec, Enums<typeof nsIKeyValueImporter_ConflictPolicy & typeof nsIKeyValueImporter_CleanupPolicy> {
-  
-  readonly type: string;
-  
-  addPath(path: string): nsIKeyValueImportSourceSpec;
-  
-  import(callback: nsIKeyValueVoidCallback): void;
-}
-
-
-interface nsIKeyValueDatabaseImportOptions extends nsISupports {
-  
-  setConflictPolicy(conflictPolicy: nsIKeyValueImporter.ConflictPolicy): nsIKeyValueDatabaseImportOptions;
-  
-  setCleanupPolicy(cleanupPolicy: nsIKeyValueImporter.CleanupPolicy): nsIKeyValueDatabaseImportOptions;
-}
-
-
-interface nsIKeyValueDatabase extends nsISupports {
-  
-  isEmpty(callback: nsIKeyValueVariantCallback): void;
-  
-  count(callback: nsIKeyValueVariantCallback): void;
-  
-  size(callback: nsIKeyValueVariantCallback): void;
-  
-  put(callback: nsIKeyValueVoidCallback, key: string, value: nsIVariant): void;
-  
-  writeMany(callback: nsIKeyValueVoidCallback, pairs: nsIKeyValuePair[]): void;
-  
-  get(callback: nsIKeyValueVariantCallback, key: string, defaultValue?: nsIVariant): void;
-  
-  has(callback: nsIKeyValueVariantCallback, key: string): void;
-  
-  delete(callback: nsIKeyValueVoidCallback, key: string): void;
-  
-  deleteRange(callback: nsIKeyValueVoidCallback, fromKey?: string, toKey?: string): void;
-  
-  clear(callback: nsIKeyValueVoidCallback): void;
-  
-  enumerate(callback: nsIKeyValueEnumeratorCallback, fromKey?: string, toKey?: string): void;
-  
-  close(callback: nsIKeyValueVoidCallback): void;
-}
-
-
-interface nsIKeyValuePair extends nsISupports {
-  
-  readonly key: string;
   
-  readonly value: nsIVariant;
-}
-
-
-interface nsIKeyValueEnumerator extends nsISupports {
-  
-  hasMoreElements(): boolean;
-  
-  getNext(): nsIKeyValuePair;
-}
-
-
-interface nsIKeyValueDatabaseCallback extends nsISupports {
-  
-  resolve(database: nsIKeyValueDatabase): void;
-  
-  reject(message: string): void;
-}
-
-
-interface nsIKeyValueEnumeratorCallback extends nsISupports {
-  
-  resolve(enumerator: nsIKeyValueEnumerator): void;
-  
-  reject(message: string): void;
-}
-
-
-interface nsIKeyValuePairCallback extends nsISupports {
-  
-  resolve(pair: nsIKeyValuePair): void;
-  
-  reject(message: string): void;
-}
-
-
-interface nsIKeyValueVariantCallback extends nsISupports {
-  
-  resolve(result: nsIVariant): void;
-  
-  reject(message: string): void;
-}
-
-
-interface nsIKeyValueVoidCallback extends nsISupports {
-  
-  resolve(): void;
-  
-  reject(message: string): void;
-}
-
-
-
-
-interface nsILayoutHistoryState extends nsISupports {
-  
-  readonly hasStates: boolean;
-  
-  getKeys(): string[];
-  
-  getPresState(aKey: string, aScrollX: OutParam<float>, aScrollY: OutParam<float>, aAllowScrollOriginDowngrade: OutParam<boolean>, aRes: OutParam<float>): void;
-  
-  addNewPresState(aKey: string, aScrollX: float, aScrollY: float, aAllowScrollOriginDowngrade: boolean, aRes: float): void;
-}
-
-
-
-
-interface nsISVGPaintContext extends nsISupports {
+  loadAndRegisterSheet(sheetURI: nsIURI, type: u32): void;
   
-  readonly fillColor: string;
+  sheetRegistered(sheetURI: nsIURI, type: u32): boolean;
   
-  readonly strokeColor: string;
+  preloadSheet(sheetURI: nsIURI, type: u32): nsIPreloadedStyleSheet;
   
-  readonly fillOpacity: float;
+  preloadSheetAsync(sheetURI: nsIURI, type: u32): any;
   
-  readonly strokeOpacity: float;
+  unregisterSheet(sheetURI: nsIURI, type: u32): void;
 }
 
 
@@ -9523,35 +8929,6 @@ interface nsILayoutDebuggingTools extends nsISupports, Enums<typeof nsILayoutDeb
   dumpComputedStyles(): void;
   
   dumpReflowStats(): void;
-}
-
-
-
-
-interface nsIPreloadedStyleSheet extends nsISupports {
-}
-
-
-
-
-interface nsIStyleSheetService extends nsISupports {
-  
-  readonly AGENT_SHEET?: 0;
-  
-  readonly USER_SHEET?: 1;
-  
-  readonly AUTHOR_SHEET?: 2;
-
-  
-  loadAndRegisterSheet(sheetURI: nsIURI, type: u32): void;
-  
-  sheetRegistered(sheetURI: nsIURI, type: u32): boolean;
-  
-  preloadSheet(sheetURI: nsIURI, type: u32): nsIPreloadedStyleSheet;
-  
-  preloadSheetAsync(sheetURI: nsIURI, type: u32): any;
-  
-  unregisterSheet(sheetURI: nsIURI, type: u32): void;
 }
 
 
@@ -9664,670 +9041,431 @@ interface nsITreeView extends nsISupports {
 
 
 
-interface mozILocaleService extends nsISupports {
+interface nsIJARChannel extends nsIChannel {
   
-  readonly langNegStrategyFiltering?: 0;
+  jarFile: nsIFile;
   
-  readonly langNegStrategyMatching?: 1;
+  readonly zipEntry: nsIZipEntry;
   
-  readonly langNegStrategyLookup?: 2;
-
-  
-  readonly defaultLocale: string;
-  
-  readonly lastFallbackLocale: string;
-  
-  readonly appLocalesAsLangTags: string[];
-  
-  readonly appLocalesAsBCP47: string[];
-  
-  readonly regionalPrefsLocales: string[];
-  
-  readonly webExposedLocales: string[];
-  
-  negotiateLanguages(aRequested: string[], aAvailable: string[], aDefaultLocale?: string, langNegStrategy?: i32): string[];
-  
-  readonly appLocaleAsLangTag: string;
-  
-  readonly appLocaleAsBCP47: string;
-  
-  requestedLocales: string[];
-  
-  readonly requestedLocale: string;
-  
-  availableLocales: string[];
-  
-  readonly isAppLocaleRTL: boolean;
-  
-  readonly packagedLocales: string[];
-  
-  readonly ellipsis: string;
-  
-  readonly alwaysAppendAccesskeys: boolean;
-  
-  readonly insertSeparatorBeforeAccesskeys: boolean;
-  
-  readonly acceptLanguages: string;
-  
-  readonly fontLanguageGroup: string;
-  
-  readonly urlFixupSuffix: string;
-  
-  isLocalizedEnough(aFtlPath: string, aOverridePref: string, aMinCoverage: double): boolean;
-  
-  areMessagesLocalized(aFtlPath: string, aRequiredIds: string[], aOverridePref: string): boolean;
+  ensureCached(): boolean;
 }
 
 
 
 
-interface mozIOSPreferences extends nsISupports {
+interface nsIJARURI extends nsIURL {
   
-  readonly dateTimeFormatStyleNone?: 0;
+  readonly JARFile: nsIURI;
   
-  readonly dateTimeFormatStyleShort?: 1;
-  
-  readonly dateTimeFormatStyleMedium?: 2;
-  
-  readonly dateTimeFormatStyleLong?: 3;
-  
-  readonly dateTimeFormatStyleFull?: 4;
-
-  
-  readonly systemLocales: string[];
-  
-  readonly regionalPrefsLocales: string[];
-  
-  readonly systemLocale: string;
-  
-  getDateTimePattern(timeFormatStyle: i32, dateFormatStyle: i32, locale?: string): string;
+  readonly JAREntry: string;
 }
 
 
 
 
-interface nsILockstore extends nsISupports {
+interface nsIZipEntry extends nsISupports {
   
-  unlockKek(kekRef: string, secret: string, timeoutMs: u64): Promise<any>;
+  readonly compression: u16;
   
-  lockKek(kekRef: string): Promise<any>;
+  readonly size: u32;
   
-  isKekUnlocked(kekRef: string): boolean;
+  readonly realSize: u32;
   
-  lock(): Promise<any>;
+  readonly CRC32: u32;
   
-  createDek(dekName: string, kekRef: string, extractable: boolean, keySize: u32): Promise<any>;
+  readonly isDirectory: boolean;
   
-  importDek(dekName: string, kekRef: string, dekBytes: u8[], extractable: boolean): Promise<any>;
+  readonly lastModifiedTime: PRTime;
   
-  isDekExtractable(dekName: string): Promise<any>;
+  readonly isSynthetic: boolean;
   
-  deleteDek(dekName: string): Promise<any>;
+  readonly permissions: u32;
+}
+
+
+interface nsIZipReader extends nsISupports {
   
-  listDeks(): Promise<any>;
+  open(zipFile: nsIFile): void;
   
-  listKeks(dekName: string): Promise<any>;
+  openInner(zipReader: nsIZipReader, zipEntry: string): void;
   
-  addKek(dekName: string, fromKekRef: string, toKekRef: string): Promise<any>;
+  readonly file: nsIFile;
   
-  removeKek(dekName: string, kekRef: string): Promise<any>;
+  close(): void;
   
-  switchKek(dekName: string, oldKekRef: string, newKekRef: string): Promise<any>;
+  test(aEntryName: string): void;
   
-  encrypt(dekName: string, kekRef: string, plaintext: u8[]): Promise<any>;
+  extract(zipEntry: string, outFile: nsIFile): void;
   
-  decrypt(dekName: string, kekRef: string, ciphertext: u8[]): Promise<any>;
+  getEntry(zipEntry: string): nsIZipEntry;
   
-  getDek(dekName: string, kekRef: string): Promise<any>;
+  hasEntry(zipEntry: string): boolean;
   
-  createKek(kekType: string, identifier: string, secret: string, cacheTimeoutMs: u64): Promise<any>;
+  findEntries(aPattern: string): nsIUTF8StringEnumerator;
   
-  deleteKek(kekRef: string): Promise<any>;
+  getInputStream(zipEntry: string): nsIInputStream;
+}
+
+
+interface nsIZipReaderCache extends nsISupports {
+  
+  init(cacheSize: u32): void;
+  
+  getZip(zipFile: nsIFile): nsIZipReader;
+  
+  getZipIfCached(zipFile: nsIFile): nsIZipReader;
+  
+  isCached(zipFile: nsIFile): boolean;
+  
+  getInnerZip(zipFile: nsIFile, zipEntry: string): nsIZipReader;
 }
 
 
 
 
-interface nsILoginInfo extends nsISupports {
+interface nsIZipWriter extends nsISupports {
   
-  readonly displayOrigin: string;
+  readonly COMPRESSION_NONE?: 0;
   
-  origin: string;
+  readonly COMPRESSION_FASTEST?: 1;
   
-  hostname: string;
+  readonly COMPRESSION_DEFAULT?: 6;
   
-  formActionOrigin: string;
+  readonly COMPRESSION_BEST?: 9;
+
   
-  formSubmitURL: string;
+  comment: string;
   
-  httpRealm: string;
+  readonly inQueue: boolean;
   
-  username: string;
+  readonly file: nsIFile;
   
-  usernameField: string;
+  open(aFile: nsIFile, aIoFlags: i32): void;
   
-  password: string;
+  getEntry(aZipEntry: string): nsIZipEntry;
   
-  passwordField: string;
+  hasEntry(aZipEntry: string): boolean;
   
-  unknownFields: string;
+  addEntryDirectory(aZipEntry: string, aModTime: PRTime, aQueue: boolean): void;
   
-  everSynced: boolean;
+  addEntryFile(aZipEntry: string, aCompression: i32, aFile: nsIFile, aQueue: boolean): void;
   
-  syncCounter: i32;
+  addEntryChannel(aZipEntry: string, aModTime: PRTime, aCompression: i32, aChannel: nsIChannel, aQueue: boolean): void;
   
-  init(aOrigin: string, aFormActionOrigin: string, aHttpRealm: string, aUsername: string, aPassword: string, aUsernameField?: string, aPasswordField?: string): void;
+  addEntryStream(aZipEntry: string, aModTime: PRTime, aCompression: i32, aStream: nsIInputStream, aQueue: boolean): void;
   
-  equals(aLoginInfo: nsILoginInfo): boolean;
+  removeEntry(aZipEntry: string, aQueue: boolean): void;
   
-  matches(aLoginInfo: nsILoginInfo, ignorePassword: boolean): boolean;
+  processQueue(aObserver: nsIRequestObserver, aContext: nsISupports): void;
   
-  clone(): nsILoginInfo;
+  close(): void;
+  
+  alignStoredFiles(aAlignSize: u16): void;
+}
+
+
+
+}  
+
+
+declare enum nsIPrefBranch_PreferenceType {
+  
+  PREF_INVALID = 0,
+  
+  PREF_STRING = 32,
+  
+  PREF_INT = 64,
+  
+  PREF_BOOL = 128,
+}
+
+declare global {
+
+namespace nsIPrefBranch {
+  type PreferenceType = nsIPrefBranch_PreferenceType;
+}
+
+
+interface nsIPrefBranch extends nsISupports, Enums<typeof nsIPrefBranch_PreferenceType> {
+  
+  readonly root: string;
+  
+  getPrefType(aPrefName: string): nsIPrefBranch.PreferenceType;
+  
+  getBoolPref(aPrefName: string, aDefaultValue?: boolean): boolean;
+  
+  setBoolPref(aPrefName: string, aValue: boolean): void;
+  
+  getFloatPref(aPrefName: string, aDefaultValue?: float): float;
+  
+  getCharPref(aPrefName: string, aDefaultValue?: string): string;
+  
+  setCharPref(aPrefName: string, aValue: string): void;
+  
+  getStringPref(aPrefName: string, aDefaultValue?: string): string;
+  
+  setStringPref(aPrefName: string, aValue: string): void;
+  
+  getIntPref(aPrefName: string, aDefaultValue?: i32): i32;
+  
+  setIntPref(aPrefName: string, aValue: i32): void;
+  
+  getComplexValue<T extends nsIID>(aPrefName: string, aType: T): nsQIResult<T>;
+  
+  setComplexValue(aPrefName: string, aType: nsID, aValue: nsISupports): void;
+  
+  clearUserPref(aPrefName: string): void;
+  
+  lockPref(aPrefName: string): void;
+  
+  prefHasUserValue(aPrefName: string): boolean;
+  
+  prefHasDefaultValue(aPrefName: string): boolean;
+  
+  prefIsLocked(aPrefName: string): boolean;
+  
+  prefIsSanitized(aPrefName: string): boolean;
+  
+  unlockPref(aPrefName: string): void;
+  
+  clearUserBranch(aStartingAt: string): void;
+  
+  deleteBranch(aStartingAt: string): void;
+  
+  getChildList(aStartingAt: string): string[];
+  
+  addObserver(aDomain: string, aObserver: nsIObserver, aHoldWeak?: boolean): void;
+  
+  removeObserver(aDomain: string, aObserver: nsIObserver): void;
 }
 
 
 
 
-interface nsILoginSearchCallback extends nsISupports {
-  
-  onSearchComplete(aLogins: nsILoginInfo[]): void;
-}
-
-
-interface nsILoginManager extends nsISupports {
-  
-  readonly initializationPromise: Promise<any>;
-  
-  addLoginAsync(aLogin: nsILoginInfo): Promise<any>;
-  
-  addLogins(aLogins: any): Promise<any>;
-  
-  removeLoginAsync(aLogin: nsILoginInfo): Promise<any>;
-  
-  modifyLoginAsync(oldLogin: nsILoginInfo, newLoginData: nsISupports): Promise<any>;
-  
-  recordPasswordUseAsync(aLogin: nsILoginInfo, aPrivateContextWithoutExplicitConsent: boolean, aLoginType: string, aFilled: boolean): Promise<any>;
-  
-  removeAllUserFacingLoginsAsync(): Promise<any>;
-  
-  removeAllLoginsAsync(): Promise<any>;
-  
-  getAllLogins(): Promise<any>;
-  
-  getAllLoginsWithCallback(aCallback: nsILoginSearchCallback): void;
-  
-  reencryptAllLogins(): Promise<any>;
-  
-  listInvalidOrigins(): Promise<any>;
-  
-  getAllDisabledHosts(): string[];
-  
-  getLoginSavingEnabled(aHost: string): boolean;
-  
-  setLoginSavingEnabled(aHost: string, isEnabled: boolean): void;
-  
-  findLogins(aOrigin: string, aActionOrigin: string, aHttpRealm: string): nsILoginInfo[];
-  
-  countLoginsAsync(aOrigin: string, aActionOrigin: string, aHttpRealm: string): Promise<any>;
-  
-  searchLoginsAsync(matchData: any): Promise<any>;
-  
-  getSyncID(): Promise<any>;
-  
-  setSyncID(syncID: string): Promise<any>;
-  
-  getLastSync(): Promise<any>;
-  
-  setLastSync(timestamp: double): Promise<any>;
-  
-  ensureCurrentSyncID(newSyncID: string): Promise<any>;
-  
-  addPotentiallyVulnerablePassword(aLogin: nsILoginInfo): Promise<any>;
-  
-  isPotentiallyVulnerablePassword(aLogin: nsILoginInfo): Promise<any>;
-  
-  recordBreachAlertDismissal(aLoginGUID: string): Promise<any>;
-  
-  getBreachAlertDismissalsByLoginGUID(): Promise<any>;
-  
-  arePotentiallyVulnerablePasswords(aLogins: any): Promise<any>;
-  
-  clearAllPotentiallyVulnerablePasswords(): Promise<any>;
-  
-  readonly uiBusy: boolean;
-  
-  readonly isLoggedIn: boolean;
+interface nsIPrefLocalizedString extends nsISupportsString {
 }
 
 
 
 
-interface nsILoginManagerAuthPrompter extends nsISupports {
+interface nsIPrefOverrideMap extends nsISupports {
   
-  init(aWindow: nsIDOMWindow): void;
+  addEntry(aPrefName: string, aPrefValue: any): void;
   
-  browser: Element;
+  getEntry(aPrefName: string): any;
 }
 
 
 
 
-interface nsILoginManagerCrypto extends nsISupports {
+type nsIPrefStatsCallback = Callable<{
   
-  readonly ENCTYPE_BASE64?: 0;
-  
-  readonly ENCTYPE_SDR?: 1;
-
-  
-  encrypt(plainText: string): string;
-  
-  encryptMany(plainTexts: any): Promise<any>;
-  
-  decrypt(cipherText: string): string;
-  
-  decryptMany(cipherTexts: any): Promise<any>;
-  
-  readonly uiBusy: boolean;
-  
-  readonly isLoggedIn: boolean;
-  
-  readonly defaultEncType: u32;
-}
-
-
-
-
-interface nsILoginManagerPrompter extends nsISupports {
-  
-  promptToSavePassword(aBrowser: Element, aLogin: nsILoginInfo, dismissed?: boolean, notifySaved?: boolean, autoFilledLoginGuid?: string, possibleValues?: any): nsIPromptInstance;
-  
-  promptToChangePassword(aBrowser: Element, aOldLogin: nsILoginInfo, aNewLogin: nsILoginInfo, dismissed?: boolean, notifySaved?: boolean, autoSavedLoginGuid?: string, autoFilledLoginGuid?: string, possibleValues?: any): nsIPromptInstance;
-  
-  promptToChangePasswordWithUsernames(aBrowser: Element, logins: nsILoginInfo[], aNewLogin: nsILoginInfo): nsIPromptInstance;
-}
-
-
-
-
-interface nsILoginMetaInfo extends nsISupports {
-  
-  guid: string;
-  
-  timeCreated: u64;
-  
-  timeLastUsed: u64;
-  
-  timePasswordChanged: u64;
-  
-  timesUsed: u32;
-  
-  timeLastBreachAlertDismissed: u64;
-}
-
-
-
-
-interface nsIPromptInstance extends nsISupports {
-  
-  dismiss(): void;
-}
-
-
-
-
-interface nsIEdgeMigrationUtils extends nsISupports {
-  
-  isDbLocked(aFile: nsIFile): Promise<any>;
-}
-
-
-
-
-interface nsIMIMEHeaderParam extends nsISupports {
-  
-  getParameter(aHeaderVal: string, aParamName: string, aFallbackCharset: string, aTryLocaleCharset: boolean, aLang: OutParam<string>): string;
-  
-  getParameterHTTP(aHeaderVal: string, aParamName: string, aFallbackCharset: string, aTryLocaleCharset: boolean, aLang: OutParam<string>): string;
-  
-  decodeRFC5987Param(aParamVal: string, aLang: OutParam<string>): string;
-}
-
-
-
-
-interface nsIHandlerInfo extends nsISupports {
-  
-  readonly saveToDisk?: 0;
-  
-  readonly alwaysAsk?: 1;
-  
-  readonly useHelperApp?: 2;
-  
-  readonly handleInternally?: 3;
-  
-  readonly useSystemDefault?: 4;
-
-  
-  readonly type: string;
-  
-  description: string;
-  
-  preferredApplicationHandler: nsIHandlerApp;
-  
-  readonly possibleApplicationHandlers: nsIMutableArray;
-  
-  readonly hasDefaultHandler: boolean;
-  
-  readonly defaultDescription: string;
-  
-  readonly defaultExecutable: nsIFile;
-  
-  launchWithURI(aURI: nsIURI, aBrowsingContext?: BrowsingContext): void;
-  
-  preferredAction: nsHandlerInfoAction;
-  
-  alwaysAskBeforeHandling: boolean;
-}
-
-
-interface nsIMIMEInfo extends nsIHandlerInfo {
-  
-  getFileExtensions(): nsIUTF8StringEnumerator;
-  
-  setFileExtensions(aExtensions: string): void;
-  
-  extensionExists(aExtension: string): boolean;
-  
-  appendExtension(aExtension: string): void;
-  
-  primaryExtension: string;
-  
-  readonly MIMEType: string;
-  
-  equals(aMIMEInfo: nsIMIMEInfo): boolean;
-  
-  readonly possibleLocalHandlers: nsIArray;
-  
-  launchWithFile(aFile: nsIFile): void;
-  
-  isCurrentAppOSDefault(): boolean;
-}
-
-
-interface nsIHandlerApp extends nsISupports {
-  
-  name: string;
-  
-  detailedDescription: string;
-  
-  equals(aHandlerApp: nsIHandlerApp): boolean;
-  
-  launchWithURI(aURI: nsIURI, aBrowsingContext?: BrowsingContext): void;
-}
-
-
-interface nsILocalHandlerApp extends nsIHandlerApp {
-  
-  executable: nsIFile;
-  
-  readonly parameterCount: u32;
-  
-  prettyNameAsync(): Promise<any>;
-  
-  clearParameters(): void;
-  
-  appendParameter(param: string): void;
-  
-  getParameter(parameterIndex: u32): string;
-  
-  parameterExists(param: string): boolean;
-}
-
-
-interface nsIWebHandlerApp extends nsIHandlerApp {
-  
-  uriTemplate: string;
-}
-
-
-interface nsIDBusHandlerApp extends nsIHandlerApp {
-  
-  service: string;
-  
-  objectPath: string;
-  
-  dBusInterface: string;
-  
-  method: string;
-}
-
-
-
-
-interface nsIMIMEService extends nsISupports {
-  
-  readonly VALIDATE_DEFAULT?: 0;
-  
-  readonly VALIDATE_SANITIZE_ONLY?: 1;
-  
-  readonly VALIDATE_DONT_COLLAPSE_WHITESPACE?: 2;
-  
-  readonly VALIDATE_DONT_TRUNCATE?: 4;
-  
-  readonly VALIDATE_GUESS_FROM_EXTENSION?: 8;
-  
-  readonly VALIDATE_ALLOW_EMPTY?: 16;
-  
-  readonly VALIDATE_NO_DEFAULT_FILENAME?: 32;
-  
-  readonly VALIDATE_FORCE_APPEND_EXTENSION?: 64;
-  
-  readonly VALIDATE_ALLOW_INVALID_FILENAMES?: 128;
-  
-  readonly VALIDATE_ALLOW_DIRECTORY_NAMES?: 256;
-
-  
-  getFromTypeAndExtension(aMIMEType: string, aFileExt: string): nsIMIMEInfo;
-  
-  getTypeFromExtension(aFileExt: string): string;
-  
-  getTypeFromURI(aURI: nsIURI): string;
-  
-  getDefaultTypeFromURI(aURI: nsIURI): string;
-  
-  getTypeFromFile(aFile: nsIFile): string;
-  
-  getPrimaryExtension(aMIMEType: string, aFileExt: string): string;
-  
-  getMIMEInfoFromOS(aType: string, aFileExtension: string, aFound: OutParam<boolean>): nsIMIMEInfo;
-  
-  updateDefaultAppInfo(aMIMEInfo: nsIMIMEInfo): void;
-  
-  getValidFileName(aChannel: nsIChannel, aType: string, aOriginalURI: nsIURI, aFlags: u32): string;
-  
-  validateFileNameForSaving(aFileName: string, aType: string, aFlags: u32): string;
-}
-
-
-
-
-type nsIMLModelDownloadProgressCallback = Callable<{
-  
-  onProgress(aProgress: i32, aCurrentLoaded: i64, aTotalLoaded: i64, aTotal: i64): void;
+  visit(prefName: string, accessCount: u32): void;
 }>
 
 
-interface nsIMLModelDownloadCompletionCallback extends nsISupports {
+interface nsIPrefObserver extends nsISupports {
   
-  onSuccess(aModel: string, aRevision: string): void;
+  onStringPref(kind: string, name: string, value: string, isSticky: boolean, isLocked: boolean): void;
   
-  onError(aError: string): void;
+  onIntPref(kind: string, name: string, value: i32, isSticky: boolean, isLocked: boolean): void;
+  
+  onBoolPref(kind: string, name: string, value: boolean, isSticky: boolean, isLocked: boolean): void;
+  
+  onError(message: string): void;
 }
 
 
-interface nsIMLModelHub extends nsISupports {
+interface nsIPrefService extends nsISupports {
   
-  isModelAvailable(aEngineId: string, aModel: string, aRevision: string, aFilename: string): Promise<any>;
+  resetPrefs(): void;
   
-  isModelInstalled(aEngineId: string, aModel: string, aRevision: string, aFilename: string): Promise<any>;
+  savePrefFile(aFile: nsIFile): void;
   
-  downloadModel(aEngineId: string, aTaskName: string, aModel: string, aRevision: string, aFiles: string[], aProgressToken: string, aProgressCallback: nsIMLModelDownloadProgressCallback, aCompletionCallback: nsIMLModelDownloadCompletionCallback): string;
+  backupPrefFile(aFile: nsIFile, aOverrideMap?: nsIPrefOverrideMap): Promise<any>;
   
-  cancelDownload(aProgressToken: string): void;
+  getBranch(aPrefRoot: string): nsIPrefBranch;
   
-  getModelBlob(aEngineId: string, aTaskName: string, aModel: string, aRevision: string, aFile: string): Promise<any>;
-}
-
-
-
-
-type nsIMLModelDownloadAuthorizationCallback = Callable<{
+  getDefaultBranch(aPrefRoot: string): nsIPrefBranch;
   
-  resolve(aAllow: boolean): void;
-}>
-
-
-interface nsIMLModelResolver extends nsISupports {
+  readonly dirty: boolean;
   
-  resolve(aId: string, aEngine: OutParam<string>, aModel: OutParam<string>, aRevision: OutParam<string>, aFilename: OutParam<string>): void;
+  readDefaultPrefsFromFile(aFile: nsIFile): void;
   
-  authorizeDownload(aModel: string, aRevision: string, aFilename: string, aWindow: WindowGlobalParent, aProgressToken: string, aCallback: nsIMLModelDownloadAuthorizationCallback): void;
-}
-
-
-
-
-interface nsIMLUtils extends nsISupports {
+  readUserPrefsFromFile(aFile: nsIFile): void;
   
-  readonly totalPhysicalMemory: u64;
+  readStats(callback: nsIPrefStatsCallback): void;
   
-  readonly availablePhysicalMemory: u64;
+  resetStats(): void;
   
-  getOptimalCPUConcurrency(): u8;
+  parsePrefsFromBuffer(bytes: u8[], observer: nsIPrefObserver, pathLabel?: string): void;
   
-  canUseLlamaCpp(): boolean;
+  readonly userPrefsFileLastModifiedAtStartup: PRTime;
+  
+  readonly prefsJsPreamble: string;
 }
 
 
 
 
-interface nsIFind extends nsISupports {
+interface nsIRelativeFilePref extends nsISupports {
   
-  findBackwards: boolean;
+  file: nsIFile;
   
-  caseSensitive: boolean;
-  
-  entireWord: boolean;
-  
-  matchDiacritics: boolean;
-  
-  Find(aPatText: string, aSearchRange: Range, aStartPoint: Range, aEndPoint: Range): Range;
+  relativeToKey: string;
 }
 
 
 
 
-interface nsIFindService extends nsISupports {
+interface nsISFVBareItem extends nsISupports {
   
-  searchString: string;
+  readonly BOOL?: 1;
   
-  replaceString: string;
+  readonly STRING?: 2;
   
-  findBackwards: boolean;
+  readonly DECIMAL?: 3;
   
-  wrapFind: boolean;
+  readonly INTEGER?: 4;
   
-  entireWord: boolean;
+  readonly TOKEN?: 5;
   
-  matchCase: boolean;
+  readonly BYTE_SEQUENCE?: 6;
+
   
-  matchDiacritics: boolean;
+  readonly type: i32;
 }
 
 
-
-
-interface nsIWebBrowserFind extends nsISupports {
+interface nsISFVInteger extends nsISFVBareItem {
   
-  findNext(): boolean;
-  
-  searchString: string;
-  
-  findBackwards: boolean;
-  
-  wrapFind: boolean;
-  
-  entireWord: boolean;
-  
-  matchCase: boolean;
-  
-  matchDiacritics: boolean;
-  
-  searchFrames: boolean;
+  value: i64;
 }
 
 
-interface nsIWebBrowserFindInFrames extends nsISupports {
+interface nsISFVString extends nsISFVBareItem {
   
-  currentSearchFrame: mozIDOMWindowProxy;
-  
-  rootSearchFrame: mozIDOMWindowProxy;
-  
-  searchSubframes: boolean;
-  
-  searchParentFrames: boolean;
+  value: string;
 }
 
 
-
-
-interface mozIMozIntl extends nsISupports {
+interface nsISFVBool extends nsISFVBareItem {
   
-  getCalendarInfo(locales?: any): any;
-  
-  getDisplayNamesDeprecated(locales?: any, options?: any): any;
-  
-  getAvailableLocaleDisplayNames(type: any): any;
-  
-  getLanguageDisplayNames(locales: any, langCodes: any): any;
-  
-  getRegionDisplayNames(locales: any, regionCodes: any): any;
-  
-  getLocaleDisplayNames(locales: any, localeCodes: any, options?: any): any;
-  
-  getScriptDirection(locale: any): any;
-  
-  stringHasRTLChars(str: any): boolean;
-  
-  readonly Collator: any;
-  
-  readonly DateTimeFormat: any;
-  
-  readonly DisplayNames: any;
-  
-  readonly ListFormat: any;
-  
-  readonly Locale: any;
-  
-  readonly NumberFormat: any;
-  
-  readonly PluralRules: any;
-  
-  readonly RelativeTimeFormat: any;
+  value: boolean;
 }
 
 
+interface nsISFVDecimal extends nsISFVBareItem {
+  
+  value: double;
+}
 
 
-interface mozIMozIntlHelper extends nsISupports {
+interface nsISFVToken extends nsISFVBareItem {
   
-  addGetCalendarInfo(intlObject: any): void;
+  value: string;
+}
+
+
+interface nsISFVByteSeq extends nsISFVBareItem {
   
-  addDateTimeFormatConstructor(intlObject: any): void;
+  value: string;
+}
+
+
+interface nsISFVParams extends nsISupports {
   
-  addDisplayNamesConstructor(intlObject: any): void;
+  get(key: string): nsISFVBareItem;
   
-  stringHasRTLChars(str: any): boolean;
+  set(key: string, item: nsISFVBareItem): void;
+  
+  delete(key: string): void;
+  
+  keys(): string[];
+}
+
+
+interface nsISFVParametrizable extends nsISupports {
+  
+  readonly params: nsISFVParams;
+}
+
+
+interface nsISFVItemOrInnerList extends nsISFVParametrizable {
+}
+
+
+interface nsISFVSerialize extends nsISupports {
+  
+  serialize(): string;
+}
+
+
+interface nsISFVItem extends nsISFVItemOrInnerList {
+  
+  readonly value: nsISFVBareItem;
+  
+  serialize(): string;
+}
+
+
+interface nsISFVInnerList extends nsISFVItemOrInnerList {
+  
+  items: nsISFVItem[];
+}
+
+
+interface nsISFVList extends nsISFVSerialize {
+  
+  members: nsISFVItemOrInnerList[];
+  
+  parseMore(header: string): void;
+}
+
+
+interface nsISFVDictionary extends nsISFVSerialize {
+  
+  get(key: string): nsISFVItemOrInnerList;
+  
+  set(key: string, member_value: nsISFVItemOrInnerList): void;
+  
+  delete(key: string): void;
+  
+  keys(): string[];
+  
+  parseMore(header: string): void;
+}
+
+
+interface nsISFVService extends nsISupports {
+  
+  parseDictionary(header: string): nsISFVDictionary;
+  
+  parseList(header: string): nsISFVList;
+  
+  parseItem(header: string): nsISFVItem;
+  
+  newInteger(value: i64): nsISFVInteger;
+  
+  newBool(value: boolean): nsISFVBool;
+  
+  newDecimal(value: double): nsISFVDecimal;
+  
+  newString(value: string): nsISFVString;
+  
+  newByteSequence(value: string): nsISFVByteSeq;
+  
+  newToken(value: string): nsISFVToken;
+  
+  newParameters(): nsISFVParams;
+  
+  newInnerList(items: nsISFVItem[], params: nsISFVParams): nsISFVInnerList;
+  
+  newItem(value: nsISFVBareItem, params: nsISFVParams): nsISFVItem;
+  
+  newList(members: nsISFVItemOrInnerList[]): nsISFVList;
+  
+  newDictionary(): nsISFVDictionary;
 }
 
 
@@ -13568,41 +12706,6 @@ interface nsPISocketTransportService extends nsIRoutedSocketTransportService {
 
 
 
-interface nsIAboutModule extends nsISupports {
-  
-  readonly URI_SAFE_FOR_UNTRUSTED_CONTENT?: 1;
-  
-  readonly ALLOW_SCRIPT?: 2;
-  
-  readonly HIDE_FROM_ABOUTABOUT?: 4;
-  
-  readonly ENABLE_INDEXED_DB?: 8;
-  
-  readonly URI_CAN_LOAD_IN_CHILD?: 16;
-  
-  readonly URI_MUST_LOAD_IN_CHILD?: 32;
-  
-  readonly MAKE_UNLINKABLE?: 64;
-  
-  readonly MAKE_LINKABLE?: 128;
-  
-  readonly URI_CAN_LOAD_IN_PRIVILEGEDABOUT_PROCESS?: 256;
-  
-  readonly URI_MUST_LOAD_IN_EXTENSION_PROCESS?: 512;
-  
-  readonly IS_SECURE_CHROME_UI?: 1024;
-
-  
-  newChannel(aURI: nsIURI, aLoadInfo: nsILoadInfo): nsIChannel;
-  
-  getURIFlags(aURI: nsIURI): u32;
-  
-  getChromeURI(aURI: nsIURI): nsIURI;
-}
-
-
-
-
 interface nsICacheEntry extends nsISupports {
   
   readonly CONTENT_TYPE_UNKNOWN?: 0;
@@ -14678,6 +13781,215 @@ interface nsPIDNSService extends nsIDNSService {
 
 
 
+interface nsIMIMEHeaderParam extends nsISupports {
+  
+  getParameter(aHeaderVal: string, aParamName: string, aFallbackCharset: string, aTryLocaleCharset: boolean, aLang: OutParam<string>): string;
+  
+  getParameterHTTP(aHeaderVal: string, aParamName: string, aFallbackCharset: string, aTryLocaleCharset: boolean, aLang: OutParam<string>): string;
+  
+  decodeRFC5987Param(aParamVal: string, aLang: OutParam<string>): string;
+}
+
+
+
+
+interface nsIHandlerInfo extends nsISupports {
+  
+  readonly saveToDisk?: 0;
+  
+  readonly alwaysAsk?: 1;
+  
+  readonly useHelperApp?: 2;
+  
+  readonly handleInternally?: 3;
+  
+  readonly useSystemDefault?: 4;
+
+  
+  readonly type: string;
+  
+  description: string;
+  
+  preferredApplicationHandler: nsIHandlerApp;
+  
+  readonly possibleApplicationHandlers: nsIMutableArray;
+  
+  readonly hasDefaultHandler: boolean;
+  
+  readonly defaultDescription: string;
+  
+  readonly defaultExecutable: nsIFile;
+  
+  launchWithURI(aURI: nsIURI, aBrowsingContext?: BrowsingContext): void;
+  
+  preferredAction: nsHandlerInfoAction;
+  
+  alwaysAskBeforeHandling: boolean;
+}
+
+
+interface nsIMIMEInfo extends nsIHandlerInfo {
+  
+  getFileExtensions(): nsIUTF8StringEnumerator;
+  
+  setFileExtensions(aExtensions: string): void;
+  
+  extensionExists(aExtension: string): boolean;
+  
+  appendExtension(aExtension: string): void;
+  
+  primaryExtension: string;
+  
+  readonly MIMEType: string;
+  
+  equals(aMIMEInfo: nsIMIMEInfo): boolean;
+  
+  readonly possibleLocalHandlers: nsIArray;
+  
+  launchWithFile(aFile: nsIFile): void;
+  
+  isCurrentAppOSDefault(): boolean;
+}
+
+
+interface nsIHandlerApp extends nsISupports {
+  
+  name: string;
+  
+  detailedDescription: string;
+  
+  equals(aHandlerApp: nsIHandlerApp): boolean;
+  
+  launchWithURI(aURI: nsIURI, aBrowsingContext?: BrowsingContext): void;
+}
+
+
+interface nsILocalHandlerApp extends nsIHandlerApp {
+  
+  executable: nsIFile;
+  
+  readonly parameterCount: u32;
+  
+  prettyNameAsync(): Promise<any>;
+  
+  clearParameters(): void;
+  
+  appendParameter(param: string): void;
+  
+  getParameter(parameterIndex: u32): string;
+  
+  parameterExists(param: string): boolean;
+}
+
+
+interface nsIWebHandlerApp extends nsIHandlerApp {
+  
+  uriTemplate: string;
+}
+
+
+interface nsIDBusHandlerApp extends nsIHandlerApp {
+  
+  service: string;
+  
+  objectPath: string;
+  
+  dBusInterface: string;
+  
+  method: string;
+}
+
+
+
+
+interface nsIMIMEService extends nsISupports {
+  
+  readonly VALIDATE_DEFAULT?: 0;
+  
+  readonly VALIDATE_SANITIZE_ONLY?: 1;
+  
+  readonly VALIDATE_DONT_COLLAPSE_WHITESPACE?: 2;
+  
+  readonly VALIDATE_DONT_TRUNCATE?: 4;
+  
+  readonly VALIDATE_GUESS_FROM_EXTENSION?: 8;
+  
+  readonly VALIDATE_ALLOW_EMPTY?: 16;
+  
+  readonly VALIDATE_NO_DEFAULT_FILENAME?: 32;
+  
+  readonly VALIDATE_FORCE_APPEND_EXTENSION?: 64;
+  
+  readonly VALIDATE_ALLOW_INVALID_FILENAMES?: 128;
+  
+  readonly VALIDATE_ALLOW_DIRECTORY_NAMES?: 256;
+
+  
+  getFromTypeAndExtension(aMIMEType: string, aFileExt: string): nsIMIMEInfo;
+  
+  getTypeFromExtension(aFileExt: string): string;
+  
+  getTypeFromURI(aURI: nsIURI): string;
+  
+  getDefaultTypeFromURI(aURI: nsIURI): string;
+  
+  getTypeFromFile(aFile: nsIFile): string;
+  
+  getPrimaryExtension(aMIMEType: string, aFileExt: string): string;
+  
+  getMIMEInfoFromOS(aType: string, aFileExtension: string, aFound: OutParam<boolean>): nsIMIMEInfo;
+  
+  updateDefaultAppInfo(aMIMEInfo: nsIMIMEInfo): void;
+  
+  getValidFileName(aChannel: nsIChannel, aType: string, aOriginalURI: nsIURI, aFlags: u32): string;
+  
+  validateFileNameForSaving(aFileName: string, aType: string, aFlags: u32): string;
+}
+
+
+
+
+interface nsIAboutModule extends nsISupports {
+  
+  readonly URI_SAFE_FOR_UNTRUSTED_CONTENT?: 1;
+  
+  readonly ALLOW_SCRIPT?: 2;
+  
+  readonly HIDE_FROM_ABOUTABOUT?: 4;
+  
+  readonly ENABLE_INDEXED_DB?: 8;
+  
+  readonly URI_CAN_LOAD_IN_CHILD?: 16;
+  
+  readonly URI_MUST_LOAD_IN_CHILD?: 32;
+  
+  readonly MAKE_UNLINKABLE?: 64;
+  
+  readonly MAKE_LINKABLE?: 128;
+  
+  readonly URI_CAN_LOAD_IN_PRIVILEGEDABOUT_PROCESS?: 256;
+  
+  readonly URI_MUST_LOAD_IN_EXTENSION_PROCESS?: 512;
+  
+  readonly IS_SECURE_CHROME_UI?: 1024;
+
+  
+  newChannel(aURI: nsIURI, aLoadInfo: nsILoadInfo): nsIChannel;
+  
+  getURIFlags(aURI: nsIURI): u32;
+  
+  getChromeURI(aURI: nsIURI): nsIURI;
+}
+
+
+
+
+interface nsIDataChannel extends nsISupports {
+}
+
+
+
+
 interface nsIFileChannel extends nsISupports {
   
   readonly file: nsIFile;
@@ -14701,12 +14013,6 @@ interface nsIFileProtocolHandler extends nsIProtocolHandler {
   readURLFile(file: nsIFile): nsIURI;
   
   readShellLink(file: nsIFile): nsIURI;
-}
-
-
-
-
-interface nsIDataChannel extends nsISupports {
 }
 
 
@@ -15294,14 +14600,6 @@ interface nsIWellKnownOpportunisticUtils extends nsISupports {
 
 
 
-interface nsICompressConvStats extends nsISupports {
-  
-  readonly decodedDataLength: u64;
-}
-
-
-
-
 interface nsIResProtocolHandler extends nsISubstitutingProtocolHandler {
   
   allowContentToAccess(url: nsIURI): boolean;
@@ -15326,136 +14624,6 @@ interface nsISubstitutingProtocolHandler extends nsIProtocolHandler {
   hasSubstitution(root: string): boolean;
   
   resolveURI(resURI: nsIURI): string;
-}
-
-
-
-
-interface nsISocketProvider extends nsISupports {
-  
-  readonly PROXY_RESOLVES_HOST?: 1;
-  
-  readonly ANONYMOUS_CONNECT?: 2;
-  
-  readonly NO_PERMANENT_STORAGE?: 4;
-  
-  readonly BE_CONSERVATIVE?: 8;
-  
-  readonly ANONYMOUS_CONNECT_ALLOW_CLIENT_CERT?: 16;
-  
-  readonly IS_SPECULATIVE_CONNECTION?: 32;
-  
-  readonly DONT_TRY_ECH?: 1024;
-  
-  readonly IS_RETRY?: 2048;
-  
-  readonly USED_PRIVATE_DNS?: 4096;
-}
-
-
-
-
-interface nsISocketProviderService extends nsISupports {
-  
-  getSocketProvider(socketType: string): nsISocketProvider;
-}
-
-
-
-
-interface mozITXTToHTMLConv extends nsIStreamConverter {
-  
-  readonly kEntities?: 0;
-  
-  readonly kURLs?: 2;
-  
-  readonly kGlyphSubstitution?: 4;
-  
-  readonly kStructPhrase?: 8;
-
-  
-  scanTXT(text: string, whattodo: u32): string;
-  
-  scanHTML(text: string, whattodo: u32): string;
-  
-  citeLevelTXT(line: string, logLineStart: OutParam<u32>): u32;
-  
-  findURLInPlaintext(text: string, aLength: i32, aPos: i32, aStartPos: OutParam<i32>, aEndPos: OutParam<i32>): void;
-}
-
-
-
-
-interface nsIDirIndex extends nsISupports {
-  
-  readonly TYPE_UNKNOWN?: 0;
-  
-  readonly TYPE_DIRECTORY?: 1;
-  
-  readonly TYPE_FILE?: 2;
-  
-  readonly TYPE_SYMLINK?: 3;
-
-  
-  type: u32;
-  
-  location: string;
-  
-  size: i64;
-  
-  lastModified: PRTime;
-}
-
-
-
-
-interface nsIDirIndexListener extends nsISupports {
-  
-  onIndexAvailable(aRequest: nsIRequest, aIndex: nsIDirIndex): void;
-}
-
-
-interface nsIDirIndexParser extends nsIStreamListener {
-  
-  listener: nsIDirIndexListener;
-}
-
-
-
-
-interface nsIStreamConverter extends nsIThreadRetargetableStreamListener {
-  
-  convert(aFromStream: nsIInputStream, aFromType: string, aToType: string, aCtxt: nsISupports): nsIInputStream;
-  
-  asyncConvertData(aFromType: string, aToType: string, aListener: nsIStreamListener, aCtxt: nsISupports): void;
-  
-  maybeRetarget(request: nsIRequest): void;
-  
-  getConvertedType(aFromType: string, aChannel: nsIChannel): string;
-}
-
-
-
-
-interface nsIStreamConverterService extends nsISupports {
-  
-  canConvert(aFromType: string, aToType: string): boolean;
-  
-  convertedType(aFromType: string, aChannel: nsIChannel): string;
-  
-  convert(aFromStream: nsIInputStream, aFromType: string, aToType: string, aContext: nsISupports): nsIInputStream;
-  
-  asyncConvertData(aFromType: string, aToType: string, aListener: nsIStreamListener, aContext: nsISupports): nsIStreamListener;
-}
-
-
-
-
-interface nsITXTToHTMLConv extends nsIStreamConverter {
-  
-  setTitle(text: string): void;
-  
-  preFormatHTML(value: boolean): void;
 }
 
 
@@ -15851,6 +15019,462 @@ interface nsIWebTransportBidirectionalStream extends nsISupports {
 
 
 
+interface nsISocketProvider extends nsISupports {
+  
+  readonly PROXY_RESOLVES_HOST?: 1;
+  
+  readonly ANONYMOUS_CONNECT?: 2;
+  
+  readonly NO_PERMANENT_STORAGE?: 4;
+  
+  readonly BE_CONSERVATIVE?: 8;
+  
+  readonly ANONYMOUS_CONNECT_ALLOW_CLIENT_CERT?: 16;
+  
+  readonly IS_SPECULATIVE_CONNECTION?: 32;
+  
+  readonly DONT_TRY_ECH?: 1024;
+  
+  readonly IS_RETRY?: 2048;
+  
+  readonly USED_PRIVATE_DNS?: 4096;
+}
+
+
+
+
+interface nsISocketProviderService extends nsISupports {
+  
+  getSocketProvider(socketType: string): nsISocketProvider;
+}
+
+
+
+
+interface nsICompressConvStats extends nsISupports {
+  
+  readonly decodedDataLength: u64;
+}
+
+
+
+
+interface mozITXTToHTMLConv extends nsIStreamConverter {
+  
+  readonly kEntities?: 0;
+  
+  readonly kURLs?: 2;
+  
+  readonly kGlyphSubstitution?: 4;
+  
+  readonly kStructPhrase?: 8;
+
+  
+  scanTXT(text: string, whattodo: u32): string;
+  
+  scanHTML(text: string, whattodo: u32): string;
+  
+  citeLevelTXT(line: string, logLineStart: OutParam<u32>): u32;
+  
+  findURLInPlaintext(text: string, aLength: i32, aPos: i32, aStartPos: OutParam<i32>, aEndPos: OutParam<i32>): void;
+}
+
+
+
+
+interface nsIDirIndex extends nsISupports {
+  
+  readonly TYPE_UNKNOWN?: 0;
+  
+  readonly TYPE_DIRECTORY?: 1;
+  
+  readonly TYPE_FILE?: 2;
+  
+  readonly TYPE_SYMLINK?: 3;
+
+  
+  type: u32;
+  
+  location: string;
+  
+  size: i64;
+  
+  lastModified: PRTime;
+}
+
+
+
+
+interface nsIDirIndexListener extends nsISupports {
+  
+  onIndexAvailable(aRequest: nsIRequest, aIndex: nsIDirIndex): void;
+}
+
+
+interface nsIDirIndexParser extends nsIStreamListener {
+  
+  listener: nsIDirIndexListener;
+}
+
+
+
+
+interface nsIStreamConverter extends nsIThreadRetargetableStreamListener {
+  
+  convert(aFromStream: nsIInputStream, aFromType: string, aToType: string, aCtxt: nsISupports): nsIInputStream;
+  
+  asyncConvertData(aFromType: string, aToType: string, aListener: nsIStreamListener, aCtxt: nsISupports): void;
+  
+  maybeRetarget(request: nsIRequest): void;
+  
+  getConvertedType(aFromType: string, aChannel: nsIChannel): string;
+}
+
+
+
+
+interface nsIStreamConverterService extends nsISupports {
+  
+  canConvert(aFromType: string, aToType: string): boolean;
+  
+  convertedType(aFromType: string, aChannel: nsIChannel): string;
+  
+  convert(aFromStream: nsIInputStream, aFromType: string, aToType: string, aContext: nsISupports): nsIInputStream;
+  
+  asyncConvertData(aFromType: string, aToType: string, aListener: nsIStreamListener, aContext: nsISupports): nsIStreamListener;
+}
+
+
+
+
+interface nsITXTToHTMLConv extends nsIStreamConverter {
+  
+  setTitle(text: string): void;
+  
+  preFormatHTML(value: boolean): void;
+}
+
+
+
+
+interface nsIHttpServer extends nsISupports {
+  
+  start(port: i32): void;
+  
+  start_ipv6(port: i32): void;
+  
+  start_dualStack(port: i32): void;
+  
+  stop(callback: nsIHttpServerStoppedCallback): void;
+  
+  registerFile(path: string, file: nsIFile, handler?: nsIHttpRequestHandler): void;
+  
+  registerPathHandler(path: string, handler: nsIHttpRequestHandler): void;
+  
+  registerPrefixHandler(prefix: string, handler: nsIHttpRequestHandler): void;
+  
+  registerErrorHandler(code: u32, handler: nsIHttpRequestHandler): void;
+  
+  registerDirectory(path: string, dir: nsIFile): void;
+  
+  registerContentType(extension: string, type: string): void;
+  
+  setIndexHandler(handler: nsIHttpRequestHandler): void;
+  
+  readonly identity: nsIHttpServerIdentity;
+  
+  getState(path: string, key: string): string;
+  
+  setState(path: string, key: string, value: string): void;
+  
+  getSharedState(key: string): string;
+  
+  setSharedState(key: string, value: string): void;
+  
+  getObjectState(key: string): nsISupports;
+  
+  setObjectState(key: string, value: nsISupports): void;
+}
+
+
+type nsIHttpServerStoppedCallback = Callable<{
+  
+  onStopped(): void;
+}>
+
+
+interface nsIHttpServerIdentity extends nsISupports {
+  
+  readonly primaryScheme: string;
+  
+  readonly primaryHost: string;
+  
+  readonly primaryPort: i32;
+  
+  add(scheme: string, host: string, port: i32): void;
+  
+  remove(scheme: string, host: string, port: i32): boolean;
+  
+  has(scheme: string, host: string, port: i32): boolean;
+  
+  getScheme(host: string, port: i32): string;
+  
+  setPrimary(scheme: string, host: string, port: i32): void;
+}
+
+
+type nsIHttpRequestHandler = Callable<{
+  
+  handle(request: nsIHttpRequest, response: nsIHttpResponse): void;
+}>
+
+
+interface nsIHttpRequest extends nsISupports {
+  
+  readonly method: string;
+  
+  readonly scheme: string;
+  
+  readonly host: string;
+  
+  readonly port: u32;
+  
+  readonly path: string;
+  
+  readonly queryString: string;
+  
+  readonly httpVersion: string;
+  
+  getHeader(fieldName: string): string;
+  
+  hasHeader(fieldName: string): boolean;
+  
+  readonly headers: nsISimpleEnumerator;
+  
+  readonly bodyInputStream: nsIInputStream;
+}
+
+
+interface nsIHttpResponse extends nsISupports {
+  
+  setStatusLine(httpVersion: string, statusCode: u16, description: string): void;
+  
+  setHeader(name: string, value: string, merge?: boolean): void;
+  
+  setHeaderNoCheck(name: string, value: string): void;
+  
+  readonly bodyOutputStream: nsIOutputStream;
+  
+  write(data: string): void;
+  
+  processAsync(): void;
+  
+  seizePower(): void;
+  
+  finish(): void;
+}
+
+
+
+
+interface nsIUrlClassifierBlockedChannel extends nsISupports {
+  
+  readonly TRACKING_PROTECTION?: 0;
+  
+  readonly SOCIAL_TRACKING_PROTECTION?: 1;
+  
+  readonly FINGERPRINTING_PROTECTION?: 2;
+  
+  readonly CRYPTOMINING_PROTECTION?: 3;
+
+  
+  readonly reason: u8;
+  
+  readonly tables: string;
+  
+  readonly url: string;
+  
+  readonly tabId: u64;
+  
+  readonly channelId: u64;
+  
+  readonly isPrivateBrowsing: boolean;
+  
+  readonly topLevelUrl: string;
+  
+  readonly browserId: u64;
+  
+  readonly channel: nsIChannel;
+  
+  replace(): void;
+  
+  allow(): void;
+}
+
+
+interface nsIChannelClassifierService extends nsISupports {
+  
+  addListener(aObserver: nsIObserver): void;
+  
+  removeListener(aObserver: nsIObserver): void;
+}
+
+
+
+
+type nsIURIClassifierCallback = Callable<{
+  
+  onClassifyComplete(aErrorCode: nsresult, aList: string, aProvider: string, aFullHash: string): void;
+}>
+
+
+interface nsIURIClassifier extends nsISupports {
+  
+  classify(aPrincipal: nsIPrincipal, aCallback: nsIURIClassifierCallback): boolean;
+  
+  asyncClassifyLocalWithFeatures(aURI: nsIURI, aFeatures: nsIUrlClassifierFeature[], aListType: nsIUrlClassifierFeature.listType, aCallback: nsIUrlClassifierFeatureCallback, aIdlePriority?: boolean): void;
+  
+  asyncClassifyLocalWithFeatureNames(aURI: nsIURI, aFeatures: string[], aListType: nsIUrlClassifierFeature.listType, aCallback: nsIUrlClassifierFeatureCallback): void;
+  
+  getFeatureByName(aFeatureName: string): nsIUrlClassifierFeature;
+  
+  getFeatureNames(): string[];
+  
+  createFeatureWithTables(aName: string, aBlocklistTables: string[], aEntitylistTables: string[]): nsIUrlClassifierFeature;
+  
+  sendThreatHitReport(aChannel: nsIChannel, aProvider: string, aList: string, aFullHash: string): void;
+}
+
+
+
+
+interface nsIUrlClassifierExceptionList extends nsISupports {
+  
+  init(aFeature: string): void;
+  
+  addEntry(aEntry: nsIUrlClassifierExceptionListEntry): void;
+  
+  matches(aURI: nsIURI, aTopLevelURI: nsIURI, aIsPrivateBrowsing: boolean): boolean;
+  
+  testGetEntries(): nsIUrlClassifierExceptionListEntry[];
+}
+
+
+
+}  
+
+
+declare enum nsIUrlClassifierExceptionListEntry_Category {
+  
+  CATEGORY_INTERNAL_PREF = 0,
+  
+  CATEGORY_BASELINE = 1,
+  
+  CATEGORY_CONVENIENCE = 2,
+}
+
+declare global {
+
+namespace nsIUrlClassifierExceptionListEntry {
+  type Category = nsIUrlClassifierExceptionListEntry_Category;
+}
+
+
+interface nsIUrlClassifierExceptionListEntry extends nsISupports, Enums<typeof nsIUrlClassifierExceptionListEntry_Category> {
+  
+  init(aCategory: nsIUrlClassifierExceptionListEntry.Category, aUrlPattern: string, aTopLevelUrlPattern: string, aIsPrivateBrowsingOnly: boolean, aFilterContentBlockingCategories: string[], aClassifierFeatures: string[]): void;
+  
+  matches(aURI: nsIURI, aTopLevelURI: nsIURI, aIsPrivateBrowsing: boolean): boolean;
+  
+  readonly category: nsIUrlClassifierExceptionListEntry.Category;
+  
+  readonly urlPattern: string;
+  
+  readonly topLevelUrlPattern: string;
+  
+  readonly isPrivateBrowsingOnly: boolean;
+  
+  readonly filterContentBlockingCategories: string[];
+  
+  readonly classifierFeatures: string[];
+}
+
+
+
+
+type nsIUrlClassifierExceptionListObserver = Callable<{
+  
+  onExceptionListUpdate(aList: nsIUrlClassifierExceptionList): void;
+}>
+
+
+interface nsIUrlClassifierExceptionListService extends nsISupports {
+  
+  registerAndRunExceptionListObserver(aFeature: string, aPrefName: string, aObserver: nsIUrlClassifierExceptionListObserver): void;
+  
+  unregisterExceptionListObserver(aFeature: string, aObserver: nsIUrlClassifierExceptionListObserver): void;
+  
+  clear(): void;
+  
+  maybeMigrateCategoryPrefs(): void;
+}
+
+
+
+}  
+
+
+declare enum nsIUrlClassifierFeature_listType {
+  
+  blocklist = 0,
+  
+  entitylist = 1,
+}
+
+
+declare enum nsIUrlClassifierFeature_URIType {
+  
+  blocklistURI = 0,
+  
+  entitylistURI = 1,
+  
+  pairwiseEntitylistURI = 2,
+}
+
+declare global {
+
+namespace nsIUrlClassifierFeature {
+  type listType = nsIUrlClassifierFeature_listType;
+  type URIType = nsIUrlClassifierFeature_URIType;
+}
+
+
+interface nsIUrlClassifierFeature extends nsISupports, Enums<typeof nsIUrlClassifierFeature_listType & typeof nsIUrlClassifierFeature_URIType> {
+  
+  readonly name: string;
+  
+  readonly exceptionList: nsIUrlClassifierExceptionList;
+}
+
+
+interface nsIUrlClassifierFeatureResult extends nsISupports {
+  
+  readonly uri: nsIURI;
+  
+  readonly feature: nsIUrlClassifierFeature;
+  
+  readonly list: string;
+}
+
+
+type nsIUrlClassifierFeatureCallback = Callable<{
+  
+  onClassifyComplete(aResults: nsIUrlClassifierFeatureResult[]): void;
+}>
+
+
+
+
 interface nsIWifiAccessPoint extends nsISupports {
   
   readonly mac: string;
@@ -15885,150 +15509,116 @@ interface nsIWifiMonitor extends nsISupports {
 
 
 
-interface nsIParentalControlsService extends nsISupports {
+interface nsIParserUtils extends nsISupports {
   
-  readonly DOWNLOAD?: 1;
+  readonly SanitizerAllowComments?: 1;
   
-  readonly INSTALL_EXTENSION?: 2;
+  readonly SanitizerAllowStyle?: 2;
   
-  readonly INSTALL_APP?: 3;
+  readonly SanitizerCidEmbedsOnly?: 4;
   
-  readonly BROWSE?: 4;
+  readonly SanitizerDropNonCSSPresentation?: 8;
   
-  readonly SHARE?: 5;
+  readonly SanitizerDropForms?: 16;
   
-  readonly BOOKMARK?: 6;
+  readonly SanitizerDropMedia?: 32;
   
-  readonly ADD_CONTACT?: 7;
-  
-  readonly SET_IMAGE?: 8;
-  
-  readonly MODIFY_ACCOUNTS?: 9;
-  
-  readonly REMOTE_DEBUGGING?: 10;
-  
-  readonly IMPORT_SETTINGS?: 11;
-  
-  readonly PRIVATE_BROWSING?: 12;
-  
-  readonly DATA_CHOICES?: 13;
-  
-  readonly CLEAR_HISTORY?: 14;
-  
-  readonly MASTER_PASSWORD?: 15;
-  
-  readonly GUEST_BROWSING?: 16;
-  
-  readonly ADVANCED_SETTINGS?: 17;
-  
-  readonly CAMERA_MICROPHONE?: 18;
-  
-  readonly BLOCK_LIST?: 19;
-  
-  readonly TELEMETRY?: 20;
-  
-  readonly HEALTH_REPORT?: 21;
-  
-  readonly DEFAULT_THEME?: 22;
-  
-  readonly ePCLog_URIVisit?: 1;
-  
-  readonly ePCLog_FileDownload?: 2;
+  readonly SanitizerLogRemovals?: 64;
 
   
-  readonly parentalControlsEnabled: boolean;
+  sanitize(src: string, flags: u32): string;
   
-  readonly blockFileDownloadsEnabled: boolean;
+  removeConditionalCSS(src: string): string;
   
-  isAllowed(aAction: i16, aUri?: nsIURI): boolean;
+  convertToPlainText(src: string, flags: u32, wrapCol: u32): string;
   
-  readonly loggingEnabled: boolean;
-  
-  log(aEntryType: i16, aFlag: boolean, aSource: nsIURI, aTarget?: nsIFile): void;
+  parseFragment(fragment: string, flags: u32, isXML: boolean, baseURI: nsIURI, element: Element): DocumentFragment;
 }
 
 
 
 
-interface IPeerConnectionObserver extends nsISupports {
-}
-
-
-interface IPeerConnection extends nsISupports {
+interface nsIExpatSink extends nsISupports {
   
-  readonly kHintAudio?: 1;
+  HandleStartElement(aName: string, aAtts: string[], aAttsCount: u32, aLineNumber: u32, aColumnNumber: u32): void;
   
-  readonly kHintVideo?: 2;
+  HandleEndElement(aName: string): void;
   
-  readonly kActionNone?: -1;
+  HandleComment(aCommentText: string): void;
   
-  readonly kActionOffer?: 0;
+  HandleCDataSection(aData: string, aLength: u32): void;
   
-  readonly kActionAnswer?: 1;
+  HandleDoctypeDecl(aSubset: string, aName: string, aSystemId: string, aPublicId: string, aCatalogData: nsISupports): void;
   
-  readonly kActionPRAnswer?: 2;
+  HandleCharacterData(aData: string, aLength: u32): void;
   
-  readonly kActionRollback?: 3;
+  HandleProcessingInstruction(aTarget: string, aData: string): void;
   
-  readonly kIceGathering?: 0;
+  HandleXMLDeclaration(aVersion: string, aEncoding: string, aStandalone: i32): void;
   
-  readonly kIceWaiting?: 1;
-  
-  readonly kIceChecking?: 2;
-  
-  readonly kIceConnected?: 3;
-  
-  readonly kIceFailed?: 4;
-  
-  readonly kNew?: 0;
-  
-  readonly kNegotiating?: 1;
-  
-  readonly kActive?: 2;
-  
-  readonly kClosing?: 3;
-  
-  readonly kClosed?: 4;
-  
-  readonly kDataChannelReliable?: 0;
-  
-  readonly kDataChannelPartialReliableRexmit?: 1;
-  
-  readonly kDataChannelPartialReliableTimed?: 2;
-  
-  readonly kNoError?: 0;
-  
-  readonly kInvalidCandidate?: 2;
-  
-  readonly kInvalidMediastreamTrack?: 3;
-  
-  readonly kInvalidState?: 4;
-  
-  readonly kInvalidSessionDescription?: 5;
-  
-  readonly kIncompatibleSessionDescription?: 6;
-  
-  readonly kIncompatibleMediaStreamTrack?: 8;
-  
-  readonly kInternalError?: 9;
-  
-  readonly kTypeError?: 10;
-  
-  readonly kOperationError?: 11;
-  
-  readonly kMaxErrorType?: 11;
+  ReportError(aErrorText: string, aSourceText: string, aError: nsIScriptError): boolean;
 }
 
 
 
 
-interface nsIRemotePermissionService extends nsISupports {
+interface nsIMarionette extends nsISupports {
   
-  init(): void;
+  readonly running: boolean;
   
-  readonly isInitialized: Promise<any>;
+  readonly isBrowserAutomationRunning: boolean;
+}
+
+
+
+
+interface nsIRemoteAgent extends nsISupports {
   
-  testAllowedPermissionValues: any;
+  readonly running: boolean;
+  
+  readonly isBrowserAutomationRunning: boolean;
+}
+
+
+
+
+interface nsILockstore extends nsISupports {
+  
+  unlockKek(kekRef: string, secret: string, timeoutMs: u64): Promise<any>;
+  
+  lockKek(kekRef: string): Promise<any>;
+  
+  isKekUnlocked(kekRef: string): boolean;
+  
+  lock(): Promise<any>;
+  
+  createDek(dekName: string, kekRef: string, extractable: boolean, keySize: u32): Promise<any>;
+  
+  importDek(dekName: string, kekRef: string, dekBytes: u8[], extractable: boolean): Promise<any>;
+  
+  isDekExtractable(dekName: string): Promise<any>;
+  
+  deleteDek(dekName: string): Promise<any>;
+  
+  listDeks(): Promise<any>;
+  
+  listKeks(dekName: string): Promise<any>;
+  
+  addKek(dekName: string, fromKekRef: string, toKekRef: string): Promise<any>;
+  
+  removeKek(dekName: string, kekRef: string): Promise<any>;
+  
+  switchKek(dekName: string, oldKekRef: string, newKekRef: string): Promise<any>;
+  
+  encrypt(dekName: string, kekRef: string, plaintext: u8[]): Promise<any>;
+  
+  decrypt(dekName: string, kekRef: string, ciphertext: u8[]): Promise<any>;
+  
+  getDek(dekName: string, kekRef: string): Promise<any>;
+  
+  createKek(kekType: string, identifier: string, secret: string, cacheTimeoutMs: u64): Promise<any>;
+  
+  deleteKek(kekRef: string): Promise<any>;
 }
 
 
@@ -17118,6 +16708,3323 @@ interface nsIX509CertValidity extends nsISupports {
 
 
 
+interface mozISandboxSettings extends nsISupports {
+  
+  readonly effectiveContentSandboxLevel: i32;
+  
+  readonly contentWin32kLockdownState: i32;
+  
+  readonly contentWin32kLockdownStateString: string;
+}
+
+
+
+
+interface mozISandboxTest extends nsISupports {
+  
+  startTests(aProcessesList: string[]): void;
+  
+  finishTests(): void;
+}
+
+
+
+
+interface mozIInterruptible extends nsISupports {
+  
+  interrupt(): void;
+}
+
+
+
+
+interface nsIStartupCacheInfo extends nsISupports {
+  
+  readonly IgnoreDiskCache: boolean;
+  
+  readonly FoundDiskCacheOnInit: boolean;
+  
+  readonly WroteToDiskCache: boolean;
+  
+  readonly DiskCachePath: string;
+}
+
+
+
+
+interface mozIStorageAsyncConnection extends nsISupports {
+  
+  readonly TRANSACTION_DEFAULT?: -1;
+  
+  readonly TRANSACTION_DEFERRED?: 0;
+  
+  readonly TRANSACTION_IMMEDIATE?: 1;
+  
+  readonly TRANSACTION_EXCLUSIVE?: 2;
+
+  
+  defaultTransactionType: i32;
+  
+  variableLimit: i32;
+  
+  readonly transactionInProgress: boolean;
+  
+  asyncClose(aCallback?: mozIStorageCompletionCallback): void;
+  
+  asyncClone(aReadOnly: boolean, aCallback: mozIStorageCompletionCallback): void;
+  
+  readonly databaseFile: nsIFile;
+  
+  interrupt(): void;
+  
+  asyncVacuum(aCallback?: mozIStorageCompletionCallback, aUseIncremental?: boolean, aSetPageSize?: i32): void;
+  
+  createAsyncStatement(aSQLStatement: string): mozIStorageAsyncStatement;
+  
+  executeAsync(aStatements: mozIStorageBaseStatement[], aCallback?: mozIStorageStatementCallback): mozIStoragePendingStatement;
+  
+  executeSimpleSQLAsync(aSQLStatement: string, aCallback?: mozIStorageStatementCallback): mozIStoragePendingStatement;
+  
+  loadExtension(aExtensionName: string, aCallback?: mozIStorageCompletionCallback): void;
+  
+  createFunction(aFunctionName: string, aNumArguments: i32, aFunction: mozIStorageFunction): void;
+  
+  removeFunction(aFunctionName: string): void;
+  
+  setProgressHandler(aGranularity: i32, aHandler: mozIStorageProgressHandler): mozIStorageProgressHandler;
+  
+  removeProgressHandler(): mozIStorageProgressHandler;
+  
+  backupToFileAsync(aDestinationFile: nsIFile, aCallback: mozIStorageCompletionCallback, aPagesPerStep?: u32, aStepDelayMs?: u32): void;
+  
+  attachDatabase(aPath: string, aName: string, aCallback?: mozIStorageStatementCallback): mozIStoragePendingStatement;
+}
+
+
+
+
+interface mozIStorageAsyncStatement extends mozIStorageBaseStatement {
+}
+
+
+
+
+interface mozIStorageBaseStatement extends mozIStorageBindingParams {
+  
+  readonly MOZ_STORAGE_STATEMENT_INVALID?: 0;
+  
+  readonly MOZ_STORAGE_STATEMENT_READY?: 1;
+  
+  readonly MOZ_STORAGE_STATEMENT_EXECUTING?: 2;
+
+  
+  finalize(): void;
+  
+  bindParameters(aParameters: mozIStorageBindingParamsArray): void;
+  
+  newBindingParamsArray(): mozIStorageBindingParamsArray;
+  
+  executeAsync(aCallback?: mozIStorageStatementCallback): mozIStoragePendingStatement;
+  
+  readonly state: i32;
+  
+  escapeStringForLIKE(aValue: string, aEscapeChar: string): string;
+  
+  escapeUTF8StringForLIKE(aValue: string, aEscapeChar: string): string;
+}
+
+
+
+
+interface mozIStorageBindingParams extends nsISupports {
+  
+  bindByName(aName: string, aValue: nsIVariant): void;
+  
+  bindBlobByName(aName: string, aValue: u8[]): void;
+  
+  bindStringAsBlobByName(aName: string, aValue: string): void;
+  
+  bindUTF8StringAsBlobByName(aName: string, aValue: string): void;
+  
+  bindArrayOfIntegersByName(aName: string, aValue: i64[]): void;
+  
+  bindArrayOfDoublesByName(aName: string, aValue: double[]): void;
+  
+  bindArrayOfStringsByName(aName: string, aValue: string[]): void;
+  
+  bindArrayOfUTF8StringsByName(aName: string, aValue: string[]): void;
+  
+  bindByIndex(aIndex: u32, aValue: nsIVariant): void;
+  
+  bindBlobByIndex(aIndex: u32, aValue: u8[]): void;
+  
+  bindStringAsBlobByIndex(aIndex: u32, aValue: string): void;
+  
+  bindUTF8StringAsBlobByIndex(aIndex: u32, aValue: string): void;
+  
+  bindArrayOfIntegersByIndex(aIndex: u32, aValue: i64[]): void;
+  
+  bindArrayOfDoublesByIndex(aIndex: u32, aValue: double[]): void;
+  
+  bindArrayOfStringsByIndex(aIndex: u32, aValue: string[]): void;
+  
+  bindArrayOfUTF8StringsByIndex(aIndex: u32, aValue: string[]): void;
+}
+
+
+
+
+interface mozIStorageBindingParamsArray extends nsISupports {
+  
+  newBindingParams(): mozIStorageBindingParams;
+  
+  addParams(aParameters: mozIStorageBindingParams): void;
+  
+  readonly length: u32;
+}
+
+
+
+
+type mozIStorageCompletionCallback = Callable<{
+  
+  complete(status: nsresult, value?: nsISupports): void;
+}>
+
+
+
+
+interface mozIStorageConnection extends mozIStorageAsyncConnection {
+  
+  close(): void;
+  
+  clone(aReadOnly?: boolean): mozIStorageConnection;
+  
+  readonly defaultPageSize: i32;
+  
+  readonly connectionReady: boolean;
+  
+  readonly lastInsertRowID: i64;
+  
+  readonly affectedRows: i32;
+  
+  readonly lastError: i32;
+  
+  readonly lastErrorString: string;
+  
+  schemaVersion: i32;
+  
+  createStatement(aSQLStatement: string): mozIStorageStatement;
+  
+  executeSimpleSQL(aSQLStatement: string): void;
+  
+  tableExists(aTableName: string): boolean;
+  
+  indexExists(aIndexName: string): boolean;
+  
+  beginTransaction(): void;
+  
+  commitTransaction(): void;
+  
+  rollbackTransaction(): void;
+  
+  createTable(aTableName: string, aTableSchema: string): void;
+  
+  setGrowthIncrement(aIncrement: i32, aDatabaseName: string): void;
+}
+
+
+
+
+interface mozIStorageError extends nsISupports {
+  
+  readonly ERROR?: 1;
+  
+  readonly INTERNAL?: 2;
+  
+  readonly PERM?: 3;
+  
+  readonly ABORT?: 4;
+  
+  readonly BUSY?: 5;
+  
+  readonly LOCKED?: 6;
+  
+  readonly NOMEM?: 7;
+  
+  readonly READONLY?: 8;
+  
+  readonly INTERRUPT?: 9;
+  
+  readonly IOERR?: 10;
+  
+  readonly CORRUPT?: 11;
+  
+  readonly FULL?: 13;
+  
+  readonly CANTOPEN?: 14;
+  
+  readonly EMPTY?: 16;
+  
+  readonly SCHEMA?: 17;
+  
+  readonly TOOBIG?: 18;
+  
+  readonly CONSTRAINT?: 19;
+  
+  readonly MISMATCH?: 20;
+  
+  readonly MISUSE?: 21;
+  
+  readonly NOLFS?: 22;
+  
+  readonly AUTH?: 23;
+  
+  readonly FORMAT?: 24;
+  
+  readonly RANGE?: 25;
+  
+  readonly NOTADB?: 26;
+
+  
+  readonly result: i32;
+  
+  readonly message: string;
+}
+
+
+
+
+type mozIStorageFunction = Callable<{
+  
+  onFunctionCall(aFunctionArguments: mozIStorageValueArray): nsIVariant;
+}>
+
+
+
+
+interface mozIStoragePendingStatement extends nsISupports {
+  
+  cancel(): void;
+}
+
+
+
+
+interface mozIStorageProgressHandler extends nsISupports {
+  
+  onProgress(aConnection: mozIStorageConnection): boolean;
+}
+
+
+
+
+interface mozIStorageResultSet extends nsISupports {
+  
+  getNextRow(): mozIStorageRow;
+}
+
+
+
+
+interface mozIStorageRow extends mozIStorageValueArray {
+  
+  getResultByIndex(aIndex: u32): nsIVariant;
+  
+  getResultByName(aName: string): nsIVariant;
+}
+
+
+
+
+interface mozIStorageService extends nsISupports {
+  
+  readonly OPEN_DEFAULT?: 0;
+  
+  readonly OPEN_SHARED?: 1;
+  
+  readonly OPEN_READONLY?: 2;
+  
+  readonly OPEN_IGNORE_LOCKING_MODE?: 4;
+  
+  readonly OPEN_NOT_EXCLUSIVE?: 8;
+  
+  readonly CONNECTION_DEFAULT?: 0;
+  
+  readonly CONNECTION_INTERRUPTIBLE?: 1;
+
+  
+  openAsyncDatabase(aDatabaseStore: nsIVariant, aOpenFlags: u32, aConnectionFlags: u32, aCallback: mozIStorageCompletionCallback): void;
+  
+  openSpecialDatabase(aStorageKey: string, aName?: string, aConnectionFlags?: u32): mozIStorageConnection;
+  
+  openDatabase(aDatabaseFile: nsIFile, aConnectionFlags?: u32): mozIStorageConnection;
+  
+  openUnsharedDatabase(aDatabaseFile: nsIFile, aConnectionFlags?: u32): mozIStorageConnection;
+  
+  openDatabaseWithFileURL(aFileURL: nsIFileURL, aTelemetryFilename?: string, aConnectionFlags?: u32): mozIStorageConnection;
+}
+
+
+
+
+interface mozIStorageStatement extends mozIStorageBaseStatement {
+  
+  readonly VALUE_TYPE_NULL?: 0;
+  
+  readonly VALUE_TYPE_INTEGER?: 1;
+  
+  readonly VALUE_TYPE_FLOAT?: 2;
+  
+  readonly VALUE_TYPE_TEXT?: 3;
+  
+  readonly VALUE_TYPE_BLOB?: 4;
+
+  
+  clone(): mozIStorageStatement;
+  
+  readonly parameterCount: u32;
+  
+  getParameterName(aParamIndex: u32): string;
+  
+  getParameterIndex(aName: string): u32;
+  
+  readonly columnCount: u32;
+  
+  getColumnName(aColumnIndex: u32): string;
+  
+  getColumnIndex(aName: string): u32;
+  
+  reset(): void;
+  
+  execute(): void;
+  
+  executeStep(): boolean;
+  
+  readonly numEntries: u32;
+  
+  getTypeOfIndex(aIndex: u32): i32;
+  
+  getVariant(aIndex: u32): nsIVariant;
+  
+  getInt32(aIndex: u32): i32;
+  
+  getInt64(aIndex: u32): i64;
+  
+  getDouble(aIndex: u32): double;
+  
+  getUTF8String(aIndex: u32): string;
+  
+  getString(aIndex: u32): string;
+  
+  getBlob(aIndex: u32, aDataSize: OutParam<u32>, aData: OutParam<u8[]>): void;
+  
+  getBlobAsString(aIndex: u32): string;
+  
+  getBlobAsUTF8String(aIndex: u32): string;
+  
+  getIsNull(aIndex: u32): boolean;
+}
+
+
+
+
+interface mozIStorageStatementCallback extends nsISupports {
+  
+  readonly REASON_FINISHED?: 0;
+  
+  readonly REASON_CANCELED?: 1;
+  
+  readonly REASON_ERROR?: 2;
+
+  
+  handleResult(aResultSet: mozIStorageResultSet): void;
+  
+  handleError(aError: mozIStorageError): void;
+  
+  handleCompletion(aReason: u16): void;
+}
+
+
+
+
+interface mozIStorageVacuumParticipant extends nsISupports {
+  
+  readonly expectedDatabasePageSize: i32;
+  
+  readonly useIncrementalVacuum: boolean;
+  
+  readonly databaseConnection: mozIStorageAsyncConnection;
+  
+  onBeginVacuum(): boolean;
+  
+  onEndVacuum(aSucceeded: boolean): void;
+}
+
+
+
+
+interface mozIStorageValueArray extends nsISupports {
+  
+  readonly VALUE_TYPE_NULL?: 0;
+  
+  readonly VALUE_TYPE_INTEGER?: 1;
+  
+  readonly VALUE_TYPE_FLOAT?: 2;
+  
+  readonly VALUE_TYPE_TEXT?: 3;
+  
+  readonly VALUE_TYPE_BLOB?: 4;
+
+  
+  readonly numEntries: u32;
+  
+  getTypeOfIndex(aIndex: u32): i32;
+  
+  getInt32(aIndex: u32): i32;
+  
+  getInt64(aIndex: u32): i64;
+  
+  getDouble(aIndex: u32): double;
+  
+  getUTF8String(aIndex: u32): string;
+  
+  getString(aIndex: u32): string;
+  
+  getBlob(aIndex: u32, aDataSize: OutParam<u32>, aData: OutParam<u8[]>): void;
+  
+  getBlobAsString(aIndex: u32): string;
+  
+  getBlobAsUTF8String(aIndex: u32): string;
+  
+  getIsNull(aIndex: u32): boolean;
+}
+
+
+
+
+interface nsIAlertAction extends nsISupports {
+  
+  readonly action: string;
+  
+  readonly title: string;
+  
+  readonly iconURL: string;
+  
+  readonly navigate: nsIURI;
+  
+  readonly windowsSystemActivationType: boolean;
+  
+  readonly opaqueRelaunchData: string;
+}
+
+
+interface nsIAlertNotification extends nsISupports {
+  
+  init(aName?: string, aImageURL?: string, aTitle?: string, aText?: string, aTextClickable?: boolean, aCookie?: string, aDir?: string, aLang?: string, aData?: string, aPrincipal?: nsIPrincipal, aInPrivateBrowsing?: boolean, aRequireInteraction?: boolean, aSilent?: boolean, aVibrate?: u32[]): void;
+  
+  initWithObject(aAlertNotification: nsIAlertNotification): void;
+  
+  readonly id: string;
+  
+  readonly name: string;
+  
+  readonly countId: u64;
+  
+  readonly imageURL: string;
+  
+  image: imgIContainer;
+  
+  readonly title: string;
+  
+  readonly text: string;
+  
+  readonly textClickable: boolean;
+  
+  readonly cookie: string;
+  
+  readonly dir: string;
+  
+  readonly lang: string;
+  
+  readonly data: string;
+  
+  readonly principal: nsIPrincipal;
+  
+  readonly URI: nsIURI;
+  
+  readonly inPrivateBrowsing: boolean;
+  
+  readonly requireInteraction: boolean;
+  
+  readonly silent: boolean;
+  
+  readonly vibrate: u32[];
+  
+  actions: nsIAlertAction[];
+  
+  readonly actionable: boolean;
+  
+  readonly source: string;
+  
+  readonly origin: string;
+  
+  opaqueRelaunchData: string;
+  
+  getAction(aName: string): nsIAlertAction;
+}
+
+
+interface nsIAlertCallbacks extends nsISupports {
+  
+  onAlertShow(): void;
+  
+  onAlertClick(aAction?: nsIAlertAction): void;
+  
+  onAlertDismissedFromForeground(): void;
+  
+  onAlertClosed(): void;
+  
+  onAlertFinished(): void;
+  
+  onAlertSettings(): void;
+  
+  onAlertDisable(): void;
+}
+
+
+interface nsIAlertsService extends nsISupports {
+  
+  showAlert(aAlert: nsIAlertNotification, aAlertListener?: nsIObserver): void;
+  
+  showAlertWithCallbacks(aAlert: nsIAlertNotification, aAlertCallbacks: nsIAlertCallbacks): void;
+  
+  closeAlert(aName?: string, aContextClosed?: boolean): void;
+  
+  getHistory(): string[];
+  
+  teardown(): void;
+  
+  pbmTeardown(): void;
+  
+  isFullscreen(): boolean;
+}
+
+
+interface nsIAlertsDoNotDisturb extends nsISupports {
+  
+  manualDoNotDisturb: boolean;
+  
+  suppressForScreenSharing: boolean;
+}
+
+
+
+
+interface nsIBTPRemoteExceptionList extends nsISupports {
+  
+  init(aProtection: nsIBounceTrackingProtection): Promise<any>;
+  
+  shutdown(): void;
+}
+
+
+
+
+interface nsIBounceTrackingMapEntry extends nsISupports {
+  
+  readonly siteHost: string;
+  
+  readonly timeStamp: PRTime;
+}
+
+
+interface nsIBounceTrackingPurgeEntry extends nsIBounceTrackingMapEntry {
+  
+  readonly purgeTime: PRTime;
+  
+  readonly bounceTrackingRecord: nsIBounceTrackingRecord;
+}
+
+
+
+}  
+
+
+declare enum nsIBounceTrackingProtection_Modes {
+  
+  MODE_DISABLED = 0,
+  
+  MODE_ENABLED = 1,
+  
+  MODE_ENABLED_STANDBY = 2,
+  
+  MODE_ENABLED_DRY_RUN = 3,
+  
+  MAX_MODE_VALUE = 3,
+}
+
+declare global {
+
+namespace nsIBounceTrackingProtection {
+  type Modes = nsIBounceTrackingProtection_Modes;
+}
+
+
+interface nsIBounceTrackingProtection extends nsISupports, Enums<typeof nsIBounceTrackingProtection_Modes> {
+  
+  clearAll(): void;
+  
+  clearBySiteHostAndOriginAttributes(aSiteHost: string, originAttributes: any): void;
+  
+  clearBySiteHostAndOriginAttributesPattern(aSiteHost: string, aOriginAttributesPattern: any): void;
+  
+  clearByTimeRange(aFrom: PRTime, aTo: PRTime): void;
+  
+  clearByOriginAttributesPattern(aPattern: string): void;
+  
+  addSiteHostExceptions(aSiteHosts: string[]): void;
+  
+  removeSiteHostExceptions(aSiteHosts: string[]): void;
+  
+  hasRecentlyPurgedSite(aSiteHost: string): boolean;
+  
+  getRecentPurgedChainEntriesForSite(aSiteHost: string): nsIBounceTrackingPurgeEntry[];
+  
+  testGetSiteHostExceptions(): string[];
+  
+  testRunPurgeBounceTrackers(): Promise<any>;
+  
+  testClearExpiredUserActivations(): void;
+  
+  testGetBounceTrackerCandidateHosts(originAttributes: any): nsIBounceTrackingMapEntry[];
+  
+  testGetUserActivationHosts(originAttributes: any): nsIBounceTrackingMapEntry[];
+  
+  testAddBounceTrackerCandidate(originAttributes: any, aSiteHost: string, aBounceTime: PRTime): void;
+  
+  testAddUserActivation(originAttributes: any, aSiteHost: string, aActivationTime: PRTime): void;
+  
+  testGetRecentlyPurgedTrackers(originAttributes: any): nsIBounceTrackingPurgeEntry[];
+  
+  testMaybeMigrateUserInteractionPermissions(): void;
+}
+
+
+
+
+interface nsIBounceTrackingRecord extends nsISupports {
+  
+  readonly initialHost: string;
+  
+  readonly finalHost: string;
+  
+  readonly bounceHosts: string[];
+}
+
+
+
+
+interface nsIContentBlockingAllowList extends nsISupports {
+  
+  computeContentBlockingAllowListPrincipal(aPrincipal: nsIPrincipal): nsIPrincipal;
+}
+
+
+
+
+type nsIPartitioningExceptionListObserver = Callable<{
+  
+  onExceptionListUpdate(aList: string): void;
+}>
+
+
+interface nsIPartitioningExceptionListService extends nsISupports {
+  
+  registerAndRunExceptionListObserver(aObserver: nsIPartitioningExceptionListObserver): void;
+  
+  unregisterExceptionListObserver(aObserver: nsIPartitioningExceptionListObserver): void;
+}
+
+
+
+
+interface nsIPurgeTrackerService extends nsISupports {
+  
+  purgeTrackingCookieJars(): Promise<any>;
+}
+
+
+
+
+interface nsITrackingDBService extends nsISupports {
+  
+  readonly OTHER_COOKIES_BLOCKED_ID?: 0;
+  
+  readonly TRACKERS_ID?: 1;
+  
+  readonly TRACKING_COOKIES_ID?: 2;
+  
+  readonly CRYPTOMINERS_ID?: 3;
+  
+  readonly FINGERPRINTERS_ID?: 4;
+  
+  readonly SOCIAL_ID?: 5;
+  
+  readonly SUSPICIOUS_FINGERPRINTERS_ID?: 6;
+  
+  readonly BOUNCETRACKERS_ID?: 7;
+
+  
+  recordContentBlockingLog(data: string): void;
+  
+  saveEvents(data: string): Promise<any>;
+  
+  clearAll(): Promise<any>;
+  
+  clearSince(since: i64): Promise<any>;
+  
+  getEventsByDateRange(dateFrom: i64, dateTo: i64): Promise<any>;
+  
+  sumAllEvents(): Promise<any>;
+  
+  getEarliestRecordedDate(): Promise<any>;
+}
+
+
+
+
+interface nsIURLDecorationAnnotationsService extends nsISupports {
+  
+  ensureUpdated(): Promise<any>;
+}
+
+
+
+
+interface nsIURLQueryStringStripper extends nsISupports {
+  
+  strip(aURI: nsIURI, aIsPBM: boolean, aOutput: OutParam<nsIURI>): u32;
+  
+  stripForCopyOrShare(aURI: nsIURI): nsIURI;
+  
+  canStripForShare(aURI: nsIURI): boolean;
+  
+  testGetStripList(): string;
+}
+
+
+
+
+interface nsIURLQueryStrippingListObserver extends nsISupports {
+  
+  onQueryStrippingListUpdate(aStripList: string, aAllowList: string): void;
+  
+  onStripOnShareUpdate(aStripRules: string[]): void;
+}
+
+
+interface nsIURLQueryStrippingListService extends nsISupports {
+  
+  registerAndRunObserver(aObserver: nsIURLQueryStrippingListObserver): void;
+  
+  registerAndRunObserverStripOnShare(aObserver: nsIURLQueryStrippingListObserver): void;
+  
+  unregisterObserver(aObserver: nsIURLQueryStrippingListObserver): void;
+  
+  unregisterStripOnShareObserver(aObserver: nsIURLQueryStrippingListObserver): void;
+  
+  clearLists(): void;
+  
+  testWaitForInit(): Promise<any>;
+  
+  testSetList(testFile: any): Promise<any>;
+  
+  testHasStripOnShareObservers(): boolean;
+  
+  testHasQPSObservers(): boolean;
+}
+
+
+
+}  
+
+
+declare enum nsIScopedPrefs_Pref {
+  
+  PRIVACY_TRACKINGPROTECTION_ENABLED = 0,
+  
+  PRIVACY_TRACKINGPROTECTION_CRYPTOMINING_ENABLED = 1,
+  
+  PRIVACY_TRACKINGPROTECTION_FINGERPRINTING_ENABLED = 2,
+  
+  PRIVACY_TRACKINGPROTECTION_SOCIALTRACKING_ENABLED = 3,
+  
+  PRIVACY_TRACKINGPROTECTION_EMAILTRACKING_ENABLED = 4,
+  
+  PRIVACY_TRACKINGPROTECTION_CONTENT_ENABLED = 5,
+  
+  PRIVACY_TRACKINGPROTECTION_CONTENT_CRYPTOMINING_ENABLED = 6,
+  
+  PRIVACY_TRACKINGPROTECTION_CONTENT_FINGERPRINTING_ENABLED = 7,
+  
+  PRIVACY_TRACKINGPROTECTION_CONTENT_SOCIALTRACKING_ENABLED = 8,
+  
+  PRIVACY_TRACKINGPROTECTION_CONTENT_EMAILTRACKING_ENABLED = 9,
+  
+  PRIVACY_TRACKINGPROTECTION_CONTENT_TEST_ENABLED = 10,
+  
+  NUM_SCOPED_BOOL_PREFS = 11,
+}
+
+declare global {
+
+namespace nsIScopedPrefs {
+  type Pref = nsIScopedPrefs_Pref;
+}
+
+
+interface nsIScopedPrefs extends nsISupports, Enums<typeof nsIScopedPrefs_Pref> {
+  
+  setBoolPrefScoped(pref: nsIScopedPrefs.Pref, bc: BrowsingContext, value: boolean): void;
+  
+  getBoolPrefScoped(pref: nsIScopedPrefs.Pref, bc: BrowsingContext): boolean;
+  
+  clearScoped(): void;
+  
+  clearScopedPref(pref: nsIScopedPrefs.Pref): void;
+  
+  clearScopedByHost(aHost: string): void;
+  
+  clearScopedPrefByHost(pref: nsIScopedPrefs.Pref, aHost: string): void;
+}
+
+
+
+
+interface nsIAsyncShutdownBlocker extends nsISupports {
+  
+  readonly name: string;
+  
+  blockShutdown(aBarrierClient: nsIAsyncShutdownClient): void;
+  
+  readonly state: nsIPropertyBag;
+}
+
+
+interface nsIAsyncShutdownClient extends nsISupports {
+  
+  readonly name: string;
+  
+  readonly isClosed: boolean;
+  
+  addBlocker(aBlocker: nsIAsyncShutdownBlocker, aFileName: string, aLineNumber: i32, aStack: string): void;
+  
+  removeBlocker(aBlocker: nsIAsyncShutdownBlocker): void;
+  
+  readonly jsclient: any;
+}
+
+
+type nsIAsyncShutdownCompletionCallback = Callable<{
+  
+  done(): void;
+}>
+
+
+interface nsIAsyncShutdownBarrier extends nsISupports {
+  
+  readonly client: nsIAsyncShutdownClient;
+  
+  readonly state: nsIPropertyBag;
+  
+  wait(aOnReady: nsIAsyncShutdownCompletionCallback): void;
+}
+
+
+interface nsIAsyncShutdownService extends nsISupports {
+  
+  makeBarrier(aName: string): nsIAsyncShutdownBarrier;
+  
+  readonly profileBeforeChange: nsIAsyncShutdownClient;
+  
+  readonly profileChangeTeardown: nsIAsyncShutdownClient;
+  
+  readonly appShutdownConfirmed: nsIAsyncShutdownClient;
+  
+  readonly sendTelemetry: nsIAsyncShutdownClient;
+  
+  readonly webWorkersShutdown: nsIAsyncShutdownClient;
+  
+  readonly xpcomWillShutdown: nsIAsyncShutdownClient;
+}
+
+
+
+
+interface nsIAutoCompleteController extends nsISupports {
+  
+  readonly STATUS_NONE?: 1;
+  
+  readonly STATUS_SEARCHING?: 2;
+  
+  readonly STATUS_COMPLETE_NO_MATCH?: 3;
+  
+  readonly STATUS_COMPLETE_MATCH?: 4;
+
+  
+  input: nsIAutoCompleteInput;
+  
+  readonly searchStatus: u16;
+  
+  readonly matchCount: u32;
+  
+  startSearch(searchString: string): void;
+  
+  stopSearch(): void;
+  
+  handleText(): boolean;
+  
+  handleEnter(aIsPopupSelection: boolean, aEvent?: Event): boolean;
+  
+  handleEscape(): boolean;
+  
+  handleStartComposition(): void;
+  
+  handleEndComposition(): void;
+  
+  handleTab(): void;
+  
+  handleKeyNavigation(key: u32): boolean;
+  
+  handleDelete(): boolean;
+  
+  getValueAt(index: i32): string;
+  
+  getLabelAt(index: i32): string;
+  
+  getCommentAt(index: i32): string;
+  
+  getStyleAt(index: i32): string;
+  
+  getImageAt(index: i32): string;
+  
+  getFinalCompleteValueAt(index: i32): string;
+  
+  searchString: string;
+  
+  setInitiallySelectedIndex(index: i32): void;
+  
+  resetInternalState(): void;
+}
+
+
+
+
+interface nsIAutoCompleteInput extends nsISupports {
+  
+  readonly popupElement: Element;
+  
+  readonly popup: nsIAutoCompletePopup;
+  
+  readonly controller: nsIAutoCompleteController;
+  
+  popupOpen: boolean;
+  
+  disableAutoComplete: boolean;
+  
+  completeDefaultIndex: boolean;
+  
+  completeSelectedIndex: boolean;
+  
+  forceComplete: boolean;
+  
+  minResultsForPopup: u32;
+  
+  maxRows: u32;
+  
+  timeout: u32;
+  
+  searchParam: string;
+  
+  readonly searchCount: u32;
+  
+  getSearchAt(index: u32): string;
+  
+  textValue: string;
+  
+  readonly selectionStart: i32;
+  
+  readonly selectionEnd: i32;
+  
+  selectTextRange(startIndex: i32, endIndex: i32): void;
+  
+  onSearchBegin(): void;
+  
+  onSearchComplete(): void;
+  
+  onTextEntered(aEvent?: Event): void;
+  
+  onTextReverted(): boolean;
+  
+  readonly consumeRollupEvent: boolean;
+  
+  readonly inPrivateContext: boolean;
+  
+  readonly noRollupOnCaretMove: boolean;
+  
+  readonly noRollupOnEmptySearch: boolean;
+  
+  readonly userContextId: u32;
+  
+  readonly invalidatePreviousResult: boolean;
+}
+
+
+
+
+interface nsIAutoCompletePopup extends nsISupports {
+  
+  readonly INVALIDATE_REASON_NEW_RESULT?: 0;
+  
+  readonly INVALIDATE_REASON_DELETE?: 1;
+
+  
+  readonly input: nsIAutoCompleteInput;
+  
+  readonly overrideValue: string;
+  
+  selectedIndex: i32;
+  
+  readonly popupOpen: boolean;
+  
+  getNoRollupOnEmptySearch(element: Element): boolean;
+  
+  openAutocompletePopup(input: nsIAutoCompleteInput, element: Element): void;
+  
+  closePopup(): void;
+  
+  invalidate(reason: u16): void;
+  
+  selectBy(reverse: boolean, page: boolean): void;
+  
+  startSearch(searchString: string, element: Element, listener: nsIFormFillCompleteObserver): void;
+  
+  stopSearch(): void;
+  
+  selectEntry(): void;
+  
+  navigateSecondaryAction(reverse: boolean): boolean;
+  
+  maybeActivateSecondaryAction(): boolean;
+}
+
+
+
+
+interface nsIAutoCompleteResult extends nsISupports {
+  
+  readonly RESULT_IGNORED?: 1;
+  
+  readonly RESULT_FAILURE?: 2;
+  
+  readonly RESULT_NOMATCH?: 3;
+  
+  readonly RESULT_SUCCESS?: 4;
+  
+  readonly RESULT_NOMATCH_ONGOING?: 5;
+  
+  readonly RESULT_SUCCESS_ONGOING?: 6;
+
+  
+  readonly searchString: string;
+  
+  readonly searchResult: u16;
+  
+  readonly defaultIndex: i32;
+  
+  readonly errorDescription: string;
+  
+  readonly matchCount: u32;
+  
+  getValueAt(index: i32): string;
+  
+  getLabelAt(index: i32): string;
+  
+  getCommentAt(index: i32): string;
+  
+  getStyleAt(index: i32): string;
+  
+  getImageAt(index: i32): string;
+  
+  getFinalCompleteValueAt(index: i32): string;
+  
+  isRemovableAt(rowIndex: i32): boolean;
+  
+  removeValueAt(rowIndex: i32): void;
+}
+
+
+
+
+interface nsIAutoCompleteSearch extends nsISupports {
+  
+  startSearch(searchString: string, searchParam: string, previousResult: nsIAutoCompleteResult, listener: nsIAutoCompleteObserver): void;
+  
+  stopSearch(): void;
+}
+
+
+interface nsIAutoCompleteObserver extends nsISupports {
+  
+  onSearchResult(search: nsIAutoCompleteSearch, result: nsIAutoCompleteResult): void;
+}
+
+
+
+
+interface nsIAutoCompleteSimpleResult extends nsIAutoCompleteResult {
+  
+  setSearchString(aSearchString: string): void;
+  
+  setErrorDescription(aErrorDescription: string): void;
+  
+  setDefaultIndex(aDefaultIndex: i32): void;
+  
+  setSearchResult(aSearchResult: u16): void;
+  
+  insertMatchAt(aIndex: i32, aValue: string, aComment: string, aImage?: string, aStyle?: string, aFinalCompleteValue?: string, aLabel?: string): void;
+  
+  appendMatch(aValue: string, aComment: string, aImage?: string, aStyle?: string, aFinalCompleteValue?: string, aLabel?: string): void;
+  
+  removeMatchAt(aIndex: i32): void;
+  
+  getListener(): nsIAutoCompleteSimpleResultListener;
+  
+  setListener(aListener: nsIAutoCompleteSimpleResultListener): void;
+}
+
+
+interface nsIAutoCompleteSimpleResultListener extends nsISupports {
+  
+  onValueRemoved(aResult: nsIAutoCompleteSimpleResult, aValue: string): void;
+}
+
+
+
+
+interface nsIAutoCompleteSimpleSearch extends nsIAutoCompleteSearch {
+  
+  overrideNextResult(values: nsIAutoCompleteResult): void;
+}
+
+
+
+
+interface nsIHangDetails extends nsISupports {
+  
+  readonly wasPersisted: boolean;
+  
+  readonly duration: double;
+  
+  readonly thread: string;
+  
+  readonly runnableName: string;
+  
+  readonly process: string;
+  
+  readonly remoteType: string;
+  
+  readonly stack: any;
+  
+  readonly modules: any;
+  
+  readonly annotations: any;
+}
+
+
+
+
+interface nsIBackgroundTasks extends nsISupports {
+  
+  readonly isBackgroundTaskMode: boolean;
+  
+  backgroundTaskName(): string;
+  
+  overrideBackgroundTaskNameForTesting(taskName: string): void;
+}
+
+
+
+
+interface nsIBackgroundTasksManager extends nsICommandLineHandler {
+  
+  runBackgroundTaskNamed(aTaskName: string, aCommandLine: nsICommandLine): void;
+}
+
+
+
+
+interface nsIBackgroundTasksRunner extends nsISupports {
+  
+  runInDetachedProcess(aTaskName: string, aCommandLine: string[]): void;
+  
+  removeDirectoryInDetachedProcess(aParentDirPath: string, aChildDirName: string, aSecondsToWait: string, aOtherFoldersSuffix: string, aMetricsId?: string): void;
+}
+
+
+
+
+interface nsIBits extends nsISupports {
+  
+  readonly ERROR_TYPE_SUCCESS?: 0;
+  
+  readonly ERROR_TYPE_UNKNOWN?: 1;
+  
+  readonly ERROR_TYPE_METHOD_THREW?: 2;
+  
+  readonly ERROR_TYPE_METHOD_TIMEOUT?: 3;
+  
+  readonly ERROR_TYPE_NULL_ARGUMENT?: 4;
+  
+  readonly ERROR_TYPE_INVALID_ARGUMENT?: 5;
+  
+  readonly ERROR_TYPE_NOT_INITIALIZED?: 6;
+  
+  readonly ERROR_TYPE_NO_UTF8_CONVERSION?: 7;
+  
+  readonly ERROR_TYPE_INVALID_GUID?: 8;
+  
+  readonly ERROR_TYPE_PIPE_NOT_CONNECTED?: 9;
+  
+  readonly ERROR_TYPE_PIPE_TIMEOUT?: 10;
+  
+  readonly ERROR_TYPE_PIPE_BAD_WRITE_COUNT?: 11;
+  
+  readonly ERROR_TYPE_PIPE_API_ERROR?: 12;
+  
+  readonly ERROR_TYPE_FAILED_TO_CREATE_BITS_JOB?: 13;
+  
+  readonly ERROR_TYPE_FAILED_TO_ADD_FILE_TO_JOB?: 14;
+  
+  readonly ERROR_TYPE_FAILED_TO_APPLY_BITS_JOB_SETTINGS?: 15;
+  
+  readonly ERROR_TYPE_FAILED_TO_RESUME_BITS_JOB?: 16;
+  
+  readonly ERROR_TYPE_OTHER_BITS_ERROR?: 17;
+  
+  readonly ERROR_TYPE_OTHER_BITS_CLIENT_ERROR?: 18;
+  
+  readonly ERROR_TYPE_BITS_JOB_NOT_FOUND?: 19;
+  
+  readonly ERROR_TYPE_FAILED_TO_GET_BITS_JOB?: 20;
+  
+  readonly ERROR_TYPE_FAILED_TO_SUSPEND_BITS_JOB?: 21;
+  
+  readonly ERROR_TYPE_FAILED_TO_COMPLETE_BITS_JOB?: 22;
+  
+  readonly ERROR_TYPE_PARTIALLY_COMPLETED_BITS_JOB?: 23;
+  
+  readonly ERROR_TYPE_FAILED_TO_CANCEL_BITS_JOB?: 24;
+  
+  readonly ERROR_TYPE_MISSING_RESULT_DATA?: 25;
+  
+  readonly ERROR_TYPE_MISSING_CALLBACK?: 26;
+  
+  readonly ERROR_TYPE_CALLBACK_ON_WRONG_THREAD?: 27;
+  
+  readonly ERROR_TYPE_MISSING_BITS_SERVICE?: 28;
+  
+  readonly ERROR_TYPE_BITS_SERVICE_ON_WRONG_THREAD?: 29;
+  
+  readonly ERROR_TYPE_MISSING_BITS_REQUEST?: 30;
+  
+  readonly ERROR_TYPE_BITS_REQUEST_ON_WRONG_THREAD?: 31;
+  
+  readonly ERROR_TYPE_MISSING_OBSERVER?: 32;
+  
+  readonly ERROR_TYPE_OBSERVER_ON_WRONG_THREAD?: 33;
+  
+  readonly ERROR_TYPE_MISSING_CONTEXT?: 34;
+  
+  readonly ERROR_TYPE_CONTEXT_ON_WRONG_THREAD?: 35;
+  
+  readonly ERROR_TYPE_FAILED_TO_START_THREAD?: 36;
+  
+  readonly ERROR_TYPE_FAILED_TO_CONSTRUCT_TASK_RUNNABLE?: 37;
+  
+  readonly ERROR_TYPE_FAILED_TO_DISPATCH_RUNNABLE?: 38;
+  
+  readonly ERROR_TYPE_TRANSFER_ALREADY_COMPLETE?: 39;
+  
+  readonly ERROR_TYPE_OPERATION_ALREADY_IN_PROGRESS?: 40;
+  
+  readonly ERROR_TYPE_MISSING_BITS_CLIENT?: 41;
+  
+  readonly ERROR_TYPE_FAILED_TO_GET_JOB_STATUS?: 42;
+  
+  readonly ERROR_TYPE_BITS_STATE_ERROR?: 43;
+  
+  readonly ERROR_TYPE_BITS_STATE_TRANSIENT_ERROR?: 44;
+  
+  readonly ERROR_TYPE_BITS_STATE_CANCELLED?: 45;
+  
+  readonly ERROR_TYPE_BITS_STATE_UNEXPECTED?: 46;
+  
+  readonly ERROR_TYPE_VERIFICATION_FAILURE?: 47;
+  
+  readonly ERROR_TYPE_ACCESS_DENIED_EXPECTED?: 48;
+  
+  readonly ERROR_TYPE_FAILED_TO_CONNECT_TO_BCM?: 49;
+  
+  readonly ERROR_TYPE_USE_AFTER_REQUEST_SHUTDOWN?: 50;
+  
+  readonly ERROR_TYPE_BROWSER_SHUTTING_DOWN?: 51;
+  
+  readonly ERROR_ACTION_UNKNOWN?: 1;
+  
+  readonly ERROR_ACTION_NONE?: 2;
+  
+  readonly ERROR_ACTION_START_DOWNLOAD?: 3;
+  
+  readonly ERROR_ACTION_MONITOR_DOWNLOAD?: 4;
+  
+  readonly ERROR_ACTION_CHANGE_MONITOR_INTERVAL?: 5;
+  
+  readonly ERROR_ACTION_CANCEL?: 6;
+  
+  readonly ERROR_ACTION_SET_PRIORITY?: 7;
+  
+  readonly ERROR_ACTION_COMPLETE?: 8;
+  
+  readonly ERROR_ACTION_SUSPEND?: 9;
+  
+  readonly ERROR_ACTION_RESUME?: 10;
+  
+  readonly ERROR_ACTION_SET_NO_PROGRESS_TIMEOUT?: 11;
+  
+  readonly ERROR_STAGE_UNKNOWN?: 1;
+  
+  readonly ERROR_STAGE_PRETASK?: 2;
+  
+  readonly ERROR_STAGE_COMMAND_THREAD?: 3;
+  
+  readonly ERROR_STAGE_AGENT_COMMUNICATION?: 4;
+  
+  readonly ERROR_STAGE_BITS_CLIENT?: 5;
+  
+  readonly ERROR_STAGE_MAIN_THREAD?: 6;
+  
+  readonly ERROR_STAGE_MONITOR?: 7;
+  
+  readonly ERROR_STAGE_VERIFICATION?: 8;
+  
+  readonly ERROR_CODE_TYPE_NONE?: 1;
+  
+  readonly ERROR_CODE_TYPE_NSRESULT?: 2;
+  
+  readonly ERROR_CODE_TYPE_HRESULT?: 3;
+  
+  readonly ERROR_CODE_TYPE_STRING?: 4;
+  
+  readonly ERROR_CODE_TYPE_EXCEPTION?: 5;
+  
+  readonly PROXY_NONE?: 1;
+  
+  readonly PROXY_PRECONFIG?: 2;
+  
+  readonly PROXY_AUTODETECT?: 3;
+
+  
+  readonly initialized: boolean;
+  
+  init(jobName: string, savePathPrefix: string, monitorTimeoutMs: u32): void;
+  
+  startDownload(downloadURL: string, saveRelativePath: string, proxy: nsProxyUsage, noProgressTimeoutSecs: u32, monitorIntervalMs: u32, customHeaders: string, observer: nsIRequestObserver, context: nsISupports, callback: nsIBitsNewRequestCallback): void;
+  
+  monitorDownload(id: string, monitorIntervalMs: u32, observer: nsIRequestObserver, context: nsISupports, callback: nsIBitsNewRequestCallback): void;
+}
+
+
+interface nsIBitsNewRequestCallback extends nsISupports {
+  
+  success(request: nsIBitsRequest): void;
+  
+  failure(errorType: nsBitsErrorType, errorAction: nsBitsErrorAction, errorStage: nsBitsErrorStage): void;
+  
+  failureNsresult(errorType: nsBitsErrorType, errorAction: nsBitsErrorAction, errorStage: nsBitsErrorStage, errorCode: nsresult): void;
+  
+  failureHresult(errorType: nsBitsErrorType, errorAction: nsBitsErrorAction, errorStage: nsBitsErrorStage, errorCode: i32): void;
+  
+  failureString(errorType: nsBitsErrorType, errorAction: nsBitsErrorAction, errorStage: nsBitsErrorStage, errorMessage: string): void;
+}
+
+
+interface nsIBitsRequest extends nsIRequest {
+  
+  readonly bitsId: string;
+  
+  readonly transferError: nsBitsErrorType;
+  
+  readonly transferErrorCode: i32;
+  
+  changeMonitorInterval(monitorIntervalMs: u32, callback: nsIBitsCallback): void;
+  
+  cancelAsync(status: nsresult, callback: nsIBitsCallback): void;
+  
+  setPriorityHigh(callback: nsIBitsCallback): void;
+  
+  setPriorityLow(callback: nsIBitsCallback): void;
+  
+  setNoProgressTimeout(timeoutSecs: u32, callback: nsIBitsCallback): void;
+  
+  complete(callback: nsIBitsCallback): void;
+  
+  suspendAsync(callback: nsIBitsCallback): void;
+  
+  resumeAsync(callback: nsIBitsCallback): void;
+}
+
+
+interface nsIBitsCallback extends nsISupports {
+  
+  success(): void;
+  
+  failure(errorType: nsBitsErrorType, errorAction: nsBitsErrorAction, errorStage: nsBitsErrorStage): void;
+  
+  failureNsresult(errorType: nsBitsErrorType, errorAction: nsBitsErrorAction, errorStage: nsBitsErrorStage, errorCode: nsresult): void;
+  
+  failureHresult(errorType: nsBitsErrorType, errorAction: nsBitsErrorAction, errorStage: nsBitsErrorStage, errorCode: i32): void;
+  
+  failureString(errorType: nsBitsErrorType, errorAction: nsBitsErrorAction, errorStage: nsBitsErrorStage, errorMessage: string): void;
+}
+
+
+
+
+interface nsIWebBrowserChrome extends nsISupports {
+  
+  readonly CHROME_DEFAULT?: 1;
+  
+  readonly CHROME_WINDOW_RESIZE?: 8;
+  
+  readonly CHROME_TOOLBAR?: 32;
+  
+  readonly CHROME_TITLEBAR?: 1024;
+  
+  readonly CHROME_NO_PERSISTENCE?: 4096;
+  
+  readonly CHROME_ALL?: 1064;
+  
+  readonly CHROME_WINDOW_MINIMIZE?: 16384;
+  
+  readonly CHROME_ALERT?: 32768;
+  
+  readonly CHROME_PRIVATE_WINDOW?: 65536;
+  
+  readonly CHROME_NON_PRIVATE_WINDOW?: 131072;
+  
+  readonly CHROME_ALWAYS_ON_TOP?: 524288;
+  
+  readonly CHROME_REMOTE_WINDOW?: 1048576;
+  
+  readonly CHROME_FISSION_WINDOW?: 2097152;
+  
+  readonly CHROME_DOCUMENT_PIP?: 4194304;
+  
+  readonly CHROME_SUPPRESS_INITIAL_FULLSCREEN?: 8388608;
+  
+  readonly CHROME_SUPPRESS_ANIMATION?: 16777216;
+  
+  readonly CHROME_CENTER_SCREEN?: 134217728;
+  
+  readonly CHROME_DEPENDENT?: 268435456;
+  
+  readonly CHROME_MODAL?: 536870912;
+  
+  readonly CHROME_OPENAS_DIALOG?: 1073741824;
+  
+  readonly CHROME_OPENAS_CHROME?: 2147483648;
+  
+  readonly CHROME_MINIMAL_POPUP?: 21512;
+  
+  readonly CHROME_DOCUMENT_PICTURE_IN_PICTURE_FLAGS?: 4740104;
+
+  
+  setLinkStatus(status: string): void;
+  
+  readonly chromeFlags: u32;
+  
+  showAsModal(): void;
+  
+  isWindowModal(): boolean;
+  
+  blur(): void;
+}
+
+
+
+
+interface nsIWebBrowserPrint extends nsISupports {
+  
+  readonly PRINTPREVIEW_GOTO_PAGENUM?: 0;
+  
+  readonly PRINTPREVIEW_PREV_PAGE?: 1;
+  
+  readonly PRINTPREVIEW_NEXT_PAGE?: 2;
+  
+  readonly PRINTPREVIEW_HOME?: 3;
+  
+  readonly PRINTPREVIEW_END?: 4;
+
+  
+  readonly doingPrint: boolean;
+  
+  readonly doingPrintPreview: boolean;
+  
+  readonly rawNumPages: i32;
+  
+  readonly printPreviewNumPages: i32;
+  
+  readonly printPreviewCurrentPageNumber: i32;
+  
+  closeWindowAfterPrint: boolean;
+  
+  printPreviewScrollToPage(aNavType: i16, aPageNum: i32): void;
+  
+  exitPrintPreview(): void;
+}
+
+
+
+
+interface nsICaptivePortalCallback extends nsISupports {
+  
+  prepare(): void;
+  
+  complete(success: boolean): void;
+}
+
+
+interface nsICaptivePortalDetector extends nsISupports {
+  
+  checkCaptivePortal(ifname: string, callback: nsICaptivePortalCallback): void;
+  
+  abort(ifname: string): void;
+  
+  cancelLogin(eventId: string): void;
+  
+  finishPreparation(ifname: string): void;
+}
+
+
+
+
+interface nsICascadeFilter extends nsISupports {
+  
+  setFilterData(data: u8[]): void;
+  
+  has(key: string): boolean;
+}
+
+
+
+
+interface nsIClearBySiteEntry extends nsISupports {
+  
+  schemelessSite: string;
+  
+  patternJSON: string;
+}
+
+
+
+
+interface nsIClearDataService extends nsISupports {
+  
+  readonly CLEAR_COOKIES?: 1;
+  
+  readonly CLEAR_NETWORK_CACHE?: 2;
+  
+  readonly CLEAR_BFCACHE?: 2;
+  
+  readonly CLEAR_IMAGE_CACHE?: 4;
+  
+  readonly CLEAR_JS_CACHE?: 8;
+  
+  readonly CLEAR_DOWNLOADS?: 16;
+  
+  readonly CLEAR_TLS_TOKEN_CACHE?: 32;
+  
+  readonly CLEAR_MEDIA_DEVICES?: 64;
+  
+  readonly CLEAR_DOM_QUOTA?: 128;
+  
+  readonly CLEAR_DOM_PUSH_NOTIFICATIONS?: 512;
+  
+  readonly CLEAR_HISTORY?: 1024;
+  
+  readonly CLEAR_MESSAGING_LAYER_SECURITY_STATE?: 2048;
+  
+  readonly CLEAR_AUTH_TOKENS?: 4096;
+  
+  readonly CLEAR_AUTH_CACHE?: 8192;
+  
+  readonly CLEAR_SITE_PERMISSIONS?: 16384;
+  
+  readonly CLEAR_CONTENT_PREFERENCES?: 32768;
+  
+  readonly CLEAR_HSTS?: 65536;
+  
+  readonly CLEAR_EME?: 131072;
+  
+  readonly CLEAR_REPORTS?: 262144;
+  
+  readonly CLEAR_STORAGE_ACCESS?: 524288;
+  
+  readonly CLEAR_CERT_EXCEPTIONS?: 1048576;
+  
+  readonly CLEAR_CONTENT_BLOCKING_RECORDS?: 2097152;
+  
+  readonly CLEAR_CSS_CACHE?: 4194304;
+  
+  readonly CLEAR_PREFLIGHT_CACHE?: 8388608;
+  
+  readonly CLEAR_CLIENT_AUTH_REMEMBER_SERVICE?: 16777216;
+  
+  readonly CLEAR_CREDENTIAL_MANAGER_STATE?: 33554432;
+  
+  readonly CLEAR_FINGERPRINTING_PROTECTION_STATE?: 268435456;
+  
+  readonly CLEAR_BOUNCE_TRACKING_PROTECTION_STATE?: 536870912;
+  
+  readonly CLEAR_STORAGE_PERMISSIONS?: 1073741824;
+  
+  readonly CLEAR_SHUTDOWN_EXCEPTIONS?: 2147483648;
+  
+  readonly CLEAR_ALL?: 4294967295;
+  
+  readonly CLEAR_PERMISSIONS?: 2147500032;
+  
+  readonly CLEAR_ALL_CACHES?: 12648462;
+  
+  readonly CLEAR_DOM_STORAGES?: 262784;
+  
+  readonly CLEAR_FORGET_ABOUT_SITE?: 3017264831;
+  
+  readonly CLEAR_COOKIES_AND_SITE_DATA?: 1879521953;
+  
+  readonly CLEAR_STATE_FOR_TRACKER_PURGING?: 1909406447;
+
+  
+  deleteDataFromLocalFiles(aIsUserRequest: boolean, aFlags: u32, aCallback: nsIClearDataCallback): void;
+  
+  deleteDataFromHost(aHost: string, aIsUserRequest: boolean, aFlags: u32, aCallback: nsIClearDataCallback): void;
+  
+  deleteDataFromSite(aSchemelessSite: string, aOriginAttributesPattern: any, aIsUserRequest: boolean, aFlags: u32, aCallback: nsIClearDataCallback): void;
+  
+  deleteDataFromSiteAndOriginAttributesPatternString(aSchemelessSite: string, aOriginAttributesPatternString: string, aIsUserRequest: boolean, aFlags: u32, aCallback: nsIClearDataCallback): void;
+  
+  deleteDataFromPrincipal(aPrincipal: nsIPrincipal, aIsUserRequest: boolean, aFlags: u32, aCallback: nsIClearDataCallback): void;
+  
+  deleteDataInTimeRange(aFrom: PRTime, aTo: PRTime, aIsUserRequest: boolean, aFlags: u32, aCallback: nsIClearDataCallback): void;
+  
+  deleteData(aFlags: u32, aCallback: nsIClearDataCallback): void;
+  
+  deleteDataFromOriginAttributesPattern(aOriginAttributesPattern: any, aCallback?: nsIClearDataCallback): void;
+  
+  deleteUserInteractionForClearingHistory(aPrincipalsWithStorage: nsIPrincipal[], aFrom?: PRTime, aCallback?: nsIClearDataCallback): void;
+  
+  cleanupAfterDeletionAtShutdown(aFlags: u32, aCallback: nsIClearDataCallback): void;
+  
+  clearPrivateBrowsingData(aCallback: nsIClearDataCallback): void;
+  
+  hostMatchesSite(aHost: string, aOriginAttributes: any, aSchemelessSite: string, aOriginAttributesPattern?: any): boolean;
+}
+
+
+type nsIClearDataCallback = Callable<{
+  
+  onDataDeleted(aFailedFlags: u32): void;
+}>
+
+
+type nsIPBMCleanupCallback = Callable<{
+  
+  complete(aStatus: nsresult): void;
+}>
+
+
+interface nsIPBMCleanupCollector extends nsISupports {
+  
+  addPendingCleanup(): nsIPBMCleanupCallback;
+}
+
+
+
+
+interface nsICommandLine extends nsISupports {
+  
+  readonly STATE_INITIAL_LAUNCH?: 0;
+  
+  readonly STATE_REMOTE_AUTO?: 1;
+  
+  readonly STATE_REMOTE_EXPLICIT?: 2;
+
+  
+  readonly length: i32;
+  
+  getArgument(aIndex: i32): string;
+  
+  findFlag(aFlag: string, aCaseSensitive: boolean): i32;
+  
+  removeArguments(aStart: i32, aEnd: i32): void;
+  
+  handleFlag(aFlag: string, aCaseSensitive: boolean): boolean;
+  
+  handleFlagWithParam(aFlag: string, aCaseSensitive: boolean): string;
+  
+  readonly state: u32;
+  
+  preventDefault: boolean;
+  
+  readonly workingDirectory: nsIFile;
+  
+  resolveFile(aArgument: string): nsIFile;
+  
+  resolveURI(aArgument: string): nsIURI;
+}
+
+
+
+
+interface nsICommandLineHandler extends nsISupports {
+  
+  handle(aCommandLine: nsICommandLine): void;
+  
+  readonly helpInfo: string;
+}
+
+
+
+
+
+
+interface nsICommandLineValidator extends nsISupports {
+  
+  validate(aCommandLine: nsICommandLine): void;
+}
+
+
+
+
+interface nsIContentClassifierRemoteSettingsClient extends nsISupports {
+  
+  init(aService: nsIContentClassifierService): Promise<any>;
+  
+  shutdown(): void;
+  
+  getListBytes(aName: string): Promise<any>;
+}
+
+
+
+
+interface nsIContentClassifierProbeRequest extends nsISupports {
+  
+  readonly url: string;
+  
+  readonly sourceUrl: string;
+  
+  readonly topWindowUrl: string;
+  
+  readonly requestType: string;
+  
+  readonly privateBrowsing: boolean;
+  
+  readonly forceThirdPartyToTop: boolean;
+  
+  readonly isNonRecommendedAddon: boolean;
+}
+
+
+interface nsIContentClassifierProbeResult extends nsISupports {
+  
+  readonly featureName: string;
+  
+  readonly matched: boolean;
+  
+  readonly exception: boolean;
+  
+  readonly important: boolean;
+  
+  readonly engineResult: nsresult;
+}
+
+}  
+
+
+declare enum nsIContentClassifierService_ProbeStatus {
+  
+  Miss = 0,
+  
+  Hit = 1,
+  
+  Exception = 2,
+  
+  ImportantHit = 3,
+  
+  ImportantException = 4,
+}
+
+declare global {
+
+namespace nsIContentClassifierService {
+  type ProbeStatus = nsIContentClassifierService_ProbeStatus;
+}
+
+
+interface nsIContentClassifierService extends nsISupports, Enums<typeof nsIContentClassifierService_ProbeStatus> {
+  
+  onListsChanged(aUpdated: string[], aRemoved: string[]): void;
+  
+  getFeatureNames(): string[];
+  
+  probeBlocking(aRequest: nsIContentClassifierProbeRequest): Promise<any>;
+  
+  probeAnnotate(aRequest: nsIContentClassifierProbeRequest): Promise<any>;
+  
+  probeFeature(aFeatureName: string, aRequest: nsIContentClassifierProbeRequest): Promise<any>;
+}
+
+
+interface nsIContentClassifierProbeReport extends nsISupports {
+  
+  readonly status: nsIContentClassifierService.ProbeStatus;
+  
+  readonly results: nsIContentClassifierProbeResult[];
+}
+
+
+
+}  
+
+
+declare enum nsIContentAnalysisAcknowledgement_Result {
+  
+  eSuccess = 1,
+  
+  eInvalidResponse = 2,
+  
+  eTooLate = 3,
+}
+
+
+declare enum nsIContentAnalysisAcknowledgement_FinalAction {
+  
+  eUnspecified = 0,
+  
+  eAllow = 1,
+  
+  eReportOnly = 2,
+  
+  eWarn = 3,
+  
+  eBlock = 4,
+}
+
+declare global {
+
+namespace nsIContentAnalysisAcknowledgement {
+  type Result = nsIContentAnalysisAcknowledgement_Result;
+  type FinalAction = nsIContentAnalysisAcknowledgement_FinalAction;
+}
+
+
+interface nsIContentAnalysisAcknowledgement extends nsISupports, Enums<typeof nsIContentAnalysisAcknowledgement_Result & typeof nsIContentAnalysisAcknowledgement_FinalAction> {
+  
+  readonly result: nsIContentAnalysisAcknowledgement.Result;
+  
+  readonly finalAction: nsIContentAnalysisAcknowledgement.FinalAction;
+}
+
+
+interface nsIContentAnalysisResult extends nsISupports {
+  
+  readonly shouldAllowContent: boolean;
+}
+
+}  
+
+
+declare enum nsIContentAnalysisResponse_Action {
+  
+  eUnspecified = 0,
+  
+  eReportOnly = 1,
+  
+  eWarn = 2,
+  
+  eBlock = 3,
+  
+  eAllow = 1000,
+  
+  eCanceled = 1001,
+}
+
+
+declare enum nsIContentAnalysisResponse_CancelError {
+  
+  eUserInitiated = 0,
+  
+  eNoAgent = 1,
+  
+  eInvalidAgentSignature = 2,
+  
+  eErrorOther = 3,
+  
+  eOtherRequestInGroupCancelled = 4,
+  
+  eShutdown = 5,
+  
+  eTimeout = 6,
+}
+
+declare global {
+
+namespace nsIContentAnalysisResponse {
+  type Action = nsIContentAnalysisResponse_Action;
+  type CancelError = nsIContentAnalysisResponse_CancelError;
+}
+
+
+interface nsIContentAnalysisResponse extends nsIContentAnalysisResult, Enums<typeof nsIContentAnalysisResponse_Action & typeof nsIContentAnalysisResponse_CancelError> {
+  
+  readonly action: nsIContentAnalysisResponse.Action;
+  
+  readonly cancelError: nsIContentAnalysisResponse.CancelError;
+  
+  readonly requestToken: string;
+  
+  readonly userActionId: string;
+  
+  readonly isCachedResponse: boolean;
+  
+  readonly isSyntheticResponse: boolean;
+  
+  acknowledge(aCaa: nsIContentAnalysisAcknowledgement): void;
+}
+
+
+interface nsIClientDownloadResource extends nsISupports {
+  
+  readonly DOWNLOAD_URL?: 0;
+  
+  readonly DOWNLOAD_REDIRECT?: 1;
+  
+  readonly TAB_URL?: 2;
+  
+  readonly TAB_REDIRECT?: 3;
+  
+  readonly PPAPI_DOCUMENT?: 4;
+  
+  readonly PPAPI_PLUGIN?: 5;
+
+  
+  readonly url: string;
+  
+  readonly type: u32;
+}
+
+}  
+
+
+declare enum nsIContentAnalysisRequest_AnalysisType {
+  
+  eUnspecified = 0,
+  
+  eFileDownloaded = 1,
+  
+  eFileAttached = 2,
+  
+  eBulkDataEntry = 3,
+  
+  ePrint = 4,
+  
+  eFileTransfer = 5,
+  
+  eDataCopied = 6,
+}
+
+
+declare enum nsIContentAnalysisRequest_Reason {
+  
+  eUnknown = 0,
+  
+  eClipboardPaste = 1,
+  
+  eDragAndDrop = 2,
+  
+  eFilePickerDialog = 3,
+  
+  ePrintPreviewPrint = 4,
+  
+  eSystemDialogPrint = 5,
+  
+  eNormalDownload = 6,
+  
+  eSaveAsDownload = 7,
+  
+  eClipboardCopy = 8,
+}
+
+
+declare enum nsIContentAnalysisRequest_OperationType {
+  
+  eClipboard = 0,
+  
+  eDroppedText = 1,
+  
+  eOperationPrint = 2,
+  
+  eUpload = 3,
+  
+  eDownload = 4,
+}
+
+declare global {
+
+namespace nsIContentAnalysisRequest {
+  type AnalysisType = nsIContentAnalysisRequest_AnalysisType;
+  type Reason = nsIContentAnalysisRequest_Reason;
+  type OperationType = nsIContentAnalysisRequest_OperationType;
+}
+
+
+interface nsIContentAnalysisRequest extends nsISupports, Enums<typeof nsIContentAnalysisRequest_AnalysisType & typeof nsIContentAnalysisRequest_Reason & typeof nsIContentAnalysisRequest_OperationType> {
+  
+  readonly analysisType: nsIContentAnalysisRequest.AnalysisType;
+  
+  readonly reason: nsIContentAnalysisRequest.Reason;
+  
+  readonly operationTypeForDisplay: nsIContentAnalysisRequest.OperationType;
+  
+  readonly fileNameForDisplay: string;
+  
+  dataTransfer: DataTransfer;
+  
+  readonly transferable: nsITransferable;
+  
+  readonly textContent: string;
+  
+  readonly filePath: string;
+  
+  getPrintData(): u8[];
+  
+  readonly printerName: string;
+  
+  readonly url: nsIURI;
+  
+  readonly sha256Digest: string;
+  
+  readonly resources: nsIClientDownloadResource[];
+  
+  readonly email: string;
+  
+  requestToken: string;
+  
+  readonly windowGlobalParent: WindowGlobalParent;
+  
+  userActionId: string;
+  
+  userActionRequestsCount: i64;
+  
+  readonly sourceWindowGlobal: WindowGlobalParent;
+  
+  timeoutMultiplier: u32;
+  
+  testOnlyIgnoreCanceledAndAlwaysSubmitToAgent: boolean;
+}
+
+
+interface nsIContentAnalysisCallback extends nsISupports {
+  
+  contentResult(aResult: nsIContentAnalysisResult): void;
+  
+  error(aResult: nsresult): void;
+}
+
+
+interface nsIContentAnalysisDiagnosticInfo extends nsISupports {
+  
+  readonly connectedToAgent: boolean;
+  
+  readonly agentPath: string;
+  
+  readonly failedSignatureVerification: boolean;
+  
+  readonly requestCount: i64;
+}
+
+
+interface nsIContentAnalysis extends nsISupports {
+  
+  readonly isActive: boolean;
+  
+  readonly mightBeActive: boolean;
+  
+  isSetByEnterprisePolicy: boolean;
+  
+  analyzeContentRequests(aCars: nsIContentAnalysisRequest[], aAutoAcknowledge: boolean): Promise<any>;
+  
+  analyzeContentRequestsCallback(aCars: nsIContentAnalysisRequest[], aAutoAcknowledge: boolean, callback: nsIContentAnalysisCallback): void;
+  
+  analyzeBatchContentRequest(aCar: nsIContentAnalysisRequest, aAutoAcknowledge: boolean): Promise<any>;
+  
+  analyzeContentRequestPrivate(aRequest: nsIContentAnalysisRequest, aAutoAcknowledge: boolean, aCallback: nsIContentAnalysisCallback): void;
+  
+  cancelRequestsByUserAction(aUserActionId: string): void;
+  
+  cancelAllRequestsAssociatedWithUserAction(aUserActionId: string): void;
+  
+  respondToWarnDialog(aRequestToken: string, aAllowContent: boolean): void;
+  
+  cancelAllRequests(aForbidFutureRequests?: boolean): void;
+  
+  testOnlySetCACmdLineArg(aVal: boolean): void;
+  
+  getDiagnosticInfo(): Promise<any>;
+  
+  getURIForBrowsingContext(aBrowsingContext: BrowsingContext): nsIURI;
+  
+  getURIForDropEvent(aEvent: DragEvent): nsIURI;
+  
+  setCachedResponse(aURI: nsIURI, aSequenceNumber: i32, aAction: nsIContentAnalysisResponse.Action): void;
+  
+  getCachedResponse(aURI: nsIURI, aSequenceNumber: i32, aAction: OutParam<nsIContentAnalysisResponse.Action>, aIsValid: OutParam<boolean>): void;
+  
+  showBlockedRequestDialog(aRequest: nsIContentAnalysisRequest): void;
+  
+  makeResponseForTest(aAction: nsIContentAnalysisResponse.Action, aToken: string, aUserActionId: string): nsIContentAnalysisResponse;
+  
+  sendCancelToAgent(aUserActionId: string): void;
+  
+  forceRecreateClientForTest(): void;
+}
+
+
+interface nsIContentAnalysisRule extends nsISupports {
+  
+  readonly REPORT?: 0;
+  
+  readonly WARN?: 1;
+  
+  readonly BLOCK?: 2;
+
+  
+  readonly name: string;
+  
+  readonly operations: u32[];
+  
+  readonly domains: string[];
+  
+  readonly contentPatterns: string[];
+  
+  readonly verdict: u8;
+  
+  readonly message: string;
+}
+
+
+interface nsIContentAnalysisWasmRunner extends nsISupports {
+  
+  analyze(aRequestBytes: u8[], aContentBytes: u8[], aRules: nsIContentAnalysisRule[]): Promise<any>;
+}
+
+
+
+
+interface nsISiteContainerService extends nsISupports {
+  
+  lookup(aHost: string): u32;
+  
+  containerForNavigation(aURI: nsIURI, aBaselineUserContextId: u32): u32;
+}
+
+
+
+
+interface nsICrashService extends nsISupports {
+  
+  readonly CRASH_TYPE_CRASH?: 0;
+  
+  readonly CRASH_TYPE_HANG?: 1;
+
+  
+  addCrash(processType: i32, crashType: i32, id: string): Promise<any>;
+}
+
+
+
+
+interface nsICredentialChooserService extends nsISupports {
+  
+  fetchImageToDataURI(window: mozIDOMWindow, uri: nsIURI): Promise<any>;
+  
+  fetchWellKnown(uri: nsIURI, triggeringPrincipal: nsIPrincipal): Promise<any>;
+  
+  fetchConfig(uri: nsIURI, triggeringPrincipal: nsIPrincipal): Promise<any>;
+  
+  fetchAccounts(uri: nsIURI, triggeringPrincipal: nsIPrincipal): Promise<any>;
+  
+  fetchToken(uri: nsIURI, body: string, triggeringPrincipal: nsIPrincipal): Promise<any>;
+  
+  fetchDisconnect(uri: nsIURI, body: string, triggeringPrincipal: nsIPrincipal): Promise<any>;
+}
+
+
+
+
+type nsICredentialChosenCallback = Callable<{
+  
+  notify(aChosenID: string): void;
+}>
+
+
+
+
+interface nsIIdentityCredentialPromptService extends nsISupports {
+  
+  showProviderPrompt(browsingContext: BrowsingContext, identityProviders: any, identityManifests: any): Promise<any>;
+  
+  showAccountListPrompt(browsingContext: BrowsingContext, accountList: any, identityProvider: any, identityManifest: any): Promise<any>;
+  
+  close(browsingContext: BrowsingContext): void;
+}
+
+
+
+
+interface nsIIdentityCredentialStorageService extends nsISupports {
+  
+  setState(rpPrincipal: nsIPrincipal, idpPrincipal: nsIPrincipal, credentialID: string, registered: boolean, allowLogout: boolean): void;
+  
+  getState(rpPrincipal: nsIPrincipal, idpPrincipal: nsIPrincipal, credentialID: string, registered: OutParam<boolean>, allowLogout: OutParam<boolean>): void;
+  
+  delete(rpPrincipal: nsIPrincipal, idpPrincipal: nsIPrincipal, credentialID: string): void;
+  
+  connected(rpPrincipal: nsIPrincipal, idpPrincipal: nsIPrincipal, connected: OutParam<boolean>): void;
+  
+  disconnect(rpPrincipal: nsIPrincipal, idpPrincipal: nsIPrincipal): void;
+  
+  clear(): void;
+  
+  deleteFromBaseDomain(baseDomain: string): void;
+  
+  deleteFromPrincipal(rpPrincipal: nsIPrincipal): void;
+  
+  deleteFromTimeRange(aFrom: PRTime, aTo: PRTime): void;
+  
+  deleteFromOriginAttributesPattern(aPattern: string): void;
+}
+
+
+
+
+interface nsIDAPTelemetry extends nsISupports {
+  
+  GetReportPrioSum(leaderHpkeConfig: u8[], helperHpkeConfig: u8[], measurement: u32, task_id: u8[], bits: u32, time_precision: u64, report: OutParam<u8[]>): void;
+  
+  GetReportPrioSumVec(leaderHpkeConfig: u8[], helperHpkeConfig: u8[], measurement: u32[], task_id: u8[], bits: u32, time_precision: u64, report: OutParam<u8[]>): void;
+  
+  GetReportPrioHistogram(leaderHpkeConfig: u8[], helperHpkeConfig: u8[], measurement: u32, task_id: u8[], length: u32, time_precision: u64, report: OutParam<u8[]>): void;
+}
+
+
+
+
+interface mozIDownloadPlatform extends nsISupports {
+  
+  downloadDone(aSource: nsIURI, aReferrer: nsIURI, aTarget: nsIFile, aContentType: string, aIsPrivate: boolean): Promise<any>;
+  
+  maybeWriteDownloadOriginInformation(aTargetFile: nsIFile, aSourceUrl: nsIURI, aReferrerInfo: nsIReferrerInfo, aIsPrivate: boolean): Promise<any>;
+}
+
+
+
+
+interface nsIEnterprisePolicies extends nsISupports {
+  
+  readonly UNINITIALIZED?: -1;
+  
+  readonly INACTIVE?: 0;
+  
+  readonly ACTIVE?: 1;
+  
+  readonly FAILED?: 2;
+
+  
+  readonly status: i16;
+  
+  readonly isEnterprise: boolean;
+  
+  isAllowed(feature: string): boolean;
+  
+  isAllowedForURI(feature: string, uri: nsIURI): boolean;
+  
+  getActivePolicies(): any;
+  
+  getSupportMenu(): any;
+  
+  getExtensionPolicy(extensionID: string): any;
+  
+  getExtensionSettings(extensionID: string): any;
+  
+  mayInstallAddon(addon: any): boolean;
+  
+  isAddonRequiredByPolicy(addonID: string): boolean;
+  
+  allowedInstallSource(uri: nsIURI): boolean;
+  
+  isExemptExecutableExtension(url: string, extension: string): boolean;
+}
+
+
+
+
+interface extIWebNavigation extends nsISupports {
+  
+  onDocumentChange(bc: BrowsingContext, transitionData: any, location: nsIURI): void;
+  
+  onHistoryChange(bc: BrowsingContext, transitionData: any, location: nsIURI, isHistoryStateUpdated: boolean, isReferenceFragmentUpdated: boolean): void;
+  
+  onStateChange(bc: BrowsingContext, requestURI: nsIURI, status: nsresult, stateFlags: u32): void;
+  
+  onCreatedNavigationTarget(bc: BrowsingContext, sourceBC: BrowsingContext, url: string): void;
+  
+  onDOMContentLoaded(bc: BrowsingContext, documentURI: nsIURI): void;
+}
+
+
+
+
+interface mozIExtensionServiceWorkerInfo extends nsISupports {
+  
+  readonly principal: nsIPrincipal;
+  
+  readonly scriptURL: string;
+  
+  readonly clientInfoId: string;
+  
+  readonly descriptorId: u64;
+}
+
+}  
+
+
+declare enum mozIExtensionListenerCallOptions_APIObjectType {
+  
+  NONE = 0,
+  
+  RUNTIME_PORT = 1,
+}
+
+
+declare enum mozIExtensionListenerCallOptions_CallbackType {
+  
+  CALLBACK_NONE = 0,
+  
+  CALLBACK_SEND_RESPONSE = 1,
+}
+
+declare global {
+
+namespace mozIExtensionListenerCallOptions {
+  type APIObjectType = mozIExtensionListenerCallOptions_APIObjectType;
+  type CallbackType = mozIExtensionListenerCallOptions_CallbackType;
+}
+
+
+interface mozIExtensionListenerCallOptions extends nsISupports, Enums<typeof mozIExtensionListenerCallOptions_APIObjectType & typeof mozIExtensionListenerCallOptions_CallbackType> {
+  
+  readonly apiObjectType: mozIExtensionListenerCallOptions.APIObjectType;
+  
+  readonly apiObjectDescriptor: any;
+  
+  readonly apiObjectPrepended: boolean;
+  
+  callbackType: mozIExtensionListenerCallOptions.CallbackType;
+}
+
+
+interface mozIExtensionEventListener extends nsISupports {
+  
+  callListener(args: any[], listenerCallOptions?: mozIExtensionListenerCallOptions): Promise<any>;
+}
+
+}  
+
+
+declare enum mozIExtensionAPIRequest_RequestType {
+  
+  CALL_FUNCTION = 0,
+  
+  CALL_FUNCTION_NO_RETURN = 1,
+  
+  CALL_FUNCTION_ASYNC = 2,
+  
+  ADD_LISTENER = 3,
+  
+  REMOVE_LISTENER = 4,
+  
+  GET_PROPERTY = 5,
+}
+
+declare global {
+
+namespace mozIExtensionAPIRequest {
+  type RequestType = mozIExtensionAPIRequest_RequestType;
+}
+
+
+interface mozIExtensionAPIRequest extends nsISupports, Enums<typeof mozIExtensionAPIRequest_RequestType> {
+  
+  toString(): string;
+  
+  readonly requestType: string;
+  
+  readonly apiNamespace: string;
+  
+  readonly apiName: string;
+  
+  readonly apiObjectType: string;
+  
+  readonly apiObjectId: string;
+  
+  readonly args: any;
+  
+  normalizedArgs: any;
+  
+  readonly callerSavedFrame: any;
+  
+  readonly serviceWorkerInfo: mozIExtensionServiceWorkerInfo;
+  
+  readonly eventListener: mozIExtensionEventListener;
+}
+
+}  
+
+
+declare enum mozIExtensionAPIRequestResult_ResultType {
+  
+  RETURN_VALUE = 0,
+  
+  EXTENSION_ERROR = 1,
+}
+
+declare global {
+
+namespace mozIExtensionAPIRequestResult {
+  type ResultType = mozIExtensionAPIRequestResult_ResultType;
+}
+
+
+interface mozIExtensionAPIRequestResult extends nsISupports, Enums<typeof mozIExtensionAPIRequestResult_ResultType> {
+  
+  readonly type: mozIExtensionAPIRequestResult.ResultType;
+  
+  readonly value: any;
+}
+
+
+interface mozIExtensionAPIRequestHandler extends nsISupports {
+  
+  handleAPIRequest(extension: nsISupports, apiRequest: mozIExtensionAPIRequest): mozIExtensionAPIRequestResult;
+  
+  initExtensionWorker(extension: nsISupports, serviceWorkerInfo: mozIExtensionServiceWorkerInfo): void;
+  
+  onExtensionWorkerLoaded(extension: nsISupports, serviceWorkerDescriptorId: u64): void;
+  
+  onExtensionWorkerDestroyed(extension: nsISupports, serviceWorkerDescriptorId: u64): void;
+}
+
+
+
+
+interface mozIExtensionProcessScript extends nsISupports {
+  
+  preloadContentScript(contentScript: nsISupports): void;
+  
+  loadContentScript(contentScript: WebExtensionContentScript, window: mozIDOMWindow): Promise<any>;
+  
+  initExtensionDocument(extension: nsISupports, doc: Document, privileged: boolean): void;
+}
+
+
+
+
+interface nsINativeMessagingPortal extends nsISupports {
+  
+  shouldUse(): boolean;
+  
+  readonly available: Promise<any>;
+  
+  createSession(aApplication: string): Promise<any>;
+  
+  closeSession(aHandle: string): Promise<any>;
+  
+  getManifest(aHandle: string, aName: string, aExtension: string): Promise<any>;
+  
+  start(aHandle: string, aName: string, aExtension: string): Promise<any>;
+}
+
+
+
+
+interface nsINativeMessagingProxy extends nsISupports {
+  
+  shouldUse(): boolean;
+  
+  readonly available: Promise<any>;
+  
+  closeSession(aHandle: string): Promise<any>;
+  
+  getManifest(aName: string, aExtension: string): Promise<any>;
+  
+  start(aName: string, aExtension: string): Promise<any>;
+}
+
+
+
+
+interface nsIFinalizationWitnessService extends nsISupports {
+  
+  make(aTopic: string, aString: string): any;
+}
+
+
+
+
+interface nsIFind extends nsISupports {
+  
+  findBackwards: boolean;
+  
+  caseSensitive: boolean;
+  
+  entireWord: boolean;
+  
+  matchDiacritics: boolean;
+  
+  Find(aPatText: string, aSearchRange: Range, aStartPoint: Range, aEndPoint: Range): Range;
+}
+
+
+
+
+interface nsIFindService extends nsISupports {
+  
+  searchString: string;
+  
+  replaceString: string;
+  
+  findBackwards: boolean;
+  
+  wrapFind: boolean;
+  
+  entireWord: boolean;
+  
+  matchCase: boolean;
+  
+  matchDiacritics: boolean;
+}
+
+
+
+
+interface nsIWebBrowserFind extends nsISupports {
+  
+  findNext(): boolean;
+  
+  searchString: string;
+  
+  findBackwards: boolean;
+  
+  wrapFind: boolean;
+  
+  entireWord: boolean;
+  
+  matchCase: boolean;
+  
+  matchDiacritics: boolean;
+  
+  searchFrames: boolean;
+}
+
+
+interface nsIWebBrowserFindInFrames extends nsISupports {
+  
+  currentSearchFrame: mozIDOMWindowProxy;
+  
+  rootSearchFrame: mozIDOMWindowProxy;
+  
+  searchSubframes: boolean;
+  
+  searchParentFrames: boolean;
+}
+
+
+
+
+interface nsIGeolocationService extends nsISupports {
+  
+  stopDevice(): void;
+}
+
+
+
+
+interface nsIFOG extends nsISupports {
+  
+  initializeFOG(aDataPathOverride?: string, aAppIdOverride?: string, aDisableInternalPings?: boolean): void;
+  
+  readonly initialized: boolean;
+  
+  registerCustomPings(): void;
+  
+  setLogPings(aEnableLogPings: boolean): void;
+  
+  setTagPings(aDebugTag: string): void;
+  
+  sendPing(aPingName: string): void;
+  
+  setExperimentActive(aExperimentId: string, aBranch: string, aExtra?: any): void;
+  
+  setExperimentInactive(aExperimentId: string): void;
+  
+  testGetExperimentData(aExperimentId: string): any;
+  
+  applyServerKnobsConfig(aJsonConfig: string): void;
+  
+  testFlushAllChildren(): Promise<any>;
+  
+  testResetFOG(aDataPathOverride?: string, aAppIdOverride?: string): void;
+  
+  testShutdownFOG(): void;
+  
+  testTriggerMetrics(aProcessType: u32): Promise<any>;
+  
+  testRegisterRuntimeMetric(aType: string, aCategory: string, aName: string, aPings: string[], aLifetime: string, aDisabled: boolean, aInSession: boolean, aExtraArgs?: string): u32;
+  
+  testRegisterRuntimePing(aName: string, aIncludeClientId: boolean, aSendIfEmpty: boolean, aPreciseTimestamps: boolean, aIncludeInfoSections: boolean, aEnabled: boolean, aSchedulesPings: string[], aReasonCodes: string[], aFollowsCollectionEnabled: boolean, aUploaderCapabilities: string[]): u32;
+  
+  clearAttribution(): void;
+  
+  updateAttribution(aSource: string, aMedium: string, aCampaign: string, aTerm: string, aContent: string): void;
+  
+  testGetAttribution(): any;
+  
+  clearDistribution(): void;
+  
+  updateDistribution(aName: string): void;
+  
+  testGetDistribution(): any;
+  
+  registerRuntimeMetric(aType: string, aCategory: string, aName: string, aPings: string[], aLifetime: string, aDisabled: boolean, aInSession: boolean, aExtraArgs?: string): void;
+  
+  registerRuntimePing(aName: string, aIncludeClientId: boolean, aSendIfEmpty: boolean, aPreciseTimestamps: boolean, aIncludeInfoSections: boolean, aEnabled: boolean, aSchedulesPings: string[], aReasonCodes: string[], aFollowsCollectionEnabled: boolean, aUploaderCapabilities: string[]): void;
+}
+
+
+
+
+type nsIGleanPingTestCallback = Callable<{
+  
+  call(aReason: string): void;
+}>
+
+
+type nsIGleanPingSubmitCallback = Callable<{
+  
+  call(): Promise<any>;
+}>
+
+
+interface nsIGleanPing extends nsISupports {
+  
+  submit(aReason?: string): void;
+  
+  testBeforeNextSubmit(aCallback: nsIGleanPingTestCallback): void;
+  
+  setEnabled(aValue: boolean): void;
+  
+  testSubmission(aTestCallback: nsIGleanPingTestCallback, aSubmitCallback: nsIGleanPingSubmitCallback, aSubmitTimeoutMs?: u32): Promise<any>;
+}
+
+
+
+}  
+
+
+declare enum nsIKeyValueService_RecoveryStrategy {
+  
+  ERROR = 0,
+  
+  DISCARD = 1,
+  
+  RENAME = 2,
+}
+
+declare global {
+
+namespace nsIKeyValueService {
+  type RecoveryStrategy = nsIKeyValueService_RecoveryStrategy;
+}
+
+
+interface nsIKeyValueService extends nsISupports, Enums<typeof nsIKeyValueService_RecoveryStrategy> {
+  
+  getOrCreate(callback: nsIKeyValueDatabaseCallback, path: string, name: string): void;
+  
+  getOrCreateWithOptions(callback: nsIKeyValueDatabaseCallback, path: string, name: string, recoveryStrategy?: nsIKeyValueService.RecoveryStrategy): void;
+  
+  createImporter(type: string, path: string): nsIKeyValueImporter;
+}
+
+
+interface nsIKeyValueImportSourceSpec extends nsISupports {
+  
+  readonly path: string;
+  
+  addDatabase(name: string): nsIKeyValueDatabaseImportOptions;
+  
+  addAllDatabases(): nsIKeyValueDatabaseImportOptions;
+}
+
+}  
+
+
+declare enum nsIKeyValueImporter_ConflictPolicy {
+  
+  ERROR_ON_CONFLICT = 0,
+  
+  IGNORE_ON_CONFLICT = 1,
+  
+  REPLACE_ON_CONFLICT = 2,
+}
+
+
+declare enum nsIKeyValueImporter_CleanupPolicy {
+  
+  KEEP_AFTER_IMPORT = 0,
+  
+  DELETE_AFTER_IMPORT = 1,
+}
+
+declare global {
+
+namespace nsIKeyValueImporter {
+  type ConflictPolicy = nsIKeyValueImporter_ConflictPolicy;
+  type CleanupPolicy = nsIKeyValueImporter_CleanupPolicy;
+}
+
+
+interface nsIKeyValueImporter extends nsIKeyValueImportSourceSpec, Enums<typeof nsIKeyValueImporter_ConflictPolicy & typeof nsIKeyValueImporter_CleanupPolicy> {
+  
+  readonly type: string;
+  
+  addPath(path: string): nsIKeyValueImportSourceSpec;
+  
+  import(callback: nsIKeyValueVoidCallback): void;
+}
+
+
+interface nsIKeyValueDatabaseImportOptions extends nsISupports {
+  
+  setConflictPolicy(conflictPolicy: nsIKeyValueImporter.ConflictPolicy): nsIKeyValueDatabaseImportOptions;
+  
+  setCleanupPolicy(cleanupPolicy: nsIKeyValueImporter.CleanupPolicy): nsIKeyValueDatabaseImportOptions;
+}
+
+
+interface nsIKeyValueDatabase extends nsISupports {
+  
+  isEmpty(callback: nsIKeyValueVariantCallback): void;
+  
+  count(callback: nsIKeyValueVariantCallback): void;
+  
+  size(callback: nsIKeyValueVariantCallback): void;
+  
+  put(callback: nsIKeyValueVoidCallback, key: string, value: nsIVariant): void;
+  
+  writeMany(callback: nsIKeyValueVoidCallback, pairs: nsIKeyValuePair[]): void;
+  
+  get(callback: nsIKeyValueVariantCallback, key: string, defaultValue?: nsIVariant): void;
+  
+  has(callback: nsIKeyValueVariantCallback, key: string): void;
+  
+  delete(callback: nsIKeyValueVoidCallback, key: string): void;
+  
+  deleteRange(callback: nsIKeyValueVoidCallback, fromKey?: string, toKey?: string): void;
+  
+  clear(callback: nsIKeyValueVoidCallback): void;
+  
+  enumerate(callback: nsIKeyValueEnumeratorCallback, fromKey?: string, toKey?: string): void;
+  
+  close(callback: nsIKeyValueVoidCallback): void;
+}
+
+
+interface nsIKeyValuePair extends nsISupports {
+  
+  readonly key: string;
+  
+  readonly value: nsIVariant;
+}
+
+
+interface nsIKeyValueEnumerator extends nsISupports {
+  
+  hasMoreElements(): boolean;
+  
+  getNext(): nsIKeyValuePair;
+}
+
+
+interface nsIKeyValueDatabaseCallback extends nsISupports {
+  
+  resolve(database: nsIKeyValueDatabase): void;
+  
+  reject(message: string): void;
+}
+
+
+interface nsIKeyValueEnumeratorCallback extends nsISupports {
+  
+  resolve(enumerator: nsIKeyValueEnumerator): void;
+  
+  reject(message: string): void;
+}
+
+
+interface nsIKeyValuePairCallback extends nsISupports {
+  
+  resolve(pair: nsIKeyValuePair): void;
+  
+  reject(message: string): void;
+}
+
+
+interface nsIKeyValueVariantCallback extends nsISupports {
+  
+  resolve(result: nsIVariant): void;
+  
+  reject(message: string): void;
+}
+
+
+interface nsIKeyValueVoidCallback extends nsISupports {
+  
+  resolve(): void;
+  
+  reject(message: string): void;
+}
+
+
+
+
+interface nsIOriginStatusEntry extends nsISupports {
+  
+  readonly origin: string;
+  
+  readonly status: i32;
+}
+
+
+interface nsIOriginsListLoadCallback extends nsISupports {
+  
+  onOriginsListLoaded(aEntries: nsIArray): void;
+}
+
+
+interface nsIWindowsMediaFoundationCDMOriginsListService extends nsISupports {
+  
+  readonly ORIGIN_BLOCKED?: 0;
+  
+  readonly ORIGIN_ALLOWED?: 1;
+
+  
+  setCallback(aCallback: nsIOriginsListLoadCallback): void;
+  
+  removeCallback(aCallback: nsIOriginsListLoadCallback): void;
+}
+
+
+
+
+type nsIMLModelDownloadProgressCallback = Callable<{
+  
+  onProgress(aProgress: i32, aCurrentLoaded: i64, aTotalLoaded: i64, aTotal: i64): void;
+}>
+
+
+interface nsIMLModelDownloadCompletionCallback extends nsISupports {
+  
+  onSuccess(aModel: string, aRevision: string): void;
+  
+  onError(aError: string): void;
+}
+
+
+interface nsIMLModelHub extends nsISupports {
+  
+  isModelAvailable(aEngineId: string, aModel: string, aRevision: string, aFilename: string): Promise<any>;
+  
+  isModelInstalled(aEngineId: string, aModel: string, aRevision: string, aFilename: string): Promise<any>;
+  
+  downloadModel(aEngineId: string, aTaskName: string, aModel: string, aRevision: string, aFiles: string[], aProgressToken: string, aProgressCallback: nsIMLModelDownloadProgressCallback, aCompletionCallback: nsIMLModelDownloadCompletionCallback): string;
+  
+  cancelDownload(aProgressToken: string): void;
+  
+  getModelBlob(aEngineId: string, aTaskName: string, aModel: string, aRevision: string, aFile: string): Promise<any>;
+}
+
+
+
+
+type nsIMLModelDownloadAuthorizationCallback = Callable<{
+  
+  resolve(aAllow: boolean): void;
+}>
+
+
+interface nsIMLModelResolver extends nsISupports {
+  
+  resolve(aId: string, aEngine: OutParam<string>, aModel: OutParam<string>, aRevision: OutParam<string>, aFilename: OutParam<string>): void;
+  
+  authorizeDownload(aModel: string, aRevision: string, aFilename: string, aWindow: WindowGlobalParent, aProgressToken: string, aCallback: nsIMLModelDownloadAuthorizationCallback): void;
+}
+
+
+
+
+interface nsIMLUtils extends nsISupports {
+  
+  readonly totalPhysicalMemory: u64;
+  
+  readonly availablePhysicalMemory: u64;
+  
+  getOptimalCPUConcurrency(): u8;
+  
+  canUseLlamaCpp(): boolean;
+}
+
+
+
+
+interface mozIMozIntl extends nsISupports {
+  
+  getCalendarInfo(locales?: any): any;
+  
+  getDisplayNamesDeprecated(locales?: any, options?: any): any;
+  
+  getAvailableLocaleDisplayNames(type: any): any;
+  
+  getLanguageDisplayNames(locales: any, langCodes: any): any;
+  
+  getRegionDisplayNames(locales: any, regionCodes: any): any;
+  
+  getLocaleDisplayNames(locales: any, localeCodes: any, options?: any): any;
+  
+  getScriptDirection(locale: any): any;
+  
+  stringHasRTLChars(str: any): boolean;
+  
+  readonly Collator: any;
+  
+  readonly DateTimeFormat: any;
+  
+  readonly DisplayNames: any;
+  
+  readonly ListFormat: any;
+  
+  readonly Locale: any;
+  
+  readonly NumberFormat: any;
+  
+  readonly PluralRules: any;
+  
+  readonly RelativeTimeFormat: any;
+}
+
+
+
+
+interface mozIMozIntlHelper extends nsISupports {
+  
+  addGetCalendarInfo(intlObject: any): void;
+  
+  addDateTimeFormatConstructor(intlObject: any): void;
+  
+  addDisplayNamesConstructor(intlObject: any): void;
+  
+  stringHasRTLChars(str: any): boolean;
+}
+
+
+
+
+interface nsIParentalControlsService extends nsISupports {
+  
+  readonly DOWNLOAD?: 1;
+  
+  readonly INSTALL_EXTENSION?: 2;
+  
+  readonly INSTALL_APP?: 3;
+  
+  readonly BROWSE?: 4;
+  
+  readonly SHARE?: 5;
+  
+  readonly BOOKMARK?: 6;
+  
+  readonly ADD_CONTACT?: 7;
+  
+  readonly SET_IMAGE?: 8;
+  
+  readonly MODIFY_ACCOUNTS?: 9;
+  
+  readonly REMOTE_DEBUGGING?: 10;
+  
+  readonly IMPORT_SETTINGS?: 11;
+  
+  readonly PRIVATE_BROWSING?: 12;
+  
+  readonly DATA_CHOICES?: 13;
+  
+  readonly CLEAR_HISTORY?: 14;
+  
+  readonly MASTER_PASSWORD?: 15;
+  
+  readonly GUEST_BROWSING?: 16;
+  
+  readonly ADVANCED_SETTINGS?: 17;
+  
+  readonly CAMERA_MICROPHONE?: 18;
+  
+  readonly BLOCK_LIST?: 19;
+  
+  readonly TELEMETRY?: 20;
+  
+  readonly HEALTH_REPORT?: 21;
+  
+  readonly DEFAULT_THEME?: 22;
+  
+  readonly ePCLog_URIVisit?: 1;
+  
+  readonly ePCLog_FileDownload?: 2;
+
+  
+  readonly parentalControlsEnabled: boolean;
+  
+  readonly blockFileDownloadsEnabled: boolean;
+  
+  isAllowed(aAction: i16, aUri?: nsIURI): boolean;
+  
+  readonly loggingEnabled: boolean;
+  
+  log(aEntryType: i16, aFlag: boolean, aSource: nsIURI, aTarget?: nsIFile): void;
+}
+
+
+
+
+interface nsILoginInfo extends nsISupports {
+  
+  readonly displayOrigin: string;
+  
+  origin: string;
+  
+  hostname: string;
+  
+  formActionOrigin: string;
+  
+  formSubmitURL: string;
+  
+  httpRealm: string;
+  
+  username: string;
+  
+  usernameField: string;
+  
+  password: string;
+  
+  passwordField: string;
+  
+  unknownFields: string;
+  
+  everSynced: boolean;
+  
+  syncCounter: i32;
+  
+  init(aOrigin: string, aFormActionOrigin: string, aHttpRealm: string, aUsername: string, aPassword: string, aUsernameField?: string, aPasswordField?: string): void;
+  
+  equals(aLoginInfo: nsILoginInfo): boolean;
+  
+  matches(aLoginInfo: nsILoginInfo, ignorePassword: boolean): boolean;
+  
+  clone(): nsILoginInfo;
+}
+
+
+
+
+interface nsILoginSearchCallback extends nsISupports {
+  
+  onSearchComplete(aLogins: nsILoginInfo[]): void;
+}
+
+
+interface nsILoginManager extends nsISupports {
+  
+  readonly initializationPromise: Promise<any>;
+  
+  addLoginAsync(aLogin: nsILoginInfo): Promise<any>;
+  
+  addLogins(aLogins: any): Promise<any>;
+  
+  removeLoginAsync(aLogin: nsILoginInfo): Promise<any>;
+  
+  modifyLoginAsync(oldLogin: nsILoginInfo, newLoginData: nsISupports): Promise<any>;
+  
+  recordPasswordUseAsync(aLogin: nsILoginInfo, aPrivateContextWithoutExplicitConsent: boolean, aLoginType: string, aFilled: boolean): Promise<any>;
+  
+  removeAllUserFacingLoginsAsync(): Promise<any>;
+  
+  removeAllLoginsAsync(): Promise<any>;
+  
+  getAllLogins(): Promise<any>;
+  
+  getAllLoginsWithCallback(aCallback: nsILoginSearchCallback): void;
+  
+  reencryptAllLogins(): Promise<any>;
+  
+  listInvalidOrigins(): Promise<any>;
+  
+  getAllDisabledHosts(): string[];
+  
+  getLoginSavingEnabled(aHost: string): boolean;
+  
+  setLoginSavingEnabled(aHost: string, isEnabled: boolean): void;
+  
+  findLogins(aOrigin: string, aActionOrigin: string, aHttpRealm: string): nsILoginInfo[];
+  
+  countLoginsAsync(aOrigin: string, aActionOrigin: string, aHttpRealm: string): Promise<any>;
+  
+  searchLoginsAsync(matchData: any): Promise<any>;
+  
+  getSyncID(): Promise<any>;
+  
+  setSyncID(syncID: string): Promise<any>;
+  
+  getLastSync(): Promise<any>;
+  
+  setLastSync(timestamp: double): Promise<any>;
+  
+  ensureCurrentSyncID(newSyncID: string): Promise<any>;
+  
+  addPotentiallyVulnerablePassword(aLogin: nsILoginInfo): Promise<any>;
+  
+  isPotentiallyVulnerablePassword(aLogin: nsILoginInfo): Promise<any>;
+  
+  recordBreachAlertDismissal(aLoginGUID: string): Promise<any>;
+  
+  getBreachAlertDismissalsByLoginGUID(): Promise<any>;
+  
+  arePotentiallyVulnerablePasswords(aLogins: any): Promise<any>;
+  
+  clearAllPotentiallyVulnerablePasswords(): Promise<any>;
+  
+  readonly uiBusy: boolean;
+  
+  readonly isLoggedIn: boolean;
+}
+
+
+
+
+interface nsILoginManagerAuthPrompter extends nsISupports {
+  
+  init(aWindow: nsIDOMWindow): void;
+  
+  browser: Element;
+}
+
+
+
+
+interface nsILoginManagerCrypto extends nsISupports {
+  
+  readonly ENCTYPE_BASE64?: 0;
+  
+  readonly ENCTYPE_SDR?: 1;
+
+  
+  encrypt(plainText: string): string;
+  
+  encryptMany(plainTexts: any): Promise<any>;
+  
+  decrypt(cipherText: string): string;
+  
+  decryptMany(cipherTexts: any): Promise<any>;
+  
+  readonly uiBusy: boolean;
+  
+  readonly isLoggedIn: boolean;
+  
+  readonly defaultEncType: u32;
+}
+
+
+
+
+interface nsILoginManagerPrompter extends nsISupports {
+  
+  promptToSavePassword(aBrowser: Element, aLogin: nsILoginInfo, dismissed?: boolean, notifySaved?: boolean, autoFilledLoginGuid?: string, possibleValues?: any): nsIPromptInstance;
+  
+  promptToChangePassword(aBrowser: Element, aOldLogin: nsILoginInfo, aNewLogin: nsILoginInfo, dismissed?: boolean, notifySaved?: boolean, autoSavedLoginGuid?: string, autoFilledLoginGuid?: string, possibleValues?: any): nsIPromptInstance;
+  
+  promptToChangePasswordWithUsernames(aBrowser: Element, logins: nsILoginInfo[], aNewLogin: nsILoginInfo): nsIPromptInstance;
+}
+
+
+
+
+interface nsILoginMetaInfo extends nsISupports {
+  
+  guid: string;
+  
+  timeCreated: u64;
+  
+  timeLastUsed: u64;
+  
+  timePasswordChanged: u64;
+  
+  timesUsed: u32;
+  
+  timeLastBreachAlertDismissed: u64;
+}
+
+
+
+
+interface nsIPromptInstance extends nsISupports {
+  
+  dismiss(): void;
+}
+
+
+
+
 interface mozIVisitInfo extends nsISupports {
   
   readonly visitId: i64;
@@ -17847,272 +20754,22 @@ interface nsITaggingService extends nsISupports {
 
 
 
-}  
 
-
-declare enum nsIPrefBranch_PreferenceType {
+interface nsIProcessToolsService extends nsISupports {
   
-  PREF_INVALID = 0,
+  kill(pid: u64): void;
   
-  PREF_STRING = 32,
+  crash(pid: u64): void;
   
-  PREF_INT = 64,
-  
-  PREF_BOOL = 128,
-}
-
-declare global {
-
-namespace nsIPrefBranch {
-  type PreferenceType = nsIPrefBranch_PreferenceType;
-}
-
-
-interface nsIPrefBranch extends nsISupports, Enums<typeof nsIPrefBranch_PreferenceType> {
-  
-  readonly root: string;
-  
-  getPrefType(aPrefName: string): nsIPrefBranch.PreferenceType;
-  
-  getBoolPref(aPrefName: string, aDefaultValue?: boolean): boolean;
-  
-  setBoolPref(aPrefName: string, aValue: boolean): void;
-  
-  getFloatPref(aPrefName: string, aDefaultValue?: float): float;
-  
-  getCharPref(aPrefName: string, aDefaultValue?: string): string;
-  
-  setCharPref(aPrefName: string, aValue: string): void;
-  
-  getStringPref(aPrefName: string, aDefaultValue?: string): string;
-  
-  setStringPref(aPrefName: string, aValue: string): void;
-  
-  getIntPref(aPrefName: string, aDefaultValue?: i32): i32;
-  
-  setIntPref(aPrefName: string, aValue: i32): void;
-  
-  getComplexValue<T extends nsIID>(aPrefName: string, aType: T): nsQIResult<T>;
-  
-  setComplexValue(aPrefName: string, aType: nsID, aValue: nsISupports): void;
-  
-  clearUserPref(aPrefName: string): void;
-  
-  lockPref(aPrefName: string): void;
-  
-  prefHasUserValue(aPrefName: string): boolean;
-  
-  prefHasDefaultValue(aPrefName: string): boolean;
-  
-  prefIsLocked(aPrefName: string): boolean;
-  
-  prefIsSanitized(aPrefName: string): boolean;
-  
-  unlockPref(aPrefName: string): void;
-  
-  clearUserBranch(aStartingAt: string): void;
-  
-  deleteBranch(aStartingAt: string): void;
-  
-  getChildList(aStartingAt: string): string[];
-  
-  addObserver(aDomain: string, aObserver: nsIObserver, aHoldWeak?: boolean): void;
-  
-  removeObserver(aDomain: string, aObserver: nsIObserver): void;
+  readonly pid: u64;
 }
 
 
 
 
-interface nsIPrefLocalizedString extends nsISupportsString {
-}
-
-
-
-
-interface nsIPrefOverrideMap extends nsISupports {
+interface nsIRemoteService extends nsISupports {
   
-  addEntry(aPrefName: string, aPrefValue: any): void;
-  
-  getEntry(aPrefName: string): any;
-}
-
-
-
-
-type nsIPrefStatsCallback = Callable<{
-  
-  visit(prefName: string, accessCount: u32): void;
-}>
-
-
-interface nsIPrefObserver extends nsISupports {
-  
-  onStringPref(kind: string, name: string, value: string, isSticky: boolean, isLocked: boolean): void;
-  
-  onIntPref(kind: string, name: string, value: i32, isSticky: boolean, isLocked: boolean): void;
-  
-  onBoolPref(kind: string, name: string, value: boolean, isSticky: boolean, isLocked: boolean): void;
-  
-  onError(message: string): void;
-}
-
-
-interface nsIPrefService extends nsISupports {
-  
-  resetPrefs(): void;
-  
-  savePrefFile(aFile: nsIFile): void;
-  
-  backupPrefFile(aFile: nsIFile, aOverrideMap?: nsIPrefOverrideMap): Promise<any>;
-  
-  getBranch(aPrefRoot: string): nsIPrefBranch;
-  
-  getDefaultBranch(aPrefRoot: string): nsIPrefBranch;
-  
-  readonly dirty: boolean;
-  
-  readDefaultPrefsFromFile(aFile: nsIFile): void;
-  
-  readUserPrefsFromFile(aFile: nsIFile): void;
-  
-  readStats(callback: nsIPrefStatsCallback): void;
-  
-  resetStats(): void;
-  
-  parsePrefsFromBuffer(bytes: u8[], observer: nsIPrefObserver, pathLabel?: string): void;
-  
-  readonly userPrefsFileLastModifiedAtStartup: PRTime;
-  
-  readonly prefsJsPreamble: string;
-}
-
-
-
-
-interface nsIRelativeFilePref extends nsISupports {
-  
-  file: nsIFile;
-  
-  relativeToKey: string;
-}
-
-
-
-
-interface nsIPrefetchService extends nsISupports {
-  
-  prefetchURI(aURI: nsIURI, aReferrerInfo: nsIReferrerInfo, aSource: Node, aExplicit: boolean): void;
-  
-  hasMoreElements(): boolean;
-  
-  cancelPrefetchPreloadURI(aURI: nsIURI, aSource: Node): void;
-}
-
-
-
-
-interface nsIProfilerStartParams extends nsISupports {
-  
-  readonly entries: u32;
-  
-  readonly duration: double;
-  
-  readonly interval: double;
-  
-  readonly features: u32;
-  
-  readonly activeTabID: u64;
-}
-
-
-interface nsIProfiler extends nsISupports {
-  
-  StartProfiler(aEntries: u32, aInterval: double, aFeatures: string[], aFilters?: string[], aActiveTabID?: u64, aDuration?: double): Promise<any>;
-  
-  StopProfiler(): Promise<any>;
-  
-  IsPaused(): boolean;
-  
-  Pause(): Promise<any>;
-  
-  Resume(): Promise<any>;
-  
-  IsSamplingPaused(): boolean;
-  
-  PauseSampling(): Promise<any>;
-  
-  ResumeSampling(): Promise<any>;
-  
-  waitOnePeriodicSampling(): Promise<any>;
-  
-  GetProfile(aSinceTime?: double): string;
-  
-  getProfileData(aSinceTime?: double): any;
-  
-  getProfileDataAsync(aSinceTime?: double): Promise<any>;
-  
-  getProfileDataAsArrayBuffer(aSinceTime?: double): Promise<any>;
-  
-  getProfileDataAsGzippedArrayBuffer(aSinceTime?: double): Promise<any>;
-  
-  dumpProfileToFileAsync(aFilename: string, aSinceTime?: double): Promise<any>;
-  
-  dumpProfileToFile(aFilename: string): void;
-  
-  scheduleDumpToFile(aDelaySeconds: double, aFilename: string, aExitAfterDump: boolean): void;
-  
-  cancelScheduledDump(): void;
-  
-  waitForScheduledDump(): void;
-  
-  IsActive(): boolean;
-  
-  ClearAllPages(): void;
-  
-  GetFeatures(): string[];
-  
-  readonly activeConfiguration: any;
-  
-  GetAllFeatures(): string[];
-  
-  GetBufferInfo(aCurrentPosition: OutParam<u32>, aTotalSize: OutParam<u32>, aGeneration: OutParam<u32>): void;
-  
-  getElapsedTime(): double;
-  
-  readonly sharedLibraries: any;
-  
-  getSymbolTable(aDebugPath: string, aBreakpadID: string): Promise<any>;
-}
-
-
-
-
-interface nsIRddProcessTest extends nsISupports {
-  
-  testTelemetryProbes(): Promise<any>;
-  
-  stopProcess(): void;
-}
-
-
-
-
-interface nsIMarionette extends nsISupports {
-  
-  readonly running: boolean;
-  
-  readonly isBrowserAutomationRunning: boolean;
-}
-
-
-
-
-interface nsIRemoteAgent extends nsISupports {
-  
-  readonly running: boolean;
-  
-  readonly isBrowserAutomationRunning: boolean;
+  sendCommandLine(aProfile: string, aArgs: string[], aRaise?: boolean): void;
 }
 
 
@@ -18165,23 +20822,71 @@ type nsIApplicationReputationCallback = Callable<{
 
 
 
-interface mozISandboxSettings extends nsISupports {
+interface nsIFingerprintingOverride extends nsISupports {
   
-  readonly effectiveContentSandboxLevel: i32;
+  readonly firstPartyDomain: string;
   
-  readonly contentWin32kLockdownState: i32;
+  readonly thirdPartyDomain: string;
   
-  readonly contentWin32kLockdownStateString: string;
+  readonly overrides: string;
+  
+  readonly isBaseline: boolean;
+}
+
+
+interface nsIFingerprintingWebCompatService extends nsISupports {
+  
+  init(): void;
+  
+  shutdown(): void;
 }
 
 
 
 
-interface mozISandboxTest extends nsISupports {
+interface nsIRFPService extends nsISupports {
   
-  startTests(aProcessesList: string[]): void;
+  setFingerprintingOverrides(aOverrides: nsIFingerprintingOverride[]): void;
   
-  finishTests(): void;
+  getFingerprintingOverrides(aDomainKey: string): nsIRFPTargetSetIDL;
+  
+  cleanAllOverrides(): void;
+  
+  readonly enabledFingerprintingProtectionsBaseline: nsIRFPTargetSetIDL;
+  
+  readonly enabledFingerprintingProtections: nsIRFPTargetSetIDL;
+  
+  cleanAllRandomKeys(): void;
+  
+  cleanRandomKeyByPrincipal(aPrincipal: nsIPrincipal): void;
+  
+  cleanRandomKeyBySite(aSchemelessSite: string, originAttributes: any): void;
+  
+  cleanRandomKeyByHost(aHost: string, aPattern: string): void;
+  
+  cleanRandomKeyByOriginAttributesPattern(aPattern: string): void;
+  
+  getSpoofedUserAgent(aDesktopMode: boolean): string;
+  
+  testGenerateRandomKey(aChannel: nsIChannel): u8[];
+}
+
+
+
+
+interface nsIRFPTargetSetIDL extends nsISupports {
+  
+  getNth32BitSet(aPart: u32): u32;
+}
+
+
+
+
+interface nsIUserCharacteristicsPageService extends nsISupports {
+  
+  createContentPage(principal: nsIPrincipal): Promise<any>;
+  
+  pageLoaded(browsingContext: BrowsingContext, data: any): void;
 }
 
 
@@ -18211,14 +20916,6 @@ type nsIFormFillCompleteObserver = Callable<{
   
   onSearchCompletion(result: nsIAutoCompleteResult): void;
 }>
-
-
-
-
-interface mozIInterruptible extends nsISupports {
-  
-  interrupt(): void;
-}
 
 
 
@@ -18259,727 +20956,106 @@ interface nsISessionStoreRestoreData extends nsISupports {
 
 
 
-interface nsIShellService extends nsISupports {
+interface nsIToolkitShellService extends nsISupports {
   
-  readonly BACKGROUND_TILE?: 1;
-  
-  readonly BACKGROUND_STRETCH?: 2;
-  
-  readonly BACKGROUND_CENTER?: 3;
-  
-  readonly BACKGROUND_FILL?: 4;
-  
-  readonly BACKGROUND_FIT?: 5;
-  
-  readonly BACKGROUND_SPAN?: 6;
-
-  
-  isDefaultBrowser(aForAllTypes?: boolean): boolean;
-  
-  setDefaultBrowser(aForAllUsers: boolean): void;
-  
-  setDesktopBackground(aElement: Element, aPosition: i32, aImageName: string): void;
-  
-  desktopBackgroundColor: u32;
+  isDefaultApplication(): boolean;
 }
 
 
 
 
-interface nsIBFCacheEntry extends nsISupports {
+interface nsISiteCategory extends nsISupports {
   
-  RemoveFromBFCacheSync(): void;
-  
-  RemoveFromBFCacheAsync(): void;
+  getCategory(aPrincipal: nsIPrincipal): string;
 }
 
 
 
+}  
 
-interface nsISHEntry extends nsISupports {
+
+declare enum nsIAppStartup_IDLShutdownPhase {
   
-  URI: nsIURI;
+  SHUTDOWN_PHASE_NOTINSHUTDOWN = 0,
   
-  originalURI: nsIURI;
+  SHUTDOWN_PHASE_APPSHUTDOWNCONFIRMED = 1,
   
-  resultPrincipalURI: nsIURI;
+  SHUTDOWN_PHASE_APPSHUTDOWNNETTEARDOWN = 2,
   
-  unstrippedURI: nsIURI;
+  SHUTDOWN_PHASE_APPSHUTDOWNTEARDOWN = 3,
   
-  loadReplace: boolean;
+  SHUTDOWN_PHASE_APPSHUTDOWN = 4,
   
-  title: string;
+  SHUTDOWN_PHASE_APPSHUTDOWNQM = 5,
   
-  name: string;
+  SHUTDOWN_PHASE_APPSHUTDOWNTELEMETRY = 6,
   
-  isSubFrame: boolean;
+  SHUTDOWN_PHASE_XPCOMWILLSHUTDOWN = 7,
   
-  hasUserInteraction: boolean;
-  
-  hasUserActivation: boolean;
-  
-  referrerInfo: nsIReferrerInfo;
-  
-  readonly isInBFCache: boolean;
-  
-  sticky: boolean;
-  
-  postData: nsIInputStream;
-  
-  readonly hasPostData: boolean;
-  
-  layoutHistoryState: nsILayoutHistoryState;
-  
-  parent: nsISHEntry;
-  
-  loadType: u32;
-  
-  ID: u32;
-  
-  cacheKey: u32;
-  
-  saveLayoutStateFlag: boolean;
-  
-  contentType: string;
-  
-  URIWasModified: boolean;
-  
-  triggeringPrincipal: nsIPrincipal;
-  
-  principalToInherit: nsIPrincipal;
-  
-  partitionedPrincipalToInherit: nsIPrincipal;
-  
-  policyContainer: nsIPolicyContainer;
-  
-  stateData: nsIStructuredCloneContainer;
-  
-  docshellID: nsID;
-  
-  readonly isSrcdocEntry: boolean;
-  
-  srcdocData: string;
-  
-  baseURI: nsIURI;
-  
-  scrollRestorationIsManual: boolean;
-  
-  readonly loadedInThisProcess: boolean;
-  
-  readonly childCount: i32;
-  
-  isTransient(): boolean;
-  
-  setTransient(): void;
-  
-  setScrollPosition(x: i32, y: i32): void;
-  
-  getScrollPosition(x: OutParam<i32>, y: OutParam<i32>): void;
-  
-  initLayoutHistoryState(): nsILayoutHistoryState;
-  
-  clone(): nsISHEntry;
-  
-  hasDynamicallyAddedChild(): boolean;
-  
-  adoptBFCacheEntry(aEntry: nsISHEntry): void;
-  
-  sharesDocumentWith(aEntry: nsISHEntry): boolean;
-  
-  setLoadTypeAsHistory(): void;
-  
-  AddChild(aChild: nsISHEntry, aOffset: i32, aUseRemoteSubframes?: boolean): void;
-  
-  GetChildAt(aIndex: i32): nsISHEntry;
-  
-  readonly bfcacheID: u64;
-  
-  wireframe: any;
-  
-  navigationKey: nsID;
-  
-  navigationId: nsID;
+  SHUTDOWN_PHASE_XPCOMSHUTDOWN = 8,
+}
+
+declare global {
+
+namespace nsIAppStartup {
+  type IDLShutdownPhase = nsIAppStartup_IDLShutdownPhase;
 }
 
 
-
-
-interface nsISHistory extends nsISupports {
-  
-  readonly count: i32;
-  
-  index: i32;
-  
-  readonly requestedIndex: i32;
-  
-  getEntryAtIndex(aIndex: i32): nsISHEntry;
-  
-  purgeHistory(aNumEntries: i32): void;
-  
-  addSHistoryListener(aListener: nsISHistoryListener): void;
-  
-  removeSHistoryListener(aListener: nsISHistoryListener): void;
-  
-  reloadCurrentEntry(): void;
-  
-  addEntry(aEntry: nsISHEntry): void;
-  
-  updateIndex(): void;
-  
-  replaceEntry(aIndex: i32, aReplaceEntry: nsISHEntry): void;
-  
-  notifyOnHistoryReload(): boolean;
-  
-  notifyOnHistoryCommit(): void;
-  
-  notifyOnEntryUpdated(aEntry: nsISHEntry): void;
-  
-  evictOutOfRangeDocumentViewers(aIndex: i32): void;
-  
-  evictAllDocumentViewers(): void;
-  
-  reload(aReloadFlags: u32): void;
-  
-  createEntry(): nsISHEntry;
-  
-  canGoBackFromEntryAtIndex(aIndex: i32): boolean;
-}
-
-
-
-
-interface nsISHistoryListener extends nsISupports {
-  
-  OnHistoryNewEntry(aNewURI: nsIURI, aOldIndex: i32): void;
-  
-  OnHistoryReload(): boolean;
-  
-  OnHistoryGotoIndex(): void;
-  
-  OnHistoryPurge(aNumEntries: i32): void;
-  
-  OnHistoryTruncate(aNumEntries: i32): void;
-  
-  OnHistoryReplaceEntry(): void;
-  
-  OnDocumentViewerEvicted(aNumEvicted: u32): void;
-  
-  OnHistoryCommit(): void;
-  
-  OnEntryUpdated(aEntry: nsISHEntry): void;
-}
-
-
-
-
-interface mozIPersonalDictionary extends nsISupports {
-  
-  load(): void;
-  
-  save(): void;
-  
-  readonly wordList: nsIStringEnumerator;
-  
-  check(word: string): boolean;
-  
-  addWord(word: string): void;
-  
-  removeWord(word: string): void;
-  
-  ignoreWord(word: string): void;
-  
-  endSession(): void;
-}
-
-
-
-
-interface mozISpellCheckingEngine extends nsISupports {
-  
-  dictionaries: string[];
-  
-  personalDictionary: mozIPersonalDictionary;
-  
-  getDictionaryList(): string[];
-  
-  check(word: string): boolean;
-  
-  suggest(word: string): string[];
-  
-  loadDictionariesFromDir(dir: nsIFile): void;
-  
-  addDirectory(dir: nsIFile): void;
-  
-  removeDirectory(dir: nsIFile): void;
-  
-  addDictionary(lang: string, file: nsIURI): void;
-  
-  removeDictionary(lang: string, file: nsIURI): boolean;
-}
-
-
-
-
-interface nsIStartupCacheInfo extends nsISupports {
-  
-  readonly IgnoreDiskCache: boolean;
-  
-  readonly FoundDiskCacheOnInit: boolean;
-  
-  readonly WroteToDiskCache: boolean;
-  
-  readonly DiskCachePath: string;
-}
-
-
-
-
-interface mozIStorageAsyncConnection extends nsISupports {
-  
-  readonly TRANSACTION_DEFAULT?: -1;
-  
-  readonly TRANSACTION_DEFERRED?: 0;
-  
-  readonly TRANSACTION_IMMEDIATE?: 1;
-  
-  readonly TRANSACTION_EXCLUSIVE?: 2;
-
-  
-  defaultTransactionType: i32;
-  
-  variableLimit: i32;
-  
-  readonly transactionInProgress: boolean;
-  
-  asyncClose(aCallback?: mozIStorageCompletionCallback): void;
-  
-  asyncClone(aReadOnly: boolean, aCallback: mozIStorageCompletionCallback): void;
-  
-  readonly databaseFile: nsIFile;
-  
-  interrupt(): void;
-  
-  asyncVacuum(aCallback?: mozIStorageCompletionCallback, aUseIncremental?: boolean, aSetPageSize?: i32): void;
-  
-  createAsyncStatement(aSQLStatement: string): mozIStorageAsyncStatement;
-  
-  executeAsync(aStatements: mozIStorageBaseStatement[], aCallback?: mozIStorageStatementCallback): mozIStoragePendingStatement;
-  
-  executeSimpleSQLAsync(aSQLStatement: string, aCallback?: mozIStorageStatementCallback): mozIStoragePendingStatement;
-  
-  loadExtension(aExtensionName: string, aCallback?: mozIStorageCompletionCallback): void;
-  
-  createFunction(aFunctionName: string, aNumArguments: i32, aFunction: mozIStorageFunction): void;
-  
-  removeFunction(aFunctionName: string): void;
-  
-  setProgressHandler(aGranularity: i32, aHandler: mozIStorageProgressHandler): mozIStorageProgressHandler;
-  
-  removeProgressHandler(): mozIStorageProgressHandler;
-  
-  backupToFileAsync(aDestinationFile: nsIFile, aCallback: mozIStorageCompletionCallback, aPagesPerStep?: u32, aStepDelayMs?: u32): void;
-  
-  attachDatabase(aPath: string, aName: string, aCallback?: mozIStorageStatementCallback): mozIStoragePendingStatement;
-}
-
-
-
-
-interface mozIStorageAsyncStatement extends mozIStorageBaseStatement {
-}
-
-
-
-
-interface mozIStorageBaseStatement extends mozIStorageBindingParams {
-  
-  readonly MOZ_STORAGE_STATEMENT_INVALID?: 0;
-  
-  readonly MOZ_STORAGE_STATEMENT_READY?: 1;
-  
-  readonly MOZ_STORAGE_STATEMENT_EXECUTING?: 2;
-
-  
-  finalize(): void;
-  
-  bindParameters(aParameters: mozIStorageBindingParamsArray): void;
-  
-  newBindingParamsArray(): mozIStorageBindingParamsArray;
-  
-  executeAsync(aCallback?: mozIStorageStatementCallback): mozIStoragePendingStatement;
-  
-  readonly state: i32;
-  
-  escapeStringForLIKE(aValue: string, aEscapeChar: string): string;
-  
-  escapeUTF8StringForLIKE(aValue: string, aEscapeChar: string): string;
-}
-
-
-
-
-interface mozIStorageBindingParams extends nsISupports {
-  
-  bindByName(aName: string, aValue: nsIVariant): void;
-  
-  bindBlobByName(aName: string, aValue: u8[]): void;
-  
-  bindStringAsBlobByName(aName: string, aValue: string): void;
-  
-  bindUTF8StringAsBlobByName(aName: string, aValue: string): void;
-  
-  bindArrayOfIntegersByName(aName: string, aValue: i64[]): void;
-  
-  bindArrayOfDoublesByName(aName: string, aValue: double[]): void;
-  
-  bindArrayOfStringsByName(aName: string, aValue: string[]): void;
-  
-  bindArrayOfUTF8StringsByName(aName: string, aValue: string[]): void;
-  
-  bindByIndex(aIndex: u32, aValue: nsIVariant): void;
-  
-  bindBlobByIndex(aIndex: u32, aValue: u8[]): void;
-  
-  bindStringAsBlobByIndex(aIndex: u32, aValue: string): void;
-  
-  bindUTF8StringAsBlobByIndex(aIndex: u32, aValue: string): void;
-  
-  bindArrayOfIntegersByIndex(aIndex: u32, aValue: i64[]): void;
-  
-  bindArrayOfDoublesByIndex(aIndex: u32, aValue: double[]): void;
-  
-  bindArrayOfStringsByIndex(aIndex: u32, aValue: string[]): void;
-  
-  bindArrayOfUTF8StringsByIndex(aIndex: u32, aValue: string[]): void;
-}
-
-
-
-
-interface mozIStorageBindingParamsArray extends nsISupports {
-  
-  newBindingParams(): mozIStorageBindingParams;
-  
-  addParams(aParameters: mozIStorageBindingParams): void;
-  
-  readonly length: u32;
-}
-
-
-
-
-type mozIStorageCompletionCallback = Callable<{
-  
-  complete(status: nsresult, value?: nsISupports): void;
-}>
-
-
-
-
-interface mozIStorageConnection extends mozIStorageAsyncConnection {
-  
-  close(): void;
-  
-  clone(aReadOnly?: boolean): mozIStorageConnection;
-  
-  readonly defaultPageSize: i32;
-  
-  readonly connectionReady: boolean;
-  
-  readonly lastInsertRowID: i64;
-  
-  readonly affectedRows: i32;
-  
-  readonly lastError: i32;
-  
-  readonly lastErrorString: string;
-  
-  schemaVersion: i32;
-  
-  createStatement(aSQLStatement: string): mozIStorageStatement;
-  
-  executeSimpleSQL(aSQLStatement: string): void;
-  
-  tableExists(aTableName: string): boolean;
-  
-  indexExists(aIndexName: string): boolean;
-  
-  beginTransaction(): void;
-  
-  commitTransaction(): void;
-  
-  rollbackTransaction(): void;
-  
-  createTable(aTableName: string, aTableSchema: string): void;
-  
-  setGrowthIncrement(aIncrement: i32, aDatabaseName: string): void;
-}
-
-
-
-
-interface mozIStorageError extends nsISupports {
-  
-  readonly ERROR?: 1;
-  
-  readonly INTERNAL?: 2;
-  
-  readonly PERM?: 3;
-  
-  readonly ABORT?: 4;
-  
-  readonly BUSY?: 5;
-  
-  readonly LOCKED?: 6;
-  
-  readonly NOMEM?: 7;
-  
-  readonly READONLY?: 8;
-  
-  readonly INTERRUPT?: 9;
-  
-  readonly IOERR?: 10;
-  
-  readonly CORRUPT?: 11;
-  
-  readonly FULL?: 13;
-  
-  readonly CANTOPEN?: 14;
-  
-  readonly EMPTY?: 16;
-  
-  readonly SCHEMA?: 17;
-  
-  readonly TOOBIG?: 18;
-  
-  readonly CONSTRAINT?: 19;
-  
-  readonly MISMATCH?: 20;
-  
-  readonly MISUSE?: 21;
-  
-  readonly NOLFS?: 22;
-  
-  readonly AUTH?: 23;
-  
-  readonly FORMAT?: 24;
-  
-  readonly RANGE?: 25;
-  
-  readonly NOTADB?: 26;
-
-  
-  readonly result: i32;
-  
-  readonly message: string;
-}
-
-
-
-
-type mozIStorageFunction = Callable<{
-  
-  onFunctionCall(aFunctionArguments: mozIStorageValueArray): nsIVariant;
-}>
-
-
-
-
-interface mozIStoragePendingStatement extends nsISupports {
-  
-  cancel(): void;
-}
-
-
-
-
-interface mozIStorageProgressHandler extends nsISupports {
-  
-  onProgress(aConnection: mozIStorageConnection): boolean;
-}
-
-
-
-
-interface mozIStorageResultSet extends nsISupports {
-  
-  getNextRow(): mozIStorageRow;
-}
-
-
-
-
-interface mozIStorageRow extends mozIStorageValueArray {
-  
-  getResultByIndex(aIndex: u32): nsIVariant;
-  
-  getResultByName(aName: string): nsIVariant;
-}
-
-
-
-
-interface mozIStorageService extends nsISupports {
-  
-  readonly OPEN_DEFAULT?: 0;
-  
-  readonly OPEN_SHARED?: 1;
-  
-  readonly OPEN_READONLY?: 2;
-  
-  readonly OPEN_IGNORE_LOCKING_MODE?: 4;
-  
-  readonly OPEN_NOT_EXCLUSIVE?: 8;
-  
-  readonly CONNECTION_DEFAULT?: 0;
-  
-  readonly CONNECTION_INTERRUPTIBLE?: 1;
-
-  
-  openAsyncDatabase(aDatabaseStore: nsIVariant, aOpenFlags: u32, aConnectionFlags: u32, aCallback: mozIStorageCompletionCallback): void;
-  
-  openSpecialDatabase(aStorageKey: string, aName?: string, aConnectionFlags?: u32): mozIStorageConnection;
-  
-  openDatabase(aDatabaseFile: nsIFile, aConnectionFlags?: u32): mozIStorageConnection;
-  
-  openUnsharedDatabase(aDatabaseFile: nsIFile, aConnectionFlags?: u32): mozIStorageConnection;
-  
-  openDatabaseWithFileURL(aFileURL: nsIFileURL, aTelemetryFilename?: string, aConnectionFlags?: u32): mozIStorageConnection;
-}
-
-
-
-
-interface mozIStorageStatement extends mozIStorageBaseStatement {
-  
-  readonly VALUE_TYPE_NULL?: 0;
-  
-  readonly VALUE_TYPE_INTEGER?: 1;
-  
-  readonly VALUE_TYPE_FLOAT?: 2;
-  
-  readonly VALUE_TYPE_TEXT?: 3;
-  
-  readonly VALUE_TYPE_BLOB?: 4;
-
+interface nsIAppStartup extends nsISupports, Enums<typeof nsIAppStartup_IDLShutdownPhase> {
   
-  clone(): mozIStorageStatement;
+  readonly eConsiderQuit?: 1;
   
-  readonly parameterCount: u32;
+  readonly eAttemptQuit?: 2;
   
-  getParameterName(aParamIndex: u32): string;
+  readonly eForceQuit?: 3;
   
-  getParameterIndex(aName: string): u32;
+  readonly eRestart?: 16;
   
-  readonly columnCount: u32;
-  
-  getColumnName(aColumnIndex: u32): string;
-  
-  getColumnIndex(aName: string): u32;
-  
-  reset(): void;
-  
-  execute(): void;
-  
-  executeStep(): boolean;
-  
-  readonly numEntries: u32;
-  
-  getTypeOfIndex(aIndex: u32): i32;
-  
-  getVariant(aIndex: u32): nsIVariant;
-  
-  getInt32(aIndex: u32): i32;
-  
-  getInt64(aIndex: u32): i64;
-  
-  getDouble(aIndex: u32): double;
-  
-  getUTF8String(aIndex: u32): string;
-  
-  getString(aIndex: u32): string;
-  
-  getBlob(aIndex: u32, aDataSize: OutParam<u32>, aData: OutParam<u8[]>): void;
-  
-  getBlobAsString(aIndex: u32): string;
-  
-  getBlobAsUTF8String(aIndex: u32): string;
-  
-  getIsNull(aIndex: u32): boolean;
-}
-
+  readonly eSilently?: 256;
 
-
-
-interface mozIStorageStatementCallback extends nsISupports {
-  
-  readonly REASON_FINISHED?: 0;
-  
-  readonly REASON_CANCELED?: 1;
-  
-  readonly REASON_ERROR?: 2;
-
-  
-  handleResult(aResultSet: mozIStorageResultSet): void;
-  
-  handleError(aError: mozIStorageError): void;
-  
-  handleCompletion(aReason: u16): void;
-}
-
-
-
-
-interface mozIStorageVacuumParticipant extends nsISupports {
   
-  readonly expectedDatabasePageSize: i32;
+  run(): void;
   
-  readonly useIncrementalVacuum: boolean;
+  enterLastWindowClosingSurvivalArea(): void;
   
-  readonly databaseConnection: mozIStorageAsyncConnection;
+  exitLastWindowClosingSurvivalArea(): void;
   
-  onBeginVacuum(): boolean;
+  readonly automaticSafeModeNecessary: boolean;
   
-  onEndVacuum(aSucceeded: boolean): void;
-}
-
-
-
-
-interface mozIStorageValueArray extends nsISupports {
+  restartInSafeMode(aQuitMode: u32): void;
   
-  readonly VALUE_TYPE_NULL?: 0;
+  createInstanceWithProfile(aProfile: nsIToolkitProfile, aArgs?: string[]): void;
   
-  readonly VALUE_TYPE_INTEGER?: 1;
+  trackStartupCrashBegin(): boolean;
   
-  readonly VALUE_TYPE_FLOAT?: 2;
+  trackStartupCrashEnd(): void;
   
-  readonly VALUE_TYPE_TEXT?: 3;
+  quit(aMode: u32, aExitCode?: i32): void;
   
-  readonly VALUE_TYPE_BLOB?: 4;
-
+  advanceShutdownPhase(aPhase: nsIAppStartup.IDLShutdownPhase): void;
   
-  readonly numEntries: u32;
+  setImpendingShutdown(): void;
   
-  getTypeOfIndex(aIndex: u32): i32;
+  isInOrBeyondShutdownPhase(aPhase: nsIAppStartup.IDLShutdownPhase): boolean;
   
-  getInt32(aIndex: u32): i32;
+  readonly shuttingDown: boolean;
   
-  getInt64(aIndex: u32): i64;
+  readonly attemptingQuit: boolean;
   
-  getDouble(aIndex: u32): double;
+  readonly startingUp: boolean;
   
-  getUTF8String(aIndex: u32): string;
+  readonly restarting: boolean;
   
-  getString(aIndex: u32): string;
+  readonly wasRestarted: boolean;
   
-  getBlob(aIndex: u32, aDataSize: OutParam<u32>, aData: OutParam<u8[]>): void;
+  readonly wasSilentlyStarted: boolean;
   
-  getBlobAsString(aIndex: u32): string;
+  readonly secondsSinceLastOSRestart: i64;
   
-  getBlobAsUTF8String(aIndex: u32): string;
+  readonly showedPreXULSkeletonUI: boolean;
   
-  getIsNull(aIndex: u32): boolean;
+  getStartupInfo(): any;
 }
 
 
@@ -19100,121 +21176,9 @@ interface nsITelemetry extends nsISupports {
 
 
 
-interface nsIHttpServer extends nsISupports {
+interface nsITerminatorTest extends nsISupports {
   
-  start(port: i32): void;
-  
-  start_ipv6(port: i32): void;
-  
-  start_dualStack(port: i32): void;
-  
-  stop(callback: nsIHttpServerStoppedCallback): void;
-  
-  registerFile(path: string, file: nsIFile, handler?: nsIHttpRequestHandler): void;
-  
-  registerPathHandler(path: string, handler: nsIHttpRequestHandler): void;
-  
-  registerPrefixHandler(prefix: string, handler: nsIHttpRequestHandler): void;
-  
-  registerErrorHandler(code: u32, handler: nsIHttpRequestHandler): void;
-  
-  registerDirectory(path: string, dir: nsIFile): void;
-  
-  registerContentType(extension: string, type: string): void;
-  
-  setIndexHandler(handler: nsIHttpRequestHandler): void;
-  
-  readonly identity: nsIHttpServerIdentity;
-  
-  getState(path: string, key: string): string;
-  
-  setState(path: string, key: string, value: string): void;
-  
-  getSharedState(key: string): string;
-  
-  setSharedState(key: string, value: string): void;
-  
-  getObjectState(key: string): nsISupports;
-  
-  setObjectState(key: string, value: nsISupports): void;
-}
-
-
-type nsIHttpServerStoppedCallback = Callable<{
-  
-  onStopped(): void;
-}>
-
-
-interface nsIHttpServerIdentity extends nsISupports {
-  
-  readonly primaryScheme: string;
-  
-  readonly primaryHost: string;
-  
-  readonly primaryPort: i32;
-  
-  add(scheme: string, host: string, port: i32): void;
-  
-  remove(scheme: string, host: string, port: i32): boolean;
-  
-  has(scheme: string, host: string, port: i32): boolean;
-  
-  getScheme(host: string, port: i32): string;
-  
-  setPrimary(scheme: string, host: string, port: i32): void;
-}
-
-
-type nsIHttpRequestHandler = Callable<{
-  
-  handle(request: nsIHttpRequest, response: nsIHttpResponse): void;
-}>
-
-
-interface nsIHttpRequest extends nsISupports {
-  
-  readonly method: string;
-  
-  readonly scheme: string;
-  
-  readonly host: string;
-  
-  readonly port: u32;
-  
-  readonly path: string;
-  
-  readonly queryString: string;
-  
-  readonly httpVersion: string;
-  
-  getHeader(fieldName: string): string;
-  
-  hasHeader(fieldName: string): boolean;
-  
-  readonly headers: nsISimpleEnumerator;
-  
-  readonly bodyInputStream: nsIInputStream;
-}
-
-
-interface nsIHttpResponse extends nsISupports {
-  
-  setStatusLine(httpVersion: string, statusCode: u16, description: string): void;
-  
-  setHeader(name: string, value: string, merge?: boolean): void;
-  
-  setHeaderNoCheck(name: string, value: string): void;
-  
-  readonly bodyOutputStream: nsIOutputStream;
-  
-  write(data: string): void;
-  
-  processAsync(): void;
-  
-  seizePower(): void;
-  
-  finish(): void;
+  getTicksForShutdownPhases(): any;
 }
 
 
@@ -19232,1313 +21196,6 @@ interface nsIPageThumbsStorageService extends nsISupports {
 
 
 
-interface nsIBTPRemoteExceptionList extends nsISupports {
-  
-  init(aProtection: nsIBounceTrackingProtection): Promise<any>;
-  
-  shutdown(): void;
-}
-
-
-
-
-interface nsIBounceTrackingMapEntry extends nsISupports {
-  
-  readonly siteHost: string;
-  
-  readonly timeStamp: PRTime;
-}
-
-
-interface nsIBounceTrackingPurgeEntry extends nsIBounceTrackingMapEntry {
-  
-  readonly purgeTime: PRTime;
-  
-  readonly bounceTrackingRecord: nsIBounceTrackingRecord;
-}
-
-
-
-}  
-
-
-declare enum nsIBounceTrackingProtection_Modes {
-  
-  MODE_DISABLED = 0,
-  
-  MODE_ENABLED = 1,
-  
-  MODE_ENABLED_STANDBY = 2,
-  
-  MODE_ENABLED_DRY_RUN = 3,
-  
-  MAX_MODE_VALUE = 3,
-}
-
-declare global {
-
-namespace nsIBounceTrackingProtection {
-  type Modes = nsIBounceTrackingProtection_Modes;
-}
-
-
-interface nsIBounceTrackingProtection extends nsISupports, Enums<typeof nsIBounceTrackingProtection_Modes> {
-  
-  clearAll(): void;
-  
-  clearBySiteHostAndOriginAttributes(aSiteHost: string, originAttributes: any): void;
-  
-  clearBySiteHostAndOriginAttributesPattern(aSiteHost: string, aOriginAttributesPattern: any): void;
-  
-  clearByTimeRange(aFrom: PRTime, aTo: PRTime): void;
-  
-  clearByOriginAttributesPattern(aPattern: string): void;
-  
-  addSiteHostExceptions(aSiteHosts: string[]): void;
-  
-  removeSiteHostExceptions(aSiteHosts: string[]): void;
-  
-  hasRecentlyPurgedSite(aSiteHost: string): boolean;
-  
-  getRecentPurgedChainEntriesForSite(aSiteHost: string): nsIBounceTrackingPurgeEntry[];
-  
-  testGetSiteHostExceptions(): string[];
-  
-  testRunPurgeBounceTrackers(): Promise<any>;
-  
-  testClearExpiredUserActivations(): void;
-  
-  testGetBounceTrackerCandidateHosts(originAttributes: any): nsIBounceTrackingMapEntry[];
-  
-  testGetUserActivationHosts(originAttributes: any): nsIBounceTrackingMapEntry[];
-  
-  testAddBounceTrackerCandidate(originAttributes: any, aSiteHost: string, aBounceTime: PRTime): void;
-  
-  testAddUserActivation(originAttributes: any, aSiteHost: string, aActivationTime: PRTime): void;
-  
-  testGetRecentlyPurgedTrackers(originAttributes: any): nsIBounceTrackingPurgeEntry[];
-  
-  testMaybeMigrateUserInteractionPermissions(): void;
-}
-
-
-
-
-interface nsIBounceTrackingRecord extends nsISupports {
-  
-  readonly initialHost: string;
-  
-  readonly finalHost: string;
-  
-  readonly bounceHosts: string[];
-}
-
-
-
-
-interface nsIContentBlockingAllowList extends nsISupports {
-  
-  computeContentBlockingAllowListPrincipal(aPrincipal: nsIPrincipal): nsIPrincipal;
-}
-
-
-
-
-type nsIPartitioningExceptionListObserver = Callable<{
-  
-  onExceptionListUpdate(aList: string): void;
-}>
-
-
-interface nsIPartitioningExceptionListService extends nsISupports {
-  
-  registerAndRunExceptionListObserver(aObserver: nsIPartitioningExceptionListObserver): void;
-  
-  unregisterExceptionListObserver(aObserver: nsIPartitioningExceptionListObserver): void;
-}
-
-
-
-
-interface nsIPurgeTrackerService extends nsISupports {
-  
-  purgeTrackingCookieJars(): Promise<any>;
-}
-
-
-
-
-interface nsITrackingDBService extends nsISupports {
-  
-  readonly OTHER_COOKIES_BLOCKED_ID?: 0;
-  
-  readonly TRACKERS_ID?: 1;
-  
-  readonly TRACKING_COOKIES_ID?: 2;
-  
-  readonly CRYPTOMINERS_ID?: 3;
-  
-  readonly FINGERPRINTERS_ID?: 4;
-  
-  readonly SOCIAL_ID?: 5;
-  
-  readonly SUSPICIOUS_FINGERPRINTERS_ID?: 6;
-  
-  readonly BOUNCETRACKERS_ID?: 7;
-
-  
-  recordContentBlockingLog(data: string): void;
-  
-  saveEvents(data: string): Promise<any>;
-  
-  clearAll(): Promise<any>;
-  
-  clearSince(since: i64): Promise<any>;
-  
-  getEventsByDateRange(dateFrom: i64, dateTo: i64): Promise<any>;
-  
-  sumAllEvents(): Promise<any>;
-  
-  getEarliestRecordedDate(): Promise<any>;
-}
-
-
-
-
-interface nsIURLDecorationAnnotationsService extends nsISupports {
-  
-  ensureUpdated(): Promise<any>;
-}
-
-
-
-
-interface nsIURLQueryStringStripper extends nsISupports {
-  
-  strip(aURI: nsIURI, aIsPBM: boolean, aOutput: OutParam<nsIURI>): u32;
-  
-  stripForCopyOrShare(aURI: nsIURI): nsIURI;
-  
-  canStripForShare(aURI: nsIURI): boolean;
-  
-  testGetStripList(): string;
-}
-
-
-
-
-interface nsIURLQueryStrippingListObserver extends nsISupports {
-  
-  onQueryStrippingListUpdate(aStripList: string, aAllowList: string): void;
-  
-  onStripOnShareUpdate(aStripRules: string[]): void;
-}
-
-
-interface nsIURLQueryStrippingListService extends nsISupports {
-  
-  registerAndRunObserver(aObserver: nsIURLQueryStrippingListObserver): void;
-  
-  registerAndRunObserverStripOnShare(aObserver: nsIURLQueryStrippingListObserver): void;
-  
-  unregisterObserver(aObserver: nsIURLQueryStrippingListObserver): void;
-  
-  unregisterStripOnShareObserver(aObserver: nsIURLQueryStrippingListObserver): void;
-  
-  clearLists(): void;
-  
-  testWaitForInit(): Promise<any>;
-  
-  testSetList(testFile: any): Promise<any>;
-  
-  testHasStripOnShareObservers(): boolean;
-  
-  testHasQPSObservers(): boolean;
-}
-
-
-
-}  
-
-
-declare enum nsIScopedPrefs_Pref {
-  
-  PRIVACY_TRACKINGPROTECTION_ENABLED = 0,
-  
-  PRIVACY_TRACKINGPROTECTION_CRYPTOMINING_ENABLED = 1,
-  
-  PRIVACY_TRACKINGPROTECTION_FINGERPRINTING_ENABLED = 2,
-  
-  PRIVACY_TRACKINGPROTECTION_SOCIALTRACKING_ENABLED = 3,
-  
-  PRIVACY_TRACKINGPROTECTION_EMAILTRACKING_ENABLED = 4,
-  
-  PRIVACY_TRACKINGPROTECTION_CONTENT_ENABLED = 5,
-  
-  PRIVACY_TRACKINGPROTECTION_CONTENT_CRYPTOMINING_ENABLED = 6,
-  
-  PRIVACY_TRACKINGPROTECTION_CONTENT_FINGERPRINTING_ENABLED = 7,
-  
-  PRIVACY_TRACKINGPROTECTION_CONTENT_SOCIALTRACKING_ENABLED = 8,
-  
-  PRIVACY_TRACKINGPROTECTION_CONTENT_EMAILTRACKING_ENABLED = 9,
-  
-  PRIVACY_TRACKINGPROTECTION_CONTENT_TEST_ENABLED = 10,
-  
-  NUM_SCOPED_BOOL_PREFS = 11,
-}
-
-declare global {
-
-namespace nsIScopedPrefs {
-  type Pref = nsIScopedPrefs_Pref;
-}
-
-
-interface nsIScopedPrefs extends nsISupports, Enums<typeof nsIScopedPrefs_Pref> {
-  
-  setBoolPrefScoped(pref: nsIScopedPrefs.Pref, bc: BrowsingContext, value: boolean): void;
-  
-  getBoolPrefScoped(pref: nsIScopedPrefs.Pref, bc: BrowsingContext): boolean;
-  
-  clearScoped(): void;
-  
-  clearScopedPref(pref: nsIScopedPrefs.Pref): void;
-  
-  clearScopedByHost(aHost: string): void;
-  
-  clearScopedPrefByHost(pref: nsIScopedPrefs.Pref, aHost: string): void;
-}
-
-
-
-
-interface nsIAsyncShutdownBlocker extends nsISupports {
-  
-  readonly name: string;
-  
-  blockShutdown(aBarrierClient: nsIAsyncShutdownClient): void;
-  
-  readonly state: nsIPropertyBag;
-}
-
-
-interface nsIAsyncShutdownClient extends nsISupports {
-  
-  readonly name: string;
-  
-  readonly isClosed: boolean;
-  
-  addBlocker(aBlocker: nsIAsyncShutdownBlocker, aFileName: string, aLineNumber: i32, aStack: string): void;
-  
-  removeBlocker(aBlocker: nsIAsyncShutdownBlocker): void;
-  
-  readonly jsclient: any;
-}
-
-
-type nsIAsyncShutdownCompletionCallback = Callable<{
-  
-  done(): void;
-}>
-
-
-interface nsIAsyncShutdownBarrier extends nsISupports {
-  
-  readonly client: nsIAsyncShutdownClient;
-  
-  readonly state: nsIPropertyBag;
-  
-  wait(aOnReady: nsIAsyncShutdownCompletionCallback): void;
-}
-
-
-interface nsIAsyncShutdownService extends nsISupports {
-  
-  makeBarrier(aName: string): nsIAsyncShutdownBarrier;
-  
-  readonly profileBeforeChange: nsIAsyncShutdownClient;
-  
-  readonly profileChangeTeardown: nsIAsyncShutdownClient;
-  
-  readonly appShutdownConfirmed: nsIAsyncShutdownClient;
-  
-  readonly sendTelemetry: nsIAsyncShutdownClient;
-  
-  readonly webWorkersShutdown: nsIAsyncShutdownClient;
-  
-  readonly xpcomWillShutdown: nsIAsyncShutdownClient;
-}
-
-
-
-
-interface nsIBackgroundTasks extends nsISupports {
-  
-  readonly isBackgroundTaskMode: boolean;
-  
-  backgroundTaskName(): string;
-  
-  overrideBackgroundTaskNameForTesting(taskName: string): void;
-}
-
-
-
-
-interface nsIBackgroundTasksManager extends nsICommandLineHandler {
-  
-  runBackgroundTaskNamed(aTaskName: string, aCommandLine: nsICommandLine): void;
-}
-
-
-
-
-interface nsIBackgroundTasksRunner extends nsISupports {
-  
-  runInDetachedProcess(aTaskName: string, aCommandLine: string[]): void;
-  
-  removeDirectoryInDetachedProcess(aParentDirPath: string, aChildDirName: string, aSecondsToWait: string, aOtherFoldersSuffix: string, aMetricsId?: string): void;
-}
-
-
-
-
-interface nsIClearBySiteEntry extends nsISupports {
-  
-  schemelessSite: string;
-  
-  patternJSON: string;
-}
-
-
-
-
-interface nsIClearDataService extends nsISupports {
-  
-  readonly CLEAR_COOKIES?: 1;
-  
-  readonly CLEAR_NETWORK_CACHE?: 2;
-  
-  readonly CLEAR_BFCACHE?: 2;
-  
-  readonly CLEAR_IMAGE_CACHE?: 4;
-  
-  readonly CLEAR_JS_CACHE?: 8;
-  
-  readonly CLEAR_DOWNLOADS?: 16;
-  
-  readonly CLEAR_TLS_TOKEN_CACHE?: 32;
-  
-  readonly CLEAR_MEDIA_DEVICES?: 64;
-  
-  readonly CLEAR_DOM_QUOTA?: 128;
-  
-  readonly CLEAR_DOM_PUSH_NOTIFICATIONS?: 512;
-  
-  readonly CLEAR_HISTORY?: 1024;
-  
-  readonly CLEAR_MESSAGING_LAYER_SECURITY_STATE?: 2048;
-  
-  readonly CLEAR_AUTH_TOKENS?: 4096;
-  
-  readonly CLEAR_AUTH_CACHE?: 8192;
-  
-  readonly CLEAR_SITE_PERMISSIONS?: 16384;
-  
-  readonly CLEAR_CONTENT_PREFERENCES?: 32768;
-  
-  readonly CLEAR_HSTS?: 65536;
-  
-  readonly CLEAR_EME?: 131072;
-  
-  readonly CLEAR_REPORTS?: 262144;
-  
-  readonly CLEAR_STORAGE_ACCESS?: 524288;
-  
-  readonly CLEAR_CERT_EXCEPTIONS?: 1048576;
-  
-  readonly CLEAR_CONTENT_BLOCKING_RECORDS?: 2097152;
-  
-  readonly CLEAR_CSS_CACHE?: 4194304;
-  
-  readonly CLEAR_PREFLIGHT_CACHE?: 8388608;
-  
-  readonly CLEAR_CLIENT_AUTH_REMEMBER_SERVICE?: 16777216;
-  
-  readonly CLEAR_CREDENTIAL_MANAGER_STATE?: 33554432;
-  
-  readonly CLEAR_FINGERPRINTING_PROTECTION_STATE?: 268435456;
-  
-  readonly CLEAR_BOUNCE_TRACKING_PROTECTION_STATE?: 536870912;
-  
-  readonly CLEAR_STORAGE_PERMISSIONS?: 1073741824;
-  
-  readonly CLEAR_SHUTDOWN_EXCEPTIONS?: 2147483648;
-  
-  readonly CLEAR_ALL?: 4294967295;
-  
-  readonly CLEAR_PERMISSIONS?: 2147500032;
-  
-  readonly CLEAR_ALL_CACHES?: 12648462;
-  
-  readonly CLEAR_DOM_STORAGES?: 262784;
-  
-  readonly CLEAR_FORGET_ABOUT_SITE?: 3017264831;
-  
-  readonly CLEAR_COOKIES_AND_SITE_DATA?: 1879521953;
-  
-  readonly CLEAR_STATE_FOR_TRACKER_PURGING?: 1909406447;
-
-  
-  deleteDataFromLocalFiles(aIsUserRequest: boolean, aFlags: u32, aCallback: nsIClearDataCallback): void;
-  
-  deleteDataFromHost(aHost: string, aIsUserRequest: boolean, aFlags: u32, aCallback: nsIClearDataCallback): void;
-  
-  deleteDataFromSite(aSchemelessSite: string, aOriginAttributesPattern: any, aIsUserRequest: boolean, aFlags: u32, aCallback: nsIClearDataCallback): void;
-  
-  deleteDataFromSiteAndOriginAttributesPatternString(aSchemelessSite: string, aOriginAttributesPatternString: string, aIsUserRequest: boolean, aFlags: u32, aCallback: nsIClearDataCallback): void;
-  
-  deleteDataFromPrincipal(aPrincipal: nsIPrincipal, aIsUserRequest: boolean, aFlags: u32, aCallback: nsIClearDataCallback): void;
-  
-  deleteDataInTimeRange(aFrom: PRTime, aTo: PRTime, aIsUserRequest: boolean, aFlags: u32, aCallback: nsIClearDataCallback): void;
-  
-  deleteData(aFlags: u32, aCallback: nsIClearDataCallback): void;
-  
-  deleteDataFromOriginAttributesPattern(aOriginAttributesPattern: any, aCallback?: nsIClearDataCallback): void;
-  
-  deleteUserInteractionForClearingHistory(aPrincipalsWithStorage: nsIPrincipal[], aFrom?: PRTime, aCallback?: nsIClearDataCallback): void;
-  
-  cleanupAfterDeletionAtShutdown(aFlags: u32, aCallback: nsIClearDataCallback): void;
-  
-  clearPrivateBrowsingData(aCallback: nsIClearDataCallback): void;
-  
-  hostMatchesSite(aHost: string, aOriginAttributes: any, aSchemelessSite: string, aOriginAttributesPattern?: any): boolean;
-}
-
-
-type nsIClearDataCallback = Callable<{
-  
-  onDataDeleted(aFailedFlags: u32): void;
-}>
-
-
-type nsIPBMCleanupCallback = Callable<{
-  
-  complete(aStatus: nsresult): void;
-}>
-
-
-interface nsIPBMCleanupCollector extends nsISupports {
-  
-  addPendingCleanup(): nsIPBMCleanupCallback;
-}
-
-
-
-}  
-
-
-declare enum nsIContentAnalysisAcknowledgement_Result {
-  
-  eSuccess = 1,
-  
-  eInvalidResponse = 2,
-  
-  eTooLate = 3,
-}
-
-
-declare enum nsIContentAnalysisAcknowledgement_FinalAction {
-  
-  eUnspecified = 0,
-  
-  eAllow = 1,
-  
-  eReportOnly = 2,
-  
-  eWarn = 3,
-  
-  eBlock = 4,
-}
-
-declare global {
-
-namespace nsIContentAnalysisAcknowledgement {
-  type Result = nsIContentAnalysisAcknowledgement_Result;
-  type FinalAction = nsIContentAnalysisAcknowledgement_FinalAction;
-}
-
-
-interface nsIContentAnalysisAcknowledgement extends nsISupports, Enums<typeof nsIContentAnalysisAcknowledgement_Result & typeof nsIContentAnalysisAcknowledgement_FinalAction> {
-  
-  readonly result: nsIContentAnalysisAcknowledgement.Result;
-  
-  readonly finalAction: nsIContentAnalysisAcknowledgement.FinalAction;
-}
-
-
-interface nsIContentAnalysisResult extends nsISupports {
-  
-  readonly shouldAllowContent: boolean;
-}
-
-}  
-
-
-declare enum nsIContentAnalysisResponse_Action {
-  
-  eUnspecified = 0,
-  
-  eReportOnly = 1,
-  
-  eWarn = 2,
-  
-  eBlock = 3,
-  
-  eAllow = 1000,
-  
-  eCanceled = 1001,
-}
-
-
-declare enum nsIContentAnalysisResponse_CancelError {
-  
-  eUserInitiated = 0,
-  
-  eNoAgent = 1,
-  
-  eInvalidAgentSignature = 2,
-  
-  eErrorOther = 3,
-  
-  eOtherRequestInGroupCancelled = 4,
-  
-  eShutdown = 5,
-  
-  eTimeout = 6,
-}
-
-declare global {
-
-namespace nsIContentAnalysisResponse {
-  type Action = nsIContentAnalysisResponse_Action;
-  type CancelError = nsIContentAnalysisResponse_CancelError;
-}
-
-
-interface nsIContentAnalysisResponse extends nsIContentAnalysisResult, Enums<typeof nsIContentAnalysisResponse_Action & typeof nsIContentAnalysisResponse_CancelError> {
-  
-  readonly action: nsIContentAnalysisResponse.Action;
-  
-  readonly cancelError: nsIContentAnalysisResponse.CancelError;
-  
-  readonly requestToken: string;
-  
-  readonly userActionId: string;
-  
-  readonly isCachedResponse: boolean;
-  
-  readonly isSyntheticResponse: boolean;
-  
-  acknowledge(aCaa: nsIContentAnalysisAcknowledgement): void;
-}
-
-
-interface nsIClientDownloadResource extends nsISupports {
-  
-  readonly DOWNLOAD_URL?: 0;
-  
-  readonly DOWNLOAD_REDIRECT?: 1;
-  
-  readonly TAB_URL?: 2;
-  
-  readonly TAB_REDIRECT?: 3;
-  
-  readonly PPAPI_DOCUMENT?: 4;
-  
-  readonly PPAPI_PLUGIN?: 5;
-
-  
-  readonly url: string;
-  
-  readonly type: u32;
-}
-
-}  
-
-
-declare enum nsIContentAnalysisRequest_AnalysisType {
-  
-  eUnspecified = 0,
-  
-  eFileDownloaded = 1,
-  
-  eFileAttached = 2,
-  
-  eBulkDataEntry = 3,
-  
-  ePrint = 4,
-  
-  eFileTransfer = 5,
-  
-  eDataCopied = 6,
-}
-
-
-declare enum nsIContentAnalysisRequest_Reason {
-  
-  eUnknown = 0,
-  
-  eClipboardPaste = 1,
-  
-  eDragAndDrop = 2,
-  
-  eFilePickerDialog = 3,
-  
-  ePrintPreviewPrint = 4,
-  
-  eSystemDialogPrint = 5,
-  
-  eNormalDownload = 6,
-  
-  eSaveAsDownload = 7,
-  
-  eClipboardCopy = 8,
-}
-
-
-declare enum nsIContentAnalysisRequest_OperationType {
-  
-  eClipboard = 0,
-  
-  eDroppedText = 1,
-  
-  eOperationPrint = 2,
-  
-  eUpload = 3,
-  
-  eDownload = 4,
-}
-
-declare global {
-
-namespace nsIContentAnalysisRequest {
-  type AnalysisType = nsIContentAnalysisRequest_AnalysisType;
-  type Reason = nsIContentAnalysisRequest_Reason;
-  type OperationType = nsIContentAnalysisRequest_OperationType;
-}
-
-
-interface nsIContentAnalysisRequest extends nsISupports, Enums<typeof nsIContentAnalysisRequest_AnalysisType & typeof nsIContentAnalysisRequest_Reason & typeof nsIContentAnalysisRequest_OperationType> {
-  
-  readonly analysisType: nsIContentAnalysisRequest.AnalysisType;
-  
-  readonly reason: nsIContentAnalysisRequest.Reason;
-  
-  readonly operationTypeForDisplay: nsIContentAnalysisRequest.OperationType;
-  
-  readonly fileNameForDisplay: string;
-  
-  dataTransfer: DataTransfer;
-  
-  readonly transferable: nsITransferable;
-  
-  readonly textContent: string;
-  
-  readonly filePath: string;
-  
-  getPrintData(): u8[];
-  
-  readonly printerName: string;
-  
-  readonly url: nsIURI;
-  
-  readonly sha256Digest: string;
-  
-  readonly resources: nsIClientDownloadResource[];
-  
-  readonly email: string;
-  
-  requestToken: string;
-  
-  readonly windowGlobalParent: WindowGlobalParent;
-  
-  userActionId: string;
-  
-  userActionRequestsCount: i64;
-  
-  readonly sourceWindowGlobal: WindowGlobalParent;
-  
-  timeoutMultiplier: u32;
-  
-  testOnlyIgnoreCanceledAndAlwaysSubmitToAgent: boolean;
-}
-
-
-interface nsIContentAnalysisCallback extends nsISupports {
-  
-  contentResult(aResult: nsIContentAnalysisResult): void;
-  
-  error(aResult: nsresult): void;
-}
-
-
-interface nsIContentAnalysisDiagnosticInfo extends nsISupports {
-  
-  readonly connectedToAgent: boolean;
-  
-  readonly agentPath: string;
-  
-  readonly failedSignatureVerification: boolean;
-  
-  readonly requestCount: i64;
-}
-
-
-interface nsIContentAnalysis extends nsISupports {
-  
-  readonly isActive: boolean;
-  
-  readonly mightBeActive: boolean;
-  
-  isSetByEnterprisePolicy: boolean;
-  
-  analyzeContentRequests(aCars: nsIContentAnalysisRequest[], aAutoAcknowledge: boolean): Promise<any>;
-  
-  analyzeContentRequestsCallback(aCars: nsIContentAnalysisRequest[], aAutoAcknowledge: boolean, callback: nsIContentAnalysisCallback): void;
-  
-  analyzeBatchContentRequest(aCar: nsIContentAnalysisRequest, aAutoAcknowledge: boolean): Promise<any>;
-  
-  analyzeContentRequestPrivate(aRequest: nsIContentAnalysisRequest, aAutoAcknowledge: boolean, aCallback: nsIContentAnalysisCallback): void;
-  
-  cancelRequestsByUserAction(aUserActionId: string): void;
-  
-  cancelAllRequestsAssociatedWithUserAction(aUserActionId: string): void;
-  
-  respondToWarnDialog(aRequestToken: string, aAllowContent: boolean): void;
-  
-  cancelAllRequests(aForbidFutureRequests?: boolean): void;
-  
-  testOnlySetCACmdLineArg(aVal: boolean): void;
-  
-  getDiagnosticInfo(): Promise<any>;
-  
-  getURIForBrowsingContext(aBrowsingContext: BrowsingContext): nsIURI;
-  
-  getURIForDropEvent(aEvent: DragEvent): nsIURI;
-  
-  setCachedResponse(aURI: nsIURI, aSequenceNumber: i32, aAction: nsIContentAnalysisResponse.Action): void;
-  
-  getCachedResponse(aURI: nsIURI, aSequenceNumber: i32, aAction: OutParam<nsIContentAnalysisResponse.Action>, aIsValid: OutParam<boolean>): void;
-  
-  showBlockedRequestDialog(aRequest: nsIContentAnalysisRequest): void;
-  
-  makeResponseForTest(aAction: nsIContentAnalysisResponse.Action, aToken: string, aUserActionId: string): nsIContentAnalysisResponse;
-  
-  sendCancelToAgent(aUserActionId: string): void;
-  
-  forceRecreateClientForTest(): void;
-}
-
-
-interface nsIContentAnalysisRule extends nsISupports {
-  
-  readonly REPORT?: 0;
-  
-  readonly WARN?: 1;
-  
-  readonly BLOCK?: 2;
-
-  
-  readonly name: string;
-  
-  readonly operations: u32[];
-  
-  readonly domains: string[];
-  
-  readonly contentPatterns: string[];
-  
-  readonly verdict: u8;
-  
-  readonly message: string;
-}
-
-
-interface nsIContentAnalysisWasmRunner extends nsISupports {
-  
-  analyze(aRequestBytes: u8[], aContentBytes: u8[], aRules: nsIContentAnalysisRule[]): Promise<any>;
-}
-
-
-
-
-interface nsICrashService extends nsISupports {
-  
-  readonly CRASH_TYPE_CRASH?: 0;
-  
-  readonly CRASH_TYPE_HANG?: 1;
-
-  
-  addCrash(processType: i32, crashType: i32, id: string): Promise<any>;
-}
-
-
-
-
-interface nsIFinalizationWitnessService extends nsISupports {
-  
-  make(aTopic: string, aString: string): any;
-}
-
-
-
-
-interface nsIGeolocationService extends nsISupports {
-  
-  stopDevice(): void;
-}
-
-
-
-
-interface nsIOriginStatusEntry extends nsISupports {
-  
-  readonly origin: string;
-  
-  readonly status: i32;
-}
-
-
-interface nsIOriginsListLoadCallback extends nsISupports {
-  
-  onOriginsListLoaded(aEntries: nsIArray): void;
-}
-
-
-interface nsIWindowsMediaFoundationCDMOriginsListService extends nsISupports {
-  
-  readonly ORIGIN_BLOCKED?: 0;
-  
-  readonly ORIGIN_ALLOWED?: 1;
-
-  
-  setCallback(aCallback: nsIOriginsListLoadCallback): void;
-  
-  removeCallback(aCallback: nsIOriginsListLoadCallback): void;
-}
-
-
-
-
-interface nsIVisibleTab extends nsISupports {
-  
-  contentTitle: string;
-  
-  browserId: i64;
-}
-
-
-interface nsIBrowserWindowTracker extends nsISupports {
-  
-  getAllVisibleTabs(): nsIVisibleTab[];
-  
-  getBrowserById(aBrowserId: u64): nsISupports;
-}
-
-
-
-
-interface nsIRegion extends nsISupports {
-  
-  readonly current: string;
-  
-  readonly home: string;
-}
-
-
-
-
-interface nsIProcessToolsService extends nsISupports {
-  
-  kill(pid: u64): void;
-  
-  crash(pid: u64): void;
-  
-  readonly pid: u64;
-}
-
-
-
-
-interface nsIFingerprintingOverride extends nsISupports {
-  
-  readonly firstPartyDomain: string;
-  
-  readonly thirdPartyDomain: string;
-  
-  readonly overrides: string;
-  
-  readonly isBaseline: boolean;
-}
-
-
-interface nsIFingerprintingWebCompatService extends nsISupports {
-  
-  init(): void;
-  
-  shutdown(): void;
-}
-
-
-
-
-interface nsIRFPService extends nsISupports {
-  
-  setFingerprintingOverrides(aOverrides: nsIFingerprintingOverride[]): void;
-  
-  getFingerprintingOverrides(aDomainKey: string): nsIRFPTargetSetIDL;
-  
-  cleanAllOverrides(): void;
-  
-  readonly enabledFingerprintingProtectionsBaseline: nsIRFPTargetSetIDL;
-  
-  readonly enabledFingerprintingProtections: nsIRFPTargetSetIDL;
-  
-  cleanAllRandomKeys(): void;
-  
-  cleanRandomKeyByPrincipal(aPrincipal: nsIPrincipal): void;
-  
-  cleanRandomKeyBySite(aSchemelessSite: string, originAttributes: any): void;
-  
-  cleanRandomKeyByHost(aHost: string, aPattern: string): void;
-  
-  cleanRandomKeyByOriginAttributesPattern(aPattern: string): void;
-  
-  getSpoofedUserAgent(aDesktopMode: boolean): string;
-  
-  testGenerateRandomKey(aChannel: nsIChannel): u8[];
-}
-
-
-
-
-interface nsIRFPTargetSetIDL extends nsISupports {
-  
-  getNth32BitSet(aPart: u32): u32;
-}
-
-
-
-
-interface nsIUserCharacteristicsPageService extends nsISupports {
-  
-  createContentPage(principal: nsIPrincipal): Promise<any>;
-  
-  pageLoaded(browsingContext: BrowsingContext, data: any): void;
-}
-
-
-
-
-interface nsIToolkitShellService extends nsISupports {
-  
-  isDefaultApplication(): boolean;
-}
-
-
-
-
-interface nsITerminatorTest extends nsISupports {
-  
-  getTicksForShutdownPhases(): any;
-}
-
-
-
-
-interface nsIXULStore extends nsISupports {
-  
-  persist(aNode: Node, attr: string): void;
-  
-  setValue(doc: string, id: string, attr: string, value: string): void;
-  
-  hasValue(doc: string, id: string, attr: string): boolean;
-  
-  getValue(doc: string, id: string, attr: string): string;
-  
-  removeValue(doc: string, id: string, attr: string): void;
-  
-  removeDocument(doc: string): void;
-  
-  getIDsEnumerator(doc: string): nsIStringEnumerator;
-  
-  getAttributeEnumerator(doc: string, id: string): nsIStringEnumerator;
-}
-
-
-
-
-interface nsIProfileStartup extends nsISupports {
-  
-  readonly directory: nsIFile;
-  
-  doStartup(): void;
-}
-
-
-interface nsIProfileMigrator extends nsISupports {
-  
-  migrate(aStartup: nsIProfileStartup, aKey: string, aProfileName?: string): void;
-}
-
-
-
-
-interface nsIProfileUnlocker extends nsISupports {
-  
-  readonly ATTEMPT_QUIT?: 0;
-  
-  readonly FORCE_QUIT?: 1;
-
-  
-  unlock(aSeverity: u32): void;
-}
-
-
-
-
-interface nsIProfileLock extends nsISupports {
-  
-  readonly directory: nsIFile;
-  
-  readonly localDirectory: nsIFile;
-  
-  readonly replacedLockTime: PRTime;
-  
-  unlock(): void;
-}
-
-
-interface nsIToolkitProfile extends nsISupports {
-  
-  rootDir: nsIFile;
-  
-  readonly localDir: nsIFile;
-  
-  name: string;
-  
-  storeID: string;
-  
-  showProfileSelector: boolean;
-  
-  remove(removeFiles: boolean): void;
-  
-  removeInBackground(removeFiles: boolean): void;
-  
-  lock(aUnlocker: OutParam<nsIProfileUnlocker>): nsIProfileLock;
-}
-
-
-
-}  
-
-
-declare enum nsIToolkitProfileService_downgradeUIFlags {
-  
-  hasSync = 1,
-}
-
-
-declare enum nsIToolkitProfileService_downgradeUIChoice {
-  
-  quit = 0,
-  
-  createNewProfile = 1,
-}
-
-
-declare enum nsIToolkitProfileService_profileManagerResult {
-  
-  exit = 0,
-  
-  launchWithProfile = 1,
-  
-  restart = 2,
-}
-
-declare global {
-
-namespace nsIToolkitProfileService {
-  type downgradeUIFlags = nsIToolkitProfileService_downgradeUIFlags;
-  type downgradeUIChoice = nsIToolkitProfileService_downgradeUIChoice;
-  type profileManagerResult = nsIToolkitProfileService_profileManagerResult;
-}
-
-
-interface nsIToolkitProfileService extends nsISupports, Enums<typeof nsIToolkitProfileService_downgradeUIFlags & typeof nsIToolkitProfileService_downgradeUIChoice & typeof nsIToolkitProfileService_profileManagerResult> {
-  
-  readonly isListOutdated: boolean;
-  
-  readonly isFirstRun: boolean;
-  
-  startWithLastProfile: boolean;
-  
-  readonly profiles: nsISimpleEnumerator;
-  
-  readonly currentProfile: nsIToolkitProfile;
-  
-  defaultProfile: nsIToolkitProfile;
-  
-  selectStartupProfile(aArgv: string[], aIsResetting: boolean, aUpdateChannel: string, aLegacyInstallHash: string, aRootDir: OutParam<nsIFile>, aLocalDir: OutParam<nsIFile>, aProfile: OutParam<nsIToolkitProfile>): boolean;
-  
-  getProfileByName(aName: string): nsIToolkitProfile;
-  
-  getProfileByDir(aRootDir: nsIFile, aLocalDir?: nsIFile): nsIToolkitProfile;
-  
-  createProfile(aRootDir: nsIFile, aName: string, aSource: string): nsIToolkitProfile;
-  
-  createUniqueProfile(aRootDir: nsIFile, aNamePrefix: string, aSource: string): nsIToolkitProfile;
-  
-  getProfileDescriptor(aRootDir: nsIFile, aIsRelative: OutParam<boolean>): string;
-  
-  getLocalDirFromRootDir(aRootDir: nsIFile): nsIFile;
-  
-  readonly profileCount: u32;
-  
-  flush(): void;
-  
-  asyncFlush(): Promise<any>;
-  
-  asyncFlushCurrentProfile(): Promise<any>;
-  
-  removeProfileFilesByPath(aRootDir: nsIFile, aLocalDir: nsIFile, aTimeout: u32): Promise<any>;
-}
-
-
-
-
-interface nsIRemoteService extends nsISupports {
-  
-  sendCommandLine(aProfile: string, aArgs: string[], aRaise?: boolean): void;
-}
-
-
-
-
-interface nsITransaction extends nsISupports {
-  
-  doTransaction(): void;
-  
-  undoTransaction(): void;
-  
-  redoTransaction(): void;
-  
-  readonly isTransient: boolean;
-  
-  merge(aTransaction: nsITransaction): boolean;
-}
-
-
-
-
-interface nsITransactionManager extends nsISupports {
-  
-  doTransaction(aTransaction: nsITransaction): void;
-  
-  undoTransaction(): void;
-  
-  redoTransaction(): void;
-  
-  clear(): void;
-  
-  clearUndoStack(): void;
-  
-  clearRedoStack(): void;
-  
-  beginBatch(aData: nsISupports): void;
-  
-  endBatch(aAllowEmpty: boolean): void;
-  
-  readonly numberOfUndoItems: i32;
-  
-  readonly numberOfRedoItems: i32;
-  
-  maxTransactionCount: i32;
-  
-  batchTopUndo(): void;
-  
-  removeTopUndo(): void;
-  
-  peekUndoStack(): nsITransaction;
-  
-  peekRedoStack(): nsITransaction;
-}
-
-
-
-
-interface nsIInlineSpellChecker extends nsISupports {
-  
-  readonly spellChecker: nsIEditorSpellCheck;
-  
-  init(aEditor: nsIEditor): void;
-  
-  cleanup(aDestroyingFrames: boolean): void;
-  
-  enableRealTimeSpell: boolean;
-  
-  spellCheckRange(aSelection: Range): void;
-  
-  getMisspelledWord(aNode: Node, aOffset: u32): Range;
-  
-  replaceWord(aNode: Node, aOffset: u32, aNewword: string): void;
-  
-  addWordToDictionary(aWord: string): void;
-  
-  removeWordFromDictionary(aWord: string): void;
-  
-  ignoreWord(aWord: string): void;
-  
-  ignoreWords(aWordsToIgnore: string[]): void;
-  
-  updateCurrentDictionary(): void;
-  
-  readonly spellCheckPending: boolean;
-}
-
-
-
-
-interface nsIScriptableUnicodeConverter extends nsISupports {
-  
-  ConvertFromUnicode(aSrc: string): string;
-  
-  Finish(): string;
-  
-  ConvertToUnicode(aSrc: string): string;
-  
-  charset: string;
-  
-  isInternal: boolean;
-}
-
-
-
-
-interface nsITextToSubURI extends nsISupports {
-  
-  ConvertAndEscape(charset: string, text: string): string;
-  
-  UnEscapeAndConvert(charset: string, text: string): string;
-  
-  unEscapeURIForUI(aURIFragment: string, aDontEscape?: boolean): string;
-  
-  unEscapeNonAsciiURI(aCharset: string, aURIFragment: string): string;
-}
-
-
-
-
 interface nsIUpdateTimerManager extends nsISupports {
   
   registerTimer(id: string, callback: nsITimerCallback, interval: u32, skipFirst?: boolean): void;
@@ -20549,786 +21206,57 @@ interface nsIUpdateTimerManager extends nsISupports {
 
 
 
-interface nsIUpdatePatch extends nsISupports {
+interface nsITypeAheadFind extends nsISupports {
   
-  readonly type: string;
+  readonly FIND_INITIAL?: 0;
   
-  readonly URL: string;
+  readonly FIND_NEXT?: 1;
   
-  finalURL: string;
+  readonly FIND_PREVIOUS?: 2;
   
-  readonly size: u32;
+  readonly FIND_FIRST?: 3;
   
-  state: string;
+  readonly FIND_LAST?: 4;
   
-  errorCode: i32;
+  readonly FIND_FOUND?: 0;
   
-  selected: boolean;
+  readonly FIND_NOTFOUND?: 1;
   
-  serialize(updates: Document): Element;
+  readonly FIND_WRAPPED?: 2;
+  
+  readonly FIND_PENDING?: 3;
+
+  
+  init(aDocShell: nsIDocShell): void;
+  
+  find(aSearchString: string, aLinksOnly: boolean, aMode: u32, aDontIterateFrames: boolean): u16;
+  
+  getFoundRange(): Range;
+  
+  setDocShell(aDocShell: nsIDocShell): void;
+  
+  setSelectionModeAndRepaint(toggle: i16): void;
+  
+  collapseSelection(): void;
+  
+  isRangeVisible(aRange: Range, aMustBeInViewPort: boolean): boolean;
+  
+  isRangeRendered(aRange: Range): boolean;
+  
+  readonly searchString: string;
+  
+  caseSensitive: boolean;
+  
+  matchDiacritics: boolean;
+  
+  entireWord: boolean;
+  
+  readonly foundLink: Element;
+  
+  readonly foundEditable: Element;
+  
+  readonly currentWindow: mozIDOMWindow;
 }
-
-
-interface nsIUpdate extends nsISupports {
-  
-  readonly type: string;
-  
-  readonly name: string;
-  
-  readonly displayVersion: string;
-  
-  readonly appVersion: string;
-  
-  readonly platformVersion: string;
-  
-  readonly previousAppVersion: string;
-  
-  readonly buildID: string;
-  
-  readonly detailsURL: string;
-  
-  readonly serviceURL: string;
-  
-  readonly channel: string;
-  
-  readonly unsupported: boolean;
-  
-  promptWaitTime: i64;
-  
-  isCompleteUpdate: boolean;
-  
-  installDate: i64;
-  
-  statusText: string;
-  
-  readonly selectedPatch: nsIUpdatePatch;
-  
-  state: string;
-  
-  errorCode: i32;
-  
-  elevationFailure: boolean;
-  
-  readonly patchCount: u32;
-  
-  getPatchAt(index: u32): nsIUpdatePatch;
-  
-  serialize(updates: Document): Element;
-}
-
-
-interface nsIUpdateCheckResult extends nsISupports {
-  
-  readonly checksAllowed: boolean;
-  
-  readonly succeeded: boolean;
-  
-  readonly request: any;
-  
-  readonly updates: nsIUpdate[];
-}
-
-
-interface nsIUpdateCheck extends nsISupports {
-  
-  readonly id: i32;
-  
-  readonly result: Promise<any>;
-}
-
-
-interface nsIUpdateCheckerInternal extends nsISupports {
-  
-  checkForUpdates(checkType: i32): nsIUpdateCheck;
-}
-
-
-interface nsIUpdateChecker extends nsISupports {
-  
-  readonly BACKGROUND_CHECK?: 1;
-  
-  readonly FOREGROUND_CHECK?: 2;
-
-  
-  checkForUpdates(checkType: i32): nsIUpdateCheck;
-  
-  getUpdateURL(checkType: i32): Promise<any>;
-  
-  stopCheck(id: i32): void;
-  
-  stopAllChecks(): void;
-  
-  readonly internal: nsIUpdateCheckerInternal;
-}
-
-
-interface nsIApplicationUpdateServiceInternal extends nsISupports {
-  
-  init(force: boolean): Promise<any>;
-  
-  downloadUpdate(update: nsIUpdate): Promise<any>;
-  
-  stopDownload(): Promise<any>;
-}
-
-
-interface nsIApplicationUpdateService extends nsISupports {
-  
-  readonly DOWNLOAD_SUCCESS?: 1;
-  
-  readonly DOWNLOAD_FAILURE_CANNOT_RESUME_IN_BACKGROUND?: 2;
-  
-  readonly DOWNLOAD_FAILURE_GENERIC?: 3;
-  
-  readonly DOWNLOAD_FAILURE_CANNOT_WRITE_STATE?: 4;
-  
-  readonly STATE_IDLE?: 1;
-  
-  readonly STATE_DOWNLOADING?: 2;
-  
-  readonly STATE_STAGING?: 4;
-  
-  readonly STATE_PENDING?: 5;
-  
-  readonly STATE_SWAP?: 6;
-  
-  readonly STATE_DOWNLOAD_FAILED?: 7;
-
-  
-  init(): Promise<any>;
-  
-  checkForBackgroundUpdates(): Promise<any>;
-  
-  selectUpdate(updates: nsIUpdate[]): Promise<any>;
-  
-  addDownloadListener(listener: nsIRequestObserver): void;
-  
-  removeDownloadListener(listener: nsIRequestObserver): void;
-  
-  downloadUpdate(update: nsIUpdate): Promise<any>;
-  
-  onCheckComplete(result: nsIUpdateCheckResult): Promise<any>;
-  
-  stopDownload(): Promise<any>;
-  
-  readonly disabled: boolean;
-  
-  readonly canUsuallyCheckForUpdates: boolean;
-  
-  readonly canCheckForUpdates: boolean;
-  
-  readonly elevationRequired: boolean;
-  
-  readonly canUsuallyApplyUpdates: boolean;
-  
-  readonly canApplyUpdates: boolean;
-  
-  readonly isOtherInstanceHandlingUpdates: boolean;
-  
-  readonly canUsuallyStageUpdates: boolean;
-  
-  readonly canStageUpdates: boolean;
-  
-  readonly canUsuallyUseBits: boolean;
-  
-  readonly canUseBits: boolean;
-  
-  readonly manualUpdateOnly: boolean;
-  
-  readonly isAppBaseDirWritable: boolean;
-  
-  onlyDownloadUpdatesThisSession: boolean;
-  
-  getStateName(state: i32): string;
-  
-  readonly currentState: i32;
-  
-  readonly stateTransition: Promise<any>;
-  
-  readonly internal: nsIApplicationUpdateServiceInternal;
-}
-
-
-interface nsIUpdateProcessor extends nsISupports {
-  
-  processUpdate(): void;
-  
-  getServiceRegKeyExists(): boolean;
-  
-  attemptAutomaticApplicationRestartWithLaunchArgs(argvExtra: string[]): i32;
-  
-  waitForProcessExit(pid: u32, timeoutMS: u32): void;
-}
-
-
-interface nsIUpdateSyncManager extends nsISupports {
-  
-  isOtherInstanceRunning(): boolean;
-  
-  resetLock(anAppFile?: nsIFile): void;
-  
-  getUpdateLockFilePath(): string;
-}
-
-
-interface nsIUpdateMutex extends nsISupports {
-  
-  isLocked(): boolean;
-  
-  tryLock(): boolean;
-  
-  unlock(): void;
-}
-
-
-interface nsIUpdateManagerInternal extends nsISupports {
-  
-  reload(skipFiles: boolean): Promise<any>;
-  
-  getHistory(): nsIUpdate[];
-  
-  addUpdateToHistory(update: nsIUpdate): void;
-  
-  readyUpdate: nsIUpdate;
-  
-  downloadingUpdate: nsIUpdate;
-  
-  refreshUpdateStatus(): Promise<any>;
-}
-
-
-interface nsIUpdateManager extends nsISupports {
-  
-  getHistory(): Promise<any>;
-  
-  getReadyUpdate(): Promise<any>;
-  
-  getDownloadingUpdate(): Promise<any>;
-  
-  updateInstalledAtStartup(): Promise<any>;
-  
-  lastUpdateInstalled(): Promise<any>;
-  
-  addUpdateToHistory(update: nsIUpdate): Promise<any>;
-  
-  saveUpdates(): void;
-  
-  refreshUpdateStatus(): Promise<any>;
-  
-  elevationOptedIn(): Promise<any>;
-  
-  cleanupDownloadingUpdate(): Promise<any>;
-  
-  cleanupReadyUpdate(): Promise<any>;
-  
-  cleanupActiveUpdates(): Promise<any>;
-  
-  doInstallCleanup(): Promise<any>;
-  
-  doUninstallCleanup(): Promise<any>;
-  
-  readonly internal: nsIUpdateManagerInternal;
-}
-
-
-interface nsIApplicationUpdateServiceStub extends nsISupports {
-  
-  init(): Promise<any>;
-  
-  initUpdate(): Promise<any>;
-  
-  readonly updateDisabled: boolean;
-  
-  readonly updateDisabledForTesting: boolean;
-}
-
-
-
-
-
-
-interface nsIContentHandler extends nsISupports {
-  
-  handleContent(aContentType: string, aWindowContext: nsIInterfaceRequestor, aRequest: nsIRequest): void;
-}
-
-
-
-
-interface nsIDocumentLoader extends nsISupports {
-  
-  stop(): void;
-  
-  readonly container: nsISupports;
-  
-  readonly loadGroup: nsILoadGroup;
-  
-  readonly documentChannel: nsIChannel;
-}
-
-
-
-
-interface nsITransfer extends nsIWebProgressListener2 {
-  
-  readonly DOWNLOAD_ACCEPTABLE?: 0;
-  
-  readonly DOWNLOAD_FORBIDDEN?: 1;
-  
-  readonly DOWNLOAD_POTENTIALLY_UNSAFE?: 2;
-
-  
-  init(aSource: nsIURI, aSourceOriginalURI: nsIURI, aTarget: nsIURI, aDisplayName: string, aMIMEInfo: nsIMIMEInfo, startTime: PRTime, aTempFile: nsIFile, aCancelable: nsICancelable, aIsPrivate: boolean, aDownloadClassification: i32, aReferrerInfo: nsIReferrerInfo, aOpenDownloadsListOnStart: boolean, aFilesFolder: nsIFile): void;
-  
-  initWithBrowsingContext(aSource: nsIURI, aTarget: nsIURI, aDisplayName: string, aMIMEInfo: nsIMIMEInfo, startTime: PRTime, aTempFile: nsIFile, aCancelable: nsICancelable, aIsPrivate: boolean, aDownloadClassification: i32, aReferrerInfo: nsIReferrerInfo, aOpenDownloadsListOnStart: boolean, aBrowsingContext: BrowsingContext, aHandleInternally: boolean, aHttpChannel: nsIHttpChannel): void;
-  
-  setSha256Hash(aHash: string): void;
-  
-  setSignatureInfo(aSignatureInfo: u8[][][]): void;
-  
-  setRedirects(aRedirects: nsIArray): void;
-  
-  readonly downloadPromise: Promise<any>;
-}
-
-
-
-
-interface nsIURIContentListener extends nsISupports {
-  
-  doContent(aContentType: string, aIsContentPreferred: boolean, aRequest: nsIRequest, aContentHandler: OutParam<nsIStreamListener>): boolean;
-  
-  isPreferred(aContentType: string, aDesiredContentType: OutParam<string>): boolean;
-  
-  canHandleContent(aContentType: string, aIsContentPreferred: boolean, aDesiredContentType: OutParam<string>): boolean;
-  
-  loadCookie: nsISupports;
-  
-  parentContentListener: nsIURIContentListener;
-}
-
-
-
-
-interface nsIURILoader extends nsISupports {
-  
-  readonly IS_CONTENT_PREFERRED?: 1;
-  
-  readonly DONT_RETARGET?: 2;
-  
-  readonly IS_OBJECT_EMBED?: 4;
-
-  
-  registerContentListener(aContentListener: nsIURIContentListener): void;
-  
-  unRegisterContentListener(aContentListener: nsIURIContentListener): void;
-  
-  openURI(aChannel: nsIChannel, aFlags: u32, aWindowContext: nsIInterfaceRequestor): void;
-  
-  openChannel(aChannel: nsIChannel, aFlags: u32, aWindowContext: nsIInterfaceRequestor): nsIStreamListener;
-  
-  stop(aLoadCookie: nsISupports): void;
-}
-
-
-
-
-interface nsIWebProgress extends nsISupports {
-  
-  readonly NOTIFY_STATE_REQUEST?: 1;
-  
-  readonly NOTIFY_STATE_DOCUMENT?: 2;
-  
-  readonly NOTIFY_STATE_NETWORK?: 4;
-  
-  readonly NOTIFY_STATE_WINDOW?: 8;
-  
-  readonly NOTIFY_STATE_ALL?: 15;
-  
-  readonly NOTIFY_PROGRESS?: 16;
-  
-  readonly NOTIFY_STATUS?: 32;
-  
-  readonly NOTIFY_SECURITY?: 64;
-  
-  readonly NOTIFY_LOCATION?: 128;
-  
-  readonly NOTIFY_REFRESH?: 256;
-  
-  readonly NOTIFY_CONTENT_BLOCKING?: 512;
-  
-  readonly NOTIFY_ALL?: 1023;
-
-  
-  addProgressListener(aListener: nsIWebProgressListener, aNotifyMask: u32): void;
-  
-  removeProgressListener(aListener: nsIWebProgressListener): void;
-  
-  readonly browsingContext: BrowsingContext;
-  
-  readonly DOMWindow: mozIDOMWindowProxy;
-  
-  readonly isTopLevel: boolean;
-  
-  readonly isLoadingDocument: boolean;
-  
-  readonly loadType: u32;
-  
-  target: nsIEventTarget;
-  
-  readonly documentRequest: nsIRequest;
-}
-
-
-
-
-interface nsIWebProgressListener extends nsISupports {
-  
-  readonly STATE_START?: 1;
-  
-  readonly STATE_REDIRECTING?: 2;
-  
-  readonly STATE_TRANSFERRING?: 4;
-  
-  readonly STATE_NEGOTIATING?: 8;
-  
-  readonly STATE_STOP?: 16;
-  
-  readonly STATE_IS_REQUEST?: 65536;
-  
-  readonly STATE_IS_DOCUMENT?: 131072;
-  
-  readonly STATE_IS_NETWORK?: 262144;
-  
-  readonly STATE_IS_WINDOW?: 524288;
-  
-  readonly STATE_IS_REDIRECTED_DOCUMENT?: 1048576;
-  
-  readonly STATE_RESTORING?: 16777216;
-  
-  readonly STATE_IS_INSECURE?: 4;
-  
-  readonly STATE_IS_BROKEN?: 1;
-  
-  readonly STATE_IS_SECURE?: 2;
-  
-  readonly STATE_BLOCKED_MIXED_ACTIVE_CONTENT?: 16;
-  
-  readonly STATE_LOADED_MIXED_ACTIVE_CONTENT?: 32;
-  
-  readonly STATE_BLOCKED_MIXED_DISPLAY_CONTENT?: 256;
-  
-  readonly STATE_LOADED_MIXED_DISPLAY_CONTENT?: 512;
-  
-  readonly STATE_IDENTITY_EV_TOPLEVEL?: 1048576;
-  
-  readonly STATE_IDENTITY_ASSOCIATED?: 2097152;
-  
-  readonly STATE_USES_SSL_3?: 16777216;
-  
-  readonly STATE_USES_WEAK_CRYPTO?: 33554432;
-  
-  readonly STATE_CERT_USER_OVERRIDDEN?: 67108864;
-  
-  readonly STATE_BLOCKED_TRACKING_CONTENT?: 4096;
-  
-  readonly STATE_LOADED_LEVEL_1_TRACKING_CONTENT?: 8192;
-  
-  readonly STATE_LOADED_LEVEL_2_TRACKING_CONTENT?: 1048576;
-  
-  readonly STATE_BLOCKED_FINGERPRINTING_CONTENT?: 64;
-  
-  readonly STATE_LOADED_FINGERPRINTING_CONTENT?: 1024;
-  
-  readonly STATE_REPLACED_FINGERPRINTING_CONTENT?: 134217728;
-  
-  readonly STATE_ALLOWED_FINGERPRINTING_CONTENT?: 512;
-  
-  readonly STATE_BLOCKED_CRYPTOMINING_CONTENT?: 2048;
-  
-  readonly STATE_LOADED_CRYPTOMINING_CONTENT?: 2097152;
-  
-  readonly STATE_BLOCKED_UNSAFE_CONTENT?: 16384;
-  
-  readonly STATE_COOKIES_LOADED?: 32768;
-  
-  readonly STATE_COOKIES_LOADED_TRACKER?: 262144;
-  
-  readonly STATE_COOKIES_LOADED_SOCIALTRACKER?: 524288;
-  
-  readonly STATE_COOKIES_BLOCKED_BY_PERMISSION?: 268435456;
-  
-  readonly STATE_COOKIES_BLOCKED_TRACKER?: 536870912;
-  
-  readonly STATE_COOKIES_BLOCKED_SOCIALTRACKER?: 16777216;
-  
-  readonly STATE_COOKIES_BLOCKED_ALL?: 1073741824;
-  
-  readonly STATE_COOKIES_PARTITIONED_TRACKER?: 2;
-  
-  readonly STATE_COOKIES_PARTITIONED_FOREIGN?: 2147483648;
-  
-  readonly STATE_COOKIES_BLOCKED_FOREIGN?: 128;
-  
-  readonly STATE_BLOCKED_SOCIALTRACKING_CONTENT?: 65536;
-  
-  readonly STATE_LOADED_SOCIALTRACKING_CONTENT?: 131072;
-  
-  readonly STATE_REPLACED_TRACKING_CONTENT?: 16;
-  
-  readonly STATE_ALLOWED_TRACKING_CONTENT?: 32;
-  
-  readonly STATE_BLOCKED_EMAILTRACKING_CONTENT?: 4194304;
-  
-  readonly STATE_LOADED_EMAILTRACKING_LEVEL_1_CONTENT?: 8388608;
-  
-  readonly STATE_LOADED_EMAILTRACKING_LEVEL_2_CONTENT?: 256;
-  
-  readonly STATE_ALLOWED_CANVAS_FINGERPRINTING?: 33554432;
-  
-  readonly STATE_ALLOWED_FONT_FINGERPRINTING?: 67108864;
-  
-  readonly STATE_BLOCKED_SUSPICIOUS_FINGERPRINTING?: 4;
-  
-  readonly STATE_PURGED_BOUNCETRACKER?: 8;
-  
-  readonly STATE_HTTPS_ONLY_MODE_UPGRADED?: 4194304;
-  
-  readonly STATE_HTTPS_ONLY_MODE_UPGRADE_FAILED?: 8388608;
-  
-  readonly STATE_HTTPS_ONLY_MODE_UPGRADED_FIRST?: 134217728;
-  
-  readonly LOCATION_CHANGE_SAME_DOCUMENT?: 1;
-  
-  readonly LOCATION_CHANGE_ERROR_PAGE?: 2;
-  
-  readonly LOCATION_CHANGE_RELOAD?: 4;
-  
-  readonly LOCATION_CHANGE_HASHCHANGE?: 8;
-  
-  readonly LOCATION_CHANGE_SESSION_STORE?: 16;
-
-  
-  onStateChange(aWebProgress: nsIWebProgress, aRequest: nsIRequest, aStateFlags: u32, aStatus: nsresult): void;
-  
-  onProgressChange(aWebProgress: nsIWebProgress, aRequest: nsIRequest, aCurSelfProgress: i32, aMaxSelfProgress: i32, aCurTotalProgress: i32, aMaxTotalProgress: i32): void;
-  
-  onLocationChange(aWebProgress: nsIWebProgress, aRequest: nsIRequest, aLocation: nsIURI, aFlags?: u32): void;
-  
-  onStatusChange(aWebProgress: nsIWebProgress, aRequest: nsIRequest, aStatus: nsresult, aMessage: string): void;
-  
-  onSecurityChange(aWebProgress: nsIWebProgress, aRequest: nsIRequest, aState: u32): void;
-  
-  onContentBlockingEvent(aWebProgress: nsIWebProgress, aRequest: nsIRequest, aEvent: u32): void;
-}
-
-
-
-
-interface nsIWebProgressListener2 extends nsIWebProgressListener {
-  
-  onProgressChange64(aWebProgress: nsIWebProgress, aRequest: nsIRequest, aCurSelfProgress: i64, aMaxSelfProgress: i64, aCurTotalProgress: i64, aMaxTotalProgress: i64): void;
-  
-  onRefreshAttempted(aWebProgress: nsIWebProgress, aRefreshURI: nsIURI, aMillis: u32, aSameURI: boolean): boolean;
-}
-
-
-
-
-interface nsIUrlClassifierBlockedChannel extends nsISupports {
-  
-  readonly TRACKING_PROTECTION?: 0;
-  
-  readonly SOCIAL_TRACKING_PROTECTION?: 1;
-  
-  readonly FINGERPRINTING_PROTECTION?: 2;
-  
-  readonly CRYPTOMINING_PROTECTION?: 3;
-
-  
-  readonly reason: u8;
-  
-  readonly tables: string;
-  
-  readonly url: string;
-  
-  readonly tabId: u64;
-  
-  readonly channelId: u64;
-  
-  readonly isPrivateBrowsing: boolean;
-  
-  readonly topLevelUrl: string;
-  
-  readonly browserId: u64;
-  
-  readonly channel: nsIChannel;
-  
-  replace(): void;
-  
-  allow(): void;
-}
-
-
-interface nsIChannelClassifierService extends nsISupports {
-  
-  addListener(aObserver: nsIObserver): void;
-  
-  removeListener(aObserver: nsIObserver): void;
-}
-
-
-
-
-type nsIURIClassifierCallback = Callable<{
-  
-  onClassifyComplete(aErrorCode: nsresult, aList: string, aProvider: string, aFullHash: string): void;
-}>
-
-
-interface nsIURIClassifier extends nsISupports {
-  
-  classify(aPrincipal: nsIPrincipal, aCallback: nsIURIClassifierCallback): boolean;
-  
-  asyncClassifyLocalWithFeatures(aURI: nsIURI, aFeatures: nsIUrlClassifierFeature[], aListType: nsIUrlClassifierFeature.listType, aCallback: nsIUrlClassifierFeatureCallback, aIdlePriority?: boolean): void;
-  
-  asyncClassifyLocalWithFeatureNames(aURI: nsIURI, aFeatures: string[], aListType: nsIUrlClassifierFeature.listType, aCallback: nsIUrlClassifierFeatureCallback): void;
-  
-  getFeatureByName(aFeatureName: string): nsIUrlClassifierFeature;
-  
-  getFeatureNames(): string[];
-  
-  createFeatureWithTables(aName: string, aBlocklistTables: string[], aEntitylistTables: string[]): nsIUrlClassifierFeature;
-  
-  sendThreatHitReport(aChannel: nsIChannel, aProvider: string, aList: string, aFullHash: string): void;
-}
-
-
-
-
-interface nsIUrlClassifierExceptionList extends nsISupports {
-  
-  init(aFeature: string): void;
-  
-  addEntry(aEntry: nsIUrlClassifierExceptionListEntry): void;
-  
-  matches(aURI: nsIURI, aTopLevelURI: nsIURI, aIsPrivateBrowsing: boolean): boolean;
-  
-  testGetEntries(): nsIUrlClassifierExceptionListEntry[];
-}
-
-
-
-}  
-
-
-declare enum nsIUrlClassifierExceptionListEntry_Category {
-  
-  CATEGORY_INTERNAL_PREF = 0,
-  
-  CATEGORY_BASELINE = 1,
-  
-  CATEGORY_CONVENIENCE = 2,
-}
-
-declare global {
-
-namespace nsIUrlClassifierExceptionListEntry {
-  type Category = nsIUrlClassifierExceptionListEntry_Category;
-}
-
-
-interface nsIUrlClassifierExceptionListEntry extends nsISupports, Enums<typeof nsIUrlClassifierExceptionListEntry_Category> {
-  
-  init(aCategory: nsIUrlClassifierExceptionListEntry.Category, aUrlPattern: string, aTopLevelUrlPattern: string, aIsPrivateBrowsingOnly: boolean, aFilterContentBlockingCategories: string[], aClassifierFeatures: string[]): void;
-  
-  matches(aURI: nsIURI, aTopLevelURI: nsIURI, aIsPrivateBrowsing: boolean): boolean;
-  
-  readonly category: nsIUrlClassifierExceptionListEntry.Category;
-  
-  readonly urlPattern: string;
-  
-  readonly topLevelUrlPattern: string;
-  
-  readonly isPrivateBrowsingOnly: boolean;
-  
-  readonly filterContentBlockingCategories: string[];
-  
-  readonly classifierFeatures: string[];
-}
-
-
-
-
-type nsIUrlClassifierExceptionListObserver = Callable<{
-  
-  onExceptionListUpdate(aList: nsIUrlClassifierExceptionList): void;
-}>
-
-
-interface nsIUrlClassifierExceptionListService extends nsISupports {
-  
-  registerAndRunExceptionListObserver(aFeature: string, aPrefName: string, aObserver: nsIUrlClassifierExceptionListObserver): void;
-  
-  unregisterExceptionListObserver(aFeature: string, aObserver: nsIUrlClassifierExceptionListObserver): void;
-  
-  clear(): void;
-  
-  maybeMigrateCategoryPrefs(): void;
-}
-
-
-
-}  
-
-
-declare enum nsIUrlClassifierFeature_listType {
-  
-  blocklist = 0,
-  
-  entitylist = 1,
-}
-
-
-declare enum nsIUrlClassifierFeature_URIType {
-  
-  blocklistURI = 0,
-  
-  entitylistURI = 1,
-  
-  pairwiseEntitylistURI = 2,
-}
-
-declare global {
-
-namespace nsIUrlClassifierFeature {
-  type listType = nsIUrlClassifierFeature_listType;
-  type URIType = nsIUrlClassifierFeature_URIType;
-}
-
-
-interface nsIUrlClassifierFeature extends nsISupports, Enums<typeof nsIUrlClassifierFeature_listType & typeof nsIUrlClassifierFeature_URIType> {
-  
-  readonly name: string;
-  
-  readonly exceptionList: nsIUrlClassifierExceptionList;
-}
-
-
-interface nsIUrlClassifierFeatureResult extends nsISupports {
-  
-  readonly uri: nsIURI;
-  
-  readonly feature: nsIUrlClassifierFeature;
-  
-  readonly list: string;
-}
-
-
-type nsIUrlClassifierFeatureCallback = Callable<{
-  
-  onClassifyComplete(aResults: nsIUrlClassifierFeatureResult[]): void;
-}>
 
 
 
@@ -21667,519 +21595,1327 @@ interface nsIURLFormatter extends nsISupports {
 
 
 
-interface nsIUtilityProcessTest extends nsISupports {
+interface nsIWindowCreator extends nsISupports {
   
-  startProcess(actorsToAdd?: string[]): Promise<any>;
-  
-  untilChildProcessDead(pid: u32): Promise<any>;
-  
-  noteIntentionalCrash(pid: u32): void;
-  
-  stopProcess(utilityActorName?: string): void;
-  
-  testTelemetryProbes(): void;
+  createChromeWindow(parent: nsIWebBrowserChrome, chromeFlags: u32, aOpenWindowInfo: nsIOpenWindowInfo, cancel: OutParam<boolean>): nsIWebBrowserChrome;
 }
 
 
 
 
-interface nsIWebBrowserChrome extends nsISupports {
-  
-  readonly CHROME_DEFAULT?: 1;
-  
-  readonly CHROME_WINDOW_RESIZE?: 8;
-  
-  readonly CHROME_TOOLBAR?: 32;
-  
-  readonly CHROME_TITLEBAR?: 1024;
-  
-  readonly CHROME_NO_PERSISTENCE?: 4096;
-  
-  readonly CHROME_ALL?: 1064;
-  
-  readonly CHROME_WINDOW_MINIMIZE?: 16384;
-  
-  readonly CHROME_ALERT?: 32768;
-  
-  readonly CHROME_PRIVATE_WINDOW?: 65536;
-  
-  readonly CHROME_NON_PRIVATE_WINDOW?: 131072;
-  
-  readonly CHROME_ALWAYS_ON_TOP?: 524288;
-  
-  readonly CHROME_REMOTE_WINDOW?: 1048576;
-  
-  readonly CHROME_FISSION_WINDOW?: 2097152;
-  
-  readonly CHROME_DOCUMENT_PIP?: 4194304;
-  
-  readonly CHROME_SUPPRESS_INITIAL_FULLSCREEN?: 8388608;
-  
-  readonly CHROME_SUPPRESS_ANIMATION?: 16777216;
-  
-  readonly CHROME_CENTER_SCREEN?: 134217728;
-  
-  readonly CHROME_DEPENDENT?: 268435456;
-  
-  readonly CHROME_MODAL?: 536870912;
-  
-  readonly CHROME_OPENAS_DIALOG?: 1073741824;
-  
-  readonly CHROME_OPENAS_CHROME?: 2147483648;
-  
-  readonly CHROME_MINIMAL_POPUP?: 21512;
-  
-  readonly CHROME_DOCUMENT_PICTURE_IN_PICTURE_FLAGS?: 4740104;
-
-  
-  setLinkStatus(status: string): void;
-  
-  readonly chromeFlags: u32;
-  
-  showAsModal(): void;
-  
-  isWindowModal(): boolean;
-  
-  blur(): void;
+interface nsIWindowProvider extends nsISupports {
 }
 
 
 
 
-interface nsIWebBrowserPrint extends nsISupports {
+interface nsIDialogParamBlock extends nsISupports {
   
-  readonly PRINTPREVIEW_GOTO_PAGENUM?: 0;
+  GetInt(inIndex: i32): i32;
   
-  readonly PRINTPREVIEW_PREV_PAGE?: 1;
+  SetInt(inIndex: i32, inInt: i32): void;
   
-  readonly PRINTPREVIEW_NEXT_PAGE?: 2;
+  SetNumberStrings(inNumStrings: i32): void;
   
-  readonly PRINTPREVIEW_HOME?: 3;
+  GetString(inIndex: i32): string;
   
-  readonly PRINTPREVIEW_END?: 4;
-
+  SetString(inIndex: i32, inString: string): void;
   
-  readonly doingPrint: boolean;
-  
-  readonly doingPrintPreview: boolean;
-  
-  readonly rawNumPages: i32;
-  
-  readonly printPreviewNumPages: i32;
-  
-  readonly printPreviewCurrentPageNumber: i32;
-  
-  closeWindowAfterPrint: boolean;
-  
-  printPreviewScrollToPage(aNavType: i16, aPageNum: i32): void;
-  
-  exitPrintPreview(): void;
+  objects: nsIMutableArray;
 }
 
 
 
 
-interface nsIWebBrowserPersist extends nsICancelable {
+interface nsIOpenWindowInfo extends nsISupports {
   
-  readonly PERSIST_FLAGS_NONE?: 0;
+  readonly parent: BrowsingContext;
   
-  readonly PERSIST_FLAGS_FROM_CACHE?: 1;
+  readonly isRemote: boolean;
   
-  readonly PERSIST_FLAGS_BYPASS_CACHE?: 2;
+  readonly forceNoOpener: boolean;
   
-  readonly PERSIST_FLAGS_IGNORE_REDIRECTED_DATA?: 4;
+  readonly isForPrinting: boolean;
   
-  readonly PERSIST_FLAGS_IGNORE_IFRAMES?: 8;
+  readonly isForWindowDotPrint: boolean;
   
-  readonly PERSIST_FLAGS_NO_CONVERSION?: 16;
+  readonly isTopLevelCreatedByWebContent: boolean;
   
-  readonly PERSIST_FLAGS_REPLACE_EXISTING_FILES?: 32;
+  readonly hasValidUserGestureActivation: boolean;
   
-  readonly PERSIST_FLAGS_NO_BASE_TAG_MODIFICATIONS?: 64;
+  readonly textDirectiveUserActivation: boolean;
   
-  readonly PERSIST_FLAGS_FIXUP_ORIGINAL_DOM?: 128;
-  
-  readonly PERSIST_FLAGS_FIXUP_LINKS_TO_DESTINATION?: 256;
-  
-  readonly PERSIST_FLAGS_DONT_FIXUP_LINKS?: 512;
-  
-  readonly PERSIST_FLAGS_SERIALIZE_OUTPUT?: 1024;
-  
-  readonly PERSIST_FLAGS_DONT_CHANGE_FILENAMES?: 2048;
-  
-  readonly PERSIST_FLAGS_FAIL_ON_BROKEN_LINKS?: 4096;
-  
-  readonly PERSIST_FLAGS_CLEANUP_ON_FAILURE?: 8192;
-  
-  readonly PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION?: 16384;
-  
-  readonly PERSIST_FLAGS_APPEND_TO_FILE?: 32768;
-  
-  readonly PERSIST_FLAGS_DISABLE_HTTPS_ONLY?: 65536;
-  
-  readonly PERSIST_STATE_READY?: 1;
-  
-  readonly PERSIST_STATE_SAVING?: 2;
-  
-  readonly PERSIST_STATE_FINISHED?: 3;
-  
-  readonly ENCODE_FLAGS_SELECTION_ONLY?: 1;
-  
-  readonly ENCODE_FLAGS_FORMATTED?: 2;
-  
-  readonly ENCODE_FLAGS_RAW?: 4;
-  
-  readonly ENCODE_FLAGS_BODY_ONLY?: 8;
-  
-  readonly ENCODE_FLAGS_PREFORMATTED?: 16;
-  
-  readonly ENCODE_FLAGS_WRAP?: 32;
-  
-  readonly ENCODE_FLAGS_FORMAT_FLOWED?: 64;
-  
-  readonly ENCODE_FLAGS_ABSOLUTE_LINKS?: 128;
-  
-  readonly ENCODE_FLAGS_CR_LINEBREAKS?: 512;
-  
-  readonly ENCODE_FLAGS_LF_LINEBREAKS?: 1024;
-  
-  readonly ENCODE_FLAGS_NOSCRIPT_CONTENT?: 2048;
-  
-  readonly ENCODE_FLAGS_NOFRAMES_CONTENT?: 4096;
-  
-  readonly ENCODE_FLAGS_ENCODE_BASIC_ENTITIES?: 8192;
-  
-  readonly ENCODE_FLAGS_DISALLOW_LINE_BREAKING?: 16384;
-
-  
-  persistFlags: u32;
-  
-  readonly currentState: u32;
-  
-  readonly result: nsresult;
-  
-  progressListener: nsIWebProgressListener;
-  
-  saveURI(aURI: nsIURI, aTriggeringPrincipal: nsIPrincipal, aCacheKey: u32, aReferrerInfo: nsIReferrerInfo, aCookieJarSettings: nsICookieJarSettings, aPostData: nsIInputStream, aExtraHeaders: string, aFile: nsISupports, aContentPolicyType: nsContentPolicyType, aIsPrivate: boolean): void;
-  
-  saveChannel(aChannel: nsIChannel, aFile: nsISupports): void;
-  
-  saveDocument(aDocument: nsISupports, aFile: nsISupports, aDataPath: nsISupports, aOutputContentType: string, aEncodingFlags: u32, aWrapColumn: u32): void;
-  
-  cancelSave(): void;
-}
-
-
-
-
-interface nsIWebBrowserPersistURIMap extends nsISupports {
-  
-  readonly numMappedURIs: u32;
-  
-  getURIMapping(aIndex: u32, aMapFrom: OutParam<string>, aMapTo: OutParam<string>): void;
-  
-  readonly targetBaseURI: string;
-}
-
-
-interface nsIWebBrowserPersistDocument extends nsISupports {
-  
-  readonly isClosed: boolean;
-  
-  close(): void;
-  
-  readonly isPrivate: boolean;
-  
-  readonly documentURI: string;
-  
-  readonly baseURI: string;
-  
-  readonly contentType: string;
-  
-  readonly characterSet: string;
-  
-  readonly title: string;
-  
-  readonly referrerInfo: nsIReferrerInfo;
-  
-  readonly cookieJarSettings: nsICookieJarSettings;
-  
-  readonly contentDisposition: string;
-  
-  readonly postData: nsIInputStream;
-  
-  readonly principal: nsIPrincipal;
-  
-  readonly cacheKey: u32;
-  
-  persistFlags: u32;
-  
-  readResources(aVisitor: nsIWebBrowserPersistResourceVisitor): void;
-  
-  writeContent(aStream: nsIOutputStream, aURIMap: nsIWebBrowserPersistURIMap, aRequestedContentType: string, aEncoderFlags: u32, aWrapColumn: u32, aCompletion: nsIWebBrowserPersistWriteCompletion): void;
-}
-
-
-interface nsIWebBrowserPersistResourceVisitor extends nsISupports {
-  
-  visitResource(aDocument: nsIWebBrowserPersistDocument, aURI: string, aContentPolicyType: nsContentPolicyType): void;
-  
-  visitDocument(aDocument: nsIWebBrowserPersistDocument, aSubDocument: nsIWebBrowserPersistDocument): void;
-  
-  visitBrowsingContext(aDocument: nsIWebBrowserPersistDocument, aContext: BrowsingContext): void;
-  
-  endVisit(aDocument: nsIWebBrowserPersistDocument, aStatus: nsresult): void;
-}
-
-
-type nsIWebBrowserPersistWriteCompletion = Callable<{
-  
-  onFinish(aDocument: nsIWebBrowserPersistDocument, aStream: nsIOutputStream, aContentType: string, aStatus: nsresult): void;
-}>
-
-
-interface nsIWebBrowserPersistDocumentReceiver extends nsISupports {
-  
-  onDocumentReady(aDocument: nsIWebBrowserPersistDocument): void;
-  
-  onError(aFailure: nsresult): void;
-}
-
-
-
-
-interface extIWebNavigation extends nsISupports {
-  
-  onDocumentChange(bc: BrowsingContext, transitionData: any, location: nsIURI): void;
-  
-  onHistoryChange(bc: BrowsingContext, transitionData: any, location: nsIURI, isHistoryStateUpdated: boolean, isReferenceFragmentUpdated: boolean): void;
-  
-  onStateChange(bc: BrowsingContext, requestURI: nsIURI, status: nsresult, stateFlags: u32): void;
-  
-  onCreatedNavigationTarget(bc: BrowsingContext, sourceBC: BrowsingContext, url: string): void;
-  
-  onDOMContentLoaded(bc: BrowsingContext, documentURI: nsIURI): void;
-}
-
-
-
-
-interface mozIExtensionServiceWorkerInfo extends nsISupports {
-  
-  readonly principal: nsIPrincipal;
-  
-  readonly scriptURL: string;
-  
-  readonly clientInfoId: string;
-  
-  readonly descriptorId: u64;
-}
-
-}  
-
-
-declare enum mozIExtensionListenerCallOptions_APIObjectType {
-  
-  NONE = 0,
-  
-  RUNTIME_PORT = 1,
-}
-
-
-declare enum mozIExtensionListenerCallOptions_CallbackType {
-  
-  CALLBACK_NONE = 0,
-  
-  CALLBACK_SEND_RESPONSE = 1,
-}
-
-declare global {
-
-namespace mozIExtensionListenerCallOptions {
-  type APIObjectType = mozIExtensionListenerCallOptions_APIObjectType;
-  type CallbackType = mozIExtensionListenerCallOptions_CallbackType;
-}
-
-
-interface mozIExtensionListenerCallOptions extends nsISupports, Enums<typeof mozIExtensionListenerCallOptions_APIObjectType & typeof mozIExtensionListenerCallOptions_CallbackType> {
-  
-  readonly apiObjectType: mozIExtensionListenerCallOptions.APIObjectType;
-  
-  readonly apiObjectDescriptor: any;
-  
-  readonly apiObjectPrepended: boolean;
-  
-  callbackType: mozIExtensionListenerCallOptions.CallbackType;
-}
-
-
-interface mozIExtensionEventListener extends nsISupports {
-  
-  callListener(args: any[], listenerCallOptions?: mozIExtensionListenerCallOptions): Promise<any>;
-}
-
-}  
-
-
-declare enum mozIExtensionAPIRequest_RequestType {
-  
-  CALL_FUNCTION = 0,
-  
-  CALL_FUNCTION_NO_RETURN = 1,
-  
-  CALL_FUNCTION_ASYNC = 2,
-  
-  ADD_LISTENER = 3,
-  
-  REMOVE_LISTENER = 4,
-  
-  GET_PROPERTY = 5,
-}
-
-declare global {
-
-namespace mozIExtensionAPIRequest {
-  type RequestType = mozIExtensionAPIRequest_RequestType;
-}
-
-
-interface mozIExtensionAPIRequest extends nsISupports, Enums<typeof mozIExtensionAPIRequest_RequestType> {
-  
-  toString(): string;
-  
-  readonly requestType: string;
-  
-  readonly apiNamespace: string;
-  
-  readonly apiName: string;
-  
-  readonly apiObjectType: string;
-  
-  readonly apiObjectId: string;
-  
-  readonly args: any;
-  
-  normalizedArgs: any;
-  
-  readonly callerSavedFrame: any;
-  
-  readonly serviceWorkerInfo: mozIExtensionServiceWorkerInfo;
-  
-  readonly eventListener: mozIExtensionEventListener;
-}
-
-}  
-
-
-declare enum mozIExtensionAPIRequestResult_ResultType {
-  
-  RETURN_VALUE = 0,
-  
-  EXTENSION_ERROR = 1,
-}
-
-declare global {
-
-namespace mozIExtensionAPIRequestResult {
-  type ResultType = mozIExtensionAPIRequestResult_ResultType;
-}
-
-
-interface mozIExtensionAPIRequestResult extends nsISupports, Enums<typeof mozIExtensionAPIRequestResult_ResultType> {
-  
-  readonly type: mozIExtensionAPIRequestResult.ResultType;
-  
-  readonly value: any;
-}
-
-
-interface mozIExtensionAPIRequestHandler extends nsISupports {
-  
-  handleAPIRequest(extension: nsISupports, apiRequest: mozIExtensionAPIRequest): mozIExtensionAPIRequestResult;
-  
-  initExtensionWorker(extension: nsISupports, serviceWorkerInfo: mozIExtensionServiceWorkerInfo): void;
-  
-  onExtensionWorkerLoaded(extension: nsISupports, serviceWorkerDescriptorId: u64): void;
-  
-  onExtensionWorkerDestroyed(extension: nsISupports, serviceWorkerDescriptorId: u64): void;
-}
-
-
-
-
-interface mozIExtensionProcessScript extends nsISupports {
-  
-  preloadContentScript(contentScript: nsISupports): void;
-  
-  loadContentScript(contentScript: WebExtensionContentScript, window: mozIDOMWindow): Promise<any>;
-  
-  initExtensionDocument(extension: nsISupports, doc: Document, privileged: boolean): void;
-}
-
-
-
-
-interface nsINativeMessagingPortal extends nsISupports {
-  
-  shouldUse(): boolean;
-  
-  readonly available: Promise<any>;
-  
-  createSession(aApplication: string): Promise<any>;
-  
-  closeSession(aHandle: string): Promise<any>;
-  
-  getManifest(aHandle: string, aName: string, aExtension: string): Promise<any>;
-  
-  start(aHandle: string, aName: string, aExtension: string): Promise<any>;
-}
-
-
-
-
-interface nsINativeMessagingProxy extends nsISupports {
-  
-  shouldUse(): boolean;
-  
-  readonly available: Promise<any>;
-  
-  closeSession(aHandle: string): Promise<any>;
-  
-  getManifest(aName: string, aExtension: string): Promise<any>;
-  
-  start(aName: string, aExtension: string): Promise<any>;
-}
-
-
-
-
-interface nsIWebVTTListener extends nsISupports {
-  
-  onCue(cue: any): void;
-  
-  onRegion(region: any): void;
-  
-  onParsingError(errorCode: i32): void;
-}
-
-
-
-
-interface nsIWebVTTParserWrapper extends nsISupports {
-  
-  loadParser(window: mozIDOMWindow): void;
-  
-  parse(data: string): void;
-  
-  flush(): void;
-  
-  watch(callback: nsIWebVTTListener): void;
+  readonly originAttributes: any;
   
   cancel(): void;
   
-  convertCueToDOMTree(window: mozIDOMWindow, cue: nsISupports): DocumentFragment;
+  cloneWithPrincipals(aPrincipal: nsIPrincipal, aPartitionedPrincipal: nsIPrincipal): nsIOpenWindowInfo;
+}
+
+
+
+
+interface nsIPromptCollection extends nsISupports {
   
-  processCues(window: mozIDOMWindow, cues: nsIVariant, overlay: nsISupports, controls: nsISupports): void;
+  asyncBeforeUnloadCheck(aBrowsingContext: BrowsingContext): Promise<any>;
+  
+  confirmRepost(aBrowsingContext: BrowsingContext): boolean;
+  
+  confirmFolderUpload(aBrowsingContext: BrowsingContext, aDirectoryName: string): boolean;
+}
+
+
+
+
+interface nsIPromptFactory extends nsISupports {
+  
+  getPrompt<T extends nsIID>(aParent: mozIDOMWindowProxy, iid: T): nsQIResult<T>;
+}
+
+
+
+
+interface nsIPromptService extends nsISupports {
+  
+  readonly BUTTON_POS_0?: 1;
+  
+  readonly BUTTON_POS_1?: 256;
+  
+  readonly BUTTON_POS_2?: 65536;
+  
+  readonly BUTTON_TITLE_OK?: 1;
+  
+  readonly BUTTON_TITLE_CANCEL?: 2;
+  
+  readonly BUTTON_TITLE_YES?: 3;
+  
+  readonly BUTTON_TITLE_NO?: 4;
+  
+  readonly BUTTON_TITLE_SAVE?: 5;
+  
+  readonly BUTTON_TITLE_DONT_SAVE?: 6;
+  
+  readonly BUTTON_TITLE_REVERT?: 7;
+  
+  readonly BUTTON_TITLE_IS_STRING?: 127;
+  
+  readonly BUTTON_POS_0_DEFAULT?: 0;
+  
+  readonly BUTTON_POS_1_DEFAULT?: 16777216;
+  
+  readonly BUTTON_POS_2_DEFAULT?: 33554432;
+  
+  readonly BUTTON_DELAY_ENABLE?: 67108864;
+  
+  readonly SHOW_SPINNER?: 134217728;
+  
+  readonly BUTTON_NONE_ENABLE_BIT?: 268435456;
+  
+  readonly BUTTON_NONE?: 268435583;
+  
+  readonly BUTTON_POS_1_IS_SECONDARY?: 536870912;
+  
+  readonly STD_OK_CANCEL_BUTTONS?: 513;
+  
+  readonly STD_YES_NO_BUTTONS?: 1027;
+  
+  readonly MODAL_TYPE_CONTENT?: 1;
+  
+  readonly MODAL_TYPE_TAB?: 2;
+  
+  readonly MODAL_TYPE_WINDOW?: 3;
+  
+  readonly MODAL_TYPE_INTERNAL_WINDOW?: 4;
+
+  
+  alert(aParent: mozIDOMWindowProxy, aDialogTitle: string, aText: string): void;
+  
+  alertBC(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string): void;
+  
+  asyncAlert(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string): Promise<any>;
+  
+  alertCheck(aParent: mozIDOMWindowProxy, aDialogTitle: string, aText: string, aCheckMsg: string, aCheckState: InOutParam<boolean>): void;
+  
+  alertCheckBC(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aCheckMsg: string, aCheckState: InOutParam<boolean>): void;
+  
+  asyncAlertCheck(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aCheckMsg: string, aCheckState: boolean): Promise<any>;
+  
+  confirm(aParent: mozIDOMWindowProxy, aDialogTitle: string, aText: string): boolean;
+  
+  confirmBC(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string): boolean;
+  
+  asyncConfirm(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string): Promise<any>;
+  
+  confirmCheck(aParent: mozIDOMWindowProxy, aDialogTitle: string, aText: string, aCheckMsg: string, aCheckState: InOutParam<boolean>): boolean;
+  
+  confirmCheckBC(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aCheckMsg: string, aCheckState: InOutParam<boolean>): boolean;
+  
+  asyncConfirmCheck(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aCheckMsg: string, aCheckState: boolean): Promise<any>;
+  
+  confirmEx(aParent: mozIDOMWindowProxy, aDialogTitle: string, aText: string, aButtonFlags: u32, aButton0Title: string, aButton1Title: string, aButton2Title: string, aCheckMsg: string, aCheckState: InOutParam<boolean>): i32;
+  
+  confirmExBC(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aButtonFlags: u32, aButton0Title: string, aButton1Title: string, aButton2Title: string, aCheckMsg: string, aCheckState: InOutParam<boolean>): i32;
+  
+  asyncConfirmEx(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aButtonFlags: u32, aButton0Title: string, aButton1Title: string, aButton2Title: string, aCheckMsg: string, aCheckState: boolean, aExtraArgs?: any): Promise<any>;
+  
+  prompt(aParent: mozIDOMWindowProxy, aDialogTitle: string, aText: string, aValue: InOutParam<string>, aCheckMsg: string, aCheckState: InOutParam<boolean>): boolean;
+  
+  promptBC(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aValue: InOutParam<string>, aCheckMsg: string, aCheckState: InOutParam<boolean>): boolean;
+  
+  asyncPrompt(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aValue: string, aCheckMsg: string, aCheckState: boolean): Promise<any>;
+  
+  promptUsernameAndPassword(aParent: mozIDOMWindowProxy, aDialogTitle: string, aText: string, aUsername: InOutParam<string>, aPassword: InOutParam<string>): boolean;
+  
+  promptUsernameAndPasswordBC(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aUsername: InOutParam<string>, aPassword: InOutParam<string>): boolean;
+  
+  asyncPromptUsernameAndPassword(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aUsername: string, aPassword: string): Promise<any>;
+  
+  promptPassword(aParent: mozIDOMWindowProxy, aDialogTitle: string, aText: string, aPassword: InOutParam<string>): boolean;
+  
+  promptPasswordBC(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aPassword: InOutParam<string>): boolean;
+  
+  asyncPromptPassword(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aPassword: string): Promise<any>;
+  
+  select(aParent: mozIDOMWindowProxy, aDialogTitle: string, aText: string, aSelectList: string[], aOutSelection: OutParam<i32>): boolean;
+  
+  selectBC(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aSelectList: string[], aOutSelection: OutParam<i32>): boolean;
+  
+  asyncSelect(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aSelectList: string[]): Promise<any>;
+  
+  promptAuth(aParent: mozIDOMWindowProxy, aChannel: nsIChannel, level: u32, authInfo: nsIAuthInformation): boolean;
+  
+  promptAuthBC(aBrowsingContext: BrowsingContext, modalType: u32, aChannel: nsIChannel, level: u32, authInfo: nsIAuthInformation): boolean;
+  
+  asyncPromptAuth(aBrowsingContext: BrowsingContext, modalType: u32, aChannel: nsIChannel, level: u32, authInfo: nsIAuthInformation): Promise<any>;
+  
+  confirmUserPaste(aWindow: WindowGlobalParent): Promise<any>;
+}
+
+
+
+
+interface nsIWindowWatcher extends nsISupports {
+  
+  openWindow(aParent: mozIDOMWindowProxy, aUrl: string, aName: string, aFeatures: string, aArguments: nsISupports): mozIDOMWindowProxy;
+  
+  registerNotification(aObserver: nsIObserver): void;
+  
+  unregisterNotification(aObserver: nsIObserver): void;
+  
+  getWindowEnumerator(): nsISimpleEnumerator;
+  
+  getNewPrompter(aParent: mozIDOMWindowProxy): nsIPrompt;
+  
+  getNewAuthPrompter(aParent: mozIDOMWindowProxy): nsIAuthPrompt;
+  
+  setWindowCreator(creator: nsIWindowCreator): void;
+  
+  hasWindowCreator(): boolean;
+  
+  getChromeForWindow(aWindow: mozIDOMWindowProxy): nsIWebBrowserChrome;
+  
+  getWindowByName(aTargetName: string): mozIDOMWindowProxy;
+  
+  readonly activeWindow: mozIDOMWindowProxy;
+}
+
+
+
+
+
+
+interface nsIXULStore extends nsISupports {
+  
+  persist(aNode: Node, attr: string): void;
+  
+  setValue(doc: string, id: string, attr: string, value: string): void;
+  
+  hasValue(doc: string, id: string, attr: string): boolean;
+  
+  getValue(doc: string, id: string, attr: string): string;
+  
+  removeValue(doc: string, id: string, attr: string): void;
+  
+  removeDocument(doc: string): void;
+  
+  getIDsEnumerator(doc: string): nsIStringEnumerator;
+  
+  getAttributeEnumerator(doc: string, id: string): nsIStringEnumerator;
+}
+
+
+
+
+interface nsICrashReporterTestUtils extends nsISupports {
+  
+  getCrashHelperPid(): u32;
+}
+
+
+
+
+interface nsIVisibleTab extends nsISupports {
+  
+  contentTitle: string;
+  
+  browserId: i64;
+}
+
+
+interface nsIBrowserWindowTracker extends nsISupports {
+  
+  getAllVisibleTabs(): nsIVisibleTab[];
+  
+  getBrowserById(aBrowserId: u64): nsISupports;
+}
+
+
+
+
+interface nsIRegion extends nsISupports {
+  
+  readonly current: string;
+  
+  readonly home: string;
+}
+
+
+
+
+interface amIAddonManagerStartup extends nsISupports {
+  
+  readStartupData(): any;
+  
+  registerChrome(manifestURI: nsIURI, entries: any): nsIJSRAIIHelper;
+  
+  encodeBlob(value: any): any;
+  
+  decodeBlob(value: any): any;
+  
+  enumerateJAR(uri: nsIURI, pattern: string): string[];
+  
+  enumerateJARSubtree(uri: nsIURI): string[];
+  
+  initializeURLPreloader(): void;
+}
+
+
+
+
+interface amIWebInstallPrompt extends nsISupports {
+  
+  confirm(aBrowser: Element, aUri: nsIURI, aInstalls: nsIVariant[]): void;
+}
+
+
+
+
+interface nsIUpdatePatch extends nsISupports {
+  
+  readonly type: string;
+  
+  readonly URL: string;
+  
+  finalURL: string;
+  
+  readonly size: u32;
+  
+  state: string;
+  
+  errorCode: i32;
+  
+  selected: boolean;
+  
+  serialize(updates: Document): Element;
+}
+
+
+interface nsIUpdate extends nsISupports {
+  
+  readonly type: string;
+  
+  readonly name: string;
+  
+  readonly displayVersion: string;
+  
+  readonly appVersion: string;
+  
+  readonly platformVersion: string;
+  
+  readonly previousAppVersion: string;
+  
+  readonly buildID: string;
+  
+  readonly detailsURL: string;
+  
+  readonly serviceURL: string;
+  
+  readonly channel: string;
+  
+  readonly unsupported: boolean;
+  
+  promptWaitTime: i64;
+  
+  isCompleteUpdate: boolean;
+  
+  installDate: i64;
+  
+  statusText: string;
+  
+  readonly selectedPatch: nsIUpdatePatch;
+  
+  state: string;
+  
+  errorCode: i32;
+  
+  elevationFailure: boolean;
+  
+  readonly patchCount: u32;
+  
+  getPatchAt(index: u32): nsIUpdatePatch;
+  
+  serialize(updates: Document): Element;
+}
+
+
+interface nsIUpdateCheckResult extends nsISupports {
+  
+  readonly checksAllowed: boolean;
+  
+  readonly succeeded: boolean;
+  
+  readonly request: any;
+  
+  readonly updates: nsIUpdate[];
+}
+
+
+interface nsIUpdateCheck extends nsISupports {
+  
+  readonly id: i32;
+  
+  readonly result: Promise<any>;
+}
+
+
+interface nsIUpdateCheckerInternal extends nsISupports {
+  
+  checkForUpdates(checkType: i32): nsIUpdateCheck;
+}
+
+
+interface nsIUpdateChecker extends nsISupports {
+  
+  readonly BACKGROUND_CHECK?: 1;
+  
+  readonly FOREGROUND_CHECK?: 2;
+
+  
+  checkForUpdates(checkType: i32): nsIUpdateCheck;
+  
+  getUpdateURL(checkType: i32): Promise<any>;
+  
+  stopCheck(id: i32): void;
+  
+  stopAllChecks(): void;
+  
+  readonly internal: nsIUpdateCheckerInternal;
+}
+
+
+interface nsIApplicationUpdateServiceInternal extends nsISupports {
+  
+  init(force: boolean): Promise<any>;
+  
+  downloadUpdate(update: nsIUpdate): Promise<any>;
+  
+  stopDownload(): Promise<any>;
+}
+
+
+interface nsIApplicationUpdateService extends nsISupports {
+  
+  readonly DOWNLOAD_SUCCESS?: 1;
+  
+  readonly DOWNLOAD_FAILURE_CANNOT_RESUME_IN_BACKGROUND?: 2;
+  
+  readonly DOWNLOAD_FAILURE_GENERIC?: 3;
+  
+  readonly DOWNLOAD_FAILURE_CANNOT_WRITE_STATE?: 4;
+  
+  readonly STATE_IDLE?: 1;
+  
+  readonly STATE_DOWNLOADING?: 2;
+  
+  readonly STATE_STAGING?: 4;
+  
+  readonly STATE_PENDING?: 5;
+  
+  readonly STATE_SWAP?: 6;
+  
+  readonly STATE_DOWNLOAD_FAILED?: 7;
+
+  
+  init(): Promise<any>;
+  
+  checkForBackgroundUpdates(): Promise<any>;
+  
+  selectUpdate(updates: nsIUpdate[]): Promise<any>;
+  
+  addDownloadListener(listener: nsIRequestObserver): void;
+  
+  removeDownloadListener(listener: nsIRequestObserver): void;
+  
+  downloadUpdate(update: nsIUpdate): Promise<any>;
+  
+  onCheckComplete(result: nsIUpdateCheckResult): Promise<any>;
+  
+  stopDownload(): Promise<any>;
+  
+  readonly disabled: boolean;
+  
+  readonly canUsuallyCheckForUpdates: boolean;
+  
+  readonly canCheckForUpdates: boolean;
+  
+  readonly elevationRequired: boolean;
+  
+  readonly canUsuallyApplyUpdates: boolean;
+  
+  readonly canApplyUpdates: boolean;
+  
+  readonly isOtherInstanceHandlingUpdates: boolean;
+  
+  readonly canUsuallyStageUpdates: boolean;
+  
+  readonly canStageUpdates: boolean;
+  
+  readonly canUsuallyUseBits: boolean;
+  
+  readonly canUseBits: boolean;
+  
+  readonly manualUpdateOnly: boolean;
+  
+  readonly isAppBaseDirWritable: boolean;
+  
+  onlyDownloadUpdatesThisSession: boolean;
+  
+  getStateName(state: i32): string;
+  
+  readonly currentState: i32;
+  
+  readonly stateTransition: Promise<any>;
+  
+  readonly internal: nsIApplicationUpdateServiceInternal;
+}
+
+
+interface nsIUpdateProcessor extends nsISupports {
+  
+  processUpdate(): void;
+  
+  getServiceRegKeyExists(): boolean;
+  
+  attemptAutomaticApplicationRestartWithLaunchArgs(argvExtra: string[]): i32;
+  
+  waitForProcessExit(pid: u32, timeoutMS: u32): void;
+}
+
+
+interface nsIUpdateSyncManager extends nsISupports {
+  
+  isOtherInstanceRunning(): boolean;
+  
+  resetLock(anAppFile?: nsIFile): void;
+  
+  getUpdateLockFilePath(): string;
+}
+
+
+interface nsIUpdateMutex extends nsISupports {
+  
+  isLocked(): boolean;
+  
+  tryLock(): boolean;
+  
+  unlock(): void;
+}
+
+
+interface nsIUpdateManagerInternal extends nsISupports {
+  
+  reload(skipFiles: boolean): Promise<any>;
+  
+  getHistory(): nsIUpdate[];
+  
+  addUpdateToHistory(update: nsIUpdate): void;
+  
+  readyUpdate: nsIUpdate;
+  
+  downloadingUpdate: nsIUpdate;
+  
+  refreshUpdateStatus(): Promise<any>;
+}
+
+
+interface nsIUpdateManager extends nsISupports {
+  
+  getHistory(): Promise<any>;
+  
+  getReadyUpdate(): Promise<any>;
+  
+  getDownloadingUpdate(): Promise<any>;
+  
+  updateInstalledAtStartup(): Promise<any>;
+  
+  lastUpdateInstalled(): Promise<any>;
+  
+  addUpdateToHistory(update: nsIUpdate): Promise<any>;
+  
+  saveUpdates(): void;
+  
+  refreshUpdateStatus(): Promise<any>;
+  
+  elevationOptedIn(): Promise<any>;
+  
+  cleanupDownloadingUpdate(): Promise<any>;
+  
+  cleanupReadyUpdate(): Promise<any>;
+  
+  cleanupActiveUpdates(): Promise<any>;
+  
+  doInstallCleanup(): Promise<any>;
+  
+  doUninstallCleanup(): Promise<any>;
+  
+  readonly internal: nsIUpdateManagerInternal;
+}
+
+
+interface nsIApplicationUpdateServiceStub extends nsISupports {
+  
+  init(): Promise<any>;
+  
+  initUpdate(): Promise<any>;
+  
+  readonly updateDisabled: boolean;
+  
+  readonly updateDisabledForTesting: boolean;
+}
+
+
+
+
+interface nsIProfileStartup extends nsISupports {
+  
+  readonly directory: nsIFile;
+  
+  doStartup(): void;
+}
+
+
+interface nsIProfileMigrator extends nsISupports {
+  
+  migrate(aStartup: nsIProfileStartup, aKey: string, aProfileName?: string): void;
+}
+
+
+
+
+interface nsIProfileUnlocker extends nsISupports {
+  
+  readonly ATTEMPT_QUIT?: 0;
+  
+  readonly FORCE_QUIT?: 1;
+
+  
+  unlock(aSeverity: u32): void;
+}
+
+
+
+
+interface nsIProfileLock extends nsISupports {
+  
+  readonly directory: nsIFile;
+  
+  readonly localDirectory: nsIFile;
+  
+  readonly replacedLockTime: PRTime;
+  
+  unlock(): void;
+}
+
+
+interface nsIToolkitProfile extends nsISupports {
+  
+  rootDir: nsIFile;
+  
+  readonly localDir: nsIFile;
+  
+  name: string;
+  
+  storeID: string;
+  
+  showProfileSelector: boolean;
+  
+  remove(removeFiles: boolean): void;
+  
+  removeInBackground(removeFiles: boolean): void;
+  
+  lock(aUnlocker: OutParam<nsIProfileUnlocker>): nsIProfileLock;
+}
+
+
+
+}  
+
+
+declare enum nsIToolkitProfileService_downgradeUIFlags {
+  
+  hasSync = 1,
+}
+
+
+declare enum nsIToolkitProfileService_downgradeUIChoice {
+  
+  quit = 0,
+  
+  createNewProfile = 1,
+}
+
+
+declare enum nsIToolkitProfileService_profileManagerResult {
+  
+  exit = 0,
+  
+  launchWithProfile = 1,
+  
+  restart = 2,
+}
+
+declare global {
+
+namespace nsIToolkitProfileService {
+  type downgradeUIFlags = nsIToolkitProfileService_downgradeUIFlags;
+  type downgradeUIChoice = nsIToolkitProfileService_downgradeUIChoice;
+  type profileManagerResult = nsIToolkitProfileService_profileManagerResult;
+}
+
+
+interface nsIToolkitProfileService extends nsISupports, Enums<typeof nsIToolkitProfileService_downgradeUIFlags & typeof nsIToolkitProfileService_downgradeUIChoice & typeof nsIToolkitProfileService_profileManagerResult> {
+  
+  readonly isListOutdated: boolean;
+  
+  readonly isFirstRun: boolean;
+  
+  startWithLastProfile: boolean;
+  
+  readonly profiles: nsISimpleEnumerator;
+  
+  readonly currentProfile: nsIToolkitProfile;
+  
+  defaultProfile: nsIToolkitProfile;
+  
+  selectStartupProfile(aArgv: string[], aIsResetting: boolean, aUpdateChannel: string, aLegacyInstallHash: string, aRootDir: OutParam<nsIFile>, aLocalDir: OutParam<nsIFile>, aProfile: OutParam<nsIToolkitProfile>): boolean;
+  
+  getProfileByName(aName: string): nsIToolkitProfile;
+  
+  getProfileByDir(aRootDir: nsIFile, aLocalDir?: nsIFile): nsIToolkitProfile;
+  
+  createProfile(aRootDir: nsIFile, aName: string, aSource: string): nsIToolkitProfile;
+  
+  createUniqueProfile(aRootDir: nsIFile, aNamePrefix: string, aSource: string): nsIToolkitProfile;
+  
+  getProfileDescriptor(aRootDir: nsIFile, aIsRelative: OutParam<boolean>): string;
+  
+  getLocalDirFromRootDir(aRootDir: nsIFile): nsIFile;
+  
+  readonly profileCount: u32;
+  
+  flush(): void;
+  
+  asyncFlush(): Promise<any>;
+  
+  asyncFlushCurrentProfile(): Promise<any>;
+  
+  removeProfileFilesByPath(aRootDir: nsIFile, aLocalDir: nsIFile, aTimeout: u32): Promise<any>;
+}
+
+
+
+
+interface nsIASWebAuthSessionRequest extends nsISupports {
+  
+  readonly uuid: string;
+  
+  readonly url: string;
+  
+  readonly callbackScheme: string;
+  
+  readonly hasCallback: boolean;
+  
+  readonly useEphemeralSession: boolean;
+  
+  readonly additionalHeaderNames: string[];
+  
+  getAdditionalHeader(name: string): string;
+  
+  matchesCallbackURL(url: string): boolean;
+  
+  complete(callbackURL: string): void;
+  
+  cancel(): void;
+}
+
+
+
+
+interface nsINativeAppSupport extends nsISupports {
+  
+  start(): boolean;
+  
+  enable(): void;
+  
+  onLastWindowClosing(): void;
+  
+  ReOpen(): void;
+}
+
+
+
+
+interface nsIXREDirProvider extends nsISupports {
+  
+  setUserDataDirectory(aFile: nsIFile, aLocal: boolean): void;
+  
+  getInstallHash(): string;
+}
+
+
+
+
+interface nsIProfilerStartParams extends nsISupports {
+  
+  readonly entries: u32;
+  
+  readonly duration: double;
+  
+  readonly interval: double;
+  
+  readonly features: u32;
+  
+  readonly activeTabID: u64;
+}
+
+
+interface nsIProfiler extends nsISupports {
+  
+  StartProfiler(aEntries: u32, aInterval: double, aFeatures: string[], aFilters?: string[], aActiveTabID?: u64, aDuration?: double): Promise<any>;
+  
+  StopProfiler(): Promise<any>;
+  
+  IsPaused(): boolean;
+  
+  Pause(): Promise<any>;
+  
+  Resume(): Promise<any>;
+  
+  IsSamplingPaused(): boolean;
+  
+  PauseSampling(): Promise<any>;
+  
+  ResumeSampling(): Promise<any>;
+  
+  waitOnePeriodicSampling(): Promise<any>;
+  
+  GetProfile(aSinceTime?: double): string;
+  
+  getProfileData(aSinceTime?: double): any;
+  
+  getProfileDataAsync(aSinceTime?: double): Promise<any>;
+  
+  getProfileDataAsArrayBuffer(aSinceTime?: double): Promise<any>;
+  
+  getProfileDataAsGzippedArrayBuffer(aSinceTime?: double): Promise<any>;
+  
+  dumpProfileToFileAsync(aFilename: string, aSinceTime?: double): Promise<any>;
+  
+  dumpProfileToFile(aFilename: string): void;
+  
+  scheduleDumpToFile(aDelaySeconds: double, aFilename: string, aExitAfterDump: boolean): void;
+  
+  cancelScheduledDump(): void;
+  
+  waitForScheduledDump(): void;
+  
+  IsActive(): boolean;
+  
+  ClearAllPages(): void;
+  
+  GetFeatures(): string[];
+  
+  readonly activeConfiguration: any;
+  
+  GetAllFeatures(): string[];
+  
+  GetBufferInfo(aCurrentPosition: OutParam<u32>, aTotalSize: OutParam<u32>, aGeneration: OutParam<u32>): void;
+  
+  getElapsedTime(): double;
+  
+  readonly sharedLibraries: any;
+  
+  getSymbolTable(aDebugPath: string, aBreakpadID: string): Promise<any>;
+}
+
+
+
+
+
+
+interface nsIContentHandler extends nsISupports {
+  
+  handleContent(aContentType: string, aWindowContext: nsIInterfaceRequestor, aRequest: nsIRequest): void;
+}
+
+
+
+
+interface nsIDocumentLoader extends nsISupports {
+  
+  stop(): void;
+  
+  readonly container: nsISupports;
+  
+  readonly loadGroup: nsILoadGroup;
+  
+  readonly documentChannel: nsIChannel;
+}
+
+
+
+
+interface nsITransfer extends nsIWebProgressListener2 {
+  
+  readonly DOWNLOAD_ACCEPTABLE?: 0;
+  
+  readonly DOWNLOAD_FORBIDDEN?: 1;
+  
+  readonly DOWNLOAD_POTENTIALLY_UNSAFE?: 2;
+
+  
+  init(aSource: nsIURI, aSourceOriginalURI: nsIURI, aTarget: nsIURI, aDisplayName: string, aMIMEInfo: nsIMIMEInfo, startTime: PRTime, aTempFile: nsIFile, aCancelable: nsICancelable, aIsPrivate: boolean, aDownloadClassification: i32, aReferrerInfo: nsIReferrerInfo, aOpenDownloadsListOnStart: boolean, aFilesFolder: nsIFile): void;
+  
+  initWithBrowsingContext(aSource: nsIURI, aTarget: nsIURI, aDisplayName: string, aMIMEInfo: nsIMIMEInfo, startTime: PRTime, aTempFile: nsIFile, aCancelable: nsICancelable, aIsPrivate: boolean, aDownloadClassification: i32, aReferrerInfo: nsIReferrerInfo, aOpenDownloadsListOnStart: boolean, aBrowsingContext: BrowsingContext, aHandleInternally: boolean, aHttpChannel: nsIHttpChannel): void;
+  
+  setSha256Hash(aHash: string): void;
+  
+  setSignatureInfo(aSignatureInfo: u8[][][]): void;
+  
+  setRedirects(aRedirects: nsIArray): void;
+  
+  readonly downloadPromise: Promise<any>;
+}
+
+
+
+
+interface nsIURIContentListener extends nsISupports {
+  
+  doContent(aContentType: string, aIsContentPreferred: boolean, aRequest: nsIRequest, aContentHandler: OutParam<nsIStreamListener>): boolean;
+  
+  isPreferred(aContentType: string, aDesiredContentType: OutParam<string>): boolean;
+  
+  canHandleContent(aContentType: string, aIsContentPreferred: boolean, aDesiredContentType: OutParam<string>): boolean;
+  
+  loadCookie: nsISupports;
+  
+  parentContentListener: nsIURIContentListener;
+}
+
+
+
+
+interface nsIURILoader extends nsISupports {
+  
+  readonly IS_CONTENT_PREFERRED?: 1;
+  
+  readonly DONT_RETARGET?: 2;
+  
+  readonly IS_OBJECT_EMBED?: 4;
+
+  
+  registerContentListener(aContentListener: nsIURIContentListener): void;
+  
+  unRegisterContentListener(aContentListener: nsIURIContentListener): void;
+  
+  openURI(aChannel: nsIChannel, aFlags: u32, aWindowContext: nsIInterfaceRequestor): void;
+  
+  openChannel(aChannel: nsIChannel, aFlags: u32, aWindowContext: nsIInterfaceRequestor): nsIStreamListener;
+  
+  stop(aLoadCookie: nsISupports): void;
+}
+
+
+
+
+interface nsIWebProgress extends nsISupports {
+  
+  readonly NOTIFY_STATE_REQUEST?: 1;
+  
+  readonly NOTIFY_STATE_DOCUMENT?: 2;
+  
+  readonly NOTIFY_STATE_NETWORK?: 4;
+  
+  readonly NOTIFY_STATE_WINDOW?: 8;
+  
+  readonly NOTIFY_STATE_ALL?: 15;
+  
+  readonly NOTIFY_PROGRESS?: 16;
+  
+  readonly NOTIFY_STATUS?: 32;
+  
+  readonly NOTIFY_SECURITY?: 64;
+  
+  readonly NOTIFY_LOCATION?: 128;
+  
+  readonly NOTIFY_REFRESH?: 256;
+  
+  readonly NOTIFY_CONTENT_BLOCKING?: 512;
+  
+  readonly NOTIFY_ALL?: 1023;
+
+  
+  addProgressListener(aListener: nsIWebProgressListener, aNotifyMask: u32): void;
+  
+  removeProgressListener(aListener: nsIWebProgressListener): void;
+  
+  readonly browsingContext: BrowsingContext;
+  
+  readonly DOMWindow: mozIDOMWindowProxy;
+  
+  readonly isTopLevel: boolean;
+  
+  readonly isLoadingDocument: boolean;
+  
+  readonly loadType: u32;
+  
+  target: nsIEventTarget;
+  
+  readonly documentRequest: nsIRequest;
+}
+
+
+
+
+interface nsIWebProgressListener extends nsISupports {
+  
+  readonly STATE_START?: 1;
+  
+  readonly STATE_REDIRECTING?: 2;
+  
+  readonly STATE_TRANSFERRING?: 4;
+  
+  readonly STATE_NEGOTIATING?: 8;
+  
+  readonly STATE_STOP?: 16;
+  
+  readonly STATE_IS_REQUEST?: 65536;
+  
+  readonly STATE_IS_DOCUMENT?: 131072;
+  
+  readonly STATE_IS_NETWORK?: 262144;
+  
+  readonly STATE_IS_WINDOW?: 524288;
+  
+  readonly STATE_IS_REDIRECTED_DOCUMENT?: 1048576;
+  
+  readonly STATE_RESTORING?: 16777216;
+  
+  readonly STATE_IS_INSECURE?: 4;
+  
+  readonly STATE_IS_BROKEN?: 1;
+  
+  readonly STATE_IS_SECURE?: 2;
+  
+  readonly STATE_BLOCKED_MIXED_ACTIVE_CONTENT?: 16;
+  
+  readonly STATE_LOADED_MIXED_ACTIVE_CONTENT?: 32;
+  
+  readonly STATE_BLOCKED_MIXED_DISPLAY_CONTENT?: 256;
+  
+  readonly STATE_LOADED_MIXED_DISPLAY_CONTENT?: 512;
+  
+  readonly STATE_IDENTITY_EV_TOPLEVEL?: 1048576;
+  
+  readonly STATE_IDENTITY_ASSOCIATED?: 2097152;
+  
+  readonly STATE_USES_SSL_3?: 16777216;
+  
+  readonly STATE_USES_WEAK_CRYPTO?: 33554432;
+  
+  readonly STATE_CERT_USER_OVERRIDDEN?: 67108864;
+  
+  readonly STATE_BLOCKED_TRACKING_CONTENT?: 4096;
+  
+  readonly STATE_LOADED_LEVEL_1_TRACKING_CONTENT?: 8192;
+  
+  readonly STATE_LOADED_LEVEL_2_TRACKING_CONTENT?: 1048576;
+  
+  readonly STATE_BLOCKED_FINGERPRINTING_CONTENT?: 64;
+  
+  readonly STATE_LOADED_FINGERPRINTING_CONTENT?: 1024;
+  
+  readonly STATE_REPLACED_FINGERPRINTING_CONTENT?: 134217728;
+  
+  readonly STATE_ALLOWED_FINGERPRINTING_CONTENT?: 512;
+  
+  readonly STATE_BLOCKED_CRYPTOMINING_CONTENT?: 2048;
+  
+  readonly STATE_LOADED_CRYPTOMINING_CONTENT?: 2097152;
+  
+  readonly STATE_BLOCKED_UNSAFE_CONTENT?: 16384;
+  
+  readonly STATE_COOKIES_LOADED?: 32768;
+  
+  readonly STATE_COOKIES_LOADED_TRACKER?: 262144;
+  
+  readonly STATE_COOKIES_LOADED_SOCIALTRACKER?: 524288;
+  
+  readonly STATE_COOKIES_BLOCKED_BY_PERMISSION?: 268435456;
+  
+  readonly STATE_COOKIES_BLOCKED_TRACKER?: 536870912;
+  
+  readonly STATE_COOKIES_BLOCKED_SOCIALTRACKER?: 16777216;
+  
+  readonly STATE_COOKIES_BLOCKED_ALL?: 1073741824;
+  
+  readonly STATE_COOKIES_PARTITIONED_TRACKER?: 2;
+  
+  readonly STATE_COOKIES_PARTITIONED_FOREIGN?: 2147483648;
+  
+  readonly STATE_COOKIES_BLOCKED_FOREIGN?: 128;
+  
+  readonly STATE_BLOCKED_SOCIALTRACKING_CONTENT?: 65536;
+  
+  readonly STATE_LOADED_SOCIALTRACKING_CONTENT?: 131072;
+  
+  readonly STATE_REPLACED_TRACKING_CONTENT?: 16;
+  
+  readonly STATE_ALLOWED_TRACKING_CONTENT?: 32;
+  
+  readonly STATE_BLOCKED_EMAILTRACKING_CONTENT?: 4194304;
+  
+  readonly STATE_LOADED_EMAILTRACKING_LEVEL_1_CONTENT?: 8388608;
+  
+  readonly STATE_LOADED_EMAILTRACKING_LEVEL_2_CONTENT?: 256;
+  
+  readonly STATE_ALLOWED_CANVAS_FINGERPRINTING?: 33554432;
+  
+  readonly STATE_ALLOWED_FONT_FINGERPRINTING?: 67108864;
+  
+  readonly STATE_BLOCKED_SUSPICIOUS_FINGERPRINTING?: 4;
+  
+  readonly STATE_PURGED_BOUNCETRACKER?: 8;
+  
+  readonly STATE_HTTPS_ONLY_MODE_UPGRADED?: 4194304;
+  
+  readonly STATE_HTTPS_ONLY_MODE_UPGRADE_FAILED?: 8388608;
+  
+  readonly STATE_HTTPS_ONLY_MODE_UPGRADED_FIRST?: 134217728;
+  
+  readonly LOCATION_CHANGE_SAME_DOCUMENT?: 1;
+  
+  readonly LOCATION_CHANGE_ERROR_PAGE?: 2;
+  
+  readonly LOCATION_CHANGE_RELOAD?: 4;
+  
+  readonly LOCATION_CHANGE_HASHCHANGE?: 8;
+  
+  readonly LOCATION_CHANGE_SESSION_STORE?: 16;
+
+  
+  onStateChange(aWebProgress: nsIWebProgress, aRequest: nsIRequest, aStateFlags: u32, aStatus: nsresult): void;
+  
+  onProgressChange(aWebProgress: nsIWebProgress, aRequest: nsIRequest, aCurSelfProgress: i32, aMaxSelfProgress: i32, aCurTotalProgress: i32, aMaxTotalProgress: i32): void;
+  
+  onLocationChange(aWebProgress: nsIWebProgress, aRequest: nsIRequest, aLocation: nsIURI, aFlags?: u32): void;
+  
+  onStatusChange(aWebProgress: nsIWebProgress, aRequest: nsIRequest, aStatus: nsresult, aMessage: string): void;
+  
+  onSecurityChange(aWebProgress: nsIWebProgress, aRequest: nsIRequest, aState: u32): void;
+  
+  onContentBlockingEvent(aWebProgress: nsIWebProgress, aRequest: nsIRequest, aEvent: u32): void;
+}
+
+
+
+
+interface nsIWebProgressListener2 extends nsIWebProgressListener {
+  
+  onProgressChange64(aWebProgress: nsIWebProgress, aRequest: nsIRequest, aCurSelfProgress: i64, aMaxSelfProgress: i64, aCurTotalProgress: i64, aMaxTotalProgress: i64): void;
+  
+  onRefreshAttempted(aWebProgress: nsIWebProgress, aRefreshURI: nsIURI, aMillis: u32, aSameURI: boolean): boolean;
+}
+
+
+
+
+
+
+interface nsIContentDispatchChooser extends nsISupports {
+  
+  handleURI(aHandler: nsIHandlerInfo, aURI: nsIURI, aTriggeringPrincipal: nsIPrincipal, aBrowsingContext: BrowsingContext, aWasTriggeredExternally?: boolean, aHasValidUserGestureActivation?: boolean): void;
+}
+
+
+
+
+interface nsIExternalHelperAppService extends nsISupports {
+  
+  doContent(aMimeContentType: string, aChannel: nsIChannel, aContentContext: nsIInterfaceRequestor, aForceSave: boolean, aWindowContext?: nsIInterfaceRequestor): nsIStreamListener;
+  
+  createListener(aMimeContentType: string, aChannel: nsIChannel, aContentContext: BrowsingContext, aForceSave: boolean, aWindowContext?: nsIInterfaceRequestor): nsIStreamListener;
+  
+  applyDecodingForExtension(aExtension: string, aEncodingType: string): boolean;
+  
+  getPreferredDownloadsDirectory(): nsIFile;
+}
+
+
+interface nsPIExternalAppLauncher extends nsISupports {
+  
+  deleteTemporaryFileOnExit(aTemporaryFile: nsIFile): void;
+  
+  deleteTemporaryPrivateFileWhenPossible(aTemporaryFile: nsIFile): void;
+  
+  deletePrivateFileWhenPossible(aPrivateFile: nsIFile): void;
+}
+
+
+interface nsIHelperAppLauncher extends nsICancelable {
+  
+  readonly MIMEInfo: nsIMIMEInfo;
+  
+  readonly source: nsIURI;
+  
+  readonly suggestedFileName: string;
+  
+  promptForSaveDestination(): void;
+  
+  setDownloadToLaunch(aHandleInternally: boolean, aFile: nsIFile): void;
+  
+  launchLocalFile(): void;
+  
+  saveDestinationAvailable(aFile: nsIFile, aDialogWasShown?: boolean): void;
+  
+  setWebProgressListener(aWebProgressListener: nsIWebProgressListener2): void;
+  
+  readonly targetFile: nsIFile;
+  
+  readonly targetFileIsExecutable: boolean;
+  
+  readonly timeDownloadStarted: PRTime;
+  
+  readonly contentLength: i64;
+  
+  readonly browsingContextId: u64;
+}
+
+
+
+
+interface nsIExternalProtocolService extends nsISupports {
+  
+  externalProtocolHandlerExists(aProtocolScheme: string): boolean;
+  
+  isExposedProtocol(aProtocolScheme: string): boolean;
+  
+  getProtocolHandlerInfo(aProtocolScheme: string): nsIHandlerInfo;
+  
+  getProtocolHandlerInfoFromOS(aProtocolScheme: string, aFound: OutParam<boolean>): nsIHandlerInfo;
+  
+  setProtocolHandlerDefaults(aHandlerInfo: nsIHandlerInfo, aOSHandlerExists: boolean): void;
+  
+  loadURI(aURI: nsIURI, aTriggeringPrincipal?: nsIPrincipal, aRedirectPrincipal?: nsIPrincipal, aBrowsingContext?: BrowsingContext, aWasTriggeredExternally?: boolean, aHasValidUserGestureActivation?: boolean, aNewWindowTarget?: boolean): void;
+  
+  getApplicationDescription(aScheme: string): string;
+  
+  isCurrentAppOSDefaultForProtocol(aScheme: string): boolean;
+}
+
+
+
+
+interface nsIHandlerService extends nsISupports {
+  
+  asyncInit(): void;
+  
+  enumerate(): nsISimpleEnumerator;
+  
+  fillHandlerInfo(aHandlerInfo: nsIHandlerInfo, aOverrideType: string): void;
+  
+  store(aHandlerInfo: nsIHandlerInfo): void;
+  
+  exists(aHandlerInfo: nsIHandlerInfo): boolean;
+  
+  remove(aHandlerInfo: nsIHandlerInfo): void;
+  
+  getTypeFromExtension(aFileExtension: string): string;
+  
+  existsForProtocolOS(aProtocolScheme: string): boolean;
+  
+  existsForProtocol(aProtocolScheme: string): boolean;
+  
+  getApplicationDescription(aProtocolScheme: string): string;
+}
+
+
+
+}  
+
+
+declare enum nsIHelperAppLauncherDialog_reason {
+  
+  REASON_CANTHANDLE = 0,
+  
+  REASON_SERVERREQUEST = 1,
+  
+  REASON_TYPESNIFFED = 2,
+}
+
+declare global {
+
+namespace nsIHelperAppLauncherDialog {
+  type reason = nsIHelperAppLauncherDialog_reason;
+}
+
+
+interface nsIHelperAppLauncherDialog extends nsISupports, Enums<typeof nsIHelperAppLauncherDialog_reason> {
+  
+  show(aLauncher: nsIHelperAppLauncher, aWindowContext: nsIInterfaceRequestor, aReason: nsIHelperAppLauncherDialog.reason): void;
+  
+  promptForSaveToFileAsync(aLauncher: nsIHelperAppLauncher, aWindowContext: nsIInterfaceRequestor, aDefaultFileName: string, aSuggestedFileExtension: string, aForcePrompt: boolean): void;
+}
+
+
+
+
+interface nsISharingHandlerApp extends nsIHandlerApp {
+  
+  share(data: string, title?: string): void;
+}
+
+
+
+
+interface nsIPrefetchService extends nsISupports {
+  
+  prefetchURI(aURI: nsIURI, aReferrerInfo: nsIReferrerInfo, aSource: Node, aExplicit: boolean): void;
+  
+  hasMoreElements(): boolean;
+  
+  cancelPrefetchPreloadURI(aURI: nsIURI, aSource: Node): void;
 }
 
 
@@ -23274,235 +24010,6 @@ interface nsIUserIdleServiceInternal extends nsIUserIdleService {
   
   resetIdleTimeOut(idleDeltaInMS: u32): void;
 }
-
-
-
-
-interface nsIWindowCreator extends nsISupports {
-  
-  createChromeWindow(parent: nsIWebBrowserChrome, chromeFlags: u32, aOpenWindowInfo: nsIOpenWindowInfo, cancel: OutParam<boolean>): nsIWebBrowserChrome;
-}
-
-
-
-
-interface nsIWindowProvider extends nsISupports {
-}
-
-
-
-
-interface nsIDialogParamBlock extends nsISupports {
-  
-  GetInt(inIndex: i32): i32;
-  
-  SetInt(inIndex: i32, inInt: i32): void;
-  
-  SetNumberStrings(inNumStrings: i32): void;
-  
-  GetString(inIndex: i32): string;
-  
-  SetString(inIndex: i32, inString: string): void;
-  
-  objects: nsIMutableArray;
-}
-
-
-
-
-interface nsIOpenWindowInfo extends nsISupports {
-  
-  readonly parent: BrowsingContext;
-  
-  readonly isRemote: boolean;
-  
-  readonly forceNoOpener: boolean;
-  
-  readonly isForPrinting: boolean;
-  
-  readonly isForWindowDotPrint: boolean;
-  
-  readonly isTopLevelCreatedByWebContent: boolean;
-  
-  readonly hasValidUserGestureActivation: boolean;
-  
-  readonly textDirectiveUserActivation: boolean;
-  
-  readonly originAttributes: any;
-  
-  cancel(): void;
-  
-  cloneWithPrincipals(aPrincipal: nsIPrincipal, aPartitionedPrincipal: nsIPrincipal): nsIOpenWindowInfo;
-}
-
-
-
-
-interface nsIPromptCollection extends nsISupports {
-  
-  asyncBeforeUnloadCheck(aBrowsingContext: BrowsingContext): Promise<any>;
-  
-  confirmRepost(aBrowsingContext: BrowsingContext): boolean;
-  
-  confirmFolderUpload(aBrowsingContext: BrowsingContext, aDirectoryName: string): boolean;
-}
-
-
-
-
-interface nsIPromptFactory extends nsISupports {
-  
-  getPrompt<T extends nsIID>(aParent: mozIDOMWindowProxy, iid: T): nsQIResult<T>;
-}
-
-
-
-
-interface nsIPromptService extends nsISupports {
-  
-  readonly BUTTON_POS_0?: 1;
-  
-  readonly BUTTON_POS_1?: 256;
-  
-  readonly BUTTON_POS_2?: 65536;
-  
-  readonly BUTTON_TITLE_OK?: 1;
-  
-  readonly BUTTON_TITLE_CANCEL?: 2;
-  
-  readonly BUTTON_TITLE_YES?: 3;
-  
-  readonly BUTTON_TITLE_NO?: 4;
-  
-  readonly BUTTON_TITLE_SAVE?: 5;
-  
-  readonly BUTTON_TITLE_DONT_SAVE?: 6;
-  
-  readonly BUTTON_TITLE_REVERT?: 7;
-  
-  readonly BUTTON_TITLE_IS_STRING?: 127;
-  
-  readonly BUTTON_POS_0_DEFAULT?: 0;
-  
-  readonly BUTTON_POS_1_DEFAULT?: 16777216;
-  
-  readonly BUTTON_POS_2_DEFAULT?: 33554432;
-  
-  readonly BUTTON_DELAY_ENABLE?: 67108864;
-  
-  readonly SHOW_SPINNER?: 134217728;
-  
-  readonly BUTTON_NONE_ENABLE_BIT?: 268435456;
-  
-  readonly BUTTON_NONE?: 268435583;
-  
-  readonly BUTTON_POS_1_IS_SECONDARY?: 536870912;
-  
-  readonly STD_OK_CANCEL_BUTTONS?: 513;
-  
-  readonly STD_YES_NO_BUTTONS?: 1027;
-  
-  readonly MODAL_TYPE_CONTENT?: 1;
-  
-  readonly MODAL_TYPE_TAB?: 2;
-  
-  readonly MODAL_TYPE_WINDOW?: 3;
-  
-  readonly MODAL_TYPE_INTERNAL_WINDOW?: 4;
-
-  
-  alert(aParent: mozIDOMWindowProxy, aDialogTitle: string, aText: string): void;
-  
-  alertBC(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string): void;
-  
-  asyncAlert(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string): Promise<any>;
-  
-  alertCheck(aParent: mozIDOMWindowProxy, aDialogTitle: string, aText: string, aCheckMsg: string, aCheckState: InOutParam<boolean>): void;
-  
-  alertCheckBC(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aCheckMsg: string, aCheckState: InOutParam<boolean>): void;
-  
-  asyncAlertCheck(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aCheckMsg: string, aCheckState: boolean): Promise<any>;
-  
-  confirm(aParent: mozIDOMWindowProxy, aDialogTitle: string, aText: string): boolean;
-  
-  confirmBC(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string): boolean;
-  
-  asyncConfirm(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string): Promise<any>;
-  
-  confirmCheck(aParent: mozIDOMWindowProxy, aDialogTitle: string, aText: string, aCheckMsg: string, aCheckState: InOutParam<boolean>): boolean;
-  
-  confirmCheckBC(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aCheckMsg: string, aCheckState: InOutParam<boolean>): boolean;
-  
-  asyncConfirmCheck(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aCheckMsg: string, aCheckState: boolean): Promise<any>;
-  
-  confirmEx(aParent: mozIDOMWindowProxy, aDialogTitle: string, aText: string, aButtonFlags: u32, aButton0Title: string, aButton1Title: string, aButton2Title: string, aCheckMsg: string, aCheckState: InOutParam<boolean>): i32;
-  
-  confirmExBC(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aButtonFlags: u32, aButton0Title: string, aButton1Title: string, aButton2Title: string, aCheckMsg: string, aCheckState: InOutParam<boolean>): i32;
-  
-  asyncConfirmEx(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aButtonFlags: u32, aButton0Title: string, aButton1Title: string, aButton2Title: string, aCheckMsg: string, aCheckState: boolean, aExtraArgs?: any): Promise<any>;
-  
-  prompt(aParent: mozIDOMWindowProxy, aDialogTitle: string, aText: string, aValue: InOutParam<string>, aCheckMsg: string, aCheckState: InOutParam<boolean>): boolean;
-  
-  promptBC(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aValue: InOutParam<string>, aCheckMsg: string, aCheckState: InOutParam<boolean>): boolean;
-  
-  asyncPrompt(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aValue: string, aCheckMsg: string, aCheckState: boolean): Promise<any>;
-  
-  promptUsernameAndPassword(aParent: mozIDOMWindowProxy, aDialogTitle: string, aText: string, aUsername: InOutParam<string>, aPassword: InOutParam<string>): boolean;
-  
-  promptUsernameAndPasswordBC(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aUsername: InOutParam<string>, aPassword: InOutParam<string>): boolean;
-  
-  asyncPromptUsernameAndPassword(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aUsername: string, aPassword: string): Promise<any>;
-  
-  promptPassword(aParent: mozIDOMWindowProxy, aDialogTitle: string, aText: string, aPassword: InOutParam<string>): boolean;
-  
-  promptPasswordBC(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aPassword: InOutParam<string>): boolean;
-  
-  asyncPromptPassword(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aPassword: string): Promise<any>;
-  
-  select(aParent: mozIDOMWindowProxy, aDialogTitle: string, aText: string, aSelectList: string[], aOutSelection: OutParam<i32>): boolean;
-  
-  selectBC(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aSelectList: string[], aOutSelection: OutParam<i32>): boolean;
-  
-  asyncSelect(aBrowsingContext: BrowsingContext, modalType: u32, aDialogTitle: string, aText: string, aSelectList: string[]): Promise<any>;
-  
-  promptAuth(aParent: mozIDOMWindowProxy, aChannel: nsIChannel, level: u32, authInfo: nsIAuthInformation): boolean;
-  
-  promptAuthBC(aBrowsingContext: BrowsingContext, modalType: u32, aChannel: nsIChannel, level: u32, authInfo: nsIAuthInformation): boolean;
-  
-  asyncPromptAuth(aBrowsingContext: BrowsingContext, modalType: u32, aChannel: nsIChannel, level: u32, authInfo: nsIAuthInformation): Promise<any>;
-  
-  confirmUserPaste(aWindow: WindowGlobalParent): Promise<any>;
-}
-
-
-
-
-interface nsIWindowWatcher extends nsISupports {
-  
-  openWindow(aParent: mozIDOMWindowProxy, aUrl: string, aName: string, aFeatures: string, aArguments: nsISupports): mozIDOMWindowProxy;
-  
-  registerNotification(aObserver: nsIObserver): void;
-  
-  unregisterNotification(aObserver: nsIObserver): void;
-  
-  getWindowEnumerator(): nsISimpleEnumerator;
-  
-  getNewPrompter(aParent: mozIDOMWindowProxy): nsIPrompt;
-  
-  getNewAuthPrompter(aParent: mozIDOMWindowProxy): nsIAuthPrompt;
-  
-  setWindowCreator(creator: nsIWindowCreator): void;
-  
-  hasWindowCreator(): boolean;
-  
-  getChromeForWindow(aWindow: mozIDOMWindowProxy): nsIWebBrowserChrome;
-  
-  getWindowByName(aTargetName: string): mozIDOMWindowProxy;
-  
-  readonly activeWindow: mozIDOMWindowProxy;
-}
-
-
 
 
 
@@ -25590,6 +26097,18 @@ interface nsIXULRuntime extends nsISupports, Enums<typeof nsIXULRuntime_Experime
 
 
 
+interface nsIScriptableOK extends nsISupports {
+  
+  method1(): void;
+}
+
+
+interface nsIScriptableWithNotXPCOM extends nsISupports {
+}
+
+
+
+
 
 
 interface nsIEnvironment extends nsISupports {
@@ -25876,657 +26395,133 @@ interface nsITimerManager extends nsISupports {
 
 
 
-interface nsIScriptableOK extends nsISupports {
+interface nsIAppShellService extends nsISupports {
   
-  method1(): void;
-}
+  readonly SIZE_TO_CONTENT?: -1;
 
-
-interface nsIScriptableWithNotXPCOM extends nsISupports {
-}
-
-
-
-
-interface mozIJSSubScriptLoader extends nsISupports {
   
-  loadSubScript(url: string, obj?: any): any;
+  createTopLevelWindow(aParent: nsIAppWindow, aUrl: nsIURI, aChromeMask: u32, aInitialWidth: i32, aInitialHeight: i32): nsIAppWindow;
   
-  loadSubScriptWithOptions(url: string, options: any): any;
-}
-
-
-
-
-
-
-interface xpcIJSWeakReference extends nsISupports {
+  createWindowlessBrowser(aIsChrome?: boolean, aChromeMask?: u32): nsIWindowlessBrowser;
   
-  get(): any;
+  readonly hiddenWindow: nsIAppWindow;
+  
+  readonly hiddenDOMWindow: mozIDOMWindowProxy;
+  
+  registerTopLevelWindow(aWindow: nsIAppWindow): void;
+  
+  unregisterTopLevelWindow(aWindow: nsIAppWindow): void;
+  
+  readonly hasHiddenWindow: boolean;
 }
 
 
 
 
-interface nsIXPCComponents_Classes extends nsISupports {
-}
-
-
-interface nsIXPCComponents_Results extends nsISupports {
-}
-
-
-interface nsIXPCComponents_ID extends nsISupports {
-}
-
-
-interface nsIXPCComponents_Exception extends nsISupports {
-}
-
-
-interface nsIXPCComponents_Constructor extends nsISupports {
-}
-
-
-interface nsIXPCComponents_utils_Sandbox extends nsISupports {
-}
-
-
-type nsIScheduledGCCallback = Callable<{
+interface nsIAppWindow extends nsISupports {
   
-  callback(): void;
-}>
-
-
-interface nsIXPCComponents_Utils extends nsISupports {
+  readonly docShell: nsIDocShell;
   
-  printStderr(message: string): void;
+  intrinsicallySized: boolean;
   
-  reportError(error: any, stack?: any): void;
+  readonly primaryContentShell: nsIDocShellTreeItem;
   
-  readonly Sandbox: nsIXPCComponents_utils_Sandbox;
+  readonly primaryRemoteTab: nsIRemoteTab;
   
-  evalInSandbox(source: string, sandbox: any, version?: any, filename?: string, lineNo?: i32, enforceFilenameRestrictions?: boolean): any;
+  readonly primaryContentBrowsingContext: BrowsingContext;
   
-  getUAWidgetScope(principal: nsIPrincipal): any;
+  remoteTabAdded(aTab: nsIRemoteTab, aPrimary: boolean): void;
   
-  getSandboxMetadata(sandbox: any): any;
+  remoteTabRemoved(aTab: nsIRemoteTab): void;
   
-  setSandboxMetadata(sandbox: any, metadata: any): void;
+  readonly outerToInnerHeightDifferenceInCSSPixels: u32;
   
-  setSandboxLocaleOverride(sandbox: any, locale: string): void;
+  readonly outerToInnerWidthDifferenceInCSSPixels: u32;
   
-  setSandboxTimezoneOverride(sandbox: any, timezone: string): void;
+  center(aRelative: nsIAppWindow, aScreen: boolean, aAlert: boolean): void;
   
-  isESModuleLoaded(aResourceURI: string): boolean;
+  showModal(): void;
   
-  importGlobalProperties(aPropertyList: any): void;
+  lockAspectRatio(aShouldLock: boolean): void;
   
-  getWeakReference(obj: any): xpcIJSWeakReference;
+  readonly chromeFlags: u32;
   
-  forceGC(): void;
+  createNewWindow(aChromeFlags: i32, aOpenWindowInfo: nsIOpenWindowInfo): nsIAppWindow;
   
-  forceCC(aListener?: nsICycleCollectorListener): void;
+  XULBrowserWindow: nsIXULBrowserWindow;
   
-  createCCLogger(): nsICycleCollectorListener;
+  readonly initialOpenWindowInfo: nsIOpenWindowInfo;
   
-  finishCC(): void;
+  needFastSnaphot(): void;
   
-  ccSlice(budget: i64): void;
+  rollupAllPopups(): void;
   
-  getMaxCCSliceTimeSinceClear(): i32;
-  
-  clearMaxCCTime(): void;
-  
-  forceShrinkingGC(): void;
-  
-  schedulePreciseGC(callback: nsIScheduledGCCallback): void;
-  
-  schedulePreciseShrinkingGC(callback: nsIScheduledGCCallback): void;
-  
-  unlinkGhostWindows(): void;
-  
-  intentionallyLeak(): void;
-  
-  getJSTestingFunctions(): any;
-  
-  getFunctionSourceLocation(func: any): any;
-  
-  callFunctionWithAsyncStack(func: any, stack: nsIStackFrame, asyncCause: string): any;
-  
-  getGlobalForObject(obj: any): any;
-  
-  isProxy(vobject: any): boolean;
-  
-  exportFunction(vfunction: any, vscope: any, voptions?: any): any;
-  
-  createObjectIn(vobj: any, voptions?: any): any;
-  
-  makeObjectPropsNormal(vobj: any): void;
-  
-  isDeadWrapper(obj: any): boolean;
-  
-  isRemoteProxy(val: any): boolean;
-  
-  recomputeWrappers(vobj?: any): void;
-  
-  setWantXrays(vscope: any): void;
-  
-  dispatch(runnable: any, scope?: any): void;
-  
-  readonly isInAutomation: boolean;
-  
-  exitIfInAutomation(): void;
-  
-  crashIfNotInAutomation(): void;
-  
-  setGCZeal(zeal: i32): void;
-  
-  nukeSandbox(obj: any): void;
-  
-  blockScriptForGlobal(global: any): void;
-  
-  unblockScriptForGlobal(global: any): void;
-  
-  isOpaqueWrapper(obj: any): boolean;
-  
-  isXrayWrapper(obj: any): boolean;
-  
-  waiveXrays(aVal: any): any;
-  
-  unwaiveXrays(aVal: any): any;
-  
-  getClassName(aObj: any, aUnwrap: boolean): string;
-  
-  getIncumbentGlobal(callback?: any): any;
-  
-  getDebugName(obj: any): string;
-  
-  getWatchdogTimestamp(aCategory: string): PRTime;
-  
-  getJSEngineTelemetryValue(): any;
-  
-  cloneInto(value: any, scope: any, options?: any): any;
-  
-  getWebIDLCallerPrincipal(): nsIPrincipal;
-  
-  getObjectPrincipal(obj: any): nsIPrincipal;
-  
-  getRealmLocation(obj: any): string;
-  
-  readUTF8File(file: nsIFile): string;
-  
-  readUTF8URI(url: nsIURI): string;
-  
-  createSpellChecker(): nsIEditorSpellCheck;
-  
-  createCommandLine(args: string[], workingDir: nsIFile, state: u32): nsISupports;
-  
-  createCommandParams(): nsICommandParams;
-  
-  createLoadContext(): nsILoadContext;
-  
-  createPrivateLoadContext(): nsILoadContext;
-  
-  createPersistentProperties(): nsIPersistentProperties;
-  
-  createDocumentEncoder(contentType: string): nsIDocumentEncoder;
-  
-  createHTMLCopyEncoder(): nsIDocumentEncoder;
-  
-  readonly loadedESModules: string[];
-  
-  getModuleImportStack(aLocation: string): string;
-}
-
-
-interface nsIXPCComponents extends nsISupports {
-  
-  readonly interfaces: nsIXPCComponents_Interfaces;
-  
-  readonly results: nsIXPCComponents_Results;
-  
-  isSuccessCode(result: nsresult): boolean;
-  
-  readonly classes: nsIXPCComponents_Classes;
-  
-  readonly stack: nsIStackFrame;
-  
-  readonly manager: nsIComponentManager;
-  
-  readonly utils: nsIXPCComponents_Utils;
-  
-  readonly ID: nsIXPCComponents_ID;
-  
-  readonly Exception: nsIXPCComponents_Exception;
-  
-  readonly Constructor: nsIXPCComponents_Constructor;
-  
-  returnCode: any;
+  showInitialViewer(): void;
 }
 
 
 
 
-interface nsIXPCTestObjectReadOnly extends nsISupports {
+interface nsIWindowMediator extends nsISupports {
   
-  readonly strReadOnly: string;
+  getEnumerator(aWindowType: string): nsISimpleEnumerator;
   
-  readonly boolReadOnly: boolean;
+  getAppWindowEnumerator(aWindowType: string): nsISimpleEnumerator;
   
-  readonly shortReadOnly: i16;
+  getZOrderAppWindowEnumerator(aWindowType: string, aFrontToBack: boolean): nsISimpleEnumerator;
   
-  readonly longReadOnly: i32;
+  getMostRecentWindow(aWindowType: string): mozIDOMWindowProxy;
   
-  readonly floatReadOnly: float;
+  getMostRecentBrowserWindow(): mozIDOMWindowProxy;
   
-  readonly charReadOnly: string;
+  getMostRecentNonPBWindow(aWindowType: string): mozIDOMWindowProxy;
   
-  readonly timeReadOnly: PRTime;
-}
-
-
-interface nsIXPCTestObjectReadWrite extends nsISupports {
+  getMostRecentWindowBy(aWindowType: string, aFilter: u8): mozIDOMWindowProxy;
   
-  stringProperty: string;
+  getOuterWindowWithId(aOuterWindowID: u64): mozIDOMWindowProxy;
   
-  booleanProperty: boolean;
+  getCurrentInnerWindowWithId(aInnerWindowID: u64): mozIDOMWindow;
   
-  shortProperty: i16;
+  addListener(aListener: nsIWindowMediatorListener): void;
   
-  longProperty: i32;
-  
-  floatProperty: float;
-  
-  charProperty: string;
-  
-  timeProperty: PRTime;
+  removeListener(aListener: nsIWindowMediatorListener): void;
 }
 
 
 
 
-interface nsIXPCTestBug809674 extends nsISupports {
+interface nsIWindowMediatorListener extends nsISupports {
   
-  addArgs(x: u32, y: u32): u32;
+  onOpenWindow(window: nsIAppWindow): void;
   
-  addSubMulArgs(x: u32, y: u32, subOut: OutParam<u32>, mulOut: OutParam<u32>): u32;
-  
-  addVals(x: any, y: any): any;
-  
-  methodNoArgs(): u32;
-  
-  methodNoArgsNoRetVal(): void;
-  
-  addMany(x1: u32, x2: u32, x3: u32, x4: u32, x5: u32, x6: u32, x7: u32, x8: u32): u32;
-  
-  valProperty: any;
-  
-  uintProperty: u32;
-  
-  methodWithOptionalArgc(): void;
-}
-
-
-
-}  
-
-
-declare enum nsIXPCTestCEnums_testFlagsExplicit {
-  
-  shouldBe1Explicit = 1,
-  
-  shouldBe2Explicit = 2,
-  
-  shouldBe4Explicit = 4,
-  
-  shouldBe8Explicit = 8,
-  
-  shouldBe12Explicit = 12,
-}
-
-
-declare enum nsIXPCTestCEnums_testFlagsImplicit {
-  
-  shouldBe0Implicit = 0,
-  
-  shouldBe1Implicit = 1,
-  
-  shouldBe2Implicit = 2,
-  
-  shouldBe3Implicit = 3,
-  
-  shouldBe5Implicit = 5,
-  
-  shouldBe6Implicit = 6,
-  
-  shouldBe2AgainImplicit = 2,
-  
-  shouldBe3AgainImplicit = 3,
-}
-
-declare global {
-
-namespace nsIXPCTestCEnums {
-  type testFlagsExplicit = nsIXPCTestCEnums_testFlagsExplicit;
-  type testFlagsImplicit = nsIXPCTestCEnums_testFlagsImplicit;
-}
-
-
-interface nsIXPCTestCEnums extends nsISupports, Enums<typeof nsIXPCTestCEnums_testFlagsExplicit & typeof nsIXPCTestCEnums_testFlagsImplicit> {
-  
-  readonly testConst?: 1;
-
-  
-  testCEnumInput(abc: nsIXPCTestCEnums.testFlagsExplicit): void;
-  
-  testCEnumOutput(): nsIXPCTestCEnums.testFlagsExplicit;
+  onCloseWindow(window: nsIAppWindow): void;
 }
 
 
 
 
-interface nsIXPCTestInterfaceA extends nsISupports {
-  
-  name: string;
-}
-
-
-interface nsIXPCTestInterfaceB extends nsISupports {
-  
-  name: string;
-}
-
-
-interface nsIXPCTestInterfaceC extends nsISupports {
-  
-  someInteger: i32;
-}
-
-
-
-
-interface nsIXPCTestParams extends nsISupports {
-  
-  testBoolean(a: boolean, b: InOutParam<boolean>): boolean;
-  
-  testOctet(a: u8, b: InOutParam<u8>): u8;
-  
-  testShort(a: i16, b: InOutParam<i16>): i16;
-  
-  testLong(a: i32, b: InOutParam<i32>): i32;
-  
-  testLongLong(a: i64, b: InOutParam<i64>): i64;
-  
-  testUnsignedShort(a: u16, b: InOutParam<u16>): u16;
-  
-  testUnsignedLong(a: u32, b: InOutParam<u32>): u32;
-  
-  testUnsignedLongLong(a: u64, b: InOutParam<u64>): u64;
-  
-  testFloat(a: float, b: InOutParam<float>): float;
-  
-  testDouble(a: double, b: InOutParam<float>): double;
-  
-  testChar(a: string, b: InOutParam<string>): string;
-  
-  testString(a: string, b: InOutParam<string>): string;
-  
-  testWchar(a: string, b: InOutParam<string>): string;
-  
-  testWstring(a: string, b: InOutParam<string>): string;
-  
-  testAString(a: string, b: InOutParam<string>): string;
-  
-  testAUTF8String(a: string, b: InOutParam<string>): string;
-  
-  testACString(a: string, b: InOutParam<string>): string;
-  
-  testJsval(a: any, b: InOutParam<any>): any;
-  
-  testShortSequence(a: i16[], b: InOutParam<i16[]>): i16[];
-  
-  testDoubleSequence(a: double[], b: InOutParam<double[]>): double[];
-  
-  testInterfaceSequence(a: nsIXPCTestInterfaceA[], b: InOutParam<nsIXPCTestInterfaceA[]>): nsIXPCTestInterfaceA[];
-  
-  testAStringSequence(a: string[], b: InOutParam<string[]>): string[];
-  
-  testACStringSequence(a: string[], b: InOutParam<string[]>): string[];
-  
-  testJsvalSequence(a: any[], b: InOutParam<any[]>): any[];
-  
-  testSequenceSequence(a: i16[][], b: InOutParam<i16[][]>): i16[][];
-  
-  testOptionalSequence(arr?: u8[]): u8[];
-  
-  testShortArray(aLength: u32, a: i16[], bLength: InOutParam<u32>, b: InOutParam<i16[]>, rvLength: OutParam<u32>): i16[];
-  
-  testDoubleArray(aLength: u32, a: double[], bLength: InOutParam<u32>, b: InOutParam<double[]>, rvLength: OutParam<u32>): double[];
-  
-  testStringArray(aLength: u32, a: string[], bLength: InOutParam<u32>, b: InOutParam<string[]>, rvLength: OutParam<u32>): string[];
-  
-  testWstringArray(aLength: u32, a: string[], bLength: InOutParam<u32>, b: InOutParam<string[]>, rvLength: OutParam<u32>): string[];
-  
-  testInterfaceArray(aLength: u32, a: nsIXPCTestInterfaceA[], bLength: InOutParam<u32>, b: InOutParam<nsIXPCTestInterfaceA[]>, rvLength: OutParam<u32>): nsIXPCTestInterfaceA[];
-  
-  testByteArrayOptionalLength(a: u8[], aLength?: u32): u32;
-  
-  testSizedString(aLength: u32, a: string, bLength: InOutParam<u32>, b: InOutParam<string>, rvLength: OutParam<u32>): string;
-  
-  testSizedWstring(aLength: u32, a: string, bLength: InOutParam<u32>, b: InOutParam<string>, rvLength: OutParam<u32>): string;
-  
-  testJsvalArray(aLength: u32, a: any[], bLength: InOutParam<u32>, b: InOutParam<any[]>, rvLength: OutParam<u32>): any[];
-  
-  testOutAString(o: OutParam<string>): void;
-  
-  testStringArrayOptionalSize(a: string[], aLength?: u32): string;
-  
-  testOmittedOptionalOut(aJSObj: nsIXPCTestParams, aOut?: OutParam<nsIURI>): void;
-  
-  readonly testNaN: double;
-}
-
-
-
-
-interface nsIXPCTestReturnCodeParent extends nsISupports {
-  
-  callChild(childBehavior: i32): nsresult;
-}
-
-
-interface nsIXPCTestReturnCodeChild extends nsISupports {
-  
-  readonly CHILD_SHOULD_THROW?: 0;
-  
-  readonly CHILD_SHOULD_RETURN_SUCCESS?: 1;
-  
-  readonly CHILD_SHOULD_RETURN_RESULTCODE?: 2;
-  
-  readonly CHILD_SHOULD_NEST_RESULTCODES?: 3;
-
-  
-  doIt(behavior: i32): void;
-}
-
-
-
-
-type nsIXPCTestFunctionInterface = Callable<{
-  
-  echo(arg: string): string;
-}>
-
-
-interface nsIXPCTestUtils extends nsISupports {
-  
-  doubleWrapFunction(f: nsIXPCTestFunctionInterface): nsIXPCTestFunctionInterface;
-}
-
-
-interface nsIXPCTestTypeScript extends nsISupports {
-  
-  exposedProp: i32;
-  
-  exposedMethod(arg: i32): void;
-}
-
-
-
-
-interface nsIBrowserController extends nsISupports {
-  
-  enableDisableCommands(action: string, enabledCommands: string[], disabledCommands: string[]): void;
-}
-
-
-
-
-interface nsIController extends nsISupports {
-  
-  isCommandEnabled(command: string): boolean;
-  
-  supportsCommand(command: string): boolean;
-  
-  doCommand(command: string): void;
-  
-  onEvent(eventName: string): void;
-}
-
-
-interface nsICommandController extends nsISupports {
-  
-  getCommandStateWithParams(command: string, aCommandParams: nsICommandParams): void;
-  
-  doCommandWithParams(command: string, aCommandParams: nsICommandParams): void;
-  
-  getSupportedCommands(): string[];
-}
-
-
-
-
-interface nsIControllers extends nsISupports {
-  
-  getControllerForCommand(command: string): nsIController;
-  
-  insertControllerAt(index: u32, controller: nsIController): void;
-  
-  removeControllerAt(index: u32): nsIController;
-  
-  getControllerAt(index: u32): nsIController;
-  
-  appendController(controller: nsIController): void;
-  
-  removeController(controller: nsIController): void;
-  
-  getControllerId(controller: nsIController): u32;
-  
-  getControllerById(controllerID: u32): nsIController;
-  
-  getControllerCount(): u32;
-}
-
-
-
-
-interface nsIASWebAuthSessionRequest extends nsISupports {
-  
-  readonly uuid: string;
-  
-  readonly url: string;
-  
-  readonly callbackScheme: string;
-  
-  readonly hasCallback: boolean;
-  
-  readonly useEphemeralSession: boolean;
-  
-  readonly additionalHeaderNames: string[];
-  
-  getAdditionalHeader(name: string): string;
-  
-  matchesCallbackURL(url: string): boolean;
-  
-  complete(callbackURL: string): void;
-  
-  cancel(): void;
-}
-
-
-
-
-interface nsINativeAppSupport extends nsISupports {
-  
-  start(): boolean;
-  
-  enable(): void;
-  
-  onLastWindowClosing(): void;
-  
-  ReOpen(): void;
-}
-
-
-
-
-interface nsIXREDirProvider extends nsISupports {
-  
-  setUserDataDirectory(aFile: nsIFile, aLocal: boolean): void;
-  
-  getInstallHash(): string;
-}
-
-
-
-
-interface nsIZipWriter extends nsISupports {
-  
-  readonly COMPRESSION_NONE?: 0;
-  
-  readonly COMPRESSION_FASTEST?: 1;
-  
-  readonly COMPRESSION_DEFAULT?: 6;
-  
-  readonly COMPRESSION_BEST?: 9;
-
-  
-  comment: string;
-  
-  readonly inQueue: boolean;
-  
-  readonly file: nsIFile;
-  
-  open(aFile: nsIFile, aIoFlags: i32): void;
-  
-  getEntry(aZipEntry: string): nsIZipEntry;
-  
-  hasEntry(aZipEntry: string): boolean;
-  
-  addEntryDirectory(aZipEntry: string, aModTime: PRTime, aQueue: boolean): void;
-  
-  addEntryFile(aZipEntry: string, aCompression: i32, aFile: nsIFile, aQueue: boolean): void;
-  
-  addEntryChannel(aZipEntry: string, aModTime: PRTime, aCompression: i32, aChannel: nsIChannel, aQueue: boolean): void;
-  
-  addEntryStream(aZipEntry: string, aModTime: PRTime, aCompression: i32, aStream: nsIInputStream, aQueue: boolean): void;
-  
-  removeEntry(aZipEntry: string, aQueue: boolean): void;
-  
-  processQueue(aObserver: nsIRequestObserver, aContext: nsISupports): void;
+interface nsIWindowlessBrowser extends nsIWebNavigation {
   
   close(): void;
   
-  alignStoredFiles(aAlignSize: u16): void;
+  readonly docShell: nsIDocShell;
+  
+  readonly browsingContext: BrowsingContext;
+}
+
+
+
+
+interface nsIXULBrowserWindow extends nsISupports {
+  
+  setOverLink(link: string): void;
+  
+  showTooltip(x: i32, y: i32, tooltip: string, direction: string, browser: Element): void;
+  
+  hideTooltip(): void;
 }
 
 interface nsIXPCComponents_Interfaces {
-  nsIBits: nsJSIID<nsIBits>;
-  nsIBitsNewRequestCallback: nsJSIID<nsIBitsNewRequestCallback>;
-  nsIBitsRequest: nsJSIID<nsIBitsRequest>;
-  nsIBitsCallback: nsJSIID<nsIBitsCallback>;
-  nsISiteCategory: nsJSIID<nsISiteCategory>;
   nsIAccessibilityService: nsJSIID<nsIAccessibilityService>;
   nsIAccessible: nsJSIID<nsIAccessible>;
   nsIAccessibleAnnouncementEvent: nsJSIID<nsIAccessibleAnnouncementEvent>;
@@ -26559,62 +26554,20 @@ interface nsIXPCComponents_Interfaces {
   nsIAccessibleScrollType: nsJSIID<nsIAccessibleScrollType>;
   nsIAccessibleCoordinateType: nsJSIID<nsIAccessibleCoordinateType>;
   nsIAccessibleValue: nsJSIID<nsIAccessibleValue>;
-  nsIAlertAction: nsJSIID<nsIAlertAction>;
-  nsIAlertNotification: nsJSIID<nsIAlertNotification>;
-  nsIAlertCallbacks: nsJSIID<nsIAlertCallbacks>;
-  nsIAlertsService: nsJSIID<nsIAlertsService>;
-  nsIAlertsDoNotDisturb: nsJSIID<nsIAlertsDoNotDisturb>;
-  nsIAppShellService: nsJSIID<nsIAppShellService>;
-  nsIAppWindow: nsJSIID<nsIAppWindow>;
-  nsIWindowMediator: nsJSIID<nsIWindowMediator>;
-  nsIWindowMediatorListener: nsJSIID<nsIWindowMediatorListener>;
-  nsIWindowlessBrowser: nsJSIID<nsIWindowlessBrowser>;
-  nsIXULBrowserWindow: nsJSIID<nsIXULBrowserWindow>;
-  nsIAppStartup: nsJSIID<nsIAppStartup, typeof nsIAppStartup_IDLShutdownPhase>;
-  nsIAutoCompleteController: nsJSIID<nsIAutoCompleteController>;
-  nsIAutoCompleteInput: nsJSIID<nsIAutoCompleteInput>;
-  nsIAutoCompletePopup: nsJSIID<nsIAutoCompletePopup>;
-  nsIAutoCompleteResult: nsJSIID<nsIAutoCompleteResult>;
-  nsIAutoCompleteSearch: nsJSIID<nsIAutoCompleteSearch>;
-  nsIAutoCompleteObserver: nsJSIID<nsIAutoCompleteObserver>;
-  nsIAutoCompleteSimpleResult: nsJSIID<nsIAutoCompleteSimpleResult>;
-  nsIAutoCompleteSimpleResultListener: nsJSIID<nsIAutoCompleteSimpleResultListener>;
-  nsIAutoCompleteSimpleSearch: nsJSIID<nsIAutoCompleteSimpleSearch>;
-  nsIAutoplay: nsJSIID<nsIAutoplay>;
-  nsIHangDetails: nsJSIID<nsIHangDetails>;
+  nsIEdgeMigrationUtils: nsJSIID<nsIEdgeMigrationUtils>;
   nsIBrowserHandler: nsJSIID<nsIBrowserHandler>;
+  nsIShellService: nsJSIID<nsIShellService>;
   nsIAddonPolicyService: nsJSIID<nsIAddonPolicyService>;
   nsIAddonContentPolicy: nsJSIID<nsIAddonContentPolicy>;
   nsIDomainPolicy: nsJSIID<nsIDomainPolicy>;
   nsIDomainSet: nsJSIID<nsIDomainSet>;
   nsIPrincipal: nsJSIID<nsIPrincipal>;
   nsIScriptSecurityManager: nsJSIID<nsIScriptSecurityManager>;
-  nsICaptivePortalCallback: nsJSIID<nsICaptivePortalCallback>;
-  nsICaptivePortalDetector: nsJSIID<nsICaptivePortalDetector>;
-  nsICascadeFilter: nsJSIID<nsICascadeFilter>;
   nsIChromeRegistry: nsJSIID<nsIChromeRegistry>;
   nsIXULChromeRegistry: nsJSIID<nsIXULChromeRegistry>;
   nsIToolkitChromeRegistry: nsJSIID<nsIToolkitChromeRegistry>;
-  nsICommandManager: nsJSIID<nsICommandManager>;
-  nsICommandParams: nsJSIID<nsICommandParams>;
-  nsICommandLine: nsJSIID<nsICommandLine>;
-  nsICommandLineHandler: nsJSIID<nsICommandLineHandler>;
-  nsICommandLineValidator: nsJSIID<nsICommandLineValidator>;
-  nsIEditingSession: nsJSIID<nsIEditingSession>;
-  nsIContentClassifierRemoteSettingsClient: nsJSIID<nsIContentClassifierRemoteSettingsClient>;
-  nsIContentClassifierProbeRequest: nsJSIID<nsIContentClassifierProbeRequest>;
-  nsIContentClassifierProbeResult: nsJSIID<nsIContentClassifierProbeResult>;
-  nsIContentClassifierService: nsJSIID<nsIContentClassifierService, typeof nsIContentClassifierService_ProbeStatus>;
-  nsIContentClassifierProbeReport: nsJSIID<nsIContentClassifierProbeReport>;
-  nsIEventListenerChange: nsJSIID<nsIEventListenerChange>;
-  nsIListenerChangeListener: nsJSIID<nsIListenerChangeListener>;
-  nsIEventListenerInfo: nsJSIID<nsIEventListenerInfo>;
-  nsIEventListenerService: nsJSIID<nsIEventListenerService>;
-  mozIGeckoMediaPluginChromeService: nsJSIID<mozIGeckoMediaPluginChromeService>;
-  mozIGeckoMediaPluginService: nsJSIID<mozIGeckoMediaPluginService>;
-  nsISiteContainerService: nsJSIID<nsISiteContainerService>;
-  nsICrashReporterTestUtils: nsJSIID<nsICrashReporterTestUtils>;
-  nsIDAPTelemetry: nsJSIID<nsIDAPTelemetry>;
+  IJSDebugger: nsJSIID<IJSDebugger>;
+  nsIJSInspector: nsJSIID<nsIJSInspector>;
   nsIDocShell: nsJSIID<nsIDocShell, typeof nsIDocShell_DocShellEnumeratorDirection & typeof nsIDocShell_AppType & typeof nsIDocShell_BusyFlags & typeof nsIDocShell_LoadCommand>;
   nsIDocShellTreeItem: nsJSIID<nsIDocShellTreeItem>;
   nsIDocShellTreeOwner: nsJSIID<nsIDocShellTreeOwner>;
@@ -26633,6 +26586,11 @@ interface nsIXPCComponents_Interfaces {
   nsIWebNavigation: nsJSIID<nsIWebNavigation>;
   nsIWebNavigationInfo: nsJSIID<nsIWebNavigationInfo>;
   nsIWebPageDescriptor: nsJSIID<nsIWebPageDescriptor>;
+  nsIBFCacheEntry: nsJSIID<nsIBFCacheEntry>;
+  nsISHEntry: nsJSIID<nsISHEntry>;
+  nsISHistory: nsJSIID<nsISHistory>;
+  nsISHistoryListener: nsJSIID<nsISHistoryListener>;
+  nsISuspendedTypes: nsJSIID<nsISuspendedTypes>;
   mozIDOMWindow: nsJSIID<mozIDOMWindow>;
   mozIDOMWindowProxy: nsJSIID<mozIDOMWindowProxy>;
   nsIContentPolicy: nsJSIID<nsIContentPolicy, typeof nsIContentPolicy_nsContentPolicyType>;
@@ -26651,14 +26609,20 @@ interface nsIXPCComponents_Interfaces {
   nsISlowScriptDebuggerStartupCallback: nsJSIID<nsISlowScriptDebuggerStartupCallback>;
   nsISlowScriptDebugRemoteCallback: nsJSIID<nsISlowScriptDebugRemoteCallback>;
   nsISlowScriptDebug: nsJSIID<nsISlowScriptDebug>;
+  nsIScriptErrorNote: nsJSIID<nsIScriptErrorNote>;
+  nsIScriptError: nsJSIID<nsIScriptError>;
+  mozITestInterfaceJS: nsJSIID<mozITestInterfaceJS>;
+  nsICommandManager: nsJSIID<nsICommandManager>;
+  nsICommandParams: nsJSIID<nsICommandParams>;
   nsIConsoleAPIStorage: nsJSIID<nsIConsoleAPIStorage>;
+  nsIEventListenerChange: nsJSIID<nsIEventListenerChange>;
+  nsIListenerChangeListener: nsJSIID<nsIListenerChangeListener>;
+  nsIEventListenerInfo: nsJSIID<nsIEventListenerInfo>;
+  nsIEventListenerService: nsJSIID<nsIEventListenerService>;
   mozIRemoteLazyInputStream: nsJSIID<mozIRemoteLazyInputStream>;
-  nsIDOMProcessChild: nsJSIID<nsIDOMProcessChild>;
-  nsIDOMProcessParent: nsJSIID<nsIDOMProcessParent>;
-  nsIContentParentKeepAlive: nsJSIID<nsIContentParentKeepAlive>;
-  nsIHangReport: nsJSIID<nsIHangReport>;
-  nsILoginDetectionService: nsJSIID<nsILoginDetectionService>;
-  nsISuspendedTypes: nsJSIID<nsISuspendedTypes>;
+  nsIGeolocationUIUtils: nsJSIID<nsIGeolocationUIUtils>;
+  nsIIDBPermissionsRequest: nsJSIID<nsIIDBPermissionsRequest>;
+  nsIIndexedDatabaseManager: nsJSIID<nsIIndexedDatabaseManager>;
   nsIBrowser: nsJSIID<nsIBrowser>;
   nsIBrowserChild: nsJSIID<nsIBrowserChild>;
   nsIOpenURIInFrameParams: nsJSIID<nsIOpenURIInFrameParams>;
@@ -26693,33 +26657,14 @@ interface nsIXPCComponents_Interfaces {
   nsITextInputProcessorCallback: nsJSIID<nsITextInputProcessorCallback>;
   nsITextInputProcessorListenerCallback: nsJSIID<nsITextInputProcessorListenerCallback>;
   nsITextInputProcessorListener: nsJSIID<nsITextInputProcessorListener>;
-  nsIScriptErrorNote: nsJSIID<nsIScriptErrorNote>;
-  nsIScriptError: nsJSIID<nsIScriptError>;
-  mozITestInterfaceJS: nsJSIID<mozITestInterfaceJS>;
-  nsIGeolocationUIUtils: nsJSIID<nsIGeolocationUIUtils>;
   nsIDOMGeoPosition: nsJSIID<nsIDOMGeoPosition>;
   nsIDOMGeoPositionCallback: nsJSIID<nsIDOMGeoPositionCallback>;
   nsIDOMGeoPositionCoords: nsJSIID<nsIDOMGeoPositionCoords>;
   nsIDOMGeoPositionErrorCallback: nsJSIID<nsIDOMGeoPositionErrorCallback>;
-  nsICredentialChooserService: nsJSIID<nsICredentialChooserService>;
-  nsICredentialChosenCallback: nsJSIID<nsICredentialChosenCallback>;
-  nsIIdentityCredentialPromptService: nsJSIID<nsIIdentityCredentialPromptService>;
-  nsIIdentityCredentialStorageService: nsJSIID<nsIIdentityCredentialStorageService>;
-  nsIIDBPermissionsRequest: nsJSIID<nsIIDBPermissionsRequest>;
-  nsIIndexedDatabaseManager: nsJSIID<nsIIndexedDatabaseManager>;
-  nsILocalStorageManager: nsJSIID<nsILocalStorageManager>;
-  nsIAudioDeviceInfo: nsJSIID<nsIAudioDeviceInfo>;
-  nsIMediaDevice: nsJSIID<nsIMediaDevice>;
-  nsIMediaManagerService: nsJSIID<nsIMediaManagerService>;
-  nsIMediaPictureInPictureProvider: nsJSIID<nsIMediaPictureInPictureProvider>;
-  nsIModelContextService: nsJSIID<nsIModelContextService>;
-  nsITCPSocketCallback: nsJSIID<nsITCPSocketCallback>;
-  nsIUDPSocketInternal: nsJSIID<nsIUDPSocketInternal>;
   nsINotificationActionStorageEntry: nsJSIID<nsINotificationActionStorageEntry>;
   nsINotificationStorageEntry: nsJSIID<nsINotificationStorageEntry>;
   nsINotificationStorageCallback: nsJSIID<nsINotificationStorageCallback>;
   nsINotificationStorage: nsJSIID<nsINotificationStorage>;
-  nsINotificationHandler: nsJSIID<nsINotificationHandler>;
   nsIPaymentResponseData: nsJSIID<nsIPaymentResponseData>;
   nsIGeneralResponseData: nsJSIID<nsIGeneralResponseData>;
   nsIBasicCardResponseData: nsJSIID<nsIBasicCardResponseData>;
@@ -26742,6 +26687,52 @@ interface nsIXPCComponents_Interfaces {
   nsIPaymentRequest: nsJSIID<nsIPaymentRequest>;
   nsIPaymentRequestService: nsJSIID<nsIPaymentRequestService>;
   nsIPaymentUIService: nsJSIID<nsIPaymentUIService>;
+  nsIContentSecurityManager: nsJSIID<nsIContentSecurityManager>;
+  nsIContentSecurityPolicy: nsJSIID<nsIContentSecurityPolicy, typeof nsIContentSecurityPolicy_CSPDirective & typeof nsIContentSecurityPolicy_RequireTrustedTypesForDirectiveState>;
+  nsICSPEventListener: nsJSIID<nsICSPEventListener>;
+  nsIIntegrityPolicy: nsJSIID<nsIIntegrityPolicy>;
+  nsIPolicyContainer: nsJSIID<nsIPolicyContainer>;
+  nsIReferrerInfo: nsJSIID<nsIReferrerInfo, typeof nsIReferrerInfo_ReferrerPolicyIDL>;
+  nsIWebProtocolHandlerRegistrar: nsJSIID<nsIWebProtocolHandlerRegistrar>;
+  nsIDOMStorageManager: nsJSIID<nsIDOMStorageManager>;
+  nsIStorageActivityService: nsJSIID<nsIStorageActivityService>;
+  nsIDOMXULButtonElement: nsJSIID<nsIDOMXULButtonElement>;
+  nsIDOMXULCommandDispatcher: nsJSIID<nsIDOMXULCommandDispatcher>;
+  nsIDOMXULContainerItemElement: nsJSIID<nsIDOMXULContainerItemElement>;
+  nsIDOMXULContainerElement: nsJSIID<nsIDOMXULContainerElement>;
+  nsIDOMXULControlElement: nsJSIID<nsIDOMXULControlElement>;
+  nsIDOMXULMenuListElement: nsJSIID<nsIDOMXULMenuListElement>;
+  nsIDOMXULMultiSelectControlElement: nsJSIID<nsIDOMXULMultiSelectControlElement>;
+  nsIDOMXULRadioGroupElement: nsJSIID<nsIDOMXULRadioGroupElement>;
+  nsIDOMXULRelatedElement: nsJSIID<nsIDOMXULRelatedElement>;
+  nsIDOMXULSelectControlElement: nsJSIID<nsIDOMXULSelectControlElement>;
+  nsIDOMXULSelectControlItemElement: nsJSIID<nsIDOMXULSelectControlItemElement>;
+  nsIDOMProcessChild: nsJSIID<nsIDOMProcessChild>;
+  nsIDOMProcessParent: nsJSIID<nsIDOMProcessParent>;
+  nsIContentParentKeepAlive: nsJSIID<nsIContentParentKeepAlive>;
+  nsIHangReport: nsJSIID<nsIHangReport>;
+  nsILoginDetectionService: nsJSIID<nsILoginDetectionService>;
+  nsILocalStorageManager: nsJSIID<nsILocalStorageManager>;
+  nsIAutoplay: nsJSIID<nsIAutoplay>;
+  IPeerConnectionObserver: nsJSIID<IPeerConnectionObserver>;
+  IPeerConnection: nsJSIID<IPeerConnection>;
+  mozIGeckoMediaPluginChromeService: nsJSIID<mozIGeckoMediaPluginChromeService>;
+  mozIGeckoMediaPluginService: nsJSIID<mozIGeckoMediaPluginService>;
+  nsIAudioDeviceInfo: nsJSIID<nsIAudioDeviceInfo>;
+  nsIMediaDevice: nsJSIID<nsIMediaDevice>;
+  nsIMediaManagerService: nsJSIID<nsIMediaManagerService>;
+  nsIMediaPictureInPictureProvider: nsJSIID<nsIMediaPictureInPictureProvider>;
+  nsIRddProcessTest: nsJSIID<nsIRddProcessTest>;
+  nsISpeechTaskCallback: nsJSIID<nsISpeechTaskCallback>;
+  nsISpeechTask: nsJSIID<nsISpeechTask>;
+  nsISpeechService: nsJSIID<nsISpeechService>;
+  nsISynthVoiceRegistry: nsJSIID<nsISynthVoiceRegistry>;
+  nsIWebVTTListener: nsJSIID<nsIWebVTTListener>;
+  nsIWebVTTParserWrapper: nsJSIID<nsIWebVTTParserWrapper>;
+  nsIModelContextService: nsJSIID<nsIModelContextService>;
+  nsITCPSocketCallback: nsJSIID<nsITCPSocketCallback>;
+  nsIUDPSocketInternal: nsJSIID<nsIUDPSocketInternal>;
+  nsINotificationHandler: nsJSIID<nsINotificationHandler>;
   nsIPermissionMonitor: nsJSIID<nsIPermissionMonitor>;
   nsIDOMMozWakeLockListener: nsJSIID<nsIDOMMozWakeLockListener>;
   nsIPowerManagerService: nsJSIID<nsIPowerManagerService>;
@@ -26769,23 +26760,14 @@ interface nsIXPCComponents_Interfaces {
   nsIQuotaOriginUsageResult: nsJSIID<nsIQuotaOriginUsageResult>;
   nsIQuotaEstimateResult: nsJSIID<nsIQuotaEstimateResult>;
   nsIQuotaUtilsService: nsJSIID<nsIQuotaUtilsService>;
-  nsIContentSecurityManager: nsJSIID<nsIContentSecurityManager>;
-  nsIContentSecurityPolicy: nsJSIID<nsIContentSecurityPolicy, typeof nsIContentSecurityPolicy_CSPDirective & typeof nsIContentSecurityPolicy_RequireTrustedTypesForDirectiveState>;
-  nsICSPEventListener: nsJSIID<nsICSPEventListener>;
-  nsIIntegrityPolicy: nsJSIID<nsIIntegrityPolicy>;
-  nsIPolicyContainer: nsJSIID<nsIPolicyContainer>;
-  nsIReferrerInfo: nsJSIID<nsIReferrerInfo, typeof nsIReferrerInfo_ReferrerPolicyIDL>;
   nsIHttpsOnlyModePermission: nsJSIID<nsIHttpsOnlyModePermission>;
   nsIDocumentEncoderNodeFixup: nsJSIID<nsIDocumentEncoderNodeFixup>;
   nsIDocumentEncoder: nsJSIID<nsIDocumentEncoder>;
-  nsIWebProtocolHandlerRegistrar: nsJSIID<nsIWebProtocolHandlerRegistrar>;
   nsISDBCallback: nsJSIID<nsISDBCallback>;
   nsISDBCloseCallback: nsJSIID<nsISDBCloseCallback>;
   nsISDBConnection: nsJSIID<nsISDBConnection>;
   nsISDBRequest: nsJSIID<nsISDBRequest>;
   nsISDBResult: nsJSIID<nsISDBResult>;
-  nsIDOMStorageManager: nsJSIID<nsIDOMStorageManager>;
-  nsIStorageActivityService: nsJSIID<nsIStorageActivityService>;
   nsISessionStorageService: nsJSIID<nsISessionStorageService>;
   nsIOSPermissionRequest: nsJSIID<nsIOSPermissionRequest>;
   nsIWebAuthnAutoFillEntriesCallback: nsJSIID<nsIWebAuthnAutoFillEntriesCallback>;
@@ -26794,10 +26776,12 @@ interface nsIXPCComponents_Interfaces {
   nsICredentialParameters: nsJSIID<nsICredentialParameters>;
   nsIWebAuthnAutoFillEntry: nsJSIID<nsIWebAuthnAutoFillEntry>;
   nsIWebAuthnService: nsJSIID<nsIWebAuthnService>;
-  nsISpeechTaskCallback: nsJSIID<nsISpeechTaskCallback>;
-  nsISpeechTask: nsJSIID<nsISpeechTask>;
-  nsISpeechService: nsJSIID<nsISpeechService>;
-  nsISynthVoiceRegistry: nsJSIID<nsISynthVoiceRegistry>;
+  nsIWebBrowserPersist: nsJSIID<nsIWebBrowserPersist>;
+  nsIWebBrowserPersistURIMap: nsJSIID<nsIWebBrowserPersistURIMap>;
+  nsIWebBrowserPersistDocument: nsJSIID<nsIWebBrowserPersistDocument>;
+  nsIWebBrowserPersistResourceVisitor: nsJSIID<nsIWebBrowserPersistResourceVisitor>;
+  nsIWebBrowserPersistWriteCompletion: nsJSIID<nsIWebBrowserPersistWriteCompletion>;
+  nsIWebBrowserPersistDocumentReceiver: nsJSIID<nsIWebBrowserPersistDocumentReceiver>;
   nsIWorkerChannelLoadInfo: nsJSIID<nsIWorkerChannelLoadInfo>;
   nsIWorkerChannelInfo: nsJSIID<nsIWorkerChannelInfo>;
   nsIWorkerDebuggerListener: nsJSIID<nsIWorkerDebuggerListener>;
@@ -26805,18 +26789,11 @@ interface nsIXPCComponents_Interfaces {
   nsIWorkerDebuggerManagerListener: nsJSIID<nsIWorkerDebuggerManagerListener>;
   nsIWorkerDebuggerManager: nsJSIID<nsIWorkerDebuggerManager>;
   txIEXSLTFunctions: nsJSIID<txIEXSLTFunctions>;
-  nsIDOMXULButtonElement: nsJSIID<nsIDOMXULButtonElement>;
-  nsIDOMXULCommandDispatcher: nsJSIID<nsIDOMXULCommandDispatcher>;
-  nsIDOMXULContainerItemElement: nsJSIID<nsIDOMXULContainerItemElement>;
-  nsIDOMXULContainerElement: nsJSIID<nsIDOMXULContainerElement>;
-  nsIDOMXULControlElement: nsJSIID<nsIDOMXULControlElement>;
-  nsIDOMXULMenuListElement: nsJSIID<nsIDOMXULMenuListElement>;
-  nsIDOMXULMultiSelectControlElement: nsJSIID<nsIDOMXULMultiSelectControlElement>;
-  nsIDOMXULRadioGroupElement: nsJSIID<nsIDOMXULRadioGroupElement>;
-  nsIDOMXULRelatedElement: nsJSIID<nsIDOMXULRelatedElement>;
-  nsIDOMXULSelectControlElement: nsJSIID<nsIDOMXULSelectControlElement>;
-  nsIDOMXULSelectControlItemElement: nsJSIID<nsIDOMXULSelectControlItemElement>;
-  mozIDownloadPlatform: nsJSIID<mozIDownloadPlatform>;
+  nsIBrowserController: nsJSIID<nsIBrowserController>;
+  nsIController: nsJSIID<nsIController>;
+  nsICommandController: nsJSIID<nsICommandController>;
+  nsIControllers: nsJSIID<nsIControllers>;
+  nsIEditingSession: nsJSIID<nsIEditingSession>;
   nsIDocumentStateListener: nsJSIID<nsIDocumentStateListener>;
   nsIEditActionListener: nsJSIID<nsIEditActionListener>;
   nsIEditor: nsJSIID<nsIEditor>;
@@ -26828,25 +26805,76 @@ interface nsIXPCComponents_Interfaces {
   nsIHTMLInlineTableEditor: nsJSIID<nsIHTMLInlineTableEditor>;
   nsIHTMLObjectResizer: nsJSIID<nsIHTMLObjectResizer>;
   nsITableEditor: nsJSIID<nsITableEditor>;
-  nsIEnterprisePolicies: nsJSIID<nsIEnterprisePolicies>;
-  amIAddonManagerStartup: nsJSIID<amIAddonManagerStartup>;
-  amIWebInstallPrompt: nsJSIID<amIWebInstallPrompt>;
-  nsIContentDispatchChooser: nsJSIID<nsIContentDispatchChooser>;
-  nsIExternalHelperAppService: nsJSIID<nsIExternalHelperAppService>;
-  nsPIExternalAppLauncher: nsJSIID<nsPIExternalAppLauncher>;
-  nsIHelperAppLauncher: nsJSIID<nsIHelperAppLauncher>;
-  nsIExternalProtocolService: nsJSIID<nsIExternalProtocolService>;
-  nsIHandlerService: nsJSIID<nsIHandlerService>;
-  nsIHelperAppLauncherDialog: nsJSIID<nsIHelperAppLauncherDialog, typeof nsIHelperAppLauncherDialog_reason>;
-  nsISharingHandlerApp: nsJSIID<nsISharingHandlerApp>;
-  nsITypeAheadFind: nsJSIID<nsITypeAheadFind>;
-  nsIFOG: nsJSIID<nsIFOG>;
-  nsIGleanPingTestCallback: nsJSIID<nsIGleanPingTestCallback>;
-  nsIGleanPingSubmitCallback: nsJSIID<nsIGleanPingSubmitCallback>;
-  nsIGleanPing: nsJSIID<nsIGleanPing>;
+  nsIInlineSpellChecker: nsJSIID<nsIInlineSpellChecker>;
+  nsITransaction: nsJSIID<nsITransaction>;
+  nsITransactionManager: nsJSIID<nsITransactionManager>;
+  nsIRemotePermissionService: nsJSIID<nsIRemotePermissionService>;
+  mozIPersonalDictionary: nsJSIID<mozIPersonalDictionary>;
+  mozISpellCheckingEngine: nsJSIID<mozISpellCheckingEngine>;
   nsIFontEnumerator: nsJSIID<nsIFontEnumerator>;
-  nsIParserUtils: nsJSIID<nsIParserUtils>;
-  nsIExpatSink: nsJSIID<nsIExpatSink>;
+  imgICache: nsJSIID<imgICache>;
+  imgIContainer: nsJSIID<imgIContainer, typeof imgIContainer_DecodeResult>;
+  imgIContainerDebug: nsJSIID<imgIContainerDebug>;
+  imgIEncoder: nsJSIID<imgIEncoder, typeof imgIEncoder_CICPColourPrimaries & typeof imgIEncoder_CICPTransferCharacteristics & typeof imgIEncoder_CICPMatrixCoefficients>;
+  imgILoader: nsJSIID<imgILoader>;
+  imgINotificationObserver: nsJSIID<imgINotificationObserver>;
+  imgIRequest: nsJSIID<imgIRequest>;
+  imgIScriptedNotificationObserver: nsJSIID<imgIScriptedNotificationObserver>;
+  imgITools: nsJSIID<imgITools>;
+  imgIContainerCallback: nsJSIID<imgIContainerCallback>;
+  nsIMozIconURI: nsJSIID<nsIMozIconURI>;
+  mozILocaleService: nsJSIID<mozILocaleService>;
+  mozIOSPreferences: nsJSIID<mozIOSPreferences>;
+  nsIStringBundle: nsJSIID<nsIStringBundle>;
+  nsIStringBundleService: nsJSIID<nsIStringBundleService>;
+  nsIScriptableUnicodeConverter: nsJSIID<nsIScriptableUnicodeConverter>;
+  nsITextToSubURI: nsJSIID<nsITextToSubURI>;
+  nsIUtilityProcessTest: nsJSIID<nsIUtilityProcessTest>;
+  mozIJSSubScriptLoader: nsJSIID<mozIJSSubScriptLoader>;
+  xpcIJSWeakReference: nsJSIID<xpcIJSWeakReference>;
+  nsIXPCComponents_Classes: nsJSIID<nsIXPCComponents_Classes>;
+  nsIXPCComponents_Results: nsJSIID<nsIXPCComponents_Results>;
+  nsIXPCComponents_ID: nsJSIID<nsIXPCComponents_ID>;
+  nsIXPCComponents_Exception: nsJSIID<nsIXPCComponents_Exception>;
+  nsIXPCComponents_Constructor: nsJSIID<nsIXPCComponents_Constructor>;
+  nsIXPCComponents_utils_Sandbox: nsJSIID<nsIXPCComponents_utils_Sandbox>;
+  nsIScheduledGCCallback: nsJSIID<nsIScheduledGCCallback>;
+  nsIXPCComponents_Utils: nsJSIID<nsIXPCComponents_Utils>;
+  nsIXPCComponents: nsJSIID<nsIXPCComponents>;
+  nsIXPCTestObjectReadOnly: nsJSIID<nsIXPCTestObjectReadOnly>;
+  nsIXPCTestObjectReadWrite: nsJSIID<nsIXPCTestObjectReadWrite>;
+  nsIXPCTestBug809674: nsJSIID<nsIXPCTestBug809674>;
+  nsIXPCTestCEnums: nsJSIID<nsIXPCTestCEnums, typeof nsIXPCTestCEnums_testFlagsExplicit & typeof nsIXPCTestCEnums_testFlagsImplicit>;
+  nsIXPCTestInterfaceA: nsJSIID<nsIXPCTestInterfaceA>;
+  nsIXPCTestInterfaceB: nsJSIID<nsIXPCTestInterfaceB>;
+  nsIXPCTestInterfaceC: nsJSIID<nsIXPCTestInterfaceC>;
+  nsIXPCTestParams: nsJSIID<nsIXPCTestParams>;
+  nsIXPCTestReturnCodeParent: nsJSIID<nsIXPCTestReturnCodeParent>;
+  nsIXPCTestReturnCodeChild: nsJSIID<nsIXPCTestReturnCodeChild>;
+  nsIXPCTestFunctionInterface: nsJSIID<nsIXPCTestFunctionInterface>;
+  nsIXPCTestUtils: nsJSIID<nsIXPCTestUtils>;
+  nsIXPCTestTypeScript: nsJSIID<nsIXPCTestTypeScript>;
+  nsILayoutHistoryState: nsJSIID<nsILayoutHistoryState>;
+  nsISVGPaintContext: nsJSIID<nsISVGPaintContext>;
+  inIDeepTreeWalker: nsJSIID<inIDeepTreeWalker>;
+  nsIPreloadedStyleSheet: nsJSIID<nsIPreloadedStyleSheet>;
+  nsIStyleSheetService: nsJSIID<nsIStyleSheetService>;
+  nsILayoutDebuggingTools: nsJSIID<nsILayoutDebuggingTools, typeof nsILayoutDebuggingTools_DumpFrameFlags>;
+  nsITreeSelection: nsJSIID<nsITreeSelection>;
+  nsITreeView: nsJSIID<nsITreeView>;
+  nsIJARChannel: nsJSIID<nsIJARChannel>;
+  nsIJARURI: nsJSIID<nsIJARURI>;
+  nsIZipEntry: nsJSIID<nsIZipEntry>;
+  nsIZipReader: nsJSIID<nsIZipReader>;
+  nsIZipReaderCache: nsJSIID<nsIZipReaderCache>;
+  nsIZipWriter: nsJSIID<nsIZipWriter>;
+  nsIPrefBranch: nsJSIID<nsIPrefBranch, typeof nsIPrefBranch_PreferenceType>;
+  nsIPrefLocalizedString: nsJSIID<nsIPrefLocalizedString>;
+  nsIPrefOverrideMap: nsJSIID<nsIPrefOverrideMap>;
+  nsIPrefStatsCallback: nsJSIID<nsIPrefStatsCallback>;
+  nsIPrefObserver: nsJSIID<nsIPrefObserver>;
+  nsIPrefService: nsJSIID<nsIPrefService>;
+  nsIRelativeFilePref: nsJSIID<nsIRelativeFilePref>;
   nsISFVBareItem: nsJSIID<nsISFVBareItem>;
   nsISFVInteger: nsJSIID<nsISFVInteger>;
   nsISFVString: nsJSIID<nsISFVString>;
@@ -26863,78 +26891,6 @@ interface nsIXPCComponents_Interfaces {
   nsISFVList: nsJSIID<nsISFVList>;
   nsISFVDictionary: nsJSIID<nsISFVDictionary>;
   nsISFVService: nsJSIID<nsISFVService>;
-  imgICache: nsJSIID<imgICache>;
-  imgIContainer: nsJSIID<imgIContainer, typeof imgIContainer_DecodeResult>;
-  imgIContainerDebug: nsJSIID<imgIContainerDebug>;
-  imgIEncoder: nsJSIID<imgIEncoder, typeof imgIEncoder_CICPColourPrimaries & typeof imgIEncoder_CICPTransferCharacteristics & typeof imgIEncoder_CICPMatrixCoefficients>;
-  imgILoader: nsJSIID<imgILoader>;
-  imgINotificationObserver: nsJSIID<imgINotificationObserver>;
-  imgIRequest: nsJSIID<imgIRequest>;
-  imgIScriptedNotificationObserver: nsJSIID<imgIScriptedNotificationObserver>;
-  imgITools: nsJSIID<imgITools>;
-  imgIContainerCallback: nsJSIID<imgIContainerCallback>;
-  nsIMozIconURI: nsJSIID<nsIMozIconURI>;
-  inIDeepTreeWalker: nsJSIID<inIDeepTreeWalker>;
-  nsIStringBundle: nsJSIID<nsIStringBundle>;
-  nsIStringBundleService: nsJSIID<nsIStringBundleService>;
-  nsIJARChannel: nsJSIID<nsIJARChannel>;
-  nsIJARURI: nsJSIID<nsIJARURI>;
-  nsIZipEntry: nsJSIID<nsIZipEntry>;
-  nsIZipReader: nsJSIID<nsIZipReader>;
-  nsIZipReaderCache: nsJSIID<nsIZipReaderCache>;
-  IJSDebugger: nsJSIID<IJSDebugger>;
-  nsIJSInspector: nsJSIID<nsIJSInspector>;
-  nsIKeyValueService: nsJSIID<nsIKeyValueService, typeof nsIKeyValueService_RecoveryStrategy>;
-  nsIKeyValueImportSourceSpec: nsJSIID<nsIKeyValueImportSourceSpec>;
-  nsIKeyValueImporter: nsJSIID<nsIKeyValueImporter, typeof nsIKeyValueImporter_ConflictPolicy & typeof nsIKeyValueImporter_CleanupPolicy>;
-  nsIKeyValueDatabaseImportOptions: nsJSIID<nsIKeyValueDatabaseImportOptions>;
-  nsIKeyValueDatabase: nsJSIID<nsIKeyValueDatabase>;
-  nsIKeyValuePair: nsJSIID<nsIKeyValuePair>;
-  nsIKeyValueEnumerator: nsJSIID<nsIKeyValueEnumerator>;
-  nsIKeyValueDatabaseCallback: nsJSIID<nsIKeyValueDatabaseCallback>;
-  nsIKeyValueEnumeratorCallback: nsJSIID<nsIKeyValueEnumeratorCallback>;
-  nsIKeyValuePairCallback: nsJSIID<nsIKeyValuePairCallback>;
-  nsIKeyValueVariantCallback: nsJSIID<nsIKeyValueVariantCallback>;
-  nsIKeyValueVoidCallback: nsJSIID<nsIKeyValueVoidCallback>;
-  nsILayoutHistoryState: nsJSIID<nsILayoutHistoryState>;
-  nsISVGPaintContext: nsJSIID<nsISVGPaintContext>;
-  nsILayoutDebuggingTools: nsJSIID<nsILayoutDebuggingTools, typeof nsILayoutDebuggingTools_DumpFrameFlags>;
-  nsIPreloadedStyleSheet: nsJSIID<nsIPreloadedStyleSheet>;
-  nsIStyleSheetService: nsJSIID<nsIStyleSheetService>;
-  nsITreeSelection: nsJSIID<nsITreeSelection>;
-  nsITreeView: nsJSIID<nsITreeView>;
-  mozILocaleService: nsJSIID<mozILocaleService>;
-  mozIOSPreferences: nsJSIID<mozIOSPreferences>;
-  nsILockstore: nsJSIID<nsILockstore>;
-  nsILoginInfo: nsJSIID<nsILoginInfo>;
-  nsILoginSearchCallback: nsJSIID<nsILoginSearchCallback>;
-  nsILoginManager: nsJSIID<nsILoginManager>;
-  nsILoginManagerAuthPrompter: nsJSIID<nsILoginManagerAuthPrompter>;
-  nsILoginManagerCrypto: nsJSIID<nsILoginManagerCrypto>;
-  nsILoginManagerPrompter: nsJSIID<nsILoginManagerPrompter>;
-  nsILoginMetaInfo: nsJSIID<nsILoginMetaInfo>;
-  nsIPromptInstance: nsJSIID<nsIPromptInstance>;
-  nsIEdgeMigrationUtils: nsJSIID<nsIEdgeMigrationUtils>;
-  nsIMIMEHeaderParam: nsJSIID<nsIMIMEHeaderParam>;
-  nsIHandlerInfo: nsJSIID<nsIHandlerInfo>;
-  nsIMIMEInfo: nsJSIID<nsIMIMEInfo>;
-  nsIHandlerApp: nsJSIID<nsIHandlerApp>;
-  nsILocalHandlerApp: nsJSIID<nsILocalHandlerApp>;
-  nsIWebHandlerApp: nsJSIID<nsIWebHandlerApp>;
-  nsIDBusHandlerApp: nsJSIID<nsIDBusHandlerApp>;
-  nsIMIMEService: nsJSIID<nsIMIMEService>;
-  nsIMLModelDownloadProgressCallback: nsJSIID<nsIMLModelDownloadProgressCallback>;
-  nsIMLModelDownloadCompletionCallback: nsJSIID<nsIMLModelDownloadCompletionCallback>;
-  nsIMLModelHub: nsJSIID<nsIMLModelHub>;
-  nsIMLModelDownloadAuthorizationCallback: nsJSIID<nsIMLModelDownloadAuthorizationCallback>;
-  nsIMLModelResolver: nsJSIID<nsIMLModelResolver>;
-  nsIMLUtils: nsJSIID<nsIMLUtils>;
-  nsIFind: nsJSIID<nsIFind>;
-  nsIFindService: nsJSIID<nsIFindService>;
-  nsIWebBrowserFind: nsJSIID<nsIWebBrowserFind>;
-  nsIWebBrowserFindInFrames: nsJSIID<nsIWebBrowserFindInFrames>;
-  mozIMozIntl: nsJSIID<mozIMozIntl>;
-  mozIMozIntlHelper: nsJSIID<mozIMozIntlHelper>;
   mozIThirdPartyUtil: nsJSIID<mozIThirdPartyUtil>;
   nsIAndroidContentInputStream: nsJSIID<nsIAndroidContentInputStream>;
   nsIArrayBufferInputStream: nsJSIID<nsIArrayBufferInputStream>;
@@ -27090,7 +27046,6 @@ interface nsIXPCComponents_Interfaces {
   nsIUploadChannel: nsJSIID<nsIUploadChannel>;
   nsIUploadChannel2: nsJSIID<nsIUploadChannel2>;
   nsPISocketTransportService: nsJSIID<nsPISocketTransportService>;
-  nsIAboutModule: nsJSIID<nsIAboutModule>;
   nsICacheEntry: nsJSIID<nsICacheEntry>;
   nsICacheEntryMetaDataVisitor: nsJSIID<nsICacheEntryMetaDataVisitor>;
   nsICacheEntryDoomCallback: nsJSIID<nsICacheEntryDoomCallback>;
@@ -27132,9 +27087,18 @@ interface nsIXPCComponents_Interfaces {
   nsINativeDNSResolverOverride: nsJSIID<nsINativeDNSResolverOverride>;
   nsITRRSkipReason: nsJSIID<nsITRRSkipReason, typeof nsITRRSkipReason_value>;
   nsPIDNSService: nsJSIID<nsPIDNSService>;
+  nsIMIMEHeaderParam: nsJSIID<nsIMIMEHeaderParam>;
+  nsIHandlerInfo: nsJSIID<nsIHandlerInfo>;
+  nsIMIMEInfo: nsJSIID<nsIMIMEInfo>;
+  nsIHandlerApp: nsJSIID<nsIHandlerApp>;
+  nsILocalHandlerApp: nsJSIID<nsILocalHandlerApp>;
+  nsIWebHandlerApp: nsJSIID<nsIWebHandlerApp>;
+  nsIDBusHandlerApp: nsJSIID<nsIDBusHandlerApp>;
+  nsIMIMEService: nsJSIID<nsIMIMEService>;
+  nsIAboutModule: nsJSIID<nsIAboutModule>;
+  nsIDataChannel: nsJSIID<nsIDataChannel>;
   nsIFileChannel: nsJSIID<nsIFileChannel>;
   nsIFileProtocolHandler: nsJSIID<nsIFileProtocolHandler>;
-  nsIDataChannel: nsJSIID<nsIDataChannel>;
   nsIBinaryHttpRequest: nsJSIID<nsIBinaryHttpRequest>;
   nsIBinaryHttpResponse: nsJSIID<nsIBinaryHttpResponse>;
   nsIBinaryHttp: nsJSIID<nsIBinaryHttp>;
@@ -27163,18 +27127,8 @@ interface nsIXPCComponents_Interfaces {
   nsIObliviousHttpChannel: nsJSIID<nsIObliviousHttpChannel>;
   nsIReplacedHttpResponse: nsJSIID<nsIReplacedHttpResponse>;
   nsIWellKnownOpportunisticUtils: nsJSIID<nsIWellKnownOpportunisticUtils>;
-  nsICompressConvStats: nsJSIID<nsICompressConvStats>;
   nsIResProtocolHandler: nsJSIID<nsIResProtocolHandler>;
   nsISubstitutingProtocolHandler: nsJSIID<nsISubstitutingProtocolHandler>;
-  nsISocketProvider: nsJSIID<nsISocketProvider>;
-  nsISocketProviderService: nsJSIID<nsISocketProviderService>;
-  mozITXTToHTMLConv: nsJSIID<mozITXTToHTMLConv>;
-  nsIDirIndex: nsJSIID<nsIDirIndex>;
-  nsIDirIndexListener: nsJSIID<nsIDirIndexListener>;
-  nsIDirIndexParser: nsJSIID<nsIDirIndexParser>;
-  nsIStreamConverter: nsJSIID<nsIStreamConverter>;
-  nsIStreamConverterService: nsJSIID<nsIStreamConverterService>;
-  nsITXTToHTMLConv: nsJSIID<nsITXTToHTMLConv>;
   nsITransportProvider: nsJSIID<nsITransportProvider>;
   nsIWebSocketChannel: nsJSIID<nsIWebSocketChannel>;
   nsIWebSocketFrame: nsJSIID<nsIWebSocketFrame>;
@@ -27195,13 +27149,41 @@ interface nsIXPCComponents_Interfaces {
   nsIWebTransportReceiveStream: nsJSIID<nsIWebTransportReceiveStream>;
   nsIWebTransportSendStream: nsJSIID<nsIWebTransportSendStream>;
   nsIWebTransportBidirectionalStream: nsJSIID<nsIWebTransportBidirectionalStream>;
+  nsISocketProvider: nsJSIID<nsISocketProvider>;
+  nsISocketProviderService: nsJSIID<nsISocketProviderService>;
+  nsICompressConvStats: nsJSIID<nsICompressConvStats>;
+  mozITXTToHTMLConv: nsJSIID<mozITXTToHTMLConv>;
+  nsIDirIndex: nsJSIID<nsIDirIndex>;
+  nsIDirIndexListener: nsJSIID<nsIDirIndexListener>;
+  nsIDirIndexParser: nsJSIID<nsIDirIndexParser>;
+  nsIStreamConverter: nsJSIID<nsIStreamConverter>;
+  nsIStreamConverterService: nsJSIID<nsIStreamConverterService>;
+  nsITXTToHTMLConv: nsJSIID<nsITXTToHTMLConv>;
+  nsIHttpServer: nsJSIID<nsIHttpServer>;
+  nsIHttpServerStoppedCallback: nsJSIID<nsIHttpServerStoppedCallback>;
+  nsIHttpServerIdentity: nsJSIID<nsIHttpServerIdentity>;
+  nsIHttpRequestHandler: nsJSIID<nsIHttpRequestHandler>;
+  nsIHttpRequest: nsJSIID<nsIHttpRequest>;
+  nsIHttpResponse: nsJSIID<nsIHttpResponse>;
+  nsIUrlClassifierBlockedChannel: nsJSIID<nsIUrlClassifierBlockedChannel>;
+  nsIChannelClassifierService: nsJSIID<nsIChannelClassifierService>;
+  nsIURIClassifierCallback: nsJSIID<nsIURIClassifierCallback>;
+  nsIURIClassifier: nsJSIID<nsIURIClassifier>;
+  nsIUrlClassifierExceptionList: nsJSIID<nsIUrlClassifierExceptionList>;
+  nsIUrlClassifierExceptionListEntry: nsJSIID<nsIUrlClassifierExceptionListEntry, typeof nsIUrlClassifierExceptionListEntry_Category>;
+  nsIUrlClassifierExceptionListObserver: nsJSIID<nsIUrlClassifierExceptionListObserver>;
+  nsIUrlClassifierExceptionListService: nsJSIID<nsIUrlClassifierExceptionListService>;
+  nsIUrlClassifierFeature: nsJSIID<nsIUrlClassifierFeature, typeof nsIUrlClassifierFeature_listType & typeof nsIUrlClassifierFeature_URIType>;
+  nsIUrlClassifierFeatureResult: nsJSIID<nsIUrlClassifierFeatureResult>;
+  nsIUrlClassifierFeatureCallback: nsJSIID<nsIUrlClassifierFeatureCallback>;
   nsIWifiAccessPoint: nsJSIID<nsIWifiAccessPoint>;
   nsIWifiListener: nsJSIID<nsIWifiListener>;
   nsIWifiMonitor: nsJSIID<nsIWifiMonitor>;
-  nsIParentalControlsService: nsJSIID<nsIParentalControlsService>;
-  IPeerConnectionObserver: nsJSIID<IPeerConnectionObserver>;
-  IPeerConnection: nsJSIID<IPeerConnection>;
-  nsIRemotePermissionService: nsJSIID<nsIRemotePermissionService>;
+  nsIParserUtils: nsJSIID<nsIParserUtils>;
+  nsIExpatSink: nsJSIID<nsIExpatSink>;
+  nsIMarionette: nsJSIID<nsIMarionette>;
+  nsIRemoteAgent: nsJSIID<nsIRemoteAgent>;
+  nsILockstore: nsJSIID<nsILockstore>;
   nsICertOverride: nsJSIID<nsICertOverride>;
   nsICertOverrideService: nsJSIID<nsICertOverrideService>;
   nsICertStorageCallback: nsJSIID<nsICertStorageCallback>;
@@ -27246,6 +27228,159 @@ interface nsIXPCComponents_Interfaces {
   nsICertVerificationCallback: nsJSIID<nsICertVerificationCallback>;
   nsIX509CertDB: nsJSIID<nsIX509CertDB, typeof nsIX509CertDB_VerifyUsage & typeof nsIX509CertDB_QWACType & typeof nsIX509CertDB_PDFSignatureAlgorithm>;
   nsIX509CertValidity: nsJSIID<nsIX509CertValidity>;
+  mozISandboxSettings: nsJSIID<mozISandboxSettings>;
+  mozISandboxTest: nsJSIID<mozISandboxTest>;
+  mozIInterruptible: nsJSIID<mozIInterruptible>;
+  nsIStartupCacheInfo: nsJSIID<nsIStartupCacheInfo>;
+  mozIStorageAsyncConnection: nsJSIID<mozIStorageAsyncConnection>;
+  mozIStorageAsyncStatement: nsJSIID<mozIStorageAsyncStatement>;
+  mozIStorageBaseStatement: nsJSIID<mozIStorageBaseStatement>;
+  mozIStorageBindingParams: nsJSIID<mozIStorageBindingParams>;
+  mozIStorageBindingParamsArray: nsJSIID<mozIStorageBindingParamsArray>;
+  mozIStorageCompletionCallback: nsJSIID<mozIStorageCompletionCallback>;
+  mozIStorageConnection: nsJSIID<mozIStorageConnection>;
+  mozIStorageError: nsJSIID<mozIStorageError>;
+  mozIStorageFunction: nsJSIID<mozIStorageFunction>;
+  mozIStoragePendingStatement: nsJSIID<mozIStoragePendingStatement>;
+  mozIStorageProgressHandler: nsJSIID<mozIStorageProgressHandler>;
+  mozIStorageResultSet: nsJSIID<mozIStorageResultSet>;
+  mozIStorageRow: nsJSIID<mozIStorageRow>;
+  mozIStorageService: nsJSIID<mozIStorageService>;
+  mozIStorageStatement: nsJSIID<mozIStorageStatement>;
+  mozIStorageStatementCallback: nsJSIID<mozIStorageStatementCallback>;
+  mozIStorageVacuumParticipant: nsJSIID<mozIStorageVacuumParticipant>;
+  mozIStorageValueArray: nsJSIID<mozIStorageValueArray>;
+  nsIAlertAction: nsJSIID<nsIAlertAction>;
+  nsIAlertNotification: nsJSIID<nsIAlertNotification>;
+  nsIAlertCallbacks: nsJSIID<nsIAlertCallbacks>;
+  nsIAlertsService: nsJSIID<nsIAlertsService>;
+  nsIAlertsDoNotDisturb: nsJSIID<nsIAlertsDoNotDisturb>;
+  nsIBTPRemoteExceptionList: nsJSIID<nsIBTPRemoteExceptionList>;
+  nsIBounceTrackingMapEntry: nsJSIID<nsIBounceTrackingMapEntry>;
+  nsIBounceTrackingPurgeEntry: nsJSIID<nsIBounceTrackingPurgeEntry>;
+  nsIBounceTrackingProtection: nsJSIID<nsIBounceTrackingProtection, typeof nsIBounceTrackingProtection_Modes>;
+  nsIBounceTrackingRecord: nsJSIID<nsIBounceTrackingRecord>;
+  nsIContentBlockingAllowList: nsJSIID<nsIContentBlockingAllowList>;
+  nsIPartitioningExceptionListObserver: nsJSIID<nsIPartitioningExceptionListObserver>;
+  nsIPartitioningExceptionListService: nsJSIID<nsIPartitioningExceptionListService>;
+  nsIPurgeTrackerService: nsJSIID<nsIPurgeTrackerService>;
+  nsITrackingDBService: nsJSIID<nsITrackingDBService>;
+  nsIURLDecorationAnnotationsService: nsJSIID<nsIURLDecorationAnnotationsService>;
+  nsIURLQueryStringStripper: nsJSIID<nsIURLQueryStringStripper>;
+  nsIURLQueryStrippingListObserver: nsJSIID<nsIURLQueryStrippingListObserver>;
+  nsIURLQueryStrippingListService: nsJSIID<nsIURLQueryStrippingListService>;
+  nsIScopedPrefs: nsJSIID<nsIScopedPrefs, typeof nsIScopedPrefs_Pref>;
+  nsIAsyncShutdownBlocker: nsJSIID<nsIAsyncShutdownBlocker>;
+  nsIAsyncShutdownClient: nsJSIID<nsIAsyncShutdownClient>;
+  nsIAsyncShutdownCompletionCallback: nsJSIID<nsIAsyncShutdownCompletionCallback>;
+  nsIAsyncShutdownBarrier: nsJSIID<nsIAsyncShutdownBarrier>;
+  nsIAsyncShutdownService: nsJSIID<nsIAsyncShutdownService>;
+  nsIAutoCompleteController: nsJSIID<nsIAutoCompleteController>;
+  nsIAutoCompleteInput: nsJSIID<nsIAutoCompleteInput>;
+  nsIAutoCompletePopup: nsJSIID<nsIAutoCompletePopup>;
+  nsIAutoCompleteResult: nsJSIID<nsIAutoCompleteResult>;
+  nsIAutoCompleteSearch: nsJSIID<nsIAutoCompleteSearch>;
+  nsIAutoCompleteObserver: nsJSIID<nsIAutoCompleteObserver>;
+  nsIAutoCompleteSimpleResult: nsJSIID<nsIAutoCompleteSimpleResult>;
+  nsIAutoCompleteSimpleResultListener: nsJSIID<nsIAutoCompleteSimpleResultListener>;
+  nsIAutoCompleteSimpleSearch: nsJSIID<nsIAutoCompleteSimpleSearch>;
+  nsIHangDetails: nsJSIID<nsIHangDetails>;
+  nsIBackgroundTasks: nsJSIID<nsIBackgroundTasks>;
+  nsIBackgroundTasksManager: nsJSIID<nsIBackgroundTasksManager>;
+  nsIBackgroundTasksRunner: nsJSIID<nsIBackgroundTasksRunner>;
+  nsIBits: nsJSIID<nsIBits>;
+  nsIBitsNewRequestCallback: nsJSIID<nsIBitsNewRequestCallback>;
+  nsIBitsRequest: nsJSIID<nsIBitsRequest>;
+  nsIBitsCallback: nsJSIID<nsIBitsCallback>;
+  nsIWebBrowserChrome: nsJSIID<nsIWebBrowserChrome>;
+  nsIWebBrowserPrint: nsJSIID<nsIWebBrowserPrint>;
+  nsICaptivePortalCallback: nsJSIID<nsICaptivePortalCallback>;
+  nsICaptivePortalDetector: nsJSIID<nsICaptivePortalDetector>;
+  nsICascadeFilter: nsJSIID<nsICascadeFilter>;
+  nsIClearBySiteEntry: nsJSIID<nsIClearBySiteEntry>;
+  nsIClearDataService: nsJSIID<nsIClearDataService>;
+  nsIClearDataCallback: nsJSIID<nsIClearDataCallback>;
+  nsIPBMCleanupCallback: nsJSIID<nsIPBMCleanupCallback>;
+  nsIPBMCleanupCollector: nsJSIID<nsIPBMCleanupCollector>;
+  nsICommandLine: nsJSIID<nsICommandLine>;
+  nsICommandLineHandler: nsJSIID<nsICommandLineHandler>;
+  nsICommandLineValidator: nsJSIID<nsICommandLineValidator>;
+  nsIContentClassifierRemoteSettingsClient: nsJSIID<nsIContentClassifierRemoteSettingsClient>;
+  nsIContentClassifierProbeRequest: nsJSIID<nsIContentClassifierProbeRequest>;
+  nsIContentClassifierProbeResult: nsJSIID<nsIContentClassifierProbeResult>;
+  nsIContentClassifierService: nsJSIID<nsIContentClassifierService, typeof nsIContentClassifierService_ProbeStatus>;
+  nsIContentClassifierProbeReport: nsJSIID<nsIContentClassifierProbeReport>;
+  nsIContentAnalysisAcknowledgement: nsJSIID<nsIContentAnalysisAcknowledgement, typeof nsIContentAnalysisAcknowledgement_Result & typeof nsIContentAnalysisAcknowledgement_FinalAction>;
+  nsIContentAnalysisResult: nsJSIID<nsIContentAnalysisResult>;
+  nsIContentAnalysisResponse: nsJSIID<nsIContentAnalysisResponse, typeof nsIContentAnalysisResponse_Action & typeof nsIContentAnalysisResponse_CancelError>;
+  nsIClientDownloadResource: nsJSIID<nsIClientDownloadResource>;
+  nsIContentAnalysisRequest: nsJSIID<nsIContentAnalysisRequest, typeof nsIContentAnalysisRequest_AnalysisType & typeof nsIContentAnalysisRequest_Reason & typeof nsIContentAnalysisRequest_OperationType>;
+  nsIContentAnalysisCallback: nsJSIID<nsIContentAnalysisCallback>;
+  nsIContentAnalysisDiagnosticInfo: nsJSIID<nsIContentAnalysisDiagnosticInfo>;
+  nsIContentAnalysis: nsJSIID<nsIContentAnalysis>;
+  nsIContentAnalysisRule: nsJSIID<nsIContentAnalysisRule>;
+  nsIContentAnalysisWasmRunner: nsJSIID<nsIContentAnalysisWasmRunner>;
+  nsISiteContainerService: nsJSIID<nsISiteContainerService>;
+  nsICrashService: nsJSIID<nsICrashService>;
+  nsICredentialChooserService: nsJSIID<nsICredentialChooserService>;
+  nsICredentialChosenCallback: nsJSIID<nsICredentialChosenCallback>;
+  nsIIdentityCredentialPromptService: nsJSIID<nsIIdentityCredentialPromptService>;
+  nsIIdentityCredentialStorageService: nsJSIID<nsIIdentityCredentialStorageService>;
+  nsIDAPTelemetry: nsJSIID<nsIDAPTelemetry>;
+  mozIDownloadPlatform: nsJSIID<mozIDownloadPlatform>;
+  nsIEnterprisePolicies: nsJSIID<nsIEnterprisePolicies>;
+  extIWebNavigation: nsJSIID<extIWebNavigation>;
+  mozIExtensionServiceWorkerInfo: nsJSIID<mozIExtensionServiceWorkerInfo>;
+  mozIExtensionListenerCallOptions: nsJSIID<mozIExtensionListenerCallOptions, typeof mozIExtensionListenerCallOptions_APIObjectType & typeof mozIExtensionListenerCallOptions_CallbackType>;
+  mozIExtensionEventListener: nsJSIID<mozIExtensionEventListener>;
+  mozIExtensionAPIRequest: nsJSIID<mozIExtensionAPIRequest, typeof mozIExtensionAPIRequest_RequestType>;
+  mozIExtensionAPIRequestResult: nsJSIID<mozIExtensionAPIRequestResult, typeof mozIExtensionAPIRequestResult_ResultType>;
+  mozIExtensionAPIRequestHandler: nsJSIID<mozIExtensionAPIRequestHandler>;
+  mozIExtensionProcessScript: nsJSIID<mozIExtensionProcessScript>;
+  nsINativeMessagingPortal: nsJSIID<nsINativeMessagingPortal>;
+  nsINativeMessagingProxy: nsJSIID<nsINativeMessagingProxy>;
+  nsIFinalizationWitnessService: nsJSIID<nsIFinalizationWitnessService>;
+  nsIFind: nsJSIID<nsIFind>;
+  nsIFindService: nsJSIID<nsIFindService>;
+  nsIWebBrowserFind: nsJSIID<nsIWebBrowserFind>;
+  nsIWebBrowserFindInFrames: nsJSIID<nsIWebBrowserFindInFrames>;
+  nsIGeolocationService: nsJSIID<nsIGeolocationService>;
+  nsIFOG: nsJSIID<nsIFOG>;
+  nsIGleanPingTestCallback: nsJSIID<nsIGleanPingTestCallback>;
+  nsIGleanPingSubmitCallback: nsJSIID<nsIGleanPingSubmitCallback>;
+  nsIGleanPing: nsJSIID<nsIGleanPing>;
+  nsIKeyValueService: nsJSIID<nsIKeyValueService, typeof nsIKeyValueService_RecoveryStrategy>;
+  nsIKeyValueImportSourceSpec: nsJSIID<nsIKeyValueImportSourceSpec>;
+  nsIKeyValueImporter: nsJSIID<nsIKeyValueImporter, typeof nsIKeyValueImporter_ConflictPolicy & typeof nsIKeyValueImporter_CleanupPolicy>;
+  nsIKeyValueDatabaseImportOptions: nsJSIID<nsIKeyValueDatabaseImportOptions>;
+  nsIKeyValueDatabase: nsJSIID<nsIKeyValueDatabase>;
+  nsIKeyValuePair: nsJSIID<nsIKeyValuePair>;
+  nsIKeyValueEnumerator: nsJSIID<nsIKeyValueEnumerator>;
+  nsIKeyValueDatabaseCallback: nsJSIID<nsIKeyValueDatabaseCallback>;
+  nsIKeyValueEnumeratorCallback: nsJSIID<nsIKeyValueEnumeratorCallback>;
+  nsIKeyValuePairCallback: nsJSIID<nsIKeyValuePairCallback>;
+  nsIKeyValueVariantCallback: nsJSIID<nsIKeyValueVariantCallback>;
+  nsIKeyValueVoidCallback: nsJSIID<nsIKeyValueVoidCallback>;
+  nsIOriginStatusEntry: nsJSIID<nsIOriginStatusEntry>;
+  nsIOriginsListLoadCallback: nsJSIID<nsIOriginsListLoadCallback>;
+  nsIWindowsMediaFoundationCDMOriginsListService: nsJSIID<nsIWindowsMediaFoundationCDMOriginsListService>;
+  nsIMLModelDownloadProgressCallback: nsJSIID<nsIMLModelDownloadProgressCallback>;
+  nsIMLModelDownloadCompletionCallback: nsJSIID<nsIMLModelDownloadCompletionCallback>;
+  nsIMLModelHub: nsJSIID<nsIMLModelHub>;
+  nsIMLModelDownloadAuthorizationCallback: nsJSIID<nsIMLModelDownloadAuthorizationCallback>;
+  nsIMLModelResolver: nsJSIID<nsIMLModelResolver>;
+  nsIMLUtils: nsJSIID<nsIMLUtils>;
+  mozIMozIntl: nsJSIID<mozIMozIntl>;
+  mozIMozIntlHelper: nsJSIID<mozIMozIntlHelper>;
+  nsIParentalControlsService: nsJSIID<nsIParentalControlsService>;
+  nsILoginInfo: nsJSIID<nsILoginInfo>;
+  nsILoginSearchCallback: nsJSIID<nsILoginSearchCallback>;
+  nsILoginManager: nsJSIID<nsILoginManager>;
+  nsILoginManagerAuthPrompter: nsJSIID<nsILoginManagerAuthPrompter>;
+  nsILoginManagerCrypto: nsJSIID<nsILoginManagerCrypto>;
+  nsILoginManagerPrompter: nsJSIID<nsILoginManagerPrompter>;
+  nsILoginMetaInfo: nsJSIID<nsILoginMetaInfo>;
+  nsIPromptInstance: nsJSIID<nsIPromptInstance>;
   mozIVisitInfo: nsJSIID<mozIVisitInfo>;
   mozIPlaceInfo: nsJSIID<mozIPlaceInfo>;
   mozIVisitInfoCallback: nsJSIID<mozIVisitInfoCallback>;
@@ -27269,167 +27404,30 @@ interface nsIXPCComponents_Interfaces {
   nsINavHistoryService: nsJSIID<nsINavHistoryService, typeof nsINavHistoryService_TransitionType>;
   nsIPlacesPreviewsHelperService: nsJSIID<nsIPlacesPreviewsHelperService>;
   nsITaggingService: nsJSIID<nsITaggingService>;
-  nsIPrefBranch: nsJSIID<nsIPrefBranch, typeof nsIPrefBranch_PreferenceType>;
-  nsIPrefLocalizedString: nsJSIID<nsIPrefLocalizedString>;
-  nsIPrefOverrideMap: nsJSIID<nsIPrefOverrideMap>;
-  nsIPrefStatsCallback: nsJSIID<nsIPrefStatsCallback>;
-  nsIPrefObserver: nsJSIID<nsIPrefObserver>;
-  nsIPrefService: nsJSIID<nsIPrefService>;
-  nsIRelativeFilePref: nsJSIID<nsIRelativeFilePref>;
-  nsIPrefetchService: nsJSIID<nsIPrefetchService>;
-  nsIProfilerStartParams: nsJSIID<nsIProfilerStartParams>;
-  nsIProfiler: nsJSIID<nsIProfiler>;
-  nsIRddProcessTest: nsJSIID<nsIRddProcessTest>;
-  nsIMarionette: nsJSIID<nsIMarionette>;
-  nsIRemoteAgent: nsJSIID<nsIRemoteAgent>;
+  nsIProcessToolsService: nsJSIID<nsIProcessToolsService>;
+  nsIRemoteService: nsJSIID<nsIRemoteService>;
   nsIApplicationReputationService: nsJSIID<nsIApplicationReputationService>;
   nsIApplicationReputationQuery: nsJSIID<nsIApplicationReputationQuery>;
   nsIApplicationReputationCallback: nsJSIID<nsIApplicationReputationCallback>;
-  mozISandboxSettings: nsJSIID<mozISandboxSettings>;
-  mozISandboxTest: nsJSIID<mozISandboxTest>;
-  nsIFormFillFocusListener: nsJSIID<nsIFormFillFocusListener>;
-  nsIFormFillController: nsJSIID<nsIFormFillController>;
-  nsIFormFillCompleteObserver: nsJSIID<nsIFormFillCompleteObserver>;
-  mozIInterruptible: nsJSIID<mozIInterruptible>;
-  nsISessionStoreFunctions: nsJSIID<nsISessionStoreFunctions>;
-  nsISessionStoreRestoreData: nsJSIID<nsISessionStoreRestoreData>;
-  nsIShellService: nsJSIID<nsIShellService>;
-  nsIBFCacheEntry: nsJSIID<nsIBFCacheEntry>;
-  nsISHEntry: nsJSIID<nsISHEntry>;
-  nsISHistory: nsJSIID<nsISHistory>;
-  nsISHistoryListener: nsJSIID<nsISHistoryListener>;
-  mozIPersonalDictionary: nsJSIID<mozIPersonalDictionary>;
-  mozISpellCheckingEngine: nsJSIID<mozISpellCheckingEngine>;
-  nsIStartupCacheInfo: nsJSIID<nsIStartupCacheInfo>;
-  mozIStorageAsyncConnection: nsJSIID<mozIStorageAsyncConnection>;
-  mozIStorageAsyncStatement: nsJSIID<mozIStorageAsyncStatement>;
-  mozIStorageBaseStatement: nsJSIID<mozIStorageBaseStatement>;
-  mozIStorageBindingParams: nsJSIID<mozIStorageBindingParams>;
-  mozIStorageBindingParamsArray: nsJSIID<mozIStorageBindingParamsArray>;
-  mozIStorageCompletionCallback: nsJSIID<mozIStorageCompletionCallback>;
-  mozIStorageConnection: nsJSIID<mozIStorageConnection>;
-  mozIStorageError: nsJSIID<mozIStorageError>;
-  mozIStorageFunction: nsJSIID<mozIStorageFunction>;
-  mozIStoragePendingStatement: nsJSIID<mozIStoragePendingStatement>;
-  mozIStorageProgressHandler: nsJSIID<mozIStorageProgressHandler>;
-  mozIStorageResultSet: nsJSIID<mozIStorageResultSet>;
-  mozIStorageRow: nsJSIID<mozIStorageRow>;
-  mozIStorageService: nsJSIID<mozIStorageService>;
-  mozIStorageStatement: nsJSIID<mozIStorageStatement>;
-  mozIStorageStatementCallback: nsJSIID<mozIStorageStatementCallback>;
-  mozIStorageVacuumParticipant: nsJSIID<mozIStorageVacuumParticipant>;
-  mozIStorageValueArray: nsJSIID<mozIStorageValueArray>;
-  nsIFetchTelemetryDataCallback: nsJSIID<nsIFetchTelemetryDataCallback>;
-  nsITelemetry: nsJSIID<nsITelemetry>;
-  nsIHttpServer: nsJSIID<nsIHttpServer>;
-  nsIHttpServerStoppedCallback: nsJSIID<nsIHttpServerStoppedCallback>;
-  nsIHttpServerIdentity: nsJSIID<nsIHttpServerIdentity>;
-  nsIHttpRequestHandler: nsJSIID<nsIHttpRequestHandler>;
-  nsIHttpRequest: nsJSIID<nsIHttpRequest>;
-  nsIHttpResponse: nsJSIID<nsIHttpResponse>;
-  nsIPageThumbsStorageService: nsJSIID<nsIPageThumbsStorageService>;
-  nsIBTPRemoteExceptionList: nsJSIID<nsIBTPRemoteExceptionList>;
-  nsIBounceTrackingMapEntry: nsJSIID<nsIBounceTrackingMapEntry>;
-  nsIBounceTrackingPurgeEntry: nsJSIID<nsIBounceTrackingPurgeEntry>;
-  nsIBounceTrackingProtection: nsJSIID<nsIBounceTrackingProtection, typeof nsIBounceTrackingProtection_Modes>;
-  nsIBounceTrackingRecord: nsJSIID<nsIBounceTrackingRecord>;
-  nsIContentBlockingAllowList: nsJSIID<nsIContentBlockingAllowList>;
-  nsIPartitioningExceptionListObserver: nsJSIID<nsIPartitioningExceptionListObserver>;
-  nsIPartitioningExceptionListService: nsJSIID<nsIPartitioningExceptionListService>;
-  nsIPurgeTrackerService: nsJSIID<nsIPurgeTrackerService>;
-  nsITrackingDBService: nsJSIID<nsITrackingDBService>;
-  nsIURLDecorationAnnotationsService: nsJSIID<nsIURLDecorationAnnotationsService>;
-  nsIURLQueryStringStripper: nsJSIID<nsIURLQueryStringStripper>;
-  nsIURLQueryStrippingListObserver: nsJSIID<nsIURLQueryStrippingListObserver>;
-  nsIURLQueryStrippingListService: nsJSIID<nsIURLQueryStrippingListService>;
-  nsIScopedPrefs: nsJSIID<nsIScopedPrefs, typeof nsIScopedPrefs_Pref>;
-  nsIAsyncShutdownBlocker: nsJSIID<nsIAsyncShutdownBlocker>;
-  nsIAsyncShutdownClient: nsJSIID<nsIAsyncShutdownClient>;
-  nsIAsyncShutdownCompletionCallback: nsJSIID<nsIAsyncShutdownCompletionCallback>;
-  nsIAsyncShutdownBarrier: nsJSIID<nsIAsyncShutdownBarrier>;
-  nsIAsyncShutdownService: nsJSIID<nsIAsyncShutdownService>;
-  nsIBackgroundTasks: nsJSIID<nsIBackgroundTasks>;
-  nsIBackgroundTasksManager: nsJSIID<nsIBackgroundTasksManager>;
-  nsIBackgroundTasksRunner: nsJSIID<nsIBackgroundTasksRunner>;
-  nsIClearBySiteEntry: nsJSIID<nsIClearBySiteEntry>;
-  nsIClearDataService: nsJSIID<nsIClearDataService>;
-  nsIClearDataCallback: nsJSIID<nsIClearDataCallback>;
-  nsIPBMCleanupCallback: nsJSIID<nsIPBMCleanupCallback>;
-  nsIPBMCleanupCollector: nsJSIID<nsIPBMCleanupCollector>;
-  nsIContentAnalysisAcknowledgement: nsJSIID<nsIContentAnalysisAcknowledgement, typeof nsIContentAnalysisAcknowledgement_Result & typeof nsIContentAnalysisAcknowledgement_FinalAction>;
-  nsIContentAnalysisResult: nsJSIID<nsIContentAnalysisResult>;
-  nsIContentAnalysisResponse: nsJSIID<nsIContentAnalysisResponse, typeof nsIContentAnalysisResponse_Action & typeof nsIContentAnalysisResponse_CancelError>;
-  nsIClientDownloadResource: nsJSIID<nsIClientDownloadResource>;
-  nsIContentAnalysisRequest: nsJSIID<nsIContentAnalysisRequest, typeof nsIContentAnalysisRequest_AnalysisType & typeof nsIContentAnalysisRequest_Reason & typeof nsIContentAnalysisRequest_OperationType>;
-  nsIContentAnalysisCallback: nsJSIID<nsIContentAnalysisCallback>;
-  nsIContentAnalysisDiagnosticInfo: nsJSIID<nsIContentAnalysisDiagnosticInfo>;
-  nsIContentAnalysis: nsJSIID<nsIContentAnalysis>;
-  nsIContentAnalysisRule: nsJSIID<nsIContentAnalysisRule>;
-  nsIContentAnalysisWasmRunner: nsJSIID<nsIContentAnalysisWasmRunner>;
-  nsICrashService: nsJSIID<nsICrashService>;
-  nsIFinalizationWitnessService: nsJSIID<nsIFinalizationWitnessService>;
-  nsIGeolocationService: nsJSIID<nsIGeolocationService>;
-  nsIOriginStatusEntry: nsJSIID<nsIOriginStatusEntry>;
-  nsIOriginsListLoadCallback: nsJSIID<nsIOriginsListLoadCallback>;
-  nsIWindowsMediaFoundationCDMOriginsListService: nsJSIID<nsIWindowsMediaFoundationCDMOriginsListService>;
-  nsIVisibleTab: nsJSIID<nsIVisibleTab>;
-  nsIBrowserWindowTracker: nsJSIID<nsIBrowserWindowTracker>;
-  nsIRegion: nsJSIID<nsIRegion>;
-  nsIProcessToolsService: nsJSIID<nsIProcessToolsService>;
   nsIFingerprintingOverride: nsJSIID<nsIFingerprintingOverride>;
   nsIFingerprintingWebCompatService: nsJSIID<nsIFingerprintingWebCompatService>;
   nsIRFPService: nsJSIID<nsIRFPService>;
   nsIRFPTargetSetIDL: nsJSIID<nsIRFPTargetSetIDL>;
   nsIUserCharacteristicsPageService: nsJSIID<nsIUserCharacteristicsPageService>;
+  nsIFormFillFocusListener: nsJSIID<nsIFormFillFocusListener>;
+  nsIFormFillController: nsJSIID<nsIFormFillController>;
+  nsIFormFillCompleteObserver: nsJSIID<nsIFormFillCompleteObserver>;
+  nsISessionStoreFunctions: nsJSIID<nsISessionStoreFunctions>;
+  nsISessionStoreRestoreData: nsJSIID<nsISessionStoreRestoreData>;
   nsIToolkitShellService: nsJSIID<nsIToolkitShellService>;
+  nsISiteCategory: nsJSIID<nsISiteCategory>;
+  nsIAppStartup: nsJSIID<nsIAppStartup, typeof nsIAppStartup_IDLShutdownPhase>;
+  nsIFetchTelemetryDataCallback: nsJSIID<nsIFetchTelemetryDataCallback>;
+  nsITelemetry: nsJSIID<nsITelemetry>;
   nsITerminatorTest: nsJSIID<nsITerminatorTest>;
-  nsIXULStore: nsJSIID<nsIXULStore>;
-  nsIProfileStartup: nsJSIID<nsIProfileStartup>;
-  nsIProfileMigrator: nsJSIID<nsIProfileMigrator>;
-  nsIProfileUnlocker: nsJSIID<nsIProfileUnlocker>;
-  nsIProfileLock: nsJSIID<nsIProfileLock>;
-  nsIToolkitProfile: nsJSIID<nsIToolkitProfile>;
-  nsIToolkitProfileService: nsJSIID<nsIToolkitProfileService, typeof nsIToolkitProfileService_downgradeUIFlags & typeof nsIToolkitProfileService_downgradeUIChoice & typeof nsIToolkitProfileService_profileManagerResult>;
-  nsIRemoteService: nsJSIID<nsIRemoteService>;
-  nsITransaction: nsJSIID<nsITransaction>;
-  nsITransactionManager: nsJSIID<nsITransactionManager>;
-  nsIInlineSpellChecker: nsJSIID<nsIInlineSpellChecker>;
-  nsIScriptableUnicodeConverter: nsJSIID<nsIScriptableUnicodeConverter>;
-  nsITextToSubURI: nsJSIID<nsITextToSubURI>;
+  nsIPageThumbsStorageService: nsJSIID<nsIPageThumbsStorageService>;
   nsIUpdateTimerManager: nsJSIID<nsIUpdateTimerManager>;
-  nsIUpdatePatch: nsJSIID<nsIUpdatePatch>;
-  nsIUpdate: nsJSIID<nsIUpdate>;
-  nsIUpdateCheckResult: nsJSIID<nsIUpdateCheckResult>;
-  nsIUpdateCheck: nsJSIID<nsIUpdateCheck>;
-  nsIUpdateCheckerInternal: nsJSIID<nsIUpdateCheckerInternal>;
-  nsIUpdateChecker: nsJSIID<nsIUpdateChecker>;
-  nsIApplicationUpdateServiceInternal: nsJSIID<nsIApplicationUpdateServiceInternal>;
-  nsIApplicationUpdateService: nsJSIID<nsIApplicationUpdateService>;
-  nsIUpdateProcessor: nsJSIID<nsIUpdateProcessor>;
-  nsIUpdateSyncManager: nsJSIID<nsIUpdateSyncManager>;
-  nsIUpdateMutex: nsJSIID<nsIUpdateMutex>;
-  nsIUpdateManagerInternal: nsJSIID<nsIUpdateManagerInternal>;
-  nsIUpdateManager: nsJSIID<nsIUpdateManager>;
-  nsIApplicationUpdateServiceStub: nsJSIID<nsIApplicationUpdateServiceStub>;
-  nsIContentHandler: nsJSIID<nsIContentHandler>;
-  nsIDocumentLoader: nsJSIID<nsIDocumentLoader>;
-  nsITransfer: nsJSIID<nsITransfer>;
-  nsIURIContentListener: nsJSIID<nsIURIContentListener>;
-  nsIURILoader: nsJSIID<nsIURILoader>;
-  nsIWebProgress: nsJSIID<nsIWebProgress>;
-  nsIWebProgressListener: nsJSIID<nsIWebProgressListener>;
-  nsIWebProgressListener2: nsJSIID<nsIWebProgressListener2>;
-  nsIUrlClassifierBlockedChannel: nsJSIID<nsIUrlClassifierBlockedChannel>;
-  nsIChannelClassifierService: nsJSIID<nsIChannelClassifierService>;
-  nsIURIClassifierCallback: nsJSIID<nsIURIClassifierCallback>;
-  nsIURIClassifier: nsJSIID<nsIURIClassifier>;
-  nsIUrlClassifierExceptionList: nsJSIID<nsIUrlClassifierExceptionList>;
-  nsIUrlClassifierExceptionListEntry: nsJSIID<nsIUrlClassifierExceptionListEntry, typeof nsIUrlClassifierExceptionListEntry_Category>;
-  nsIUrlClassifierExceptionListObserver: nsJSIID<nsIUrlClassifierExceptionListObserver>;
-  nsIUrlClassifierExceptionListService: nsJSIID<nsIUrlClassifierExceptionListService>;
-  nsIUrlClassifierFeature: nsJSIID<nsIUrlClassifierFeature, typeof nsIUrlClassifierFeature_listType & typeof nsIUrlClassifierFeature_URIType>;
-  nsIUrlClassifierFeatureResult: nsJSIID<nsIUrlClassifierFeatureResult>;
-  nsIUrlClassifierFeatureCallback: nsJSIID<nsIUrlClassifierFeatureCallback>;
+  nsITypeAheadFind: nsJSIID<nsITypeAheadFind>;
   IUrlClassifierUITelemetry: nsJSIID<IUrlClassifierUITelemetry>;
   nsIUrlClassifierCallback: nsJSIID<nsIUrlClassifierCallback>;
   nsIUrlClassifierUpdateObserver: nsJSIID<nsIUrlClassifierUpdateObserver>;
@@ -27450,27 +27448,63 @@ interface nsIXPCComponents_Interfaces {
   nsIUrlClassifierUtils: nsJSIID<nsIUrlClassifierUtils>;
   nsIUrlListManager: nsJSIID<nsIUrlListManager>;
   nsIURLFormatter: nsJSIID<nsIURLFormatter>;
-  nsIUtilityProcessTest: nsJSIID<nsIUtilityProcessTest>;
-  nsIWebBrowserChrome: nsJSIID<nsIWebBrowserChrome>;
-  nsIWebBrowserPrint: nsJSIID<nsIWebBrowserPrint>;
-  nsIWebBrowserPersist: nsJSIID<nsIWebBrowserPersist>;
-  nsIWebBrowserPersistURIMap: nsJSIID<nsIWebBrowserPersistURIMap>;
-  nsIWebBrowserPersistDocument: nsJSIID<nsIWebBrowserPersistDocument>;
-  nsIWebBrowserPersistResourceVisitor: nsJSIID<nsIWebBrowserPersistResourceVisitor>;
-  nsIWebBrowserPersistWriteCompletion: nsJSIID<nsIWebBrowserPersistWriteCompletion>;
-  nsIWebBrowserPersistDocumentReceiver: nsJSIID<nsIWebBrowserPersistDocumentReceiver>;
-  extIWebNavigation: nsJSIID<extIWebNavigation>;
-  mozIExtensionServiceWorkerInfo: nsJSIID<mozIExtensionServiceWorkerInfo>;
-  mozIExtensionListenerCallOptions: nsJSIID<mozIExtensionListenerCallOptions, typeof mozIExtensionListenerCallOptions_APIObjectType & typeof mozIExtensionListenerCallOptions_CallbackType>;
-  mozIExtensionEventListener: nsJSIID<mozIExtensionEventListener>;
-  mozIExtensionAPIRequest: nsJSIID<mozIExtensionAPIRequest, typeof mozIExtensionAPIRequest_RequestType>;
-  mozIExtensionAPIRequestResult: nsJSIID<mozIExtensionAPIRequestResult, typeof mozIExtensionAPIRequestResult_ResultType>;
-  mozIExtensionAPIRequestHandler: nsJSIID<mozIExtensionAPIRequestHandler>;
-  mozIExtensionProcessScript: nsJSIID<mozIExtensionProcessScript>;
-  nsINativeMessagingPortal: nsJSIID<nsINativeMessagingPortal>;
-  nsINativeMessagingProxy: nsJSIID<nsINativeMessagingProxy>;
-  nsIWebVTTListener: nsJSIID<nsIWebVTTListener>;
-  nsIWebVTTParserWrapper: nsJSIID<nsIWebVTTParserWrapper>;
+  nsIWindowCreator: nsJSIID<nsIWindowCreator>;
+  nsIWindowProvider: nsJSIID<nsIWindowProvider>;
+  nsIDialogParamBlock: nsJSIID<nsIDialogParamBlock>;
+  nsIOpenWindowInfo: nsJSIID<nsIOpenWindowInfo>;
+  nsIPromptCollection: nsJSIID<nsIPromptCollection>;
+  nsIPromptFactory: nsJSIID<nsIPromptFactory>;
+  nsIPromptService: nsJSIID<nsIPromptService>;
+  nsIWindowWatcher: nsJSIID<nsIWindowWatcher>;
+  nsIXULStore: nsJSIID<nsIXULStore>;
+  nsICrashReporterTestUtils: nsJSIID<nsICrashReporterTestUtils>;
+  nsIVisibleTab: nsJSIID<nsIVisibleTab>;
+  nsIBrowserWindowTracker: nsJSIID<nsIBrowserWindowTracker>;
+  nsIRegion: nsJSIID<nsIRegion>;
+  amIAddonManagerStartup: nsJSIID<amIAddonManagerStartup>;
+  amIWebInstallPrompt: nsJSIID<amIWebInstallPrompt>;
+  nsIUpdatePatch: nsJSIID<nsIUpdatePatch>;
+  nsIUpdate: nsJSIID<nsIUpdate>;
+  nsIUpdateCheckResult: nsJSIID<nsIUpdateCheckResult>;
+  nsIUpdateCheck: nsJSIID<nsIUpdateCheck>;
+  nsIUpdateCheckerInternal: nsJSIID<nsIUpdateCheckerInternal>;
+  nsIUpdateChecker: nsJSIID<nsIUpdateChecker>;
+  nsIApplicationUpdateServiceInternal: nsJSIID<nsIApplicationUpdateServiceInternal>;
+  nsIApplicationUpdateService: nsJSIID<nsIApplicationUpdateService>;
+  nsIUpdateProcessor: nsJSIID<nsIUpdateProcessor>;
+  nsIUpdateSyncManager: nsJSIID<nsIUpdateSyncManager>;
+  nsIUpdateMutex: nsJSIID<nsIUpdateMutex>;
+  nsIUpdateManagerInternal: nsJSIID<nsIUpdateManagerInternal>;
+  nsIUpdateManager: nsJSIID<nsIUpdateManager>;
+  nsIApplicationUpdateServiceStub: nsJSIID<nsIApplicationUpdateServiceStub>;
+  nsIProfileStartup: nsJSIID<nsIProfileStartup>;
+  nsIProfileMigrator: nsJSIID<nsIProfileMigrator>;
+  nsIProfileUnlocker: nsJSIID<nsIProfileUnlocker>;
+  nsIProfileLock: nsJSIID<nsIProfileLock>;
+  nsIToolkitProfile: nsJSIID<nsIToolkitProfile>;
+  nsIToolkitProfileService: nsJSIID<nsIToolkitProfileService, typeof nsIToolkitProfileService_downgradeUIFlags & typeof nsIToolkitProfileService_downgradeUIChoice & typeof nsIToolkitProfileService_profileManagerResult>;
+  nsIASWebAuthSessionRequest: nsJSIID<nsIASWebAuthSessionRequest>;
+  nsINativeAppSupport: nsJSIID<nsINativeAppSupport>;
+  nsIXREDirProvider: nsJSIID<nsIXREDirProvider>;
+  nsIProfilerStartParams: nsJSIID<nsIProfilerStartParams>;
+  nsIProfiler: nsJSIID<nsIProfiler>;
+  nsIContentHandler: nsJSIID<nsIContentHandler>;
+  nsIDocumentLoader: nsJSIID<nsIDocumentLoader>;
+  nsITransfer: nsJSIID<nsITransfer>;
+  nsIURIContentListener: nsJSIID<nsIURIContentListener>;
+  nsIURILoader: nsJSIID<nsIURILoader>;
+  nsIWebProgress: nsJSIID<nsIWebProgress>;
+  nsIWebProgressListener: nsJSIID<nsIWebProgressListener>;
+  nsIWebProgressListener2: nsJSIID<nsIWebProgressListener2>;
+  nsIContentDispatchChooser: nsJSIID<nsIContentDispatchChooser>;
+  nsIExternalHelperAppService: nsJSIID<nsIExternalHelperAppService>;
+  nsPIExternalAppLauncher: nsJSIID<nsPIExternalAppLauncher>;
+  nsIHelperAppLauncher: nsJSIID<nsIHelperAppLauncher>;
+  nsIExternalProtocolService: nsJSIID<nsIExternalProtocolService>;
+  nsIHandlerService: nsJSIID<nsIHandlerService>;
+  nsIHelperAppLauncherDialog: nsJSIID<nsIHelperAppLauncherDialog, typeof nsIHelperAppLauncherDialog_reason>;
+  nsISharingHandlerApp: nsJSIID<nsISharingHandlerApp>;
+  nsIPrefetchService: nsJSIID<nsIPrefetchService>;
   nsIBaseWindow: nsJSIID<nsIBaseWindow>;
   nsIBidiKeyboard: nsJSIID<nsIBidiKeyboard>;
   nsIAsyncSetClipboardData: nsJSIID<nsIAsyncSetClipboardData>;
@@ -27508,14 +27542,6 @@ interface nsIXPCComponents_Interfaces {
   nsITransferable: nsJSIID<nsITransferable>;
   nsIUserIdleService: nsJSIID<nsIUserIdleService>;
   nsIUserIdleServiceInternal: nsJSIID<nsIUserIdleServiceInternal>;
-  nsIWindowCreator: nsJSIID<nsIWindowCreator>;
-  nsIWindowProvider: nsJSIID<nsIWindowProvider>;
-  nsIDialogParamBlock: nsJSIID<nsIDialogParamBlock>;
-  nsIOpenWindowInfo: nsJSIID<nsIOpenWindowInfo>;
-  nsIPromptCollection: nsJSIID<nsIPromptCollection>;
-  nsIPromptFactory: nsJSIID<nsIPromptFactory>;
-  nsIPromptService: nsJSIID<nsIPromptService>;
-  nsIWindowWatcher: nsJSIID<nsIWindowWatcher>;
   nsITabUnloader: nsJSIID<nsITabUnloader>;
   nsIAvailableMemoryWatcherBase: nsJSIID<nsIAvailableMemoryWatcherBase>;
   nsIConsoleListener: nsJSIID<nsIConsoleListener>;
@@ -27647,6 +27673,8 @@ interface nsIXPCComponents_Interfaces {
   nsISystemInfo: nsJSIID<nsISystemInfo>;
   nsIXULAppInfo: nsJSIID<nsIXULAppInfo>;
   nsIXULRuntime: nsJSIID<nsIXULRuntime, typeof nsIXULRuntime_ExperimentStatus & typeof nsIXULRuntime_ContentWin32kLockdownState & typeof nsIXULRuntime_FissionDecisionStatus>;
+  nsIScriptableOK: nsJSIID<nsIScriptableOK>;
+  nsIScriptableWithNotXPCOM: nsJSIID<nsIScriptableWithNotXPCOM>;
   nsIEnvironment: nsJSIID<nsIEnvironment>;
   nsIEventTarget: nsJSIID<nsIEventTarget, typeof nsIEventTarget_DispatchFlags & typeof nsIEventTarget_FeatureFlags>;
   nsINamed: nsJSIID<nsINamed>;
@@ -27662,40 +27690,12 @@ interface nsIXPCComponents_Interfaces {
   nsITimerCallback: nsJSIID<nsITimerCallback>;
   nsITimer: nsJSIID<nsITimer>;
   nsITimerManager: nsJSIID<nsITimerManager>;
-  nsIScriptableOK: nsJSIID<nsIScriptableOK>;
-  nsIScriptableWithNotXPCOM: nsJSIID<nsIScriptableWithNotXPCOM>;
-  mozIJSSubScriptLoader: nsJSIID<mozIJSSubScriptLoader>;
-  xpcIJSWeakReference: nsJSIID<xpcIJSWeakReference>;
-  nsIXPCComponents_Classes: nsJSIID<nsIXPCComponents_Classes>;
-  nsIXPCComponents_Results: nsJSIID<nsIXPCComponents_Results>;
-  nsIXPCComponents_ID: nsJSIID<nsIXPCComponents_ID>;
-  nsIXPCComponents_Exception: nsJSIID<nsIXPCComponents_Exception>;
-  nsIXPCComponents_Constructor: nsJSIID<nsIXPCComponents_Constructor>;
-  nsIXPCComponents_utils_Sandbox: nsJSIID<nsIXPCComponents_utils_Sandbox>;
-  nsIScheduledGCCallback: nsJSIID<nsIScheduledGCCallback>;
-  nsIXPCComponents_Utils: nsJSIID<nsIXPCComponents_Utils>;
-  nsIXPCComponents: nsJSIID<nsIXPCComponents>;
-  nsIXPCTestObjectReadOnly: nsJSIID<nsIXPCTestObjectReadOnly>;
-  nsIXPCTestObjectReadWrite: nsJSIID<nsIXPCTestObjectReadWrite>;
-  nsIXPCTestBug809674: nsJSIID<nsIXPCTestBug809674>;
-  nsIXPCTestCEnums: nsJSIID<nsIXPCTestCEnums, typeof nsIXPCTestCEnums_testFlagsExplicit & typeof nsIXPCTestCEnums_testFlagsImplicit>;
-  nsIXPCTestInterfaceA: nsJSIID<nsIXPCTestInterfaceA>;
-  nsIXPCTestInterfaceB: nsJSIID<nsIXPCTestInterfaceB>;
-  nsIXPCTestInterfaceC: nsJSIID<nsIXPCTestInterfaceC>;
-  nsIXPCTestParams: nsJSIID<nsIXPCTestParams>;
-  nsIXPCTestReturnCodeParent: nsJSIID<nsIXPCTestReturnCodeParent>;
-  nsIXPCTestReturnCodeChild: nsJSIID<nsIXPCTestReturnCodeChild>;
-  nsIXPCTestFunctionInterface: nsJSIID<nsIXPCTestFunctionInterface>;
-  nsIXPCTestUtils: nsJSIID<nsIXPCTestUtils>;
-  nsIXPCTestTypeScript: nsJSIID<nsIXPCTestTypeScript>;
-  nsIBrowserController: nsJSIID<nsIBrowserController>;
-  nsIController: nsJSIID<nsIController>;
-  nsICommandController: nsJSIID<nsICommandController>;
-  nsIControllers: nsJSIID<nsIControllers>;
-  nsIASWebAuthSessionRequest: nsJSIID<nsIASWebAuthSessionRequest>;
-  nsINativeAppSupport: nsJSIID<nsINativeAppSupport>;
-  nsIXREDirProvider: nsJSIID<nsIXREDirProvider>;
-  nsIZipWriter: nsJSIID<nsIZipWriter>;
+  nsIAppShellService: nsJSIID<nsIAppShellService>;
+  nsIAppWindow: nsJSIID<nsIAppWindow>;
+  nsIWindowMediator: nsJSIID<nsIWindowMediator>;
+  nsIWindowMediatorListener: nsJSIID<nsIWindowMediatorListener>;
+  nsIWindowlessBrowser: nsJSIID<nsIWindowlessBrowser>;
+  nsIXULBrowserWindow: nsJSIID<nsIXULBrowserWindow>;
 }
 
 }  

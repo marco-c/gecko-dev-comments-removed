@@ -8,94 +8,6 @@ declare global {
 
 
 
-interface nsIInstalledApplication extends nsISupports {
-  readonly name: string;
-  readonly publisher: string;
-}
-
-interface nsIAboutThirdParty extends nsISupports {
-  readonly ModuleType_Unknown?: 1;
-  readonly ModuleType_IME?: 2;
-  readonly ModuleType_ShellExtension?: 4;
-  readonly ModuleType_BlockedByUser?: 8;
-  readonly ModuleType_BlockedByUserAtLaunch?: 16;
-
-  lookupModuleType(aLeafName: string): u32;
-  lookupApplication(aModulePath: string): nsIInstalledApplication;
-  readonly isDynamicBlocklistAvailable: boolean;
-  readonly isDynamicBlocklistDisabled: boolean;
-  updateBlocklist(aLeafName: string, aNewBlockStatus: boolean): Promise<any>;
-  collectSystemInfo(): Promise<any>;
-  loadModuleForTesting(aModulePath: string): void;
-}
-
-
-
-interface nsIAboutWindowsMessages extends nsISupports {
-  getMessages(currentWindow: mozIDOMWindowProxy, messages: OutParam<string[][]>, windowTitles: OutParam<string[]>): void;
-}
-
-
-
-}  
-
-declare enum nsIWindowsAlertNotification_ImagePlacement {
-  eInline = 0,
-  eHero = 1,
-  eIcon = 2,
-}
-
-declare global {
-
-namespace nsIWindowsAlertNotification {
-  type ImagePlacement = nsIWindowsAlertNotification_ImagePlacement;
-}
-
-interface nsIWindowsAlertNotification extends nsIAlertNotification, Enums<typeof nsIWindowsAlertNotification_ImagePlacement> {
-  imagePlacement: nsIWindowsAlertNotification.ImagePlacement;
-  imagePathUnchecked: string;
-}
-
-interface nsIWindowsAlertsService extends nsIAlertsService {
-  handleWindowsTag(aWindowsTag: string): Promise<any>;
-  getXmlStringForWindowsAlert(aAlert: nsIAlertNotification, aWindowsTag?: string): string;
-  removeAllNotificationsForInstall(): void;
-}
-
-
-
-interface nsIDefaultAgent extends nsISupports {
-  registerTask(aUniqueToken: string): void;
-  updateTask(aUniqueToken: string): void;
-  unregisterTask(aUniqueToken: string): void;
-  uninstall(aUniqueToken: string): void;
-  secondsSinceLastAppRun(): i64;
-  getDefaultBrowser(): string;
-  getReplacePreviousDefaultBrowser(aCurrentBrowser: string): string;
-  getDefaultPdfHandler(): string;
-  sendPing(aCurrentBrowser: string, aPreviousBrowser: string, aPdfHandler: string, aNotificationShown: string, aNotificationAction: string, daysSinceLastAppLaunch: u32, aIsTaskbarPinned: string): void;
-  setDefaultBrowserUserChoice(aAumid: string, aExtraFileExtensions: string[]): void;
-  setDefaultBrowserUserChoiceAsync(aAumid: string, aExtraFileExtensions: string[]): Promise<any>;
-  setDefaultExtensionHandlersUserChoice(aAumid: string, aFileExtensions: string[]): void;
-  agentDisabled(): boolean;
-}
-
-
-
-interface nsIWindowsMutex extends nsISupports {
-  tryLock(): void;
-  isLocked(): boolean;
-  unlock(): void;
-}
-
-interface nsIWindowsMutexFactory extends nsISupports {
-  createMutex(aName: string): nsIWindowsMutex;
-}
-
-
-
-
-
 }  
 
 declare enum nsIWindowsShellService_LaunchOnLoginEnabledEnumerator {
@@ -154,6 +66,64 @@ interface nsIWindowsShellService extends nsIShellService, Enums<typeof nsIWindow
 
 
 
+
+
+interface nsIInstalledApplication extends nsISupports {
+  readonly name: string;
+  readonly publisher: string;
+}
+
+interface nsIAboutThirdParty extends nsISupports {
+  readonly ModuleType_Unknown?: 1;
+  readonly ModuleType_IME?: 2;
+  readonly ModuleType_ShellExtension?: 4;
+  readonly ModuleType_BlockedByUser?: 8;
+  readonly ModuleType_BlockedByUserAtLaunch?: 16;
+
+  lookupModuleType(aLeafName: string): u32;
+  lookupApplication(aModulePath: string): nsIInstalledApplication;
+  readonly isDynamicBlocklistAvailable: boolean;
+  readonly isDynamicBlocklistDisabled: boolean;
+  updateBlocklist(aLeafName: string, aNewBlockStatus: boolean): Promise<any>;
+  collectSystemInfo(): Promise<any>;
+  loadModuleForTesting(aModulePath: string): void;
+}
+
+
+
+interface nsIAboutWindowsMessages extends nsISupports {
+  getMessages(currentWindow: mozIDOMWindowProxy, messages: OutParam<string[][]>, windowTitles: OutParam<string[]>): void;
+}
+
+
+
+}  
+
+declare enum nsIWindowsAlertNotification_ImagePlacement {
+  eInline = 0,
+  eHero = 1,
+  eIcon = 2,
+}
+
+declare global {
+
+namespace nsIWindowsAlertNotification {
+  type ImagePlacement = nsIWindowsAlertNotification_ImagePlacement;
+}
+
+interface nsIWindowsAlertNotification extends nsIAlertNotification, Enums<typeof nsIWindowsAlertNotification_ImagePlacement> {
+  imagePlacement: nsIWindowsAlertNotification.ImagePlacement;
+  imagePathUnchecked: string;
+}
+
+interface nsIWindowsAlertsService extends nsIAlertsService {
+  handleWindowsTag(aWindowsTag: string): Promise<any>;
+  getXmlStringForWindowsAlert(aAlert: nsIAlertNotification, aWindowsTag?: string): string;
+  removeAllNotificationsForInstall(): void;
+}
+
+
+
 interface nsIWinTaskSchedulerService extends nsISupports {
   registerTask(aFolderName: string, aTaskName: string, aDefinitionXML: string, aUpdateExisting?: boolean): void;
   validateTaskDefinition(aDefinitionXML: string): i32;
@@ -163,6 +133,50 @@ interface nsIWinTaskSchedulerService extends nsISupports {
   getFolderTasks(aFolderName: string): string[];
   createFolder(aParentFolderName: string, aSubFolderName: string): void;
   deleteFolder(aParentFolderName: string, aSubFolderName: string): void;
+}
+
+
+
+interface nsIDefaultAgent extends nsISupports {
+  registerTask(aUniqueToken: string): void;
+  updateTask(aUniqueToken: string): void;
+  unregisterTask(aUniqueToken: string): void;
+  uninstall(aUniqueToken: string): void;
+  secondsSinceLastAppRun(): i64;
+  getDefaultBrowser(): string;
+  getReplacePreviousDefaultBrowser(aCurrentBrowser: string): string;
+  getDefaultPdfHandler(): string;
+  sendPing(aCurrentBrowser: string, aPreviousBrowser: string, aPdfHandler: string, aNotificationShown: string, aNotificationAction: string, daysSinceLastAppLaunch: u32, aIsTaskbarPinned: string): void;
+  setDefaultBrowserUserChoice(aAumid: string, aExtraFileExtensions: string[]): void;
+  setDefaultBrowserUserChoiceAsync(aAumid: string, aExtraFileExtensions: string[]): Promise<any>;
+  setDefaultExtensionHandlersUserChoice(aAumid: string, aFileExtensions: string[]): void;
+  agentDisabled(): boolean;
+}
+
+
+
+interface nsIWindowsMutex extends nsISupports {
+  tryLock(): void;
+  isLocked(): boolean;
+  unlock(): void;
+}
+
+interface nsIWindowsMutexFactory extends nsISupports {
+  createMutex(aName: string): nsIWindowsMutex;
+}
+
+
+
+interface nsIWindowsPackageManager extends nsISupports {
+  findUserInstalledPackages(prefix: string[]): string[];
+  getInstalledDate(): u64;
+  campaignId(): Promise<any>;
+}
+
+
+
+interface nsIWinAppHelper extends nsISupports {
+  readonly userCanElevate: boolean;
 }
 
 
@@ -283,14 +297,6 @@ interface nsIWindowsUIUtils extends nsISupports {
 
 
 
-interface nsIWindowsPackageManager extends nsISupports {
-  findUserInstalledPackages(prefix: string[]): string[];
-  getInstalledDate(): u64;
-  campaignId(): Promise<any>;
-}
-
-
-
 interface nsIWindowsRegKey extends nsISupports {
   readonly ROOT_KEY_CLASSES_ROOT?: 2147483648;
   readonly ROOT_KEY_CURRENT_USER?: 2147483649;
@@ -336,23 +342,19 @@ interface nsIWindowsRegKey extends nsISupports {
   writeBinaryValue(name: string, data: string): void;
 }
 
-
-
-interface nsIWinAppHelper extends nsISupports {
-  readonly userCanElevate: boolean;
-}
-
 interface nsIXPCComponents_Interfaces {
+  nsIWindowsShellService: nsJSIID<nsIWindowsShellService, typeof nsIWindowsShellService_LaunchOnLoginEnabledEnumerator & typeof nsIWindowsShellService_PinResult>;
   nsIInstalledApplication: nsJSIID<nsIInstalledApplication>;
   nsIAboutThirdParty: nsJSIID<nsIAboutThirdParty>;
   nsIAboutWindowsMessages: nsJSIID<nsIAboutWindowsMessages>;
   nsIWindowsAlertNotification: nsJSIID<nsIWindowsAlertNotification, typeof nsIWindowsAlertNotification_ImagePlacement>;
   nsIWindowsAlertsService: nsJSIID<nsIWindowsAlertsService>;
+  nsIWinTaskSchedulerService: nsJSIID<nsIWinTaskSchedulerService>;
   nsIDefaultAgent: nsJSIID<nsIDefaultAgent>;
   nsIWindowsMutex: nsJSIID<nsIWindowsMutex>;
   nsIWindowsMutexFactory: nsJSIID<nsIWindowsMutexFactory>;
-  nsIWindowsShellService: nsJSIID<nsIWindowsShellService, typeof nsIWindowsShellService_LaunchOnLoginEnabledEnumerator & typeof nsIWindowsShellService_PinResult>;
-  nsIWinTaskSchedulerService: nsJSIID<nsIWinTaskSchedulerService>;
+  nsIWindowsPackageManager: nsJSIID<nsIWindowsPackageManager>;
+  nsIWinAppHelper: nsJSIID<nsIWinAppHelper>;
   nsIJumpListBuilder: nsJSIID<nsIJumpListBuilder>;
   nsITaskbarOverlayIconController: nsJSIID<nsITaskbarOverlayIconController>;
   nsITaskbarPreview: nsJSIID<nsITaskbarPreview>;
@@ -364,9 +366,7 @@ interface nsIXPCComponents_Interfaces {
   nsITaskbarWindowPreview: nsJSIID<nsITaskbarWindowPreview>;
   nsIWinTaskbar: nsJSIID<nsIWinTaskbar>;
   nsIWindowsUIUtils: nsJSIID<nsIWindowsUIUtils>;
-  nsIWindowsPackageManager: nsJSIID<nsIWindowsPackageManager>;
   nsIWindowsRegKey: nsJSIID<nsIWindowsRegKey>;
-  nsIWinAppHelper: nsJSIID<nsIWinAppHelper>;
 }
 
 }  
