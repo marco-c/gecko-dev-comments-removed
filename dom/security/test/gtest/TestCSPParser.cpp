@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <initializer_list>
+#include <iterator>
+
 #include "gtest/gtest.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Preferences.h"
@@ -79,6 +82,8 @@ class MOZ_RAII AutoBoolPref {
   const char* mName;
   bool mOldValue;
 };
+
+constexpr auto kUrlHashesEnabledPrefName = "security.csp.url-hashes.enabled";
 
 nsresult runTest(
     uint32_t aExpectedPolicyCount,  
@@ -239,6 +244,60 @@ TEST(CSPParser, Directives)
 
 
 
+TEST(CSPParser, DirectivesUrlHashes)
+{
+  static const PolicyTest policies[] = {
+      
+    { "script-src 'url-sha256-idUt1lkA7P9ehz7Yz1P5USBar6neNbzkUPH+WQoM52A='",
+      "script-src 'url-sha256-idUt1lkA7P9ehz7Yz1P5USBar6neNbzkUPH+WQoM52A='" },
+    { "script-src-elem 'url-sha256-abc'",
+      "script-src-elem 'url-sha256-abc'" },
+    { "default-src 'url-sha256-abc'",
+      "default-src 'url-sha256-abc'" },
+    { "worker-src 'url-sha256-abc'",
+      "worker-src 'url-sha256-abc'" },
+    { "script-src 'url-sha384-abc' 'url-sha512-abc'",
+      "script-src 'url-sha384-abc' 'url-sha512-abc'" },
+    { "script-src 'nonce-foo' 'sha256-abc' 'url-sha256-abc' 'self'",
+      "script-src 'nonce-foo' 'sha256-abc' 'url-sha256-abc' 'self'" },
+    
+    { "script-src 'url-sha256-a-b_c='",
+      "script-src 'url-sha256-a+b/c='" },
+      
+  };
+
+  static const PolicyTest policiesWithoutPref[] = {
+      
+    { "script-src 'url-sha256-idUt1lkA7P9ehz7Yz1P5USBar6neNbzkUPH+WQoM52A='",
+      "script-src 'none'" },
+    { "script-src-elem 'url-sha256-abc'",
+      "script-src-elem 'none'" },
+    { "default-src 'url-sha256-abc'",
+      "default-src 'none'" },
+    { "worker-src 'url-sha256-abc'",
+      "worker-src 'none'" },
+    { "script-src 'url-sha384-abc' 'url-sha512-abc'",
+      "script-src 'none'" },
+    { "script-src 'nonce-foo' 'sha256-abc' 'url-sha256-abc' 'self'",
+      "script-src 'nonce-foo' 'sha256-abc' 'self'" },
+    { "script-src 'url-sha256-a-b_c='",
+      "script-src 'none'" },
+      
+  };
+
+  {
+    AutoBoolPref pref(kUrlHashesEnabledPrefName, true);
+    ASSERT_NS_SUCCEEDED(runTestSuite(policies, std::size(policies), 1));
+  }
+  {
+    AutoBoolPref pref(kUrlHashesEnabledPrefName, false);
+    ASSERT_NS_SUCCEEDED(
+        runTestSuite(policiesWithoutPref, std::size(policiesWithoutPref), 1));
+  }
+}
+
+
+
 TEST(CSPParser, Keywords)
 {
   static const PolicyTest policies[] = {
@@ -314,6 +373,41 @@ TEST(CSPParser, IgnoreUpperLowerCasePolicies)
 
   uint32_t policyCount = sizeof(policies) / sizeof(PolicyTest);
   ASSERT_NS_SUCCEEDED(runTestSuite(policies, policyCount, 1));
+}
+
+
+
+TEST(CSPParser, IgnoreUpperLowerCaseUrlHashes)
+{
+  static const PolicyTest policies[] = {
+      
+    
+    
+    { "script-src 'URL-SHA256-AbC'",
+      "script-src 'url-sha256-AbC'" },
+    { "script-src 'Url-Sha384-AbC'",
+      "script-src 'url-sha384-AbC'" },
+      
+  };
+
+  static const PolicyTest policiesWithoutPref[] = {
+      
+    { "script-src 'URL-SHA256-AbC'",
+      "script-src 'none'" },
+    { "script-src 'Url-Sha384-AbC'",
+      "script-src 'none'" },
+      
+  };
+
+  {
+    AutoBoolPref pref(kUrlHashesEnabledPrefName, true);
+    ASSERT_NS_SUCCEEDED(runTestSuite(policies, std::size(policies), 1));
+  }
+  {
+    AutoBoolPref pref(kUrlHashesEnabledPrefName, false);
+    ASSERT_NS_SUCCEEDED(
+        runTestSuite(policiesWithoutPref, std::size(policiesWithoutPref), 1));
+  }
 }
 
 
@@ -589,6 +683,36 @@ TEST(CSPParser, PoliciesWithInvalidSrc)
   
   uint32_t policyCount = (sizeof(policies) / sizeof(PolicyTest)) - 1;
   ASSERT_NS_SUCCEEDED(runTestSuite(policies, policyCount, 1));
+}
+
+
+
+TEST(CSPParser, PoliciesWithInvalidUrlHashes)
+{
+  static const PolicyTest policies[] = {
+      
+    { "script-src 'url-sha256-{invalid}'",
+      "script-src 'none'" },
+    { "script-src 'url-sha256-in$valid'",
+      "script-src 'none'" },
+    { "script-src 'url-sha256-invalid==='",
+      "script-src 'none'" },
+    { "script-src 'url-sha256-=='",
+      "script-src 'none'" },
+    { "script-src 'url-sha256-'",
+      "script-src 'none'" },
+    { "script-src 'url-md5-abc'",
+      "script-src 'none'" },
+    { "script-src 'url-abc'",
+      "script-src 'none'" },
+      
+  };
+
+  
+  for (bool enabled : {true, false}) {
+    AutoBoolPref pref(kUrlHashesEnabledPrefName, enabled);
+    ASSERT_NS_SUCCEEDED(runTestSuite(policies, std::size(policies), 1));
+  }
 }
 
 
@@ -1044,6 +1168,27 @@ TEST(CSPParser, ShorteningPolicies)
     memcpy(&testPol[0].policy, &pol, len * sizeof(char));
     ASSERT_TRUE(
         NS_SUCCEEDED(runTestSuite(testPol, 1, kFuzzyExpectedPolicyCount)));
+  }
+}
+
+
+
+TEST(CSPParser, ShorteningUrlHashPolicies)
+{
+  char pol[] =
+      "script-src 'url-sha256-idUt1lkA7P9ehz7Yz1P5USBar6neNbzkUPH+WQoM52A=' "
+      "'self'";
+
+  for (bool enabled : {true, false}) {
+    AutoBoolPref pref(kUrlHashesEnabledPrefName, enabled);
+    uint32_t len = static_cast<uint32_t>(sizeof(pol));
+    PolicyTest testPol[1];
+    while (--len) {
+      memset(&testPol[0].policy, '\0', kMaxPolicyLength * sizeof(char));
+      memcpy(&testPol[0].policy, &pol, len * sizeof(char));
+      ASSERT_TRUE(
+          NS_SUCCEEDED(runTestSuite(testPol, 1, kFuzzyExpectedPolicyCount)));
+    }
   }
 }
 
