@@ -28,6 +28,7 @@ const OS_WITH_WIN_PIN_PROMPT = {
 };
 const OS_MAC = { isMac: true, isWindows: false };
 const OS_WINDOWS_ONE_CLICK_DEFAULT = { isMac: false, isWindows: true };
+const OS_LINUX = { isLinux: true, isMac: false, isWindows: false };
 
 function makeSplashScreen() {
   const message = OnboardingMessageProvider.getPreonboardingMessages().find(
@@ -484,6 +485,43 @@ add_task(
       ],
       
       ["main.AW_EASY_SETUP"]
+    );
+
+    await cleanup();
+    await popPrefs();
+    sandbox.restore();
+  }
+);
+
+
+
+
+
+
+
+add_task(
+  async function test_aboutwelcome_mr_template_import_skipped_on_linux() {
+    const sandbox = sinon.createSandbox();
+    await pushPrefs(
+      ["browser.shell.checkDefaultBrowser", true],
+      ["browser.migrate.content-modal.about-welcome-behavior", "embedded"]
+    );
+    sandbox.stub(ShellService, "doesAppNeedPin").returns(false);
+    sandbox.stub(ShellService, "doesAppNeedStartMenuPin").returns(false);
+    sandbox.stub(ShellService, "isDefaultBrowserAsync").resolves(true);
+    sandbox.stub(ClientEnvironmentBase, "os").get(() => OS_LINUX);
+
+    await clearHistoryAndBookmarks();
+
+    const { browser, cleanup } = await openMRAboutWelcome();
+
+    await test_screen_content(
+      browser,
+      "does not render the import screen on Linux",
+      
+      ["main.screen"],
+      
+      ["main.AW_EASY_SETUP", "main.AW_IMPORT_SETTINGS_EMBEDDED"]
     );
 
     await cleanup();
