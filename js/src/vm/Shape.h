@@ -5,8 +5,6 @@
 #ifndef vm_Shape_h
 #define vm_Shape_h
 
-#include "js/shadow/Shape.h"  
-
 #include "mozilla/Attributes.h"
 #include "mozilla/MemoryReporting.h"
 
@@ -20,6 +18,7 @@
 #include "js/MemoryMetrics.h"
 #include "js/Printer.h"  
 #include "js/RootingAPI.h"
+#include "js/shadow/Shape.h"  
 #include "js/UbiNode.h"
 #include "util/EnumFlags.h"
 #include "vm/ObjectFlags.h"
@@ -361,6 +360,10 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
     SMALL_SLOTSPAN_MAX = 0x3ff,  
     SMALL_SLOTSPAN_SHIFT = 11,
     SMALL_SLOTSPAN_MASK = uint32_t(SMALL_SLOTSPAN_MAX << SMALL_SLOTSPAN_SHIFT),
+
+    
+    
+    REPLACEABLE_INITIAL_SHAPE_BIT = 1 << 21,
   };
 
  protected:
@@ -540,10 +543,7 @@ class NativeShape : public Shape {
 class SharedShape : public NativeShape {
   friend class js::gc::CellAllocator;
   SharedShape(BaseShape* base, ObjectFlags objectFlags, uint32_t nfixed,
-              SharedPropMap* map, uint32_t mapLength)
-      : NativeShape(Kind::Shared, base, objectFlags, nfixed, map, mapLength) {
-    initSmallSlotSpan();
-  }
+              SharedPropMap* map, uint32_t mapLength);
 
   static SharedShape* new_(JSContext* cx, Handle<BaseShape*> base,
                            ObjectFlags objectFlags, uint32_t nfixed,
@@ -599,6 +599,10 @@ class SharedShape : public NativeShape {
   }
   static uint32_t smallSlotSpanFromImmutableFlags(uint32_t immutableFlags) {
     return (immutableFlags & SMALL_SLOTSPAN_MASK) >> SMALL_SLOTSPAN_SHIFT;
+  }
+
+  bool isReplaceableInitialShape() const {
+    return immutableFlags & REPLACEABLE_INITIAL_SHAPE_BIT;
   }
 
   

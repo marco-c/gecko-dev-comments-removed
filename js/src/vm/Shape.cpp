@@ -9,9 +9,15 @@
 #include "js/Prefs.h"
 #include "js/Printer.h"  
 #include "js/UniquePtr.h"
+#include "vm/ArrayObject.h"
+#include "vm/BoundFunctionObject.h"
+#include "vm/DisposableRecord.h"
+#include "vm/ErrorObject.h"
 #include "vm/JSObject.h"
 #include "vm/JSONPrinter.h"  
+#include "vm/RegExpObject.h"
 #include "vm/ShapeZone.h"
+#include "vm/StringObject.h"
 #include "vm/Watchtower.h"
 
 #include "gc/StableCellHasher-inl.h"
@@ -1218,6 +1224,25 @@ BaseShape* BaseShape::get(JSContext* cx, const JSClass* clasp, JS::Realm* realm,
 }
 
 
+
+static bool HasCustomInitialShape(const JSClass* clasp) {
+  return clasp == &ArrayObject::class_ || ErrorObject::isErrorClass(clasp) ||
+         clasp == &RegExpObject::class_ || clasp == &StringObject::class_ ||
+         clasp == &BoundFunctionObject::class_ ||
+         clasp == &DisposableRecordObject::class_;
+}
+
+SharedShape::SharedShape(BaseShape* base, ObjectFlags objectFlags,
+                         uint32_t nfixed, SharedPropMap* map,
+                         uint32_t mapLength)
+    : NativeShape(Kind::Shared, base, objectFlags, nfixed, map, mapLength) {
+  initSmallSlotSpan();
+  if (mapLength == 0 && HasCustomInitialShape(base->clasp())) {
+    immutableFlags |= REPLACEABLE_INITIAL_SHAPE_BIT;
+  }
+}
+
+
 SharedShape* SharedShape::new_(JSContext* cx, Handle<BaseShape*> base,
                                ObjectFlags objectFlags, uint32_t nfixed,
                                Handle<SharedPropMap*> map, uint32_t mapLength) {
@@ -1530,15 +1555,17 @@ SharedShape* SharedShape::getInitialShape(JSContext* cx, const JSClass* clasp,
       cx, table, Lookup(clasp, realm, proto, nfixed, objectFlags));
   if (ptr) {
     
-    if (proto.isObject()) {
+    
+    SharedShape* shape = *ptr;
+    if (proto.isObject() && !shape->isReplaceableInitialShape()) {
       JSObject* protoObj = proto.toObject();
       Shape* protoShape = protoObj->shape();
       if (!protoShape->cache().isForAdd() &&
           RegisterShapeCache(cx, protoShape)) {
-        protoShape->cacheRef().setShapeWithProto(*ptr);
+        protoShape->cacheRef().setShapeWithProto(shape);
       }
     }
-    return *ptr;
+    return shape;
   }
 
   Rooted<TaggedProto> protoRoot(cx, proto);
@@ -1635,13 +1662,15 @@ SharedShape* SharedShape::getInitialOrPropMapShape(
 
 void SharedShape::insertInitialShape(JSContext* cx,
                                      Handle<SharedShape*> shape) {
+  MOZ_ASSERT(HasCustomInitialShape(shape->getObjectClass()));
+
   using Lookup = InitialShapeHasher::Lookup;
   Lookup lookup(shape->getObjectClass(), shape->realm(), shape->proto(),
                 shape->numFixedSlots(), shape->objectFlags());
 
   auto& table = cx->zone()->shapeZone().initialShapes;
   InitialShapeSet::Ptr p = table.lookup(lookup);
-  MOZ_ASSERT(p);
+  MOZ_RELEASE_ASSERT(p);
 
   
   
@@ -1650,19 +1679,22 @@ void SharedShape::insertInitialShape(JSContext* cx,
     return;
   }
 
+  MOZ_ASSERT(initialShape->isReplaceableInitialShape());
+
   MOZ_ASSERT(initialShape->numFixedSlots() == shape->numFixedSlots());
   MOZ_ASSERT(initialShape->base() == shape->base());
   MOZ_ASSERT(initialShape->objectFlags() == shape->objectFlags());
 
   table.replaceKey(p, lookup, shape.get());
 
+#ifdef DEBUG
   
   if (shape->proto().isObject()) {
-    JSObject* protoObj = shape->proto().toObject();
-    if (protoObj->shape()->cache().isShapeWithProto()) {
-      protoObj->shape()->cacheRef().setNone();
-    }
+    ShapeCachePtr cache = shape->proto().toObject()->shape()->cache();
+    MOZ_ASSERT_IF(cache.isShapeWithProto(),
+                  cache.toShapeWithProto() != initialShape);
   }
+#endif
 }
 
 
