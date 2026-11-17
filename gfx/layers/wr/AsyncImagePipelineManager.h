@@ -118,6 +118,12 @@ class AsyncImagePipelineManager final {
                                 const wr::MixBlendMode& aMixBlendMode);
   void ApplyAsyncImagesOfImageBridge(wr::TransactionBuilder& aSceneBuilderTxn,
                                      wr::TransactionBuilder& aFastTxn);
+
+  
+  
+  
+  bool WaitForPendingRemoteTextures();
+
   void ApplyAsyncImageForPipeline(
       const wr::PipelineId& aPipelineId, wr::TransactionBuilder& aTxn,
       wr::TransactionBuilder& aTxnForImageBridge,

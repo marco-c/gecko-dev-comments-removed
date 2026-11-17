@@ -51,6 +51,10 @@ class WebRenderImageHost : public CompositableHost, public ImageComposite {
                                 const TextureFlags aFlags);
   void UseRemoteTexture(bool aCalledInCallback);
 
+  
+  
+  bool WaitForPendingRemoteTexture();
+
   TextureHost* GetAsTextureHostForComposite(
       AsyncImagePipelineManager* aAsyncImageManager);
 

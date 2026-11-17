@@ -2271,6 +2271,13 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvGetSnapshot(
     return IPC_FAIL_NO_REASON(this);
   }
 
+  
+  
+  
+  if (mLateInit->mAsyncImageManager->WaitForPendingRemoteTextures()) {
+    FlushFrameGeneration(wr::RenderReasons::SNAPSHOT);
+  }
+
   FlushSceneBuilds();
   FlushFrameGeneration(wr::RenderReasons::SNAPSHOT);
   mLateInit->mApi->Readback(start, size, bufferTexture->GetFormat(),
