@@ -32,8 +32,8 @@ namespace js {
 class PropertyResult;
 
 
-extern JS_PUBLIC_DATA const JSClass* const FunctionClassPtr;
-extern JS_PUBLIC_DATA const JSClass* const FunctionExtendedClassPtr;
+extern JS_PUBLIC_DATA const JSClass FunctionClass;
+extern JS_PUBLIC_DATA const JSClass ExtendedFunctionClass;
 
 }  
 
@@ -691,7 +691,7 @@ struct alignas(js::gc::JSClassAlignBytes) JSClass {
   bool emulatesUndefined() const { return flags & JSCLASS_EMULATES_UNDEFINED; }
 
   bool isJSFunction() const {
-    return this == js::FunctionClassPtr || this == js::FunctionExtendedClassPtr;
+    return this == &js::FunctionClass || this == &js::ExtendedFunctionClass;
   }
 
   bool nonProxyCallable() const {

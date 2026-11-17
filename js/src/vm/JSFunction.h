@@ -37,10 +37,6 @@ using Native = JSNative;
 static constexpr std::string_view FunctionConstructorMedialSigils = ") {\n";
 static constexpr std::string_view FunctionConstructorFinalBrace = "\n}";
 
-
-extern const JSClass FunctionClass;
-extern const JSClass ExtendedFunctionClass;
-
 namespace wasm {
 
 class Instance;
