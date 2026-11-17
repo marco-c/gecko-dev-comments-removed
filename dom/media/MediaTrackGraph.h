@@ -1113,7 +1113,8 @@ class MediaTrackGraph {
 
 
 
-  ProcessedMediaTrack* CreateForwardedInputTrack(MediaSegment::Type aType);
+  ProcessedMediaTrack* CreateForwardedInputTrack(
+      MediaSegment::Type aType, MediaTrack::Flags aFlags = MediaTrack::Flags());
   
 
 

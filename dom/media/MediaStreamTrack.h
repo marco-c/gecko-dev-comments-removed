@@ -10,6 +10,8 @@
 #include "PrincipalChangeObserver.h"
 #include "PrincipalHandle.h"
 #include "mozilla/DOMEventTargetHelper.h"
+#include "mozilla/StateMirroring.h"
+#include "mozilla/StateWatching.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/MediaStreamTrackBinding.h"
 #include "mozilla/dom/MediaTrackCapabilitiesBinding.h"
@@ -615,6 +617,12 @@ class MediaStreamTrack : public DOMEventTargetHelper, public SupportsWeakPtr {
 
 
 
+  void OnTrackEnded();
+
+  
+
+
+
   void NotifyEnded();
 
   
@@ -704,6 +712,9 @@ class MediaStreamTrack : public DOMEventTargetHelper, public SupportsWeakPtr {
   bool mEnabled;
   bool mMuted;
   dom::MediaTrackConstraints mConstraints;
+  WatchManager<MediaStreamTrack> mWatchManager;
+  
+  Mirror<bool> mTrackEnded;
 };
 
 }  

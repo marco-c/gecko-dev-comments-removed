@@ -142,7 +142,6 @@ void AudioStreamTrack::SetReadyState(MediaStreamTrackState aState) {
   
   
   
-  
   if (!mCrossGraphs.IsEmpty() && aState == MediaStreamTrackState::Ended) {
     MOZ_ASSERT(!Ended());
     LOG(LogLevel::Verbose,
