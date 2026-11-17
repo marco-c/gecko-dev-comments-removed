@@ -196,7 +196,7 @@ bool BackgroundChildImpl::DeallocPBackgroundLSRequestChild(
 
 BackgroundChildImpl::PBackgroundLocalStorageCacheChild*
 BackgroundChildImpl::AllocPBackgroundLocalStorageCacheChild(
-    const PrincipalInfo& , const nsACString& ,
+    NotNull<nsIPrincipal*> , const nsACString& ,
     const uint32_t& ) {
   MOZ_CRASH(
       "PBackgroundLocalStorageChild actors should be manually "
