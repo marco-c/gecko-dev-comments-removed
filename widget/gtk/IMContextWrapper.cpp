@@ -433,7 +433,6 @@ IMContextWrapper::IMContextWrapper(nsWindow* aOwnerWindow)
       mIsDeletingSurrounding(false),
       mLayoutChanged(false),
       mSetCursorPositionOnKeyEvent(true),
-      mPendingResettingIMContext(false),
       mRetrieveSurroundingSignalReceived(false),
       mMaybeInDeadKeySequence(false),
       mIsIMInAsyncKeyHandlingMode(false),
@@ -533,9 +532,7 @@ nsDependentCSubstring IMContextWrapper::GetIMName() const {
 }
 
 void IMContextWrapper::Init() {
-  MozContainer* container = mOwnerWindow->GetMozContainer();
-  MOZ_ASSERT(container, "container is null");
-  GdkWindow* gdkWindow = gtk_widget_get_window(GTK_WIDGET(container));
+  GdkWindow* gdkWindow = mOwnerWindow->GetGdkWindow();
 
   
   
@@ -810,6 +807,7 @@ void IMContextWrapper::OnDestroyWindow(nsWindow* aWindow) {
   mLastFocusedWindow = nullptr;
   mInputContext.mIMEState.mEnabled = IMEEnabled::Disabled;
   mPendingKeyEvents.Clear();
+  mResettingIMContexts.Clear();
 
   MOZ_LOG(gIMELog, LogLevel::Debug,
           ("0x%p   OnDestroyWindow(), succeeded, Completely destroyed", this));
@@ -1317,25 +1315,61 @@ void IMContextWrapper::OnFocusChangeInGecko(bool aFocus) {
   }
 }
 
-void IMContextWrapper::ResetIME() {
-  MOZ_LOG_FMT(gIMELog, LogLevel::Info,
-              "{} ResetIME(), mCompositionState={}, mIMEFocusState={}",
-              static_cast<void*>(this), GetCompositionStateName(),
-              mIMEFocusState);
+void IMContextWrapper::MaybeResetIME(ResetIMEReason aReason) {
+  const RefPtr<GtkIMContext> activeContext = GetActiveContext();
 
-  GtkIMContext* activeContext = GetActiveContext();
-  if (MOZ_UNLIKELY(!activeContext)) {
+  MOZ_LOG_FMT(gIMELog, LogLevel::Info,
+              "{} MaybeResetIME(aReason={}), mCompositionState={}, "
+              "mIMEFocusState={}, activeContext={}",
+              static_cast<void*>(this), aReason, GetCompositionStateName(),
+              mIMEFocusState, static_cast<void*>(activeContext));
+
+  if (!activeContext) [[unlikely]] {
     MOZ_LOG(gIMELog, LogLevel::Error,
-            ("0x%p   ResetIME(), FAILED, there are no context", this));
+            ("0x%p   MaybeResetIME(), FAILED, there are no context", this));
     return;
   }
+
+  const auto index = mResettingIMContexts.IndexOf(activeContext);
+  constexpr auto kNoIndex = decltype(mResettingIMContexts)::NoIndex;
+  if (index != kNoIndex) [[unlikely]] {
+    ResettingIMContextData& data = mResettingIMContexts[index];
+    
+    
+    
+    if (aReason == ResetIMEReason::SelectionChange &&
+        data.Reason() == aReason) {
+      MOZ_LOG_FMT(
+          gIMELog, LogLevel::Info,
+          "{}   MaybeResetIME() give up to call gtk_im_context_reset({}) for "
+          "avoiding infinite recursive calls",
+          static_cast<void*>(this), static_cast<void*>(activeContext));
+      return;
+    }
+    data.MaybeSetNewReason(aReason);
+  } else {
+    mResettingIMContexts.AppendElement(
+        ResettingIMContextData(activeContext, aReason));
+  }
+  
+  
+  const auto maybeRemoveResettingIMContexts =
+      MakeScopeExit([self = RefPtr{this}, activeContext, index]() {
+        if (index != kNoIndex) {
+          return;
+        }
+        const auto newIndex = self->mResettingIMContexts.IndexOf(activeContext);
+        if (newIndex != kNoIndex) {
+          self->mResettingIMContexts.RemoveElementAt(newIndex);
+        }
+      });
 
   RefPtr<IMContextWrapper> kungFuDeathGrip(this);
   RefPtr<nsWindow> lastFocusedWindow(mLastFocusedWindow);
 
-  mPendingResettingIMContext = false;
+  mResetIMContextAfterCompositionEnd = false;
   MOZ_LOG_FMT(gIMELog, LogLevel::Info,
-              "{}   ResetIME() calling gtk_im_context_reset()...",
+              "{}   MaybeResetIME() calling gtk_im_context_reset()...",
               static_cast<void*>(this));
   gtk_im_context_reset(activeContext);
 
@@ -1345,8 +1379,8 @@ void IMContextWrapper::ResetIME() {
       NS_WARN_IF(lastFocusedWindow != mLastFocusedWindow) ||
       lastFocusedWindow->Destroyed()) {
     MOZ_LOG_FMT(gIMELog, LogLevel::Info,
-                "{}   ResetIME() called gtk_im_context_reset() and focused "
-                "window is changed, "
+                "{}   MaybeResetIME() called gtk_im_context_reset() and "
+                "focused window is changed, "
                 "activeContext={}, mCompositionState={}, mIMEFocusState={}",
                 static_cast<void*>(this), static_cast<void*>(activeContext),
                 GetCompositionStateName(), mIMEFocusState);
@@ -1357,7 +1391,7 @@ void IMContextWrapper::ResetIME() {
   GetCompositionString(activeContext, compositionString);
 
   MOZ_LOG_FMT(gIMELog, LogLevel::Info,
-              "{}   ResetIME() called gtk_im_context_reset(), "
+              "{}   MaybeResetIME() called gtk_im_context_reset(), "
               "activeContext={}, mCompositionState={}, compositionString={}, "
               "mIMEFocusState={}",
               static_cast<void*>(this), static_cast<void*>(activeContext),
@@ -1405,7 +1439,7 @@ nsresult IMContextWrapper::EndIMEComposition(nsWindow* aCaller) {
   
   
   
-  ResetIME();
+  MaybeResetIME(ResetIMEReason::Request);
 
   return NS_OK;
 }
@@ -1794,7 +1828,7 @@ void IMContextWrapper::OnSelectionChange(
       IsComposing() && !selectionChangeData.mOccurredDuringComposition &&
       !selectionChangeData.mCausedByComposition;
   if (occurredBeforeComposition) {
-    mPendingResettingIMContext = true;
+    mResetIMContextAfterCompositionEnd = true;
   }
 
   
@@ -1823,7 +1857,7 @@ void IMContextWrapper::OnSelectionChange(
     
     
     if (IsComposing() || retrievedSurroundingSignalReceived) {
-      ResetIME();
+      MaybeResetIME(ResetIMEReason::SelectionChange);
     }
   }
 
@@ -1934,8 +1968,8 @@ void IMContextWrapper::OnEndCompositionNative(GtkIMContext* aContext) {
     }
   }
 
-  if (mPendingResettingIMContext) {
-    ResetIME();
+  if (mResetIMContextAfterCompositionEnd) {
+    MaybeResetIME(ResetIMEReason::SelectionChange);
   }
 }
 
@@ -2444,7 +2478,7 @@ bool IMContextWrapper::MaybeDispatchKeyEventAsProcessedByIME(
       
       
       
-      ResetIME();
+      MaybeResetIME(ResetIMEReason::FocusChange);
     }
     return false;
   }
