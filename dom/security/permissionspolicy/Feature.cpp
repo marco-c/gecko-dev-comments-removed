@@ -118,6 +118,7 @@ bool Feature::AllowListContains(nsIPrincipal* aPrincipal) const {
   }
 
   
+  
   for (const RefPtr<ParsedSourceExpression>& expression : mSourceExpressions) {
     
     
