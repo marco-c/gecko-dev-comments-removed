@@ -287,6 +287,9 @@ class Http2StreamBase : public nsISupports,
   uint32_t mTxInlineFrameSize{0};
   uint32_t mTxInlineFrameUsed{0};
 
+  
+  nsresult mTransmitError{NS_OK};
+
   uint32_t mRFC7540Priority = 0;  
 
   

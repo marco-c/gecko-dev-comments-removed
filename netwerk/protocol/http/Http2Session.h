@@ -599,6 +599,10 @@ class Http2Session final : public ASpdySession,
   uint32_t mOutputQueueSent;
   UniquePtr<char[]> mOutputQueueBuffer;
 
+  
+  
+  bool OutputQueueHasRoom(uint32_t aCount) const;
+
   PRIntervalTime mPingThreshold;
   PRIntervalTime mLastReadEpoch;      
   PRIntervalTime mLastDataReadEpoch;  

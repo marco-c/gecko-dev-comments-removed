@@ -22,6 +22,7 @@
 #include "Http2StreamTunnel.h"
 #include "Http2WebTransportSession.h"
 #include "LoadContextInfo.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Sprintf.h"
@@ -929,8 +930,13 @@ void Http2Session::CreateFrameHeader(charType dest, uint16_t frameLength,
 char* Http2Session::EnsureOutputBuffer(uint32_t spaceNeeded) {
   
   
-  EnsureBuffer(mOutputQueueBuffer, mOutputQueueUsed + spaceNeeded,
-               mOutputQueueUsed, mOutputQueueSize);
+  CheckedInt<uint32_t> newSize =
+      CheckedInt<uint32_t>(mOutputQueueUsed) + spaceNeeded;
+  if (!newSize.isValid()) {
+    NS_ABORT_OOM(UINT32_MAX);
+  }
+  EnsureBuffer(mOutputQueueBuffer, newSize.value(), mOutputQueueUsed,
+               mOutputQueueSize);
   return mOutputQueueBuffer.get() + mOutputQueueUsed;
 }
 
@@ -3704,7 +3710,7 @@ nsresult Http2Session::OnReadSegment(const char* buf, uint32_t count,
   
   
 
-  if ((mOutputQueueUsed + count) > (mOutputQueueSize - kQueueReserved)) {
+  if (!OutputQueueHasRoom(count)) {
     return NS_BASE_STREAM_WOULD_BLOCK;
   }
 
@@ -3717,12 +3723,18 @@ nsresult Http2Session::OnReadSegment(const char* buf, uint32_t count,
   return NS_OK;
 }
 
+bool Http2Session::OutputQueueHasRoom(uint32_t aCount) const {
+  CheckedInt<uint32_t> needed =
+      CheckedInt<uint32_t>(mOutputQueueUsed) + aCount + kQueueReserved;
+  return needed.isValid() && needed.value() <= mOutputQueueSize;
+}
+
 nsresult Http2Session::CommitToSegmentSize(uint32_t count,
                                            bool forceCommitment) {
   if (mOutputQueueUsed && !mAttemptingEarlyData) FlushOutputQueue();
 
   
-  if ((mOutputQueueUsed + count) <= (mOutputQueueSize - kQueueReserved)) {
+  if (OutputQueueHasRoom(count)) {
     return NS_OK;
   }
 
@@ -3736,16 +3748,28 @@ nsresult Http2Session::CommitToSegmentSize(uint32_t count,
     RealignOutputQueue();
 
     
-    if ((mOutputQueueUsed + count) <= (mOutputQueueSize - kQueueReserved)) {
+    if (OutputQueueHasRoom(count)) {
       return NS_OK;
     }
   }
 
   
-  EnsureOutputBuffer(count + kQueueReserved);
+  CheckedInt<uint32_t> newSize =
+      CheckedInt<uint32_t>(mOutputQueueUsed) + count + kQueueReserved;
+  if (!newSize.isValid() ||
+      newSize.value() >
+          StaticPrefs::network_http_http2_max_output_queue_size()) {
+    LOG3(
+        ("Http2Session::CommitToSegmentSize %p output queue would exceed "
+         "the limit used=%u count=%u",
+         this, mOutputQueueUsed, count));
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
 
-  MOZ_ASSERT((mOutputQueueUsed + count) <= (mOutputQueueSize - kQueueReserved),
-             "buffer not as large as expected");
+  EnsureBuffer(mOutputQueueBuffer, newSize.value(), mOutputQueueUsed,
+               mOutputQueueSize);
+
+  MOZ_ASSERT(OutputQueueHasRoom(count), "buffer not as large as expected");
 
   return NS_OK;
 }
