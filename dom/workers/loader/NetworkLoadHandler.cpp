@@ -13,6 +13,7 @@
 #include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/InternalResponse.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/Response.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/ServiceWorkerBinding.h"
@@ -170,7 +171,8 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
   
   
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(request);
-  nsAutoCString tCspHeaderValue, tCspROHeaderValue, tRPHeaderCValue;
+  PolicyContainer::Headers policyContainerHeaders;
+  nsAutoCString tRPHeaderCValue;
 
   if (httpChannel) {
     bool requestSucceeded;
@@ -181,11 +183,7 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
       return NS_ERROR_NOT_AVAILABLE;
     }
 
-    (void)httpChannel->GetResponseHeader("content-security-policy"_ns,
-                                         tCspHeaderValue);
-
-    (void)httpChannel->GetResponseHeader(
-        "content-security-policy-report-only"_ns, tCspROHeaderValue);
+    policyContainerHeaders = PolicyContainer::Headers::FromChannel(httpChannel);
 
     (void)httpChannel->GetResponseHeader("referrer-policy"_ns, tRPHeaderCValue);
 
@@ -285,8 +283,8 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
     
     
     if (!CSP_ShouldResponseInheritCSP(channel)) {
-      MOZ_TRY(mWorkerRef->Private()->SetCSPFromHeaderValues(tCspHeaderValue,
-                                                            tCspROHeaderValue));
+      MOZ_TRY(mWorkerRef->Private()->SetPolicyContainerFromHeaders(
+          policyContainerHeaders));
     }
 
     mWorkerRef->Private()->UpdateReferrerInfoFromHeader(tRPHeaderCValue);

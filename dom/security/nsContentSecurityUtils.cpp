@@ -1026,16 +1026,12 @@ nsresult CheckCSPFrameAncestorPolicy(nsIChannel* aChannel,
     return rv;
   }
 
-  nsAutoCString tCspHeaderValue, tCspROHeaderValue;
+  PolicyContainer::Headers headers;
   if (httpChannel) {
-    (void)httpChannel->GetResponseHeader("content-security-policy"_ns,
-                                         tCspHeaderValue);
-
-    (void)httpChannel->GetResponseHeader(
-        "content-security-policy-report-only"_ns, tCspROHeaderValue);
+    headers = PolicyContainer::Headers::FromChannel(httpChannel);
 
     
-    if (tCspHeaderValue.IsEmpty() && tCspROHeaderValue.IsEmpty()) {
+    if (headers.IsEmpty()) {
       return NS_OK;
     }
   }
@@ -1044,22 +1040,6 @@ nsresult CheckCSPFrameAncestorPolicy(nsIChannel* aChannel,
   rv = nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
       aChannel, getter_AddRefs(resultPrincipal));
   NS_ENSURE_SUCCESS(rv, rv);
-
-  RefPtr<extensions::WebExtensionPolicy> addonPolicy;
-  if (!httpChannel) {
-    addonPolicy = BasePrincipal::Cast(resultPrincipal)->AddonPolicy();
-    if (!addonPolicy) {
-      
-      
-      return NS_OK;
-    }
-  }
-
-  RefPtr<nsCSPContext> csp = new nsCSPContext();
-  
-  
-  
-  csp->SuppressParserLogMessages();
 
   nsCOMPtr<nsIURI> selfURI;
   nsAutoCString referrerSpec;
@@ -1075,32 +1055,15 @@ nsresult CheckCSPFrameAncestorPolicy(nsIChannel* aChannel,
     NS_GetFinalChannelURI(aChannel, getter_AddRefs(selfURI));
   }
 
-  uint64_t innerWindowID = loadInfo->GetInnerWindowID();
-
-  rv = csp->SetRequestContextWithPrincipal(resultPrincipal, selfURI,
-                                           referrerSpec, innerWindowID);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  if (addonPolicy) {
-    csp->AppendPolicy(addonPolicy->BaseCSP(), false, false);
-    csp->AppendPolicy(addonPolicy->ExtensionPageCSP(), false, false);
-  } else {
-    NS_ConvertASCIItoUTF16 cspHeaderValue(tCspHeaderValue);
-    NS_ConvertASCIItoUTF16 cspROHeaderValue(tCspROHeaderValue);
-
-    
-    if (!cspHeaderValue.IsEmpty()) {
-      rv = CSP_AppendCSPFromHeader(csp, cspHeaderValue, false);
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
-
-    
-    if (!cspROHeaderValue.IsEmpty()) {
-      rv = CSP_AppendCSPFromHeader(csp, cspROHeaderValue, true);
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
+  
+  
+  RefPtr<PolicyContainer> policyContainer =
+      MOZ_TRY(PolicyContainer::CreateForFrameAncestorsCheck(
+          resultPrincipal, selfURI, referrerSpec, loadInfo->GetInnerWindowID(),
+          headers));
+  nsCOMPtr<nsIContentSecurityPolicy> csp = policyContainer->GetCSP();
+  if (!csp) {
+    return NS_OK;
   }
 
   
