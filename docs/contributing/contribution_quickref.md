@@ -10,6 +10,11 @@ Don’t hesitate to look at the {doc}`Getting Set Up To Work On The Firefox Code
 
 ## Before you start
 
+:::{important}
+Before getting started on coding, read our
+{doc}`contributor guidelines </setup/contributing_code>`.
+:::
+
 Please register and create your account for
 
 [Bugzilla](https://bugzilla.mozilla.org/) : web-based general-purpose bug tracking system.
@@ -261,6 +266,9 @@ This requires [level 1 commit access](https://www.mozilla.org/about/governance/p
 
 You can ask your reviewer to submit the patch for you if you don't have that
 level of access.
+
+To request level 1 access, follow the steps in
+{doc}`Request commit access level 1 <levelling-up>`.
 :::
 
 {doc}`More information </tools/try/index>`
