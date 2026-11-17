@@ -22,7 +22,6 @@ ChromeUtils.defineESModuleGetters(
     RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
     TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",
     FEATURES: "chrome://global/content/ml/EngineProcess.sys.mjs",
-    PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   },
   ES_MODULES_OPTIONS
 );
@@ -47,14 +46,14 @@ if (IN_WORKER) {
   ChromeUtils.defineLazyGetter(lazy, "console", () => {
     return console.createInstance({
       maxLogLevel: logLevel, // we can't use maxLogLevelPref in workers.
-      prefix: "GeckoMLUtils",
+      logModule: "GeckoMLUtils",
     });
   });
 } else {
   ChromeUtils.defineLazyGetter(lazy, "console", () => {
     return console.createInstance({
       maxLogLevelPref: "browser.ml.logLevel",
-      prefix: "GeckoMLUtils",
+      logModule: "GeckoMLUtils",
     });
   });
 }
@@ -1139,16 +1138,6 @@ export async function fileDisplayInfoForEngineIds(engineIds, files) {
 export function generateUUID() {
   lazy.console.debug("generating uuid");
   return crypto.randomUUID();
-}
-
-/**
- * Checks if we are in private browsing mode
- *
- * @returns {boolean} True if we are in private browsing mode
- */
-export function isPrivateBrowsing() {
-  const win = Services.wm.getMostRecentBrowserWindow() ?? null;
-  return lazy.PrivateBrowsingUtils.isWindowPrivate(win);
 }
 
 /**
