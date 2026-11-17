@@ -1474,15 +1474,17 @@ if (getBuildConfiguration("jitspew")) {
       const ionJSON = wasmGetIon(code, 2);
       const unoptimized = wasmIonGetFirstMIRPass(ionJSON);
       const optimized = wasmIonGetLastMIRPass(ionJSON);
-      assertOpcodesInOrder(unoptimized, ["WasmRefTestConcrete", "Test", "WasmRefCastConcrete", "WasmLoadInternalField", "WasmLoadField"]);
-      assertOpcodesInOrder(optimized, ["WasmRefTestConcrete", "Test", "WasmRefCastInfallible", "WasmLoadInternalField", "WasmLoadField"]);
+      assertOpcodesInOrder(unoptimized, ["WasmLoadInternalField", "WasmLoadField", "WasmRefTestConcrete", "Test", "WasmRefCastConcrete", "WasmLoadInternalField", "WasmLoadField"]);
+      
+      assertOpcodesInOrder(optimized, ["WasmLoadInternalField", "WasmLoadField", "WasmRefTestConcrete", "Test", "WasmRefCastInfallible", "!WasmLoadInternalField", "WasmLoadField"]);
     }
     {
       const ionJSON = wasmGetIon(code, 3);
       const unoptimized = wasmIonGetFirstMIRPass(ionJSON);
       const optimized = wasmIonGetLastMIRPass(ionJSON);
-      assertOpcodesInOrder(unoptimized, ["WasmRefTestConcrete", "Test", "WasmRefCastConcrete", "WasmLoadInternalField", "WasmLoadField"]);
-      assertOpcodesInOrder(optimized, ["WasmRefTestConcrete", "Test", "WasmRefCastInfallible", "WasmLoadInternalField", "WasmLoadField"]);
+      assertOpcodesInOrder(unoptimized, ["WasmLoadInternalField", "WasmLoadField", "WasmRefTestConcrete", "Test", "WasmRefCastConcrete", "WasmLoadInternalField", "WasmLoadField"]);
+      
+      assertOpcodesInOrder(optimized, ["WasmLoadInternalField", "WasmLoadField", "WasmRefTestConcrete", "Test", "WasmRefCastInfallible", "!WasmLoadInternalField", "WasmLoadField"]);
     }
   }
 }
