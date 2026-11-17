@@ -312,9 +312,6 @@ class nsMemoryReporterManager final : public nsIMemoryReporterManager,
   
   PendingReportersState* mPendingReportersState;  
 
-  
-  nsCOMPtr<nsIEventTarget> mThreadPool MOZ_GUARDED_BY(mMutex);
-
   PendingProcessesState* GetStateForGeneration(uint32_t aGeneration);
   [[nodiscard]] static bool StartChildReport(
       mozilla::MemoryReportingProcess* aChild,
