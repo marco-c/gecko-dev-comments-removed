@@ -150,7 +150,7 @@ TEST_F(TestAudioDecoderInputTrack, BasicAppendData) {
 
   
   RefPtr<AudioData> audio1 = CreateAudioData(5);
-  mTrack->AppendData(audio1, nullptr);
+  mTrack->AppendData(audio1, PRINCIPAL_HANDLE_NONE);
   start = end;
   end += 10;
   mTrack->ProcessInput(start, end, kNoFlags);
@@ -160,7 +160,7 @@ TEST_F(TestAudioDecoderInputTrack, BasicAppendData) {
 
   
   RefPtr<AudioData> audio2 = CreateAudioData(10);
-  mTrack->AppendData(audio2, nullptr);
+  mTrack->AppendData(audio2, PRINCIPAL_HANDLE_NONE);
   start = end;
   end += 10;
   mTrack->ProcessInput(start, end, kNoFlags);
@@ -188,7 +188,7 @@ TEST_F(TestAudioDecoderInputTrack, ClearFuture) {
   
   
   RefPtr<AudioData> audio1 = CreateAudioData(30);
-  mTrack->AppendData(audio1, nullptr);
+  mTrack->AppendData(audio1, PRINCIPAL_HANDLE_NONE);
   TrackTime start = 0;
   TrackTime end = 10;
   mTrack->ProcessInput(start, end, kNoFlags);
@@ -212,7 +212,7 @@ TEST_F(TestAudioDecoderInputTrack, ClearFuture) {
   
   
   RefPtr<AudioData> audio2 = CreateAudioData(10);
-  mTrack->AppendData(audio2, nullptr);
+  mTrack->AppendData(audio2, PRINCIPAL_HANDLE_NONE);
   start = end;
   end += 10;
   mTrack->ProcessInput(start, end, kNoFlags);
@@ -249,7 +249,7 @@ TEST_F(TestAudioDecoderInputTrack, ClearFutureTimeStretched) {
   RefPtr<AudioDecoderInputTrack> track =
       CreateTrack(mGraph, NS_GetCurrentThread(), mInfo, 0.5, false);
   RefPtr<AudioData> audio = CreateAudioData(4096);
-  track->AppendData(audio, nullptr);
+  track->AppendData(audio, PRINCIPAL_HANDLE_NONE);
   track->ProcessInput(0, 10, kNoFlags);
 
   track->ClearFutureData();
@@ -267,7 +267,7 @@ TEST_F(TestAudioDecoderInputTrack, InputRateChange) {
   
   
   RefPtr<AudioData> audio1 = CreateAudioData(10);
-  mTrack->AppendData(audio1, nullptr);
+  mTrack->AppendData(audio1, PRINCIPAL_HANDLE_NONE);
   TrackTime start = 0;
   TrackTime end = 10;
   mTrack->ProcessInput(start, end, kNoFlags);
@@ -279,7 +279,7 @@ TEST_F(TestAudioDecoderInputTrack, InputRateChange) {
   
   mInfo.mRate = kRate / 2;
   RefPtr<AudioData> audioHalfSampleRate = CreateAudioData(5);
-  mTrack->AppendData(audioHalfSampleRate, nullptr);
+  mTrack->AppendData(audioHalfSampleRate, PRINCIPAL_HANDLE_NONE);
   start = end;
   end += 10;
   mTrack->ProcessInput(start, end, kNoFlags);
@@ -292,7 +292,7 @@ TEST_F(TestAudioDecoderInputTrack, InputRateChange) {
   mInfo.mRate = kRate * 2;
   RefPtr<AudioData> audioDoubleSampleRate = CreateAudioData(10);
   TrackTime expectedDuration = audioDoubleSampleRate->Frames() / 2;
-  mTrack->AppendData(audioDoubleSampleRate, nullptr);
+  mTrack->AppendData(audioDoubleSampleRate, PRINCIPAL_HANDLE_NONE);
   start = end;
   end += 10;
   mTrack->ProcessInput(start, end, kNoFlags);
@@ -312,7 +312,7 @@ TEST_F(TestAudioDecoderInputTrack, ChannelChange) {
   
   mInfo.mChannels = 1;
   RefPtr<AudioData> audioMono = CreateAudioData(10);
-  mTrack->AppendData(audioMono, nullptr);
+  mTrack->AppendData(audioMono, PRINCIPAL_HANDLE_NONE);
   TrackTime start = 0;
   TrackTime end = 10;
   mTrack->ProcessInput(start, end, kNoFlags);
@@ -322,7 +322,7 @@ TEST_F(TestAudioDecoderInputTrack, ChannelChange) {
   
   mInfo.mChannels = 5;
   RefPtr<AudioData> audioWithFiveChannels = CreateAudioData(10);
-  mTrack->AppendData(audioWithFiveChannels, nullptr);
+  mTrack->AppendData(audioWithFiveChannels, PRINCIPAL_HANDLE_NONE);
   start = end;
   end += 10;
   mTrack->ProcessInput(start, end, kNoFlags);
@@ -336,7 +336,7 @@ TEST_F(TestAudioDecoderInputTrack, BatchedData) {
   uint32_t appendedFrames = 0;
   RefPtr<AudioData> audio = CreateAudioData(10);
   for (size_t idx = 0; idx < 50; idx++) {
-    mTrack->AppendData(audio, nullptr);
+    mTrack->AppendData(audio, PRINCIPAL_HANDLE_NONE);
     appendedFrames += audio->Frames();
   }
 
@@ -374,7 +374,7 @@ TEST_F(TestAudioDecoderInputTrack, OutputAndEndEvent) {
   
   RefPtr<AudioData> audio = CreateAudioData(10);
   auto outputPromise = TakeN(mTrack->OnOutput(), 1);
-  mTrack->AppendData(audio, nullptr);
+  mTrack->AppendData(audio, PRINCIPAL_HANDLE_NONE);
   mTrack->NotifyEndOfStream();
   TrackTime start = 0;
   TrackTime end = 10;
@@ -411,7 +411,7 @@ TEST_F(TestAudioDecoderInputTrack, PlaybackRateChange) {
   
   
   RefPtr<AudioData> audio = CreateAudioData(100);
-  mTrack->AppendData(audio, nullptr);
+  mTrack->AppendData(audio, PRINCIPAL_HANDLE_NONE);
   mTrack->NotifyEndOfStream();
 
   
@@ -445,7 +445,7 @@ TEST(AudioDecoderInputTrack, LimitsLargeRateTransposeOutput)
   RefPtr<AudioDecoderInputTrack> track =
       CreateTrack(graph, NS_GetCurrentThread(), info, 0.0625, false);
   RefPtr<AudioData> audio = CreateAudioDataFromInfo(inputFrames, info);
-  track->AppendData(audio, nullptr);
+  track->AppendData(audio, PRINCIPAL_HANDLE_NONE);
 
   
   

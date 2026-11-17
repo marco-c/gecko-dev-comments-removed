@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AudioGenerator.h"
 #include "MediaEngineWebRTCAudio.h"
 #include "MediaTrackGraphImpl.h"
@@ -258,9 +256,8 @@ TEST(TestAudioInputProcessing, ProcessDataWithDifferentPrincipals)
 
   RefPtr<nsIPrincipal> dummy_principal =
       NullPrincipal::CreateWithoutOriginAttributes();
-  const PrincipalHandle principal1 = MakePrincipalHandle(dummy_principal.get());
-  const PrincipalHandle principal2 =
-      MakePrincipalHandle(nsContentUtils::GetSystemPrincipal());
+  const PrincipalHandle principal1(dummy_principal.get());
+  const PrincipalHandle principal2(nsContentUtils::GetSystemPrincipal());
 
   
   nsTArray<std::pair<TrackTime, PrincipalHandle>> framesWithPrincipal = {

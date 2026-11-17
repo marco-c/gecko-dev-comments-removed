@@ -2,7 +2,6 @@
 
 
 
-
 #include "AudioResampler.h"
 #include "gtest/gtest.h"
 #include "nsContentUtils.h"
@@ -52,8 +51,7 @@ AudioSegment CreateAudioSegment(uint32_t aFrames, uint32_t aChannels,
 
 TEST(TestAudioResampler, OutAudioSegment_Float)
 {
-  const PrincipalHandle testPrincipal =
-      MakePrincipalHandle(nsContentUtils::GetSystemPrincipal());
+  const PrincipalHandle testPrincipal(nsContentUtils::GetSystemPrincipal());
 
   uint32_t in_frames = 10;
   uint32_t out_frames = 40;
@@ -108,8 +106,7 @@ TEST(TestAudioResampler, OutAudioSegment_Float)
 
 TEST(TestAudioResampler, OutAudioSegment_Short)
 {
-  const PrincipalHandle testPrincipal =
-      MakePrincipalHandle(nsContentUtils::GetSystemPrincipal());
+  const PrincipalHandle testPrincipal(nsContentUtils::GetSystemPrincipal());
 
   uint32_t in_frames = 10;
   uint32_t out_frames = 40;
@@ -195,8 +192,7 @@ TEST(TestAudioResampler, OutAudioSegmentLargerThanResampledInput_Float)
 
 TEST(TestAudioResampler, InAudioSegment_Float)
 {
-  const PrincipalHandle testPrincipal =
-      MakePrincipalHandle(nsContentUtils::GetSystemPrincipal());
+  const PrincipalHandle testPrincipal(nsContentUtils::GetSystemPrincipal());
 
   uint32_t in_frames = 10;
   uint32_t out_frames = 20;
@@ -260,8 +256,7 @@ TEST(TestAudioResampler, InAudioSegment_Float)
 
 TEST(TestAudioResampler, InAudioSegment_Short)
 {
-  const PrincipalHandle testPrincipal =
-      MakePrincipalHandle(nsContentUtils::GetSystemPrincipal());
+  const PrincipalHandle testPrincipal(nsContentUtils::GetSystemPrincipal());
 
   uint32_t in_frames = 10;
   uint32_t out_frames = 20;
@@ -326,8 +321,7 @@ TEST(TestAudioResampler, InAudioSegment_Short)
 
 TEST(TestAudioResampler, ChannelChange_MonoToStereo)
 {
-  const PrincipalHandle testPrincipal =
-      MakePrincipalHandle(nsContentUtils::GetSystemPrincipal());
+  const PrincipalHandle testPrincipal(nsContentUtils::GetSystemPrincipal());
 
   uint32_t in_frames = 10;
   uint32_t out_frames = 40;
@@ -361,8 +355,7 @@ TEST(TestAudioResampler, ChannelChange_MonoToStereo)
 
 TEST(TestAudioResampler, ChannelChange_StereoToMono)
 {
-  const PrincipalHandle testPrincipal =
-      MakePrincipalHandle(nsContentUtils::GetSystemPrincipal());
+  const PrincipalHandle testPrincipal(nsContentUtils::GetSystemPrincipal());
 
   uint32_t in_frames = 10;
   uint32_t out_frames = 40;
@@ -396,8 +389,7 @@ TEST(TestAudioResampler, ChannelChange_StereoToMono)
 
 TEST(TestAudioResampler, ChannelChange_StereoToQuad)
 {
-  const PrincipalHandle testPrincipal =
-      MakePrincipalHandle(nsContentUtils::GetSystemPrincipal());
+  const PrincipalHandle testPrincipal(nsContentUtils::GetSystemPrincipal());
 
   uint32_t in_frames = 10;
   uint32_t out_frames = 40;
@@ -435,8 +427,7 @@ TEST(TestAudioResampler, ChannelChange_StereoToQuad)
 
 TEST(TestAudioResampler, ChannelChange_QuadToStereo)
 {
-  const PrincipalHandle testPrincipal =
-      MakePrincipalHandle(nsContentUtils::GetSystemPrincipal());
+  const PrincipalHandle testPrincipal(nsContentUtils::GetSystemPrincipal());
 
   uint32_t in_frames = 10;
   uint32_t out_frames = 40;
@@ -474,8 +465,7 @@ void printAudioSegment(const AudioSegment& segment);
 
 TEST(TestAudioResampler, ChannelChange_Discontinuity)
 {
-  const PrincipalHandle testPrincipal =
-      MakePrincipalHandle(nsContentUtils::GetSystemPrincipal());
+  const PrincipalHandle testPrincipal(nsContentUtils::GetSystemPrincipal());
 
   uint32_t in_rate = 24000;
   uint32_t out_rate = 48000;
@@ -537,8 +527,7 @@ TEST(TestAudioResampler, ChannelChange_Discontinuity)
 
 TEST(TestAudioResampler, ChannelChange_Discontinuity2)
 {
-  const PrincipalHandle testPrincipal =
-      MakePrincipalHandle(nsContentUtils::GetSystemPrincipal());
+  const PrincipalHandle testPrincipal(nsContentUtils::GetSystemPrincipal());
 
   uint32_t in_rate = 24000;
   uint32_t out_rate = 48000;
@@ -606,8 +595,7 @@ TEST(TestAudioResampler, ChannelChange_Discontinuity2)
 
 TEST(TestAudioResampler, ChannelChange_Discontinuity3)
 {
-  const PrincipalHandle testPrincipal =
-      MakePrincipalHandle(nsContentUtils::GetSystemPrincipal());
+  const PrincipalHandle testPrincipal(nsContentUtils::GetSystemPrincipal());
 
   uint32_t in_rate = 48000;
   uint32_t out_rate = 48000;

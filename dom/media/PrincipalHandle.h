@@ -2,10 +2,10 @@
 
 
 
-
 #ifndef DOM_MEDIA_PRINCIPALHANDLE_H_
 #define DOM_MEDIA_PRINCIPALHANDLE_H_
 
+#include "mozilla/Atomics.h"
 #include "nsIPrincipal.h"
 #include "nsProxyRelease.h"
 
@@ -21,21 +21,46 @@ enum class PrincipalPrivacy : uint8_t { Private, NonPrivate };
 
 
 
-typedef nsMainThreadPtrHandle<nsIPrincipal> PrincipalHandle;
 
-inline PrincipalHandle MakePrincipalHandle(nsIPrincipal* aPrincipal) {
-  RefPtr<nsMainThreadPtrHolder<nsIPrincipal>> holder =
-      new nsMainThreadPtrHolder<nsIPrincipal>(
-          "MakePrincipalHandle::nsIPrincipal", aPrincipal);
-  return PrincipalHandle(holder);
-}
 
-#define PRINCIPAL_HANDLE_NONE nullptr
+
+
+
+
+
+
+
+struct PrincipalHandle {
+  explicit PrincipalHandle(std::nullptr_t) {}
+  explicit PrincipalHandle(nsIPrincipal* aPrincipal)
+      : mPrincipal(new nsMainThreadPtrHolder<nsIPrincipal>(
+            "PrincipalHandle::mPrincipal", aPrincipal)),
+        mGenerationId(sNextGenerationId++) {}
+
+  bool operator==(const PrincipalHandle& aOther) const {
+    return mGenerationId == aOther.mGenerationId;
+  }
+  bool operator!=(const PrincipalHandle& aOther) const {
+    return !(*this == aOther);
+  }
+
+  friend nsIPrincipal* GetPrincipalFromHandle(
+      const PrincipalHandle& aPrincipalHandle);
+
+ private:
+  nsMainThreadPtrHandle<nsIPrincipal> mPrincipal;
+  
+  uint64_t mGenerationId = 0;
+
+  static inline Atomic<uint64_t> sNextGenerationId{1};
+};
+
+#define PRINCIPAL_HANDLE_NONE PrincipalHandle(nullptr)
 
 inline nsIPrincipal* GetPrincipalFromHandle(
     const PrincipalHandle& aPrincipalHandle) {
   MOZ_ASSERT(NS_IsMainThread());
-  return aPrincipalHandle.get();
+  return aPrincipalHandle.mPrincipal.get();
 }
 
 inline bool PrincipalHandleMatches(const PrincipalHandle& aPrincipalHandle,
