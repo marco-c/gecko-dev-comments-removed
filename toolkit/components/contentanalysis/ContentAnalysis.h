@@ -241,6 +241,14 @@ class ContentAnalysis final : public nsIContentAnalysis,
       mozilla::dom::WindowGlobalParent* aWindow, nsITransferable* aTransferable,
       ContentAnalysisCallback* aResolver);
 
+  
+  
+  
+  
+  static bool IsSamePageAndSite(dom::WindowGlobalParent* aRequesting,
+                                uint64_t aSourceTopInnerWindowId,
+                                nsIPrincipal* aSourcePrincipal);
+
   using FilesAllowedPromise = MozPromise<nsCOMArray<nsIFile>, nsresult, true>;
   
   
