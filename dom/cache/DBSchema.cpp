@@ -77,7 +77,7 @@ const int32_t kHackyDowngradeSchemaVersion = 25;
 const int32_t kHackyPaddingSizePresentVersion = 27;
 
 
-const int32_t kLatestSchemaVersion = 31;
+const int32_t kLatestSchemaVersion = 32;
 
 
 
@@ -177,12 +177,6 @@ const char kTableResponseHeaders[] =
     "value TEXT NOT NULL, "
     "entry_id INTEGER NOT NULL REFERENCES entries(id) ON DELETE CASCADE"
     ")";
-
-
-
-const char kIndexResponseHeadersName[] =
-    "CREATE INDEX response_headers_name_index "
-    "ON response_headers (name)";
 
 
 const char kIndexResponseHeadersEntryId[] =
@@ -549,8 +543,6 @@ nsresult CreateOrMigrateSchema(nsIFile& aDBDir, mozIStorageConnection& aConn) {
         aConn.ExecuteSimpleSQL(nsLiteralCString(kTableRequestHeaders))));
     QM_TRY(MOZ_TO_RESULT(
         aConn.ExecuteSimpleSQL(nsLiteralCString(kTableResponseHeaders))));
-    QM_TRY(MOZ_TO_RESULT(
-        aConn.ExecuteSimpleSQL(nsLiteralCString(kIndexResponseHeadersName))));
     QM_TRY(MOZ_TO_RESULT(aConn.ExecuteSimpleSQL(
         nsLiteralCString(kIndexResponseHeadersEntryId))));
     QM_TRY(MOZ_TO_RESULT(
@@ -2508,7 +2500,6 @@ nsresult Validate(mozIStorageConnection& aConn) {
       Expect("entries_request_match_index", "index", kIndexEntriesRequest),
       Expect("request_headers", "table", kTableRequestHeaders),
       Expect("response_headers", "table", kTableResponseHeaders),
-      Expect("response_headers_name_index", "index", kIndexResponseHeadersName),
       Expect("response_headers_entry_id_index", "index",
              kIndexResponseHeadersEntryId),
       Expect("response_url_list", "table", kTableResponseUrlList),
@@ -2621,6 +2612,8 @@ nsresult MigrateFrom29To30(nsIFile& aDBDir, mozIStorageConnection& aConn,
                            bool& aRewriteSchema);
 nsresult MigrateFrom30To31(nsIFile& aDBDir, mozIStorageConnection& aConn,
                            bool& aRewriteSchema);
+nsresult MigrateFrom31To32(nsIFile& aDBDir, mozIStorageConnection& aConn,
+                           bool& aRewriteSchema);
 
 constexpr Migration sMigrationList[] = {
     Migration{15, MigrateFrom15To16}, Migration{16, MigrateFrom16To17},
@@ -2631,6 +2624,7 @@ constexpr Migration sMigrationList[] = {
     Migration{25, MigrateFrom25To26}, Migration{26, MigrateFrom26To27},
     Migration{27, MigrateFrom27To28}, Migration{28, MigrateFrom28To29},
     Migration{29, MigrateFrom29To30}, Migration{30, MigrateFrom30To31},
+    Migration{31, MigrateFrom31To32},
 };
 
 nsresult RewriteEntriesSchema(mozIStorageConnection& aConn) {
@@ -3306,6 +3300,19 @@ nsresult MigrateFrom30To31(nsIFile& aDBDir, mozIStorageConnection& aConn,
   QM_TRY(MOZ_TO_RESULT(aConn.SetSchemaVersion(31)));
 
   aRewriteSchema = true;
+
+  return NS_OK;
+}
+
+nsresult MigrateFrom31To32(nsIFile& aDBDir, mozIStorageConnection& aConn,
+                           bool& aRewriteSchema) {
+  MOZ_ASSERT(!NS_IsMainThread());
+
+  
+  QM_TRY(MOZ_TO_RESULT(
+      aConn.ExecuteSimpleSQL("DROP INDEX response_headers_name_index "_ns)));
+
+  QM_TRY(MOZ_TO_RESULT(aConn.SetSchemaVersion(32)));
 
   return NS_OK;
 }
