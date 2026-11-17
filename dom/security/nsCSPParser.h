@@ -6,6 +6,7 @@
 #define nsCSPParser_h_
 
 #include "PolicyTokenizer.h"
+#include "mozilla/UniquePtr.h"
 #include "nsCSPContext.h"
 #include "nsCSPUtils.h"
 #include "nsIURI.h"
@@ -58,6 +59,14 @@ class nsCSPParser {
 
 
 
+
+  static mozilla::UniquePtr<nsCSPBaseSrc> parseSingleSourceExpression(
+      const nsAString& aSourceExpression, nsIPrincipal* aPrincipal);
+
+  
+
+
+
   static bool isValidBase64Value(const nsAString& aValue);
 
  private:
@@ -81,6 +90,7 @@ class nsCSPParser {
   void handleTrustedTypesDirective(nsCSPDirective* aDir);
   void sourceList(nsTArray<nsCSPBaseSrc*>& outSrcs);
   nsCSPBaseSrc* sourceExpression();
+  nsCSPBaseSrc* schemeOrHostSource();
   nsCSPSchemeSrc* schemeSource();
   nsCSPHostSrc* hostSource();
   nsCSPBaseSrc* keywordSource();
@@ -220,6 +230,10 @@ class nsCSPParser {
   
   
   bool mParsingFrameAncestorsDir;
+
+  
+  
+  bool mOriginOnly;
 
   policyTokens mTokens;
   nsIURI* mSelfURI;
