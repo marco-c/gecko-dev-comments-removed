@@ -18,6 +18,7 @@ ChromeUtils.defineESModuleGetters(this, {
   Chat: "moz-src:///browser/components/aiwindow/models/Chat.sys.mjs",
   ChatConversation:
     "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs",
+  GET_OPEN_TABS: "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs",
   getModelForChoice:
     "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
   IntentClassifier:
@@ -28,6 +29,8 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesConstants.sys.mjs",
   MENTION_TYPE:
     "moz-src:///browser/components/urlbar/SmartbarMentionsPanelSearch.sys.mjs",
+  MESSAGE_ROLE:
+    "moz-src:///browser/components/aiwindow/ui/modules/ChatEnums.sys.mjs",
   openAIEngine: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
   SmartbarMentionsPanelSearch:
     "moz-src:///browser/components/urlbar/SmartbarMentionsPanelSearch.sys.mjs",
@@ -263,6 +266,47 @@ const MOCK_RS_RECORDS = [
       prompts: "Tabs:\n{titles}",
       version: "v2.0",
     },
+    
+    
+    
+    {
+      kind: "params",
+      feature: "agent-monitor-setup",
+      model: "test-model",
+      service_type: "agent",
+      purpose: "monitor",
+      parameters: {},
+      modules: [
+        { name: "system-instructions", version: "v1.0" },
+        { name: "user-data", version: "v1.0" },
+      ],
+      version: "v1.0",
+      is_default: true,
+    },
+    {
+      kind: "module",
+      feature: "agent-monitor-setup",
+      module: "system-instructions",
+      model: "test-model",
+      prompts: "Suggest a task name and a condition in {language}.",
+      version: "v1.0",
+    },
+    {
+      kind: "module",
+      feature: "agent-monitor-setup",
+      module: "user-data",
+      model: "test-model",
+      prompts: [
+        "{#pages}Pages to watch:\n{pages}\n{/pages}",
+        "{#existingTitles}Existing task names:\n{existingTitles}\n{/existingTitles}",
+        "{#memories}<memories>\n{memories}\n</memories>\n{/memories}",
+        "{#chatHistory}<recent_chat>\n{chatHistory}\n</recent_chat>\n{/chatHistory}",
+        "{#previousDrafts}<earlier_drafts>\n{previousDrafts}\n</earlier_drafts>\n{/previousDrafts}",
+        "{#pageText}<page_text>\n{pageText}\n</page_text>\n{/pageText}",
+        "Language: {language}",
+      ].join("\n"),
+      version: "v1.0",
+    },
     {
       kind: "module",
       feature: "browser-context",
@@ -282,6 +326,15 @@ const MOCK_RS_RECORDS = [
   ]);
 
 add_setup(async function () {
+  if (parseInt(Services.env.get("MOZ_CHAOSMODE"), 16)) {
+    
+    
+    
+    await SpecialPowers.pushPrefEnv({
+      set: [["ui.prefersReducedMotion", 1]],
+    });
+  }
+
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.smartwindow.endpoint", "http://localhost:0/v1"],
@@ -928,6 +981,44 @@ async function submitSmartbar(browser, { useButton = false } = {}) {
       EventUtils.synthesizeKey("KEY_Enter", {}, content);
     }
   });
+}
+
+
+
+
+
+
+
+
+
+
+async function triggerGetOpenTabsToolCall({
+  mockEngineManager,
+  conversation,
+  callId,
+}) {
+  await mockEngineManager.respondTo({
+    purpose: "chat",
+    response: {
+      text: "",
+      tokens: null,
+      isPrompt: false,
+      toolCalls: [
+        {
+          id: callId,
+          function: { name: GET_OPEN_TABS, arguments: "{}" },
+        },
+      ],
+    },
+  });
+
+  return TestUtils.waitForCondition(
+    () =>
+      conversation.messages.find(
+        m => m.role === MESSAGE_ROLE.TOOL && m.content.name === GET_OPEN_TABS
+      ),
+    "A result for get_open_tabs should be returned in the conversation."
+  );
 }
 
 

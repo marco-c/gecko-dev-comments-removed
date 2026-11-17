@@ -2510,6 +2510,9 @@ pref("browser.smartwindow.agent.expiry.noMatchDays", 60);
 pref("browser.smartwindow.agent.expiry.maxAgeDays", 90);
 
 
+pref("browser.smartwindow.agent.suggestions.enabled", true);
+
+
 
 pref("browser.smartwindow.searchQuery.endpointURL", "https://mlpa-prod-prod-mozilla.freetls.fastly.net/v1/search");
 pref("browser.smartwindow.searchQuery.apiKey", "");
