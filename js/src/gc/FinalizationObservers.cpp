@@ -390,25 +390,6 @@ void FinalizationObservers::traceWeakEdges(JSTracer* trc, JS::Zone* zone) {
   traceWeakFinalizationRegistryEdges(trc, zone);
 }
 
-static void ExposeObjectToActiveJSDuringCollection(GCRuntime* gc,
-                                                   JSObject* object) {
-  
-  
-
-  MOZ_ASSERT(!IsAboutToBeFinalizedUnbarriered(object));
-
-  if (IsInsideNursery(object) || object->isMarkedBlack()) {
-    return;
-  }
-
-  Zone* zone = object->zone();
-  if (zone->needsMarkingBarrier()) {
-    PerformIncrementalReadBarrier(&object->asTenured());
-  } else if (!zone->isGCPreparing() && object->isMarkedGray()) {
-    UnmarkGrayGCThingUnchecked(&gc->marker(), JS::GCCellPtr(object));
-  }
-}
-
 void FinalizationObservers::traceWeakFinalizationRegistryEdges(JSTracer* trc,
                                                                JS::Zone* zone) {
   
@@ -447,7 +428,6 @@ void FinalizationObservers::traceWeakFinalizationRegistryEdges(JSTracer* trc,
       FinalizationQueueObject* queue = registry->queue();
       if (queue->hasRecordsToCleanUp()) {
         MOZ_ASSERT(shouldQueueFinalizationRegistryForCleanup(queue));
-        ExposeObjectToActiveJSDuringCollection(gc, queue);
         gc->queueFinalizationRegistryForCleanup(queue);
       }
     }
@@ -482,8 +462,7 @@ void FinalizationObservers::traceWeakFinalizationRegistryEdges(JSTracer* trc,
         
         
         
-        ExposeObjectToActiveJSDuringCollection(gc, record);
-
+        
         FinalizationQueueObject* queue = record->queue();
         queue->queueRecordToBeCleanedUp(record);
 
@@ -513,6 +492,25 @@ bool FinalizationObservers::shouldQueueFinalizationRegistryForCleanup(
   return !zone->wasGCStarted() || zone->gcState() >= Zone::Sweep;
 }
 
+static void ExposeObjectToActiveJSDuringCollection(GCRuntime* gc,
+                                                   JSObject* object) {
+  
+  
+
+  MOZ_ASSERT(!IsAboutToBeFinalizedUnbarriered(object));
+
+  if (IsInsideNursery(object) || object->isMarkedBlack()) {
+    return;
+  }
+
+  Zone* zone = object->zone();
+  if (zone->needsMarkingBarrier()) {
+    PerformIncrementalReadBarrier(&object->asTenured());
+  } else if (!zone->isGCPreparing() && object->isMarkedGray()) {
+    UnmarkGrayGCThingUnchecked(&gc->marker(), JS::GCCellPtr(object));
+  }
+}
+
 void GCRuntime::queueFinalizationRegistryForCleanup(
     FinalizationQueueObject* queue) {
   
@@ -540,9 +538,15 @@ void GCRuntime::queueFinalizationRegistryForCleanup(
     incumbentGlobal = &unwrappedIncumbentGlobalRepresentative->nonCCWGlobal();
   }
 
-  JS::AssertObjectIsNotGray(doCleanup);
-  JS::AssertObjectIsNotGray(incumbentGlobal);
+  ExposeObjectToActiveJSDuringCollection(this, doCleanup);
+  if (incumbentGlobal) {
+    ExposeObjectToActiveJSDuringCollection(this, incumbentGlobal);
+  }
+
   callHostCleanupFinalizationRegistryCallback(doCleanup, incumbentGlobal);
+
+  
+  AutoTouchingGrayThings atgt;
 
   queue->setQueuedForCleanup(true);
 }
