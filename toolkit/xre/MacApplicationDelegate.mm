@@ -164,6 +164,13 @@ void RegisterEarlyUserDefaults() {
   
   defaults[@"NSAppSleepDisabled"] = @YES;
 
+#ifdef NIGHTLY_BUILD
+  
+  
+  
+  defaults[@"NSApplicationRequiresGestureRecognizersFor3rdPartyToolKit"] = @YES;
+#endif
+
   [[NSUserDefaults standardUserDefaults] registerDefaults:defaults];
 }
 
