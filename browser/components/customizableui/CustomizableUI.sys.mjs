@@ -2648,7 +2648,7 @@ var CustomizableUIInternal = {
     // in a different toolbar.
     let node = document.getElementById(aId);
     if (node) {
-      let parent = node.parentNode;
+      let parent = node.parentElement;
       while (
         parent &&
         !(
@@ -2656,7 +2656,7 @@ var CustomizableUIInternal = {
           parent == aWindow.gNavToolbox.palette
         )
       ) {
-        parent = parent.parentNode;
+        parent = parent.parentElement;
       }
 
       if (parent) {
@@ -5032,9 +5032,10 @@ var CustomizableUIInternal = {
   },
 
   /**
+   * True if the CustomizableUI state of the browser is in the stock state
+   * that is shipped by default.
+   *
    * @type {boolean}
-   *   True if the CustomizableUI state of the browser is in the stock state
-   *   that is shipped by default.
    */
   get inDefaultState() {
     if (CustomizableUI.verticalTabsEnabled) {
@@ -5454,8 +5455,9 @@ var CustomizableUIInternal = {
   },
 
   /**
+   * True if the horizontal and vertical tabstrips have been registered.
+   *
    * @type {boolean}
-   *   True if the horizontal and vertical tabstrips have been registered.
    */
   get tabstripAreasReady() {
     return (
