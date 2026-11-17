@@ -246,6 +246,13 @@ async function runJSCacheTests(tests, { http } = {}) {
           });
         }
 
+        if (item.updateIntPref) {
+          
+          
+          
+          
+          Services.prefs.setIntPref(item.updateIntPref, 10);
+        }
         if (item.clearMemory) {
           info("clear memory cache");
           ChromeUtils.clearResourceCache();

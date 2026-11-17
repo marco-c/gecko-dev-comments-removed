@@ -174,6 +174,7 @@ class SharedSubResourceCache {
     MOZ_DIAGNOSTIC_ASSERT(!sSingleton);
     sSingleton = new Derived();
     sSingleton->Init();
+    sSingleton->AddPrefCallback();
     SharedSubResourceCacheUtils::AddMemoryPressureObserver(sSingleton);
     return sSingleton.get();
   }
@@ -181,6 +182,7 @@ class SharedSubResourceCache {
   static void DeleteSingleton() {
     if (sSingleton) {
       SharedSubResourceCacheUtils::RemoveMemoryPressureObserver(sSingleton);
+      sSingleton->RemovePrefCallback();
     }
     sSingleton = nullptr;
   }
@@ -309,6 +311,41 @@ class SharedSubResourceCache {
 
   virtual void ClearInProcessForMemoryPressure() {
     ClearInProcess(Nothing(), Nothing(), Nothing(), Nothing(), Nothing());
+  }
+
+  void AddPrefCallback() {
+    
+    
+    
+    
+    
+    Preferences::RegisterPrefixCallback(OnPrefChanged, "urlclassifier.");
+    Preferences::RegisterPrefixCallback(OnPrefChanged,
+                                        "privacy.trackingprotection.");
+  }
+
+  void RemovePrefCallback() {
+    Preferences::UnregisterPrefixCallback(OnPrefChanged, "urlclassifier.");
+    Preferences::UnregisterPrefixCallback(OnPrefChanged,
+                                          "privacy.trackingprotection.");
+  }
+
+  static void OnPrefChanged(const char* aPref, void* aData) {
+    if (!sSingleton) {
+      return;
+    }
+
+    
+    
+    
+    
+    
+    sSingleton->ClearInProcessForContentFilteringUpdate();
+  }
+
+  void ClearInProcessForContentFilteringUpdate() {
+    ClearInProcess( Some(false), Nothing(), Nothing(), Nothing(),
+                   Nothing());
   }
 
   void CancelPendingLoadsForLoader(Loader&);
