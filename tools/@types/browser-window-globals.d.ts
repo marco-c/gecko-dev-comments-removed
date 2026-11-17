@@ -121,5 +121,8 @@ declare namespace BrowserWindow {
   };
 
   
+  var StatusPanel: typeof import("chrome://browser/content/tabbrowser/status-panel.mjs").StatusPanel;
+
+  
   var TabBarVisibility: typeof import("chrome://browser/content/tabbrowser/tab-bar-visibility.mjs").TabBarVisibility;
 }

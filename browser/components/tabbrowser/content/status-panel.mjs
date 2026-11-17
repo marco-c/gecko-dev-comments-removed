@@ -1,24 +1,35 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/* global MousePosTracker, RTL_UI, XULBrowserWindow */
 
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+const lazy = XPCOMUtils.declareLazy({
+  BrowserHandler: {
+    service: "@mozilla.org/browser/clh;1",
+    iid: Ci.nsIBrowserHandler,
+  },
+});
 
-
-var StatusPanel = {
-  
-  
+export const StatusPanel = {
+  // This is useful for debugging (set to `true` in the interesting state for
+  // the panel to remain in that state).
   _frozen: false,
 
   get panel() {
-    delete this.panel;
-    this.panel = document.getElementById("statuspanel");
-    this.panel.addEventListener(
-      "transitionend",
-      this._onTransitionEnd.bind(this)
+    let panel = /** @type {XULElement} */ (
+      document.getElementById("statuspanel")
     );
-    this.panel.addEventListener(
+    Object.defineProperty(this, "panel", { value: panel });
+    panel.addEventListener("transitionend", this._onTransitionEnd.bind(this));
+    panel.addEventListener(
       "transitioncancel",
       this._onTransitionEnd.bind(this)
     );
-    return this.panel;
+    return panel;
   },
 
   get isVisible() {
@@ -26,7 +37,7 @@ var StatusPanel = {
   },
 
   update() {
-    if (BrowserHandler.kiosk || this._frozen) {
+    if (lazy.BrowserHandler.kiosk || this._frozen) {
       return;
     }
     let text;
@@ -42,12 +53,12 @@ var StatusPanel = {
       }
     }
 
-    
-    
-    
-    
-    
-    
+    // If it's a long data: URI that uses base64 encoding, truncate to
+    // a reasonable length rather than trying to display the entire thing.
+    // We can't shorten arbitrary URIs like this, as bidi etc might mean
+    // we need the trailing characters for display. But a base64-encoded
+    // data-URI is plain ASCII, so this is OK for status panel display.
+    // (See bug 1484071.)
     let textCropped = false;
     if (text.length > 500 && text.match(/^data:[^,]+;base64,/)) {
       text = text.substring(0, 500) + "\u2026";
@@ -67,8 +78,11 @@ var StatusPanel = {
   },
 
   get _labelElement() {
-    delete this._labelElement;
-    return (this._labelElement = document.getElementById("statuspanel-label"));
+    let labelElement = /** @type {XULTextElement} */ (
+      document.getElementById("statuspanel-label")
+    );
+    Object.defineProperty(this, "_labelElement", { value: labelElement });
+    return labelElement;
   },
 
   set _label(val) {
@@ -81,11 +95,11 @@ var StatusPanel = {
       this.panel.getAttribute("type") == "status" &&
       this.panel.getAttribute("previoustype") == "status"
     ) {
-      
-      
-      
-      
-      
+      // Before updating the label, set the panel's current width as its
+      // min-width to let the panel grow but not shrink and prevent
+      // unnecessary flicker while loading pages. We only care about the
+      // panel's width once it has been painted, so we can do this
+      // without flushing layout.
       this.panel.style.minWidth =
         window.windowUtils.getBoundsWithoutFlushing(this.panel).width + "px";
     } else {
@@ -96,8 +110,8 @@ var StatusPanel = {
       this._labelElement.value = val;
       if (this.panel.hidden) {
         this.panel.hidden = false;
-        
-        
+        // This ensures that the "inactive" attribute removal triggers a
+        // transition.
         getComputedStyle(this.panel).display;
       }
       this.panel.removeAttribute("inactive");
@@ -115,7 +129,7 @@ var StatusPanel = {
   },
 
   getMouseTargetRect() {
-    let container = this.panel.parentNode;
+    let container = this.panel.parentElement;
     let panelRect = window.windowUtils.getBoundsWithoutFlushing(this.panel);
     let containerRect = window.windowUtils.getBoundsWithoutFlushing(container);
 
