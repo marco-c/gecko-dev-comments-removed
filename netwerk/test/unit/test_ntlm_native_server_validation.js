@@ -143,7 +143,10 @@ function nodeMakeChallenge() {
   ]);
 
   
-  const flags = 0x00810201;
+  
+  
+  
+  const flags = 0xe0898215;
   const header = Buffer.alloc(48);
   header.write("NTLMSSP\0", 0, "latin1");
   header.writeUInt32LE(2, 8);
