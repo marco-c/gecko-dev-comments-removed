@@ -136,6 +136,15 @@ class GeckoViewSupport final
                              jni::Object::Param aMetrics);
 
   
+  
+  
+  void RecordScrollCaptureTileResult(
+      const java::GeckoSession::Window::LocalRef& inst, int32_t aOutcome);
+
+  void RecordScrollCaptureOutcome(
+      const java::GeckoSession::Window::LocalRef& inst, int32_t aOutcome);
+
+  
   void PerformHapticFeedback(int32_t aEffect);
 };
 

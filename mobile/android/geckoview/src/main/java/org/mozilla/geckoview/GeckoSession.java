@@ -1575,6 +1575,15 @@ public class GeckoSession {
     public native void requestContentMetrics(
         GeckoResult<ContentMetrics> result, ContentMetrics metrics);
 
+    
+    
+    
+    @WrapForJNI(calledFrom = "ui", dispatchTo = "proxy")
+    public native void recordScrollCaptureTileResult(final int outcome);
+
+    @WrapForJNI(calledFrom = "ui", dispatchTo = "proxy")
+    public native void recordScrollCaptureOutcome(final int outcome);
+
     @WrapForJNI(calledFrom = "gecko")
     private synchronized void onReady(final @Nullable NativeQueue queue) {
       

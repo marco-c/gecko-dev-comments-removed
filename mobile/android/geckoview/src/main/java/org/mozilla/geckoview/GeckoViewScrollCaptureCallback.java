@@ -13,24 +13,124 @@ import android.view.ScrollCaptureSession;
 import android.view.Surface;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+import androidx.annotation.VisibleForTesting;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import org.mozilla.gecko.annotation.WrapForJNI;
 
 @RequiresApi(Build.VERSION_CODES.S)
  class GeckoViewScrollCaptureCallback implements ScrollCaptureCallback {
   private static final String LOGTAG = "GeckoViewScrollCapture";
 
+  
+  
+  
+  @WrapForJNI static final int TILE_RESULT_SUCCESS = 0;
+  @WrapForJNI static final int TILE_RESULT_CANCELED_BEFORE = 1;
+  @WrapForJNI static final int TILE_RESULT_CANCELED_INFLIGHT = 2;
+  @WrapForJNI static final int TILE_RESULT_NO_METRICS = 3;
+  @WrapForJNI static final int TILE_RESULT_INVALID_SURFACE = 4;
+  @WrapForJNI static final int TILE_RESULT_OUTSIDE_CONTENT = 5;
+  @WrapForJNI static final int TILE_RESULT_EMPTY_RECT = 6;
+  @WrapForJNI static final int TILE_RESULT_PAINT_ERROR = 7;
+
+  
+  
+  
+  @WrapForJNI static final int OUTCOME_COMPLETE = 0;
+  @WrapForJNI static final int OUTCOME_PARTIAL = 1;
+  @WrapForJNI static final int OUTCOME_FAILED = 2;
+  @WrapForJNI static final int OUTCOME_CANCELED = 3;
+
   private final Supplier<GeckoSession> mSessionSupplier;
   private GeckoSession.Window.ContentMetrics mContentMetrics;
+
+  
+  
+  private int mCaptureTiles;
+  private int mCaptureSuccesses;
+  private int mCaptureFailures;
+  private int mCaptureCancellations;
+  private int mCapturePending;
+
+  
+  
+  private int mCaptureGeneration;
+
+  @VisibleForTesting  int mLastCaptureOutcome = -1;
 
    GeckoViewScrollCaptureCallback(
       @NonNull final Supplier<GeckoSession> sessionSupplier) {
     mSessionSupplier = sessionSupplier;
   }
 
+  private void recordTileResult(
+      final GeckoSession session, final int generation, final int outcome) {
+    
+    if (session != null && session.mWindow != null) {
+      session.mWindow.recordScrollCaptureTileResult(outcome);
+    }
+    
+    
+    if (generation != mCaptureGeneration) {
+      return;
+    }
+    mCaptureTiles++;
+    switch (outcome) {
+      case TILE_RESULT_SUCCESS:
+        mCaptureSuccesses++;
+        break;
+      case TILE_RESULT_CANCELED_BEFORE:
+      case TILE_RESULT_CANCELED_INFLIGHT:
+        mCaptureCancellations++;
+        break;
+      case TILE_RESULT_NO_METRICS:
+      case TILE_RESULT_INVALID_SURFACE:
+      case TILE_RESULT_PAINT_ERROR:
+        mCaptureFailures++;
+        break;
+      default:
+        
+        
+        break;
+    }
+  }
+
+  private void resetCaptureTally() {
+    mCaptureTiles = 0;
+    mCaptureSuccesses = 0;
+    mCaptureFailures = 0;
+    mCaptureCancellations = 0;
+    mCapturePending = 0;
+    mCaptureGeneration++;
+    mLastCaptureOutcome = -1;
+  }
+
+  private void recordCaptureOutcome() {
+    if (mCaptureTiles == 0 && mCapturePending == 0) {
+      return;
+    }
+    final int outcome;
+    if (mCapturePending > 0 || mCaptureCancellations > 0) {
+      
+      
+      outcome = OUTCOME_CANCELED;
+    } else if (mCaptureSuccesses > 0) {
+      outcome = (mCaptureFailures > 0) ? OUTCOME_PARTIAL : OUTCOME_COMPLETE;
+    } else {
+      outcome = OUTCOME_FAILED;
+    }
+    mLastCaptureOutcome = outcome;
+    final GeckoSession session = mSessionSupplier.get();
+    if (session != null && session.mWindow != null) {
+      session.mWindow.recordScrollCaptureOutcome(outcome);
+    }
+  }
+
   @Override
   public void onScrollCaptureEnd(@NonNull final Runnable runnable) {
+    recordCaptureOutcome();
     mContentMetrics = null;
     runnable.run();
   }
@@ -42,9 +142,11 @@ import java.util.function.Supplier;
       @NonNull final Rect captureArea,
       @NonNull final Consumer<Rect> onComplete) {
     final GeckoSession session = mSessionSupplier.get();
+    final int generation = mCaptureGeneration;
     final Surface surface = scrollCaptureSession.getSurface();
     final float dpr = (mContentMetrics == null) ? 0 : mContentMetrics.devicePixelRatio;
-    if (cancellationSignal.isCanceled()
+    final boolean canceled = cancellationSignal.isCanceled();
+    if (canceled
         || mContentMetrics == null
         || session == null
         || session.mWindow == null
@@ -54,7 +156,7 @@ import java.util.function.Supplier;
       Log.w(
           LOGTAG,
           "onScrollCaptureImageRequest declined: canceled="
-              + cancellationSignal.isCanceled()
+              + canceled
               + " metrics="
               + (mContentMetrics != null)
               + " session="
@@ -65,6 +167,11 @@ import java.util.function.Supplier;
               + (surface != null && surface.isValid())
               + " dpr="
               + dpr);
+      final int outcome =
+          canceled
+              ? TILE_RESULT_CANCELED_BEFORE
+              : (dpr <= 0) ? TILE_RESULT_NO_METRICS : TILE_RESULT_INVALID_SURFACE;
+      recordTileResult(session, generation, outcome);
       onComplete.accept(new Rect());
       return;
     }
@@ -90,6 +197,7 @@ import java.util.function.Supplier;
               + ","
               + scrollY
               + ")");
+      recordTileResult(session, generation, TILE_RESULT_OUTSIDE_CONTENT);
       onComplete.accept(new Rect());
       return;
     }
@@ -107,6 +215,7 @@ import java.util.function.Supplier;
       Log.w(
           LOGTAG,
           "onScrollCaptureImageRequest declined: empty CSS rect " + cssWidth + "x" + cssHeight);
+      recordTileResult(session, generation, TILE_RESULT_EMPTY_RECT);
       onComplete.accept(new Rect());
       return;
     }
@@ -128,12 +237,29 @@ import java.util.function.Supplier;
     final AtomicBoolean cancelled = new AtomicBoolean(false);
     cancellationSignal.setOnCancelListener(() -> cancelled.set(true));
 
+    mCapturePending++;
     final GeckoResult<Void> result = new GeckoResult<>();
     session.mWindow.requestRegionToSurface(
         result, surface, cssLeft, cssTop, cssWidth, cssHeight, dpr);
     result.accept(
-        v -> onComplete.accept(cancelled.get() ? new Rect() : captured),
-        error -> onComplete.accept(new Rect()));
+        v -> {
+          if (generation == mCaptureGeneration) {
+            mCapturePending--;
+          }
+          final boolean wasCancelled = cancelled.get();
+          recordTileResult(
+              session,
+              generation,
+              wasCancelled ? TILE_RESULT_CANCELED_INFLIGHT : TILE_RESULT_SUCCESS);
+          onComplete.accept(wasCancelled ? new Rect() : captured);
+        },
+        error -> {
+          if (generation == mCaptureGeneration) {
+            mCapturePending--;
+          }
+          recordTileResult(session, generation, TILE_RESULT_PAINT_ERROR);
+          onComplete.accept(new Rect());
+        });
   }
 
   @Override
@@ -154,6 +280,7 @@ import java.util.function.Supplier;
       @NonNull final ScrollCaptureSession scrollCaptureSession,
       @NonNull final CancellationSignal cancellationSignal,
       @NonNull final Runnable onReady) {
+    resetCaptureTally();
     final GeckoSession session = mSessionSupplier.get();
     if (cancellationSignal.isCanceled() || session == null || session.mWindow == null) {
       onReady.run();
