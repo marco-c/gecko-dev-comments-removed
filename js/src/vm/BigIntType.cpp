@@ -655,52 +655,43 @@ BigInt* BigInt::absoluteSub(JSContext* cx, HandleBigInt x, HandleBigInt y,
 
 
 
-
-bool BigInt::absoluteDivWithDigitDivisor(
-    JSContext* cx, HandleBigInt x, Digit divisor,
-    const Maybe<MutableHandleBigInt>& quotient, Digit* remainder,
-    bool quotientNegative) {
+bool BigInt::absoluteDivWithDigitDivisor(JSContext* cx, HandleBigInt x,
+                                         Digit divisor,
+                                         MutableHandleBigInt quotient,
+                                         Digit* remainder,
+                                         bool quotientNegative) {
   MOZ_ASSERT(divisor);
 
   MOZ_ASSERT(!x->isZero());
   *remainder = 0;
   if (divisor == 1) {
-    if (quotient) {
-      BigInt* q;
-      if (x->isNegative() == quotientNegative) {
-        q = x;
-      } else {
-        q = neg(cx, x);
-        if (!q) {
-          return false;
-        }
+    BigInt* q;
+    if (x->isNegative() == quotientNegative) {
+      q = x;
+    } else {
+      q = neg(cx, x);
+      if (!q) {
+        return false;
       }
-      quotient.value().set(q);
     }
+    quotient.set(q);
     return true;
   }
 
   unsigned length = x->digitLength();
-  if (quotient) {
-    if (!quotient.value()) {
-      BigInt* q = createUninitialized(cx, length, quotientNegative);
-      if (!q) {
-        return false;
-      }
-      quotient.value().set(q);
+  if (!quotient) {
+    BigInt* q = createUninitialized(cx, length, quotientNegative);
+    if (!q) {
+      return false;
     }
+    quotient.set(q);
+  }
 
-    auto xDigits = x->digits();
-    auto quotientDigits = quotient.value()->digits();
-    for (int i = length - 1; i >= 0; i--) {
-      Digit q = digitDiv(*remainder, xDigits[i], divisor, remainder);
-      quotientDigits[i] = q;
-    }
-  } else {
-    auto xDigits = x->digits();
-    for (int i = length - 1; i >= 0; i--) {
-      digitDiv(*remainder, xDigits[i], divisor, remainder);
-    }
+  auto xDigits = x->digits();
+  auto quotientDigits = quotient->digits();
+  for (int i = length - 1; i >= 0; i--) {
+    Digit q = digitDiv(*remainder, xDigits[i], divisor, remainder);
+    quotientDigits[i] = q;
   }
 
   return true;
@@ -1026,14 +1017,14 @@ void BigInt::divideDigitsInPlace(Digits u, ConstDigits v, Digits q,
 
 bool BigInt::absoluteDivWithBigIntDivisor(
     JSContext* cx, HandleBigInt dividend, HandleBigInt divisor,
-    const Maybe<MutableHandleBigInt>& quotient,
-    const Maybe<MutableHandleBigInt>& remainder, bool isNegative) {
+    MutableHandleBigInt quotient, const Maybe<MutableHandleBigInt>& remainder,
+    bool isNegative) {
   MOZ_ASSERT(divisor->digitLength() >= 2);
   MOZ_ASSERT(dividend->digitLength() >= divisor->digitLength());
 
   
   
-  MOZ_ASSERT(!quotient || !quotient.value());
+  MOZ_ASSERT(!quotient);
   MOZ_ASSERT(!remainder || !remainder.value());
 
   const size_t n = divisor->digitLength();
@@ -1048,8 +1039,7 @@ bool BigInt::absoluteDivWithBigIntDivisor(
   Vector<Digit, 16, SystemAllocPolicy> q;
   Vector<Digit, 16, SystemAllocPolicy> qhatv;
   Vector<Digit, 16, SystemAllocPolicy> u;
-  if (!v.resizeUninitialized(n) ||
-      (quotient && !q.resizeUninitialized(m + 1)) ||
+  if (!v.resizeUninitialized(n) || !q.resizeUninitialized(m + 1) ||
       !qhatv.resizeUninitialized(n + 1) || !u.resizeUninitialized(uLength)) {
     ReportOutOfMemory(cx);
     return false;
@@ -1115,14 +1105,11 @@ bool BigInt::absoluteDivWithBigIntDivisor(
     }
   }
 
-  if (quotient) {
-    BigInt* result = createFromDigitVector(cx, q, isNegative);
-    if (!result) {
-      return false;
-    }
-    quotient.value().set(result);
+  BigInt* result = createFromDigitVector(cx, q, isNegative);
+  if (!result) {
+    return false;
   }
-
+  quotient.set(result);
   return true;
 }
 
@@ -1528,8 +1515,8 @@ JSLinearString* BigInt::toStringGeneric(JSContext* cx, HandleBigInt x,
   RootedBigInt dividend(cx, x);
   do {
     Digit chunk;
-    if (!absoluteDivWithDigitDivisor(cx, dividend, chunkDivisor, Some(&rest),
-                                     &chunk, dividend->isNegative())) {
+    if (!absoluteDivWithDigitDivisor(cx, dividend, chunkDivisor, &rest, &chunk,
+                                     dividend->isNegative())) {
       return nullptr;
     }
 
@@ -2103,12 +2090,12 @@ BigInt* BigInt::div(JSContext* cx, HandleBigInt x, HandleBigInt y) {
     }
 
     Digit remainder;
-    if (!absoluteDivWithDigitDivisor(cx, x, divisor, Some(&quotient),
-                                     &remainder, resultNegative)) {
+    if (!absoluteDivWithDigitDivisor(cx, x, divisor, &quotient, &remainder,
+                                     resultNegative)) {
       return nullptr;
     }
   } else {
-    if (!absoluteDivWithBigIntDivisor(cx, x, y, Some(&quotient), Nothing(),
+    if (!absoluteDivWithBigIntDivisor(cx, x, y, &quotient, Nothing(),
                                       resultNegative)) {
       return nullptr;
     }
@@ -2139,83 +2126,54 @@ BigInt* BigInt::mod(JSContext* cx, HandleBigInt x, HandleBigInt y) {
     return x;
   }
 
-  if (y->digitLength() == 1) {
-    Digit divisor = y->individualDigit(0);
-    if (divisor == 1) {
-      return zero(cx);
-    }
-
-    Digit remainderDigit;
-    bool unusedQuotientNegative = false;
-    if (!absoluteDivWithDigitDivisor(cx, x, divisor, Nothing(), &remainderDigit,
-                                     unusedQuotientNegative)) {
-      MOZ_CRASH("BigInt div by digit failed unexpectedly");
-    }
-
-    if (!remainderDigit) {
-      return zero(cx);
-    }
-
-    return createFromDigit(cx, remainderDigit, x->isNegative());
-  } else {
-    uint32_t k;
-    Digit c;
-    if (shouldModuloByCrandallReduction(y, &k, &c)) {
-      RootedBigInt result(cx, modCrandall(cx, x, k, c));
-#ifdef DEBUG
-      if (result) {
-        RootedBigInt expected(cx);
-        if (absoluteDivWithBigIntDivisor(cx, x, y, Nothing(), Some(&expected),
-                                         x->isNegative())) {
-          MOZ_ASSERT(equal(result, expected));
-        } else {
-          cx->recoverFromOutOfMemory();
-        }
-      }
-#endif
-      return result;
-    }
-
-    RootedBigInt remainder(cx);
-    if (!absoluteDivWithBigIntDivisor(cx, x, y, Nothing(), Some(&remainder),
-                                      x->isNegative())) {
-      return nullptr;
-    }
-    MOZ_ASSERT(remainder);
-    return remainder;
+  size_t length = x->digitLength();
+  size_t n = y->digitLength();
+  Vector<Digit, 16, SystemAllocPolicy> u;
+  
+  
+  if (!u.resizeUninitialized(length + 1)) {
+    ReportOutOfMemory(cx);
+    return nullptr;
   }
+  copyDigits(x->unguardedDigits(), Digits(u).First(length));
+  u[length] = 0;
+  if (!modDigitsInPlace(u, y->unguardedDigits())) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+  u.shrinkTo(n);
+  return createFromDigitVector(cx, u, x->isNegative());
 }
 
-bool BigInt::shouldModuloByCrandallReduction(const BigInt* m, uint32_t* k,
+bool BigInt::shouldModuloByCrandallReduction(ConstDigits m, uint32_t* k,
                                              Digit* c) {
   
   
-  auto mDigits = m->digits();
-  size_t n = mDigits.size();
+  size_t n = m.size();
   if (n < 2) {
     return false;
   }
 
   
-  Digit top = mDigits[n - 1];
+  Digit top = m[n - 1];
   if (top & (top + 1)) {
     return false;
   }
 
   
   for (size_t i = 1; i < n - 1; i++) {
-    if (mDigits[i] != Digit(-1)) {
+    if (m[i] != Digit(-1)) {
       return false;
     }
   }
 
   
-  if (!mDigits[0]) {
+  if (!m[0]) {
     return false;
   }
 
   unsigned topBits = DigitBits - std::countl_zero(top);
-  Digit cValue = -mDigits[0];
+  Digit cValue = -m[0];
   uint32_t kValue = (n - 1) * DigitBits + topBits;
 
   
@@ -2313,17 +2271,47 @@ void BigInt::modDigitsInPlaceByCrandallReduction(Digits r, uint32_t k,
   }
 }
 
-BigInt* BigInt::modCrandall(JSContext* cx, HandleBigInt x, uint32_t k,
-                            Digit c) {
-  if (x->digitLength() * DigitBits < k) {
-    return x;
+bool BigInt::modDigitsInPlace(Digits u, ConstDigits m) {
+  const size_t n = m.size();
+  MOZ_RELEASE_ASSERT(n > 0 && u.size() > n);
+  MOZ_ASSERT(!u[u.size() - 1]);
+
+  if (n == 1) {
+    Digit remainder = 0;
+    for (size_t i = u.size(); i-- > 0;) {
+      digitDiv(remainder, u[i], m[0], &remainder);
+    }
+    u[0] = remainder;
+    return true;
   }
-  RootedBigInt r(cx, copy(cx, x));
-  if (!r) {
-    return nullptr;
+
+  uint32_t k;
+  Digit c;
+  if (shouldModuloByCrandallReduction(m, &k, &c)) {
+    modDigitsInPlaceByCrandallReduction(u, k, c);
+    return true;
   }
-  modDigitsInPlaceByCrandallReduction(r->unguardedDigits(), k, c);
-  return destructivelyTrimHighZeroDigits(cx, r);
+
+  
+  
+  Vector<Digit, 16, SystemAllocPolicy> qhatv;
+  if (!qhatv.resizeUninitialized(n + 1)) {
+    return false;
+  }
+  unsigned shift = std::countl_zero(m[n - 1]);
+  if (!shift) {
+    divideDigitsInPlace(u, m, Digits(), qhatv);
+    return true;
+  }
+  Vector<Digit, 16, SystemAllocPolicy> v;
+  if (!v.resizeUninitialized(n)) {
+    return false;
+  }
+  MOZ_ALWAYS_FALSE(leftShiftDigits(m, shift, v));
+  MOZ_ALWAYS_FALSE(leftShiftDigits(u, shift, u));
+  divideDigitsInPlace(u, v, Digits(), qhatv);
+  MOZ_ALWAYS_FALSE(rightShiftDigits(u.First(n), shift, 0, u));
+  return true;
 }
 
 bool BigInt::divmod(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y,
@@ -2376,8 +2364,8 @@ bool BigInt::divmod(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y,
     } else {
       Rooted<BigInt*> quot(cx);
       Digit remainderDigit;
-      if (!absoluteDivWithDigitDivisor(cx, x, divisor, Some(&quot),
-                                       &remainderDigit, resultNegative)) {
+      if (!absoluteDivWithDigitDivisor(cx, x, divisor, &quot, &remainderDigit,
+                                       resultNegative)) {
         return false;
       }
 
@@ -2398,7 +2386,7 @@ bool BigInt::divmod(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y,
   } else {
     RootedBigInt quot(cx);
     RootedBigInt rem(cx);
-    if (!absoluteDivWithBigIntDivisor(cx, x, y, Some(&quot), Some(&rem),
+    if (!absoluteDivWithBigIntDivisor(cx, x, y, &quot, Some(&rem),
                                       resultNegative)) {
       return false;
     }

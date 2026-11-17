@@ -271,15 +271,6 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
                      MutableHandle<BigInt*> quotient,
                      MutableHandle<BigInt*> remainder);
 
-  
-  
-  
-  static bool shouldModuloByCrandallReduction(const BigInt* m, uint32_t* k,
-                                              Digit* c);
-  
-  static BigInt* modCrandall(JSContext* cx, Handle<BigInt*> x, uint32_t k,
-                             Digit c);
-
   static bool powIntPtr(intptr_t x, intptr_t y, intptr_t* result);
 
   static int64_t toInt64(const BigInt* x);
@@ -426,15 +417,16 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
                                                            size_t charCount,
                                                            size_t* result);
 
-  static bool absoluteDivWithDigitDivisor(
-      JSContext* cx, Handle<BigInt*> x, Digit divisor,
-      const mozilla::Maybe<MutableHandle<BigInt*>>& quotient, Digit* remainder,
-      bool quotientNegative);
+  static bool absoluteDivWithDigitDivisor(JSContext* cx, Handle<BigInt*> x,
+                                          Digit divisor,
+                                          MutableHandle<BigInt*> quotient,
+                                          Digit* remainder,
+                                          bool quotientNegative);
   static void internalMultiplyAdd(const BigInt* source, Digit factor,
                                   Digit summand, unsigned, BigInt* result);
   static bool absoluteDivWithBigIntDivisor(
       JSContext* cx, Handle<BigInt*> dividend, Handle<BigInt*> divisor,
-      const mozilla::Maybe<MutableHandle<BigInt*>>& quotient,
+      MutableHandle<BigInt*> quotient,
       const mozilla::Maybe<MutableHandle<BigInt*>>& remainder,
       bool quotientNegative);
 
@@ -465,6 +457,7 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
   
   static void zeroDigits(Digits dest);
   
+  
   static Digit leftShiftDigits(ConstDigits src, unsigned shift, Digits dest);
   
   
@@ -476,8 +469,17 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
   static void divideDigitsInPlace(Digits u, ConstDigits v, Digits q,
                                   Digits qhatv);
   
+  
+  
+  static bool shouldModuloByCrandallReduction(ConstDigits m, uint32_t* k,
+                                              Digit* c);
+  
   static void modDigitsInPlaceByCrandallReduction(Digits r, uint32_t k,
                                                   Digit c);
+  
+  
+  
+  [[nodiscard]] static bool modDigitsInPlace(Digits u, ConstDigits m);
 
   static bool productGreaterThan(Digit factor1, Digit factor2, Digit high,
                                  Digit low);
