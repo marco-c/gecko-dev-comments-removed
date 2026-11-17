@@ -124,17 +124,6 @@ static void moz_app_launch_context_init(MozAppLaunchContext* self) {
   
   
   
-  
-  if (self->activation_token && glib_check_version(2, 76, 0)) {
-    g_app_launch_context_setenv(context, "XDG_ACTIVATION_TOKEN",
-                                self->activation_token);
-  }
-
-  
-  
-  
-  
-  
   g_app_launch_context_unsetenv(context, "MOZ_APP_LAUNCHER");
 }
 
@@ -142,6 +131,14 @@ MozAppLaunchContext* moz_app_launch_context_new(const char* activation_token) {
   MozAppLaunchContext* self = MOZ_APP_LAUNCH_CONTEXT(
       g_object_new(MOZ_TYPE_APP_LAUNCH_CONTEXT, nullptr));
   self->activation_token = g_strdup(activation_token);
+
+  
+  
+  if (self->activation_token && glib_check_version(2, 76, 0)) {
+    g_app_launch_context_setenv(G_APP_LAUNCH_CONTEXT(self),
+                                "XDG_ACTIVATION_TOKEN", self->activation_token);
+  }
+
   return self;
 }
 
