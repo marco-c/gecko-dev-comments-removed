@@ -25,8 +25,12 @@ const baseState = {
       "widgets.system.crossword.enabled": true,
       "widgets.crossword.enabled": true,
       "widgets.crossword.size": "",
-      "widgets.crossword.endpoint":
-        "https://prod-games-particle.merino.prod.webservices.mozgcp.net/index.html",
+      "widgets.framed.allowedHostSuffixes": ".mozgcp.net",
+    },
+  },
+  FramedWidgets: {
+    crossword: {
+      url: "https://prod-games-particle.merino.prod.webservices.mozgcp.net/index.html",
     },
   },
 };
@@ -239,7 +243,7 @@ describe("<Crossword>", () => {
       expect(frame).toBeInTheDocument();
       expect(frame).toHaveAttribute(
         "sandbox",
-        "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+        "allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
       );
       expect(frame).toHaveAttribute(
         "src",
@@ -247,8 +251,9 @@ describe("<Crossword>", () => {
       );
     });
 
-    it("prefers the trainhopConfig endpoint over the raw pref", () => {
-      const trainhopEndpoint = "https://example.com/crossword/index.html";
+    it("prefers the trainhop namespace iframeSrcOverride over the manifest url", () => {
+      const trainhopSrc =
+        "https://hotfix.merino.prod.webservices.mozgcp.net/index.html";
       const state = {
         ...baseState,
         Prefs: {
@@ -256,7 +261,7 @@ describe("<Crossword>", () => {
           values: {
             ...baseState.Prefs.values,
             trainhopConfig: {
-              widgets: { crosswordEndpoint: trainhopEndpoint },
+              widgetCrossword: { iframeSrcOverride: trainhopSrc },
             },
           },
         },
@@ -264,31 +269,15 @@ describe("<Crossword>", () => {
       const { container } = renderCrossword({ state });
       expect(container.querySelector("iframe.crossword-frame")).toHaveAttribute(
         "src",
-        trainhopEndpoint
+        trainhopSrc
       );
     });
 
-    it("prefers the dedicated widgetCrossword endpoint over the shared widgets key", () => {
-      const dedicatedEndpoint = "https://example.com/dedicated/index.html";
-      const sharedEndpoint = "https://example.com/shared/index.html";
-      const state = {
-        ...baseState,
-        Prefs: {
-          ...baseState.Prefs,
-          values: {
-            ...baseState.Prefs.values,
-            trainhopConfig: {
-              widgetCrossword: { endpoint: dedicatedEndpoint },
-              widgets: { crosswordEndpoint: sharedEndpoint },
-            },
-          },
-        },
-      };
-      const { container } = renderCrossword({ state });
-      expect(container.querySelector("iframe.crossword-frame")).toHaveAttribute(
-        "src",
-        dedicatedEndpoint
-      );
+    it("renders nothing without a manifest entry", () => {
+      const { container } = renderCrossword({
+        state: { ...baseState, FramedWidgets: {} },
+      });
+      expect(container.querySelector("article.crossword")).toBeNull();
     });
   });
 
@@ -411,12 +400,8 @@ describe("<Crossword>", () => {
     it("does not post when the endpoint is malformed (no resolvable origin)", () => {
       const state = {
         ...baseState,
-        Prefs: {
-          ...baseState.Prefs,
-          values: {
-            ...baseState.Prefs.values,
-            "widgets.crossword.endpoint": "not-a-valid-url",
-          },
+        FramedWidgets: {
+          crossword: { url: "not-a-valid-url" },
         },
       };
       const { container } = renderCrossword({ state });
@@ -910,8 +895,8 @@ describe("<Crossword>", () => {
     });
   });
 
-  describe("menu strings", () => {
-    it("hardcodes the crossword-specific items and keeps shared chrome ids", () => {
+  describe("localized strings", () => {
+    it("uses preview Fluent ids for crossword items and keeps shared chrome ids", () => {
       const { container } = renderCrossword();
       const menu = container.querySelector("#crossword-context-menu");
 
@@ -921,18 +906,31 @@ describe("<Crossword>", () => {
         "data-l10n-id",
         "newtab-crossword-widget-open-menu-button"
       );
-      // Crossword-specific menu items are hardcoded inline (English-only).
-      expect(menu.querySelector("panel-item.show-all-clues")).toHaveTextContent(
-        "Show clues"
+      // Crossword-specific strings live in the English-only newtabPreview.ftl.
+      expect(
+        container.querySelector(".newtab-crossword-title")
+      ).toHaveAttribute("data-l10n-id", "newtab-crossword-widget-title");
+      expect(container.querySelector("iframe.crossword-frame")).toHaveAttribute(
+        "data-l10n-id",
+        "newtab-crossword-widget-frame"
       );
-      expect(menu.querySelector("panel-item.solve-puzzle")).toHaveTextContent(
-        "Solve puzzle"
+      expect(menu.querySelector("panel-item.show-all-clues")).toHaveAttribute(
+        "data-l10n-id",
+        "newtab-crossword-widget-menu-show-clues"
+      );
+      expect(menu.querySelector("panel-item.solve-puzzle")).toHaveAttribute(
+        "data-l10n-id",
+        "newtab-crossword-widget-menu-solve-puzzle"
       );
       expect(
         menu.querySelector(
           "panel-item[data-l10n-id='newtab-crossword-menu-powered-by-particle']"
         )
       ).toBeInTheDocument();
+      expect(menu.querySelector("panel-item.learn-more")).toHaveAttribute(
+        "data-l10n-id",
+        "newtab-crossword-widget-menu-learn-more"
+      );
 
       // Generic chrome keeps the shared, translated Fluent ids.
       expect(
