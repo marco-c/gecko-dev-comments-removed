@@ -491,34 +491,6 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
   void inplaceMultiplyAdd(Digit multiplier, Digit part);
 
   
-  
-  
-  
-  
-  
-  enum class BitwiseOpKind { SymmetricTrim, SymmetricFill, AsymmetricFill };
-
-  template <BitwiseOpKind kind, typename BitwiseOp>
-  static BigInt* absoluteBitwiseOp(JSContext* cx, Handle<BigInt*> x,
-                                   Handle<BigInt*> y, BitwiseOp&& op);
-
-  
-  static BigInt* absoluteAnd(JSContext* cx, Handle<BigInt*> x,
-                             Handle<BigInt*> y);
-
-  
-  static BigInt* absoluteOr(JSContext* cx, Handle<BigInt*> x,
-                            Handle<BigInt*> y);
-
-  
-  static BigInt* absoluteAndNot(JSContext* cx, Handle<BigInt*> x,
-                                Handle<BigInt*> y);
-
-  
-  static BigInt* absoluteXor(JSContext* cx, Handle<BigInt*> x,
-                             Handle<BigInt*> y);
-
-  
   static BigInt* absoluteAddOne(JSContext* cx, Handle<BigInt*> x,
                                 bool resultNegative);
 

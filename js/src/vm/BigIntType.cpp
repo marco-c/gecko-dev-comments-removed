@@ -1128,81 +1128,51 @@ bool BigInt::absoluteDivWithBigIntDivisor(
 
 
 
-
-
-
-
-
-
-
-
-
-
-template <BigInt::BitwiseOpKind kind, typename BitwiseOp>
-inline BigInt* BigInt::absoluteBitwiseOp(JSContext* cx, HandleBigInt x,
-                                         HandleBigInt y, BitwiseOp&& op) {
-  unsigned xLength = x->digitLength();
-  unsigned yLength = y->digitLength();
-  unsigned numPairs = std::min(xLength, yLength);
-  unsigned resultLength;
-  if (kind == BitwiseOpKind::SymmetricTrim) {
-    resultLength = numPairs;
-  } else if (kind == BitwiseOpKind::SymmetricFill) {
-    resultLength = std::max(xLength, yLength);
-  } else {
-    MOZ_ASSERT(kind == BitwiseOpKind::AsymmetricFill);
-    resultLength = xLength;
+template <typename Op>
+static MOZ_ALWAYS_INLINE void BitwiseDigits(BigInt::ConstDigits x,
+                                            BigInt::ConstDigits y,
+                                            BigInt::Digits dest, Op op) {
+  MOZ_RELEASE_ASSERT(x.size() == y.size());
+  MOZ_RELEASE_ASSERT(x.size() == dest.size());
+  for (size_t i = 0; i < x.size(); i++) {
+    dest[i] = op(x[i], y[i]);
   }
-  bool resultNegative = false;
+}
 
-  BigInt* result = createUninitialized(cx, resultLength, resultNegative);
-  if (!result) {
-    return nullptr;
+static void AndDigits(BigInt::ConstDigits x, BigInt::ConstDigits y,
+                      BigInt::Digits dest) {
+  BitwiseDigits(x, y, dest, std::bit_and<>());
+}
+
+static void OrDigits(BigInt::ConstDigits x, BigInt::ConstDigits y,
+                     BigInt::Digits dest) {
+  BitwiseDigits(x, y, dest, std::bit_or<>());
+}
+
+static void AndNotDigits(BigInt::ConstDigits x, BigInt::ConstDigits y,
+                         BigInt::Digits dest) {
+  BitwiseDigits(x, y, dest,
+                [](BigInt::Digit a, BigInt::Digit b) { return a & ~b; });
+}
+
+static void XorDigits(BigInt::ConstDigits x, BigInt::ConstDigits y,
+                      BigInt::Digits dest) {
+  BitwiseDigits(x, y, dest, std::bit_xor<>());
+}
+
+
+
+
+template <typename Op>
+static void BitwiseAccumulateDecrementedDigits(BigInt::Digits r,
+                                               BigInt::ConstDigits b, Op op) {
+  r = r.First(b.size());
+  size_t j = 0;
+  for (; !b[j]; j++) {
+    r[j] = op(r[j], ~BigInt::Digit(0));
   }
-  {
-    auto xDigits = x->digits();
-    auto yDigits = y->digits();
-    auto resultDigits = result->digits();
-
-    unsigned i = 0;
-    for (; i < numPairs; i++) {
-      resultDigits[i] = op(xDigits[i], yDigits[i]);
-    }
-
-    if (kind != BitwiseOpKind::SymmetricTrim) {
-      DigitsGuard& sourceDigits = kind == BitwiseOpKind::AsymmetricFill
-                                      ? xDigits
-                                  : xLength == i ? yDigits
-                                                 : xDigits;
-      for (; i < resultLength; i++) {
-        resultDigits[i] = sourceDigits[i];
-      }
-    }
-
-    MOZ_ASSERT(i == resultLength);
-  }
-  return destructivelyTrimHighZeroDigits(cx, result);
-}
-
-BigInt* BigInt::absoluteAnd(JSContext* cx, HandleBigInt x, HandleBigInt y) {
-  return absoluteBitwiseOp<BitwiseOpKind::SymmetricTrim>(cx, x, y,
-                                                         std::bit_and<>());
-}
-
-BigInt* BigInt::absoluteOr(JSContext* cx, HandleBigInt x, HandleBigInt y) {
-  return absoluteBitwiseOp<BitwiseOpKind::SymmetricFill>(cx, x, y,
-                                                         std::bit_or<>());
-}
-
-BigInt* BigInt::absoluteAndNot(JSContext* cx, HandleBigInt x, HandleBigInt y) {
-  auto digitOperation = [](Digit a, Digit b) { return a & ~b; };
-  return absoluteBitwiseOp<BitwiseOpKind::AsymmetricFill>(cx, x, y,
-                                                          digitOperation);
-}
-
-BigInt* BigInt::absoluteXor(JSContext* cx, HandleBigInt x, HandleBigInt y) {
-  return absoluteBitwiseOp<BitwiseOpKind::SymmetricFill>(cx, x, y,
-                                                         std::bit_xor<>());
+  r[j] = op(r[j], b[j] - 1);
+  BitwiseDigits(r.From(j + 1), b.From(j + 1), r.From(j + 1), op);
 }
 
 BigInt* BigInt::absoluteAddOne(JSContext* cx, HandleBigInt x,
@@ -2020,11 +1990,7 @@ BigInt* BigInt::copy(JSContext* cx, HandleBigInt x, gc::Heap heap) {
   if (!result) {
     return nullptr;
   }
-  auto xDigits = x->digits();
-  auto resultDigits = result->digits();
-  for (size_t i = 0; i < xDigits.size(); i++) {
-    resultDigits[i] = xDigits[i];
-  }
+  copyDigits(x->unguardedDigits(), result->unguardedDigits());
   return result;
 }
 
@@ -2764,40 +2730,71 @@ BigInt* BigInt::bitAnd(JSContext* cx, HandleBigInt x, HandleBigInt y) {
     return y;
   }
 
-  if (!x->isNegative() && !y->isNegative()) {
-    return absoluteAnd(cx, x, y);
-  }
-
-  if (x->isNegative() && y->isNegative()) {
-    
-    
-    RootedBigInt x1(cx, absoluteSubOne(cx, x));
-    if (!x1) {
-      return nullptr;
-    }
-    RootedBigInt y1(cx, absoluteSubOne(cx, y));
-    if (!y1) {
-      return nullptr;
-    }
-    RootedBigInt result(cx, absoluteOr(cx, x1, y1));
+  auto bitAndPositive = [cx](HandleBigInt& x, HandleBigInt& y) -> BigInt* {
+    size_t length = std::min(x->digitLength(), y->digitLength());
+    BigInt* result = createUninitialized(cx, length, false);
     if (!result) {
       return nullptr;
     }
-    bool resultNegative = true;
-    return absoluteAddOne(cx, result, resultNegative);
+    ConstDigits xDigits = x->unguardedDigits().First(length);
+    ConstDigits yDigits = y->unguardedDigits().First(length);
+    AndDigits(xDigits, yDigits, result->unguardedDigits());
+    return destructivelyTrimHighZeroDigits(cx, result);
+  };
+  if (!x->isNegative() && !y->isNegative()) {
+    return bitAndPositive(x, y);
   }
 
-  MOZ_ASSERT(x->isNegative() != y->isNegative());
-  HandleBigInt& pos = x->isNegative() ? y : x;
-  HandleBigInt& neg = x->isNegative() ? x : y;
-
-  RootedBigInt neg1(cx, absoluteSubOne(cx, neg));
-  if (!neg1) {
-    return nullptr;
+  auto bitAndNegative = [cx](HandleBigInt& x, HandleBigInt& y) -> BigInt* {
+    
+    
+    MOZ_ASSERT(x->digitLength() >= y->digitLength());
+    size_t length = x->digitLength();
+    BigInt* result = createUninitialized(cx, length, true);
+    if (!result) {
+      return nullptr;
+    }
+    ConstDigits xDigits = x->unguardedDigits();
+    ConstDigits yDigits = y->unguardedDigits();
+    Digits rDigits = result->unguardedDigits();
+    copyDigits(xDigits, rDigits);
+    MOZ_ALWAYS_FALSE(inplaceDecrementDigits(rDigits));
+    BitwiseAccumulateDecrementedDigits(rDigits, yDigits, std::bit_or<>());
+    
+    if (MOZ_UNLIKELY(inplaceIncrementDigits(rDigits))) {
+      return createFromPowerOfTwo(cx, length * DigitBits, true);
+    }
+    return result;
+  };
+  if (x->isNegative() && y->isNegative()) {
+    bool swap = x->digitLength() < y->digitLength();
+    return bitAndNegative(swap ? y : x, swap ? x : y);
   }
 
-  
-  return absoluteAndNot(cx, pos, neg1);
+  auto bitAndMixed = [cx](HandleBigInt& x, HandleBigInt& y) -> BigInt* {
+    
+    MOZ_ASSERT(!x->isNegative() && y->isNegative());
+    size_t length = x->digitLength();
+    BigInt* result = createUninitialized(cx, length, false);
+    if (!result) {
+      return nullptr;
+    }
+    ConstDigits xDigits = x->unguardedDigits();
+    ConstDigits yDigits = y->unguardedDigits();
+    Digits rDigits = result->unguardedDigits();
+    size_t n = std::min(length, yDigits.size());
+    Digits rLowDigits = rDigits.First(n);
+    
+    
+    
+    copyDigits(yDigits.First(n), rLowDigits);
+    inplaceDecrementDigits(rLowDigits);
+    AndNotDigits(xDigits.First(n), rLowDigits, rLowDigits);
+    copyDigits(xDigits.From(n), rDigits.From(n));
+    return destructivelyTrimHighZeroDigits(cx, result);
+  };
+  bool swap = x->isNegative();
+  return bitAndMixed(swap ? y : x, swap ? x : y);
 }
 
 
@@ -2810,38 +2807,71 @@ BigInt* BigInt::bitXor(JSContext* cx, HandleBigInt x, HandleBigInt y) {
     return x;
   }
 
+  auto bitXorPositive = [cx](HandleBigInt& x, HandleBigInt& y) -> BigInt* {
+    MOZ_ASSERT(x->digitLength() >= y->digitLength());
+    size_t length = x->digitLength();
+    BigInt* result = createUninitialized(cx, length, false);
+    if (!result) {
+      return nullptr;
+    }
+    ConstDigits xDigits = x->unguardedDigits();
+    ConstDigits yDigits = y->unguardedDigits();
+    Digits rDigits = result->unguardedDigits();
+    size_t n = yDigits.size();
+    XorDigits(xDigits.First(n), yDigits, rDigits.First(n));
+    copyDigits(xDigits.From(n), rDigits.From(n));
+    return destructivelyTrimHighZeroDigits(cx, result);
+  };
   if (!x->isNegative() && !y->isNegative()) {
-    return absoluteXor(cx, x, y);
+    bool swap = x->digitLength() < y->digitLength();
+    return bitXorPositive(swap ? y : x, swap ? x : y);
   }
 
-  if (x->isNegative() && y->isNegative()) {
+  auto bitXorNegative = [cx](HandleBigInt& x, HandleBigInt& y) -> BigInt* {
     
-    RootedBigInt x1(cx, absoluteSubOne(cx, x));
-    if (!x1) {
+    MOZ_ASSERT(x->digitLength() >= y->digitLength());
+    size_t length = x->digitLength();
+    BigInt* result = createUninitialized(cx, length, false);
+    if (!result) {
       return nullptr;
     }
-    RootedBigInt y1(cx, absoluteSubOne(cx, y));
-    if (!y1) {
+    ConstDigits xDigits = x->unguardedDigits();
+    ConstDigits yDigits = y->unguardedDigits();
+    Digits rDigits = result->unguardedDigits();
+    copyDigits(xDigits, rDigits);
+    MOZ_ALWAYS_FALSE(inplaceDecrementDigits(rDigits));
+    BitwiseAccumulateDecrementedDigits(rDigits, yDigits, std::bit_xor<>());
+    return destructivelyTrimHighZeroDigits(cx, result);
+  };
+  if (x->isNegative() && y->isNegative()) {
+    bool swap = x->digitLength() < y->digitLength();
+    return bitXorNegative(swap ? y : x, swap ? x : y);
+  }
+
+  auto bitXorMixed = [cx](HandleBigInt& x, HandleBigInt& y) -> BigInt* {
+    
+    MOZ_ASSERT(!x->isNegative() && y->isNegative());
+    size_t length = std::max(x->digitLength(), y->digitLength());
+    BigInt* result = createUninitialized(cx, length, true);
+    if (!result) {
       return nullptr;
     }
-    return absoluteXor(cx, x1, y1);
-  }
-  MOZ_ASSERT(x->isNegative() != y->isNegative());
-
-  HandleBigInt& pos = x->isNegative() ? y : x;
-  HandleBigInt& neg = x->isNegative() ? x : y;
-
-  
-  RootedBigInt result(cx, absoluteSubOne(cx, neg));
-  if (!result) {
-    return nullptr;
-  }
-  result = absoluteXor(cx, result, pos);
-  if (!result) {
-    return nullptr;
-  }
-  bool resultNegative = true;
-  return absoluteAddOne(cx, result, resultNegative);
+    ConstDigits xDigits = x->unguardedDigits();
+    ConstDigits yDigits = y->unguardedDigits();
+    Digits rDigits = result->unguardedDigits();
+    Digits rLowDigits = rDigits.First(yDigits.size());
+    copyDigits(yDigits, rLowDigits);
+    MOZ_ALWAYS_FALSE(inplaceDecrementDigits(rLowDigits));
+    size_t n = std::min(xDigits.size(), yDigits.size());
+    XorDigits(rDigits.First(n), xDigits.First(n), rDigits.First(n));
+    copyDigits(xDigits.From(n), rDigits.From(yDigits.size()));
+    if (MOZ_UNLIKELY(inplaceIncrementDigits(rDigits))) {
+      return createFromPowerOfTwo(cx, length * DigitBits, true);
+    }
+    return destructivelyTrimHighZeroDigits(cx, result);
+  };
+  bool swap = x->isNegative();
+  return bitXorMixed(swap ? y : x, swap ? x : y);
 }
 
 
@@ -2854,44 +2884,75 @@ BigInt* BigInt::bitOr(JSContext* cx, HandleBigInt x, HandleBigInt y) {
     return x;
   }
 
-  bool resultNegative = x->isNegative() || y->isNegative();
-
-  if (!resultNegative) {
-    return absoluteOr(cx, x, y);
+  auto bitOrPositive = [cx](HandleBigInt& x, HandleBigInt& y) -> BigInt* {
+    MOZ_ASSERT(x->digitLength() >= y->digitLength());
+    size_t length = x->digitLength();
+    BigInt* result = createUninitialized(cx, length, false);
+    if (!result) {
+      return nullptr;
+    }
+    ConstDigits xDigits = x->unguardedDigits();
+    ConstDigits yDigits = y->unguardedDigits();
+    Digits rDigits = result->unguardedDigits();
+    size_t n = yDigits.size();
+    OrDigits(xDigits.First(n), yDigits, rDigits.First(n));
+    copyDigits(xDigits.From(n), rDigits.From(n));
+    
+    return result;
+  };
+  if (!x->isNegative() && !y->isNegative()) {
+    bool swap = x->digitLength() < y->digitLength();
+    return bitOrPositive(swap ? y : x, swap ? x : y);
   }
 
+  auto bitOrNegative = [cx](HandleBigInt& x, HandleBigInt& y) -> BigInt* {
+    
+    
+    MOZ_ASSERT(x->digitLength() >= y->digitLength());
+    size_t length = y->digitLength();
+    BigInt* result = createUninitialized(cx, length, true);
+    if (!result) {
+      return nullptr;
+    }
+    ConstDigits xDigits = x->unguardedDigits();
+    ConstDigits yDigits = y->unguardedDigits();
+    Digits rDigits = result->unguardedDigits();
+    
+    
+    copyDigits(xDigits.First(length), rDigits);
+    inplaceDecrementDigits(rDigits);
+    BitwiseAccumulateDecrementedDigits(rDigits, yDigits, std::bit_and<>());
+    
+    MOZ_ALWAYS_FALSE(inplaceIncrementDigits(rDigits));
+    return destructivelyTrimHighZeroDigits(cx, result);
+  };
   if (x->isNegative() && y->isNegative()) {
+    bool swap = x->digitLength() < y->digitLength();
+    return bitOrNegative(swap ? y : x, swap ? x : y);
+  }
+
+  auto bitOrMixed = [cx](HandleBigInt& x, HandleBigInt& y) -> BigInt* {
     
-    
-    RootedBigInt result(cx, absoluteSubOne(cx, x));
+    MOZ_ASSERT(!x->isNegative() && y->isNegative());
+    size_t length = y->digitLength();
+    BigInt* result = createUninitialized(cx, length, true);
     if (!result) {
       return nullptr;
     }
-    RootedBigInt y1(cx, absoluteSubOne(cx, y));
-    if (!y1) {
-      return nullptr;
-    }
-    result = absoluteAnd(cx, result, y1);
-    if (!result) {
-      return nullptr;
-    }
-    return absoluteAddOne(cx, result, resultNegative);
-  }
-
-  MOZ_ASSERT(x->isNegative() != y->isNegative());
-  HandleBigInt& pos = x->isNegative() ? y : x;
-  HandleBigInt& neg = x->isNegative() ? x : y;
-
-  
-  RootedBigInt result(cx, absoluteSubOne(cx, neg));
-  if (!result) {
-    return nullptr;
-  }
-  result = absoluteAndNot(cx, result, pos);
-  if (!result) {
-    return nullptr;
-  }
-  return absoluteAddOne(cx, result, resultNegative);
+    ConstDigits xDigits = x->unguardedDigits();
+    ConstDigits yDigits = y->unguardedDigits();
+    Digits rDigits = result->unguardedDigits();
+    copyDigits(yDigits, rDigits);
+    MOZ_ALWAYS_FALSE(inplaceDecrementDigits(rDigits));
+    size_t n = std::min(length, xDigits.size());
+    Digits rLowDigits = rDigits.First(n);
+    AndNotDigits(rLowDigits, xDigits.First(n), rLowDigits);
+    
+    MOZ_ALWAYS_FALSE(inplaceIncrementDigits(rDigits));
+    return destructivelyTrimHighZeroDigits(cx, result);
+  };
+  bool swap = x->isNegative();
+  return bitOrMixed(swap ? y : x, swap ? x : y);
 }
 
 
