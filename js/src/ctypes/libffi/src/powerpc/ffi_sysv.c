@@ -43,6 +43,10 @@
 #define NUM_FPR_ARG_REGISTERS 8
 
 
+
+#define FFI_TYPE_UINT256 (FFI_TYPE_LAST + 1)
+
+
 #if HAVE_LONG_DOUBLE_VARIANT && FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
 
 void FFI_HIDDEN
@@ -58,6 +62,12 @@ ffi_prep_types_sysv (ffi_abi abi)
       ffi_type_longdouble.size = 16;
       ffi_type_longdouble.alignment = 16;
     }
+#ifdef FFI_TARGET_HAS_COMPLEX_TYPE
+  
+
+  ffi_type_complex_longdouble.size = 2 * ffi_type_longdouble.size;
+  ffi_type_complex_longdouble.alignment = ffi_type_longdouble.alignment;
+#endif
 }
 #endif
 
@@ -87,6 +97,39 @@ translate_float (int abi, int type)
 #endif
     }
   return type;
+}
+
+
+
+
+
+static int
+translate_type (int abi, const ffi_type *t)
+{
+  if (t->type != FFI_TYPE_COMPLEX)
+    return translate_float (abi, t->type);
+
+  switch (t->size)
+    {
+    case 2:
+      
+      return FFI_TYPE_UINT16;
+    case 4:
+      
+      return FFI_TYPE_UINT32;
+    case 8:
+      
+      return FFI_TYPE_UINT64;
+    case 16:
+      
+      return FFI_TYPE_UINT128;
+    case 32:
+      
+      return FFI_TYPE_UINT256;
+    default:
+      FFI_ASSERT (0);
+      return FFI_TYPE_STRUCT;
+    }
 }
 
 
@@ -121,7 +164,7 @@ ffi_prep_cif_sysv_core (ffi_cif *cif)
 
 
 
-  type = translate_float (cif->abi, type);
+  type = translate_type (cif->abi, cif->rtype);
 
   switch (type)
     {
@@ -140,12 +183,22 @@ ffi_prep_cif_sysv_core (ffi_cif *cif)
 #endif
       break;
 
+    case FFI_TYPE_UINT256:
+      flags |= FLAG_RETURNS_256BITS;
+      
     case FFI_TYPE_UINT128:
       flags |= FLAG_RETURNS_128BITS;
       
     case FFI_TYPE_UINT64:
     case FFI_TYPE_SINT64:
       flags |= FLAG_RETURNS_64BITS;
+      break;
+
+    case FFI_TYPE_UINT16:
+      
+
+      if (cif->rtype->type == FFI_TYPE_COMPLEX)
+	flags |= FLAG_RETURNS_SMST;
       break;
 
     case FFI_TYPE_STRUCT:
@@ -176,9 +229,8 @@ ffi_prep_cif_sysv_core (ffi_cif *cif)
 
   for (ptr = cif->arg_types, i = cif->nargs; i > 0; i--, ptr++)
     {
-      unsigned short typenum = (*ptr)->type;
-
-      typenum = translate_float (cif->abi, typenum);
+      unsigned short typenum = translate_type (cif->abi, *ptr);
+      unsigned nwords;
 
       switch (typenum)
 	{
@@ -224,16 +276,19 @@ ffi_prep_cif_sysv_core (ffi_cif *cif)
 #endif
 	  break;
 
+	case FFI_TYPE_UINT256:
 	case FFI_TYPE_UINT128:
 	  
 
 
-	  if (gpr_count >= NUM_GPR_ARG_REGISTERS - 3)
+
+	  nwords = typenum == FFI_TYPE_UINT256 ? 8 : 4;
+	  if (gpr_count > NUM_GPR_ARG_REGISTERS - nwords)
 	    gpr_count = NUM_GPR_ARG_REGISTERS;
 	  if (gpr_count >= NUM_GPR_ARG_REGISTERS)
-	    stack_count += 4;
+	    stack_count += nwords;
 	  else
-	    gpr_count += 4;
+	    gpr_count += nwords;
 	  break;
 
 	case FFI_TYPE_UINT64:
@@ -458,9 +513,8 @@ ffi_prep_args_SYSV (extended_cif *ecif, unsigned *const stack)
        i > 0;
        i--, ptr++, p_argv.v++)
     {
-      unsigned int typenum = (*ptr)->type;
-
-      typenum = translate_float (ecif->cif->abi, typenum);
+      unsigned int typenum = translate_type (ecif->cif->abi, *ptr);
+      unsigned int ii, nwords;
 
       
       switch (typenum)
@@ -518,16 +572,18 @@ ffi_prep_args_SYSV (extended_cif *ecif, unsigned *const stack)
 	  break;
 #endif 
 
+	case FFI_TYPE_UINT256:
 	case FFI_TYPE_UINT128:
 	  
 
 
 
-	  if (gpr_base.u >= gpr_end.u - 3)
+
+	  nwords = typenum == FFI_TYPE_UINT256 ? 8 : 4;
+	  if (gpr_base.u > gpr_end.u - nwords)
 	    {
-	      unsigned int ii;
 	      gpr_base.u = gpr_end.u;
-	      for (ii = 0; ii < 4; ii++)
+	      for (ii = 0; ii < nwords; ii++)
 		{
 		  unsigned int int_tmp = (*p_argv.ui)[ii];
 		  *next_arg.u++ = int_tmp;
@@ -535,8 +591,7 @@ ffi_prep_args_SYSV (extended_cif *ecif, unsigned *const stack)
 	    }
 	  else
 	    {
-	      unsigned int ii;
-	      for (ii = 0; ii < 4; ii++)
+	      for (ii = 0; ii < nwords; ii++)
 		{
 		  unsigned int int_tmp = (*p_argv.ui)[ii];
 		  *gpr_base.u++ = int_tmp;
@@ -709,7 +764,7 @@ ffi_closure_helper_SYSV (ffi_cif *cif,
   avalue = alloca (cif->nargs * sizeof (void *));
 
   
-  rtypenum = translate_float (cif->abi, rtypenum);
+  rtypenum = translate_type (cif->abi, cif->rtype);
 
   
 
@@ -729,10 +784,9 @@ ffi_closure_helper_SYSV (ffi_cif *cif,
 
   
   while (i < avn) {
-    unsigned short typenum = arg_types[i]->type;
-
     
-    typenum = translate_float (cif->abi, typenum);
+    unsigned short typenum = translate_type (cif->abi, arg_types[i]);
+    long nwords;
 
     switch (typenum)
       {
@@ -796,20 +850,23 @@ ffi_closure_helper_SYSV (ffi_cif *cif,
 # endif
 #endif
 
+      case FFI_TYPE_UINT256:
       case FFI_TYPE_UINT128:
 	
 
-	if (ng < NUM_GPR_ARG_REGISTERS - 3)
+
+	nwords = typenum == FFI_TYPE_UINT256 ? 8 : 4;
+	if (ng <= NUM_GPR_ARG_REGISTERS - nwords)
 	  {
 	    avalue[i] = pgr;
-	    pgr += 4;
-	    ng += 4;
+	    pgr += nwords;
+	    ng += nwords;
 	  }
 	else
 	  {
 	    avalue[i] = pst;
-	    pst += 4;
-	    ng = 8+4;
+	    pst += nwords;
+	    ng = NUM_GPR_ARG_REGISTERS;
 	  }
 	break;
 
@@ -940,6 +997,18 @@ ffi_closure_helper_SYSV (ffi_cif *cif,
     case FFI_TYPE_SINT8:
       return PPC_LD_S8;
     case FFI_TYPE_UINT16:
+      if (cif->rtype->type == FFI_TYPE_COMPLEX)
+	{
+	  
+	  unsigned int word = 0;
+#ifdef __LITTLE_ENDIAN__
+	  memcpy (&word, rvalue, 2);
+#else
+	  memcpy ((char *) &word + 2, rvalue, 2);
+#endif
+	  *(unsigned int *) rvalue = word;
+	  return PPC_LD_U32;
+	}
       return PPC_LD_U16;
     case FFI_TYPE_SINT16:
       return PPC_LD_S16;
@@ -955,14 +1024,16 @@ ffi_closure_helper_SYSV (ffi_cif *cif,
       return PPC_LD_I64;
     case FFI_TYPE_UINT128:
       return PPC32_LD_R3R6;
+    case FFI_TYPE_UINT256:
+      return PPC32_LD_R3R10;
     case FFI_TYPE_STRUCT:
       if (cif->abi & FFI_SYSV_STRUCT_RET)
 	switch (size)
 	  {
 	  case 1:
-	    return PPC_LD_U8;
+	    return PPC32_SYSV_LD_STRUCT_1;
 	  case 2:
-	    return PPC_LD_U16;
+	    return PPC32_SYSV_LD_STRUCT_2;
 	  case 3:
 	    return PPC32_SYSV_LD_STRUCT_3;
 	  case 4:

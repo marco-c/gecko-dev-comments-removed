@@ -402,7 +402,7 @@ static ffi_status ffi_prep_cif_machdep_int(ffi_cif *cif, unsigned nfixedargs)
 
 
 
-  if (cif->rtype->type != FFI_TYPE_STRUCT && cif->rtype->type != FFI_TYPE_COMPLEX && cif->abi == FFI_O32)
+  if (cif->rtype->type != FFI_TYPE_STRUCT && cif->abi == FFI_O32)
     {
       if (cif->nargs > 0 && cif->nargs == nfixedargs)
 	{
@@ -455,6 +455,24 @@ static ffi_status ffi_prep_cif_machdep_int(ffi_cif *cif, unsigned nfixedargs)
           cif->flags += FFI_TYPE_UINT64 << (FFI_FLAG_BITS * 2);
           break;
       
+        case FFI_TYPE_COMPLEX:
+          
+
+          cif->flags += FFI_TYPE_COMPLEX << (FFI_FLAG_BITS * 2);
+          switch (cif->rtype->elements[0]->type)
+            {
+            case FFI_TYPE_FLOAT:
+              cif->flags += FFI_TYPE_UINT32 << (FFI_FLAG_BITS * 4);
+              break;
+            case FFI_TYPE_DOUBLE:
+              cif->flags += FFI_TYPE_UINT64 << (FFI_FLAG_BITS * 4);
+              break;
+            default:
+              cif->flags += cif->rtype->elements[0]->type << (FFI_FLAG_BITS * 4);
+              break;
+            }
+          break;
+
         case FFI_TYPE_FLOAT:
         default:
           cif->flags += FFI_TYPE_INT << (FFI_FLAG_BITS * 2);
@@ -798,6 +816,18 @@ void ffi_call_int(ffi_cif *cif, void (*fn)(void), void *rvalue,
             rvalue_copy = alloca(16);
             copy_rvalue = 1;
           }
+	else if (cif->rtype->type == FFI_TYPE_COMPLEX && cif->rtype->size < 16)
+	  {
+	    
+
+
+	    rvalue_copy = alloca (16);
+	    copy_rvalue = 1;
+#if defined(__MIPSEB__) || defined(_MIPSEB)
+	    if (cif->rtype->size < 8)
+	      copy_offset = 8 - cif->rtype->size;
+#endif
+	  }
 	else if (cif->rtype->type == FFI_TYPE_FLOAT
 		 && (cif->abi == FFI_N64_SOFT_FLOAT
 		     || cif->abi == FFI_N32_SOFT_FLOAT))
@@ -978,11 +1008,19 @@ ffi_closure_mips_inner_O32 (ffi_cif *cif,
       argn = 1;
       seen_int = 1;
     }
-  if ((cif->flags >> (FFI_FLAG_BITS * 2)) == FFI_TYPE_COMPLEX)
+  if (cif->rtype->type == FFI_TYPE_COMPLEX
+      && (cif->rtype->elements[0]->type == FFI_TYPE_FLOAT
+          || cif->rtype->elements[0]->type == FFI_TYPE_DOUBLE
+          || cif->rtype->elements[0]->type == FFI_TYPE_LONGDOUBLE))
     {
       rvalue = fpr;
-      argn = 1;
     }
+  
+
+
+
+  if (cif->abi == FFI_O32_SOFT_FLOAT && cif->rtype->type == FFI_TYPE_COMPLEX)
+    rvalue = fpr;
 
   i = 0;
   avn = cif->nargs;
@@ -1041,6 +1079,15 @@ ffi_closure_mips_inner_O32 (ffi_cif *cif,
   
   fun(cif, rvalue, avaluep, user_data);
 
+  if (cif->rtype->type == FFI_TYPE_COMPLEX && cif->rtype->size == 2)
+    {
+      
+      UINT16 value;
+
+      memcpy (&value, rvalue, sizeof (value));
+      *(UINT32 *) rvalue = value;
+    }
+
   if (cif->abi == FFI_O32_SOFT_FLOAT)
     {
       switch (cif->rtype->type)
@@ -1049,15 +1096,18 @@ ffi_closure_mips_inner_O32 (ffi_cif *cif,
           return FFI_TYPE_INT;
         case FFI_TYPE_DOUBLE:
           return FFI_TYPE_UINT64;
+        case FFI_TYPE_COMPLEX:
+          return (FFI_TYPE_COMPLEX
+                  | (cif->rtype->size << (FFI_FLAG_BITS * 2)));
         default:
           return cif->rtype->type;
         }
     }
   else
     {
-      if (cif->rtype->type == FFI_TYPE_COMPLEX) {
-          __asm__ volatile ("move $v1, %0" : : "r"(cif->rtype->size));
-      }
+      if (cif->rtype->type == FFI_TYPE_COMPLEX)
+        return (FFI_TYPE_COMPLEX
+                | (cif->rtype->size << (FFI_FLAG_BITS * 2)));
       return cif->rtype->type;
     }
 }
@@ -1270,6 +1320,29 @@ ffi_closure_mips_inner_N32 (ffi_cif *cif,
 
   
   fun (cif, rvalue, avaluep, user_data);
+
+#if defined(__MIPSEB__) || defined(_MIPSEB)
+  
+
+
+
+  if ((cif->rtype->type == FFI_TYPE_FLOAT && soft_float)
+#if _MIPS_SIM == _ABIN32
+      || cif->rtype->type == FFI_TYPE_POINTER
+#endif
+      )
+    *(ffi_arg *) rvalue = (SINT32) *(UINT32 *) rvalue;
+
+  
+
+  if (cif->rtype->type == FFI_TYPE_COMPLEX && cif->rtype->size < 8)
+    {
+      size_t size = cif->rtype->size;
+
+      memmove ((char *) rvalue + 8 - size, rvalue, size);
+      memset (rvalue, 0, 8 - size);
+    }
+#endif
 
   return cif->flags >> (FFI_FLAG_BITS * 8);
 }

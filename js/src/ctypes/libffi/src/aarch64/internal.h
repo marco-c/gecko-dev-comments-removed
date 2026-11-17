@@ -78,6 +78,11 @@
 
 #endif
 
+#ifdef __AARCH64EB__
+# define BE(X)	X
+#else
+# define BE(X)	0
+#endif
 
 #ifdef LIBFFI_ASM
 

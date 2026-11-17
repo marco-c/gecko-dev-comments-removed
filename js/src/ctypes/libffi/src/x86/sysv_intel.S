@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------------
-   sysv.S - Copyright (c) 2017, 2022  Anthony Green
+   sysv.S - Copyright (c) 2017, 2022, 2026  Anthony Green
           - Copyright (c) 2013  The Written Word, Inc.
           - Copyright (c) 1996,1998,2001-2003,2005,2008,2010  Red Hat, Inc.
 
@@ -291,7 +291,7 @@ L(UW13):
 	FFI_CLOSURE_SAVE_REGS
 	FFI_CLOSURE_COPY_TRAMP_DATA
 
-	/* Entry point from preceeding Go closures.  */
+	/* Entry point from preceding Go closures.  */
 L(do_closure_i386)::
 
 	FFI_CLOSURE_PREP_CALL
@@ -420,7 +420,7 @@ L(do_closure_REGISTER)::
 
 	FFI_CLOSURE_COPY_TRAMP_DATA
 
-	/* Entry point from preceeding Go closure.  */
+	/* Entry point from preceding Go closure.  */
 L(do_closure_STDCALL)::
 
 	FFI_CLOSURE_PREP_CALL
@@ -992,7 +992,7 @@ L(EFDE9):
 #endif /* ifndef _MSC_VER */
 #endif /* ifndef __x86_64__ */
 
-#if defined __ELF__ && defined __linux__
+#if defined __ELF__ && (defined __linux__ || defined __FreeBSD__)
 	.section	.note.GNU-stack,"",@progbits
 #endif
 #endif

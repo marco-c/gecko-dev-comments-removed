@@ -24,6 +24,7 @@
 
 
 
+
 #include <ffi.h>
 #include <ffi_common.h>
 
@@ -41,18 +42,18 @@
 
 #define EM_JS_MACROS(ret, name, args, body...) EM_JS(ret, name, args, body)
 
-EM_JS_DEPS(libffi, "$getWasmTableEntry,$setWasmTableEntry,$getEmptyTableSlot,$convertJsFunctionToWasm");
+EM_JS_DEPS(libffi, "$getWasmTableEntry,$setWasmTableEntry,$getEmptyTableSlot,$wasmTable,$stackSave,$stackAlloc,$stackRestore");
 
 #define DEREF_U8(addr, offset) HEAPU8[addr + offset]
 #define DEREF_S8(addr, offset) HEAP8[addr + offset]
-#define DEREF_U16(addr, offset) HEAPU16[(addr >> 1) + offset]
-#define DEREF_S16(addr, offset) HEAP16[(addr >> 1) + offset]
-#define DEREF_U32(addr, offset) HEAPU32[(addr >> 2) + offset]
-#define DEREF_S32(addr, offset) HEAP32[(addr >> 2) + offset]
+#define DEREF_U16(addr, offset) HEAPU16[HEAP_INDEX_16(addr) + offset]
+#define DEREF_S16(addr, offset) HEAP16[HEAP_INDEX_16(addr) + offset]
+#define DEREF_U32(addr, offset) HEAPU32[HEAP_INDEX_32(addr) + offset]
+#define DEREF_S32(addr, offset) HEAP32[HEAP_INDEX_32(addr) + offset]
 
-#define DEREF_F32(addr, offset) HEAPF32[(addr >> 2) + offset]
-#define DEREF_F64(addr, offset) HEAPF64[(addr >> 3) + offset]
-#define DEREF_U64(addr, offset) HEAPU64[(addr >> 3) + offset]
+#define DEREF_F32(addr, offset) HEAPF32[HEAP_INDEX_32(addr) + offset]
+#define DEREF_F64(addr, offset) HEAPF64[HEAP_INDEX_64(addr) + offset]
+#define DEREF_U64(addr, offset) HEAPU64[HEAP_INDEX_64(addr) + offset]
 
 #define CHECK_FIELD_OFFSET(struct, field, offset)                                  \
   _Static_assert(                                                                  \
@@ -63,12 +64,26 @@ EM_JS_DEPS(libffi, "$getWasmTableEntry,$setWasmTableEntry,$getEmptyTableSlot,$co
 
 #define FFI_EMSCRIPTEN_ABI FFI_WASM32_EMSCRIPTEN
 #define PTR_SIG 'i'
+#define PTR_WASM_TYPE 0x7f
 
 #define DEC_PTR(p) p
 #define ENC_PTR(p) p
 
+
+
+#define HEAP_INDEX_16(addr) ((addr) >>> 1)
+#define HEAP_INDEX_32(addr) ((addr) >>> 2)
+#define HEAP_INDEX_64(addr) ((addr) >>> 3)
+
 #define DEREF_PTR(addr, offset) DEREF_U32(addr, offset)
 #define DEREF_PTR_NUMBER(addr, offset) DEREF_PTR(addr, offset)
+
+
+
+
+
+#define STORE_ARG_WIDENED_UNSIGNED(rvalue, x) (DEREF_U32(rvalue, 0) = (x))
+#define STORE_ARG_WIDENED_SIGNED(rvalue, x) (DEREF_U32(rvalue, 0) = (x))
 
 CHECK_FIELD_OFFSET(ffi_cif, abi, 4*0);
 CHECK_FIELD_OFFSET(ffi_cif, nargs, 4*1);
@@ -98,6 +113,7 @@ CHECK_FIELD_OFFSET(ffi_type, elements, 8);
 
 #define FFI_EMSCRIPTEN_ABI FFI_WASM64_EMSCRIPTEN
 #define PTR_SIG 'j'
+#define PTR_WASM_TYPE 0x7e
 
 
 
@@ -106,8 +122,24 @@ CHECK_FIELD_OFFSET(ffi_type, elements, 8);
 
 #define ENC_PTR(p) BigInt(p)
 
+
+
+#define HEAP_INDEX_16(addr) ((addr) / 2)
+#define HEAP_INDEX_32(addr) ((addr) / 4)
+#define HEAP_INDEX_64(addr) ((addr) / 8)
+
 #define DEREF_PTR(addr, offset) DEREF_U64(addr, offset)
 #define DEREF_PTR_NUMBER(addr, offset) DEC_PTR(DEREF_PTR(addr, offset))
+
+
+
+
+
+
+
+#define STORE_ARG_WIDENED_UNSIGNED(rvalue, x) \
+  (DEREF_U64(rvalue, 0) = BigInt(x) & BigInt(4294967295))
+#define STORE_ARG_WIDENED_SIGNED(rvalue, x) (DEREF_U64(rvalue, 0) = BigInt(x))
 
 CHECK_FIELD_OFFSET(ffi_cif, abi, 0);
 CHECK_FIELD_OFFSET(ffi_cif, nargs, 4);
@@ -247,6 +279,10 @@ ffi_call_js, (ffi_cif *cif, ffi_fp fn, void *rvalue, void **avalue),
   var rtype_unboxed = unbox_small_structs(CIF__RTYPE(cif));
   var rtype_ptr = rtype_unboxed[0];
   var rtype_id = rtype_unboxed[1];
+  
+  
+  
+  var rtype_widen = FFI_TYPE__TYPEID(DEC_PTR(CIF__RTYPE(cif))) !== FFI_TYPE_STRUCT;
   var orig_stack_ptr = stackSave();
   var cur_stack_ptr = orig_stack_ptr;
 
@@ -267,6 +303,15 @@ ffi_call_js, (ffi_cif *cif, ffi_fp fn, void *rvalue, void **avalue),
   
   
   if (rtype_id === FFI_TYPE_LONGDOUBLE || rtype_id === FFI_TYPE_STRUCT) {
+    if (rvalue === 0) {
+      
+      
+      
+      var rsize = DEC_PTR(FFI_TYPE__SIZE(rtype_ptr));
+      var ralign = FFI_TYPE__ALIGN(rtype_ptr);
+      STACK_ALLOC(cur_stack_ptr, rsize, ralign);
+      rvalue = cur_stack_ptr;
+    }
     args.push(ENC_PTR(rvalue));
     ret_by_arg = true;
   }
@@ -431,14 +476,30 @@ ffi_call_js, (ffi_cif *cif, ffi_fp fn, void *rvalue, void **avalue),
   }
 
   
+  if (rvalue === 0) {
+    return;
+  }
+
+  
+  
+  
+  
   
   switch (rtype_id) {
   case FFI_TYPE_VOID:
     break;
   case FFI_TYPE_INT:
-  case FFI_TYPE_UINT32:
   case FFI_TYPE_SINT32:
-    DEREF_U32(rvalue, 0) = result;
+    if (rtype_widen)
+      STORE_ARG_WIDENED_SIGNED(rvalue, result | 0);
+    else
+      DEREF_U32(rvalue, 0) = result;
+    break;
+  case FFI_TYPE_UINT32:
+    if (rtype_widen)
+      STORE_ARG_WIDENED_UNSIGNED(rvalue, result | 0);
+    else
+      DEREF_U32(rvalue, 0) = result;
     break;
   case FFI_TYPE_FLOAT:
     DEREF_F32(rvalue, 0) = result;
@@ -447,12 +508,28 @@ ffi_call_js, (ffi_cif *cif, ffi_fp fn, void *rvalue, void **avalue),
     DEREF_F64(rvalue, 0) = result;
     break;
   case FFI_TYPE_UINT8:
+    if (rtype_widen)
+      STORE_ARG_WIDENED_UNSIGNED(rvalue, result & 0xff);
+    else
+      DEREF_U8(rvalue, 0) = result;
+    break;
   case FFI_TYPE_SINT8:
-    DEREF_U8(rvalue, 0) = result;
+    if (rtype_widen)
+      STORE_ARG_WIDENED_SIGNED(rvalue, (result << 24) >> 24);
+    else
+      DEREF_U8(rvalue, 0) = result;
     break;
   case FFI_TYPE_UINT16:
+    if (rtype_widen)
+      STORE_ARG_WIDENED_UNSIGNED(rvalue, result & 0xffff);
+    else
+      DEREF_U16(rvalue, 0) = result;
+    break;
   case FFI_TYPE_SINT16:
-    DEREF_U16(rvalue, 0) = result;
+    if (rtype_widen)
+      STORE_ARG_WIDENED_SIGNED(rvalue, (result << 16) >> 16);
+    else
+      DEREF_U16(rvalue, 0) = result;
     break;
   case FFI_TYPE_UINT64:
   case FFI_TYPE_SINT64:
@@ -527,6 +604,34 @@ ffi_closure_free(void *closure) {
   return ffi_closure_free_js(closure);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 EM_JS_MACROS(
 ffi_status,
 ffi_prep_closure_loc_js,
@@ -537,6 +642,35 @@ ffi_prep_closure_loc_js,
   fun = DEC_PTR(fun);
   user_data = DEC_PTR(user_data);
   codeloc = DEC_PTR(codeloc);
+  var { sig, call_info } = ffi_cif_to_call_info(cif);
+
+  LOG_DEBUG("CREATE_CLOSURE", "sig:", sig);
+  try {
+    var instance = new WebAssembly.Instance(
+      ffi_closure_trampoline_module(sig),
+      {
+        e: {
+          p: ffi_closure_prelude(closure, call_info),
+          e: ffi_closure_epilogue(sig),
+          t: wasmTable,
+        },
+      },
+    );
+  } catch (e) {
+    LOG_DEBUG("CREATE_CLOSURE_FAILED", e);
+    return FFI_BAD_TYPEDEF_MACRO;
+  }
+  var wasm_trampoline = instance.exports["f"];
+  setWasmTableEntry(codeloc, wasm_trampoline);
+  CLOSURE__cif(closure) = ENC_PTR(cif);
+  CLOSURE__fun(closure) = ENC_PTR(fun);
+  CLOSURE__user_data(closure) = ENC_PTR(user_data);
+  return FFI_OK_MACRO;
+}
+
+
+
+function ffi_cif_to_call_info(cif) {
   var abi = CIF__ABI(cif);
   var nargs = CIF__NARGS(cif);
   var nfixedargs = CIF__NFIXEDARGS(cif);
@@ -633,10 +767,33 @@ ffi_prep_closure_loc_js,
     
     sig += PTR_SIG;
   }
-  LOG_DEBUG("CREATE_CLOSURE", "sig:", sig);
-  function trampoline() {
-    var args = Array.prototype.slice.call(arguments);
-    var size = 0;
+  return {
+    sig,
+    call_info: {
+      nfixedargs,
+      nargs,
+      ret_by_arg,
+      unboxed_arg_type_info_list,
+      unboxed_arg_type_id_list,
+    },
+  };
+}
+
+
+
+
+function ffi_closure_prelude(
+  closure,
+  {
+    nfixedargs,
+    nargs,
+    ret_by_arg,
+    unboxed_arg_type_info_list,
+    unboxed_arg_type_id_list,
+  },
+) {
+  return function prelude() {
+    var args = arguments;
     var orig_stack_ptr = stackSave();
     var cur_ptr = orig_stack_ptr;
     var ret_ptr;
@@ -644,7 +801,7 @@ ffi_prep_closure_loc_js,
     
     
     if (ret_by_arg) {
-      ret_ptr = args[jsarg_idx++];
+      ret_ptr = DEC_PTR(args[jsarg_idx++]);
     } else {
       
       STACK_ALLOC(cur_ptr, 8, 8);
@@ -754,37 +911,138 @@ ffi_prep_closure_loc_js,
     stackRestore(cur_ptr);
     stackAlloc(0); 
     LOG_DEBUG("CALL_CLOSURE", "closure:", closure, "fptr", CLOSURE__fun(closure), "cif", CLOSURE__cif(closure));
-    getWasmTableEntry(CLOSURE__fun(closure))(
-        CLOSURE__cif(closure), ENC_PTR(ret_ptr), ENC_PTR(args_ptr),
-        CLOSURE__user_data(closure)
-    );
-    stackRestore(orig_stack_ptr);
-
     
-    if (!ret_by_arg) {
-      switch (sig[0]) {
-      case 'i':
-        return DEREF_U32(ret_ptr, 0);
-      case 'j':
-        return DEREF_U64(ret_ptr, 0);
-      case 'd':
-        return DEREF_F64(ret_ptr, 0);
-      case 'f':
-        return DEREF_F32(ret_ptr, 0);
+    
+    
+    
+    
+    return [
+      ENC_PTR(ret_ptr),          
+      ENC_PTR(orig_stack_ptr),
+
+      CLOSURE__cif(closure),     
+      ENC_PTR(ret_ptr),
+      ENC_PTR(args_ptr),
+      CLOSURE__user_data(closure),
+
+      CLOSURE__fun(closure),     
+    ];
+  }
+}
+
+
+
+function ffi_closure_epilogue(sig) {
+  var load;
+  switch (sig[0]) {
+  case 'i': load = (ptr) => DEREF_S32(ptr, 0); break;
+  case 'j': load = (ptr) => DEREF_U64(ptr, 0); break;
+  case 'f': load = (ptr) => DEREF_F32(ptr, 0); break;
+  case 'd': load = (ptr) => DEREF_F64(ptr, 0); break;
+  default:  load = (ptr) => undefined; break;
+  }
+  return function epilogue(ret_ptr, orig_stack_ptr) {
+    stackRestore(DEC_PTR(orig_stack_ptr));
+    return load(DEC_PTR(ret_ptr));
+  };
+}
+
+var ffi_closure_trampoline_module_cache = new Map();
+function ffi_closure_trampoline_module(sig) {
+  var cache = ffi_closure_trampoline_module_cache;
+  var module = cache.get(sig);
+  if (module) {
+    return module;
+  }
+
+  function uleb128(n) {
+    var result = [];
+    do {
+      var byte = n & 0x7f;
+      n >>>= 7;
+      if (n) {
+        byte |= 0x80;
       }
-    }
+      result.push(byte);
+    } while (n);
+    return result;
   }
-  try {
-    var wasm_trampoline = convertJsFunctionToWasm(trampoline, sig);
-  } catch(e) {
-    return FFI_BAD_TYPEDEF_MACRO;
+  
+  function vec(bytes) {
+    return [...uleb128(bytes.length), ...bytes];
   }
-  setWasmTableEntry(codeloc, wasm_trampoline);
-  CLOSURE__cif(closure) = ENC_PTR(cif);
-  CLOSURE__fun(closure) = ENC_PTR(fun);
-  CLOSURE__user_data(closure) = ENC_PTR(user_data);
-  return FFI_OK_MACRO;
-})
+  function section(id, bytes) {
+    return [id, ...vec(bytes)];
+  }
+  function funcType(params, results) {
+    return [0x60, ...vec(params), ...vec(results)];
+  }
+
+  var typeCodes = { 'i': 0x7f, 'j': 0x7e, 'f': 0x7d, 'd': 0x7c };
+  var P = PTR_WASM_TYPE;
+  var params = Array.from(sig.slice(1), (c) => typeCodes[c]);
+  var results = sig[0] === 'v' ? [] : [typeCodes[sig[0]]];
+  var nparams = params.length;
+
+  
+  
+  
+  var idx64 = typeof wasmTable.length === 'bigint';
+  var idxFlag = idx64 ? 0x04 : 0x00;
+  
+  var wrapPtr = (P === 0x7e && !idx64) ? [0xa7] : []; 
+
+  var typeSection = section(0x01, [
+    ...uleb128(4),
+    ...funcType(params, results),               
+    ...funcType(params, [P, P, P, P, P, P, P]), 
+    ...funcType([P, P, P, P], []),              
+    ...funcType([P, P], results),               
+  ]);
+  var importSection = section(0x02, [
+    ...uleb128(3),
+    
+    0x01, 0x65, 0x01, 0x70, 0x00, 0x01,
+    
+    0x01, 0x65, 0x01, 0x65, 0x00, 0x03,
+    
+    0x01, 0x65, 0x01, 0x74, 0x01, 0x70, 0x00 | idxFlag, 0x00,
+  ]);
+  
+  var functionSection = section(0x03, [0x01, 0x00]);
+  
+  var exportSection = section(0x07, [0x01, 0x01, 0x66, 0x00, 0x02]);
+
+  
+  var body = [0x00]; 
+  for (var i = 0; i < nparams; i++) {
+    body.push(0x20, ...uleb128(i)); 
+  }
+  body.push(0x10, 0x00); 
+  
+  body.push(...wrapPtr); 
+  body.push(0x11, 0x02, 0x00); 
+  
+  body.push(0x10, 0x01); 
+  body.push(0x0b); 
+  var codeSection = section(0x0a, [...uleb128(1), ...vec(body)]);
+
+  var bytes = new Uint8Array([
+    0x00, 0x61, 0x73, 0x6d, 
+    0x01, 0x00, 0x00, 0x00, 
+    ...typeSection,
+    ...importSection,
+    ...functionSection,
+    ...exportSection,
+    ...codeSection,
+  ]);
+  LOG_DEBUG("CLOSURE_MODULE", "sig:", sig, "bytes:", bytes);
+  
+  module = new WebAssembly.Module(bytes);
+  cache.set(sig, module);
+  return module;
+}
+)
 
 
 

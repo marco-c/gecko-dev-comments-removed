@@ -156,7 +156,14 @@ typedef enum ffi_abi {
 
 
 
-#if defined(POWERPC64) && _CALL_ELF == 2
+
+
+
+#if defined(POWERPC64)
+# if _CALL_ELF == 2
+#  define FFI_TARGET_HAS_COMPLEX_TYPE
+# endif
+#elif defined (POWERPC) || defined (POWERPC_FREEBSD)
 # define FFI_TARGET_HAS_COMPLEX_TYPE
 #endif
 

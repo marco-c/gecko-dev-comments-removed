@@ -44,12 +44,14 @@
 #include <ffi_common.h>
 
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <fcntl.h>
 #include <pthread.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <tramp.h>
 #ifdef __linux__
 #include <linux/limits.h>
@@ -211,11 +213,12 @@ ffi_tramp_get_libffi (void)
   FILE *fp;
   
 
-
   char file[PATH_MAX+1], line[PATH_MAX+100], perm[10], dev[10];
   unsigned long start, end, offset, inode;
   uintptr_t addr = (uintptr_t) tramp_globals.text;
-  int nfields, found;
+  int nfields, found, path_off;
+  char *path = NULL, *nl;
+  struct stat st;
   int open_flags = O_RDONLY;
 
 #ifdef O_CLOEXEC
@@ -228,32 +231,63 @@ ffi_tramp_get_libffi (void)
     return 0;
 
   found = 0;
+  inode = 0;
   while (feof (fp) == 0) {
     if (fgets (line, sizeof (line), fp) == 0)
       break;
 
     
 
-    nfields = sscanf (line,
-      "%lx-%lx %9s %lx %9s %ld %" FFI_TRAMP_STR(PATH_MAX) "s",
-      &start, &end, perm, &offset, dev, &inode, file);
-    if (nfields != 7)
+
+
+
+
+
+    path_off = 0;
+    nfields = sscanf (line, "%lx-%lx %9s %lx %9s %lu %n",
+      &start, &end, perm, &offset, dev, &inode, &path_off);
+    if (nfields != 6 || path_off == 0)
       continue;
 
     if (addr >= start && addr < end) {
       tramp_globals.offset = offset + (addr - start);
+      path = line + path_off;
       found = 1;
       break;
     }
   }
   fclose (fp);
 
-  if (!found)
+  if (!found || path == NULL || *path == '\0' || *path == '\n')
     return 0;
 
-  tramp_globals.fd = open (file, open_flags);
+  
+  nl = strchr (path, '\n');
+  if (nl != NULL)
+    *nl = '\0';
+
+  tramp_globals.fd = open (path, open_flags);
   if (tramp_globals.fd == -1)
     return 0;
+
+  
+
+
+
+
+
+
+
+
+
+
+  if (fstat (tramp_globals.fd, &st) != 0
+      || (unsigned long) st.st_ino != inode)
+    {
+      close (tramp_globals.fd);
+      tramp_globals.fd = -1;
+      return 0;
+    }
 
   
 

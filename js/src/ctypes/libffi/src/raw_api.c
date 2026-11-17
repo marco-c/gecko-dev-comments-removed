@@ -232,10 +232,15 @@ ffi_prep_raw_closure_loc (ffi_raw_closure* cl,
 {
   ffi_status status;
 
+  
+
+
+
+
   status = ffi_prep_closure_loc ((ffi_closure*) cl,
 				 cif,
 				 &ffi_translate_args,
-				 codeloc,
+				 cl,
 				 codeloc);
   if (status == FFI_OK)
     {

@@ -114,7 +114,7 @@ ffi_call_int (ffi_cif *cif,
   if (rvalue && ecif.rvalue == smst_buffer)
     {
       unsigned int rsize = cif->rtype->size;
-#ifdef FFI_TARGET_HAS_COMPLEX_TYPE
+#if defined (FFI_TARGET_HAS_COMPLEX_TYPE) && defined (POWERPC64)
       
 
 

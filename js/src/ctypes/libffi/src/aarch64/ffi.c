@@ -109,82 +109,72 @@ intlog2 (int n)
 
 
 
+
+
+
+
+
+
+
+
+
 static int
-is_hfa0 (const ffi_type *ty)
-{
-  ffi_type **elements = ty->elements;
-  int i, ret = -1;
-
-  if (elements != NULL)
-    for (i = 0; elements[i]; ++i)
-      {
-        ret = elements[i]->type;
-        if (ret == FFI_TYPE_STRUCT || ret == FFI_TYPE_VECTOR
-	    || ret == FFI_TYPE_COMPLEX)
-          {
-            ret = is_hfa0 (elements[i]);
-            if (ret < 0)
-              continue;
-          }
-        break;
-      }
-
-  return ret;
-}
-
-
-
-
-
-
-static size_t
-is_simd (const ffi_type *ty)
+hfa_flatten (const ffi_type *ty, int *kind)
 {
   ffi_type **elements;
-  int i;
+  int i, total, n, k;
 
-  if (ty->type == FFI_TYPE_VECTOR)
-    return ty->size;
+  switch (ty->type)
+    {
+    case FFI_TYPE_FLOAT:
+    case FFI_TYPE_DOUBLE:
+    case FFI_TYPE_LONGDOUBLE:
+      k = (int) ty->type;
+      if (*kind == 0)
+        *kind = k;
+      else if (*kind != k)
+        return -1;
+      return 1;
 
-  elements = ty->elements;
-  if (elements != NULL)
-    for (i = 0; elements[i]; ++i)
-      {
-        int t = elements[i]->type;
-        if (t == FFI_TYPE_STRUCT || t == FFI_TYPE_COMPLEX
-	    || t == FFI_TYPE_VECTOR)
-          return is_simd (elements[i]);
-      }
+    case FFI_TYPE_VECTOR:
+      
+      if (ty->size != 4 && ty->size != 8 && ty->size != 16)
+        return -1;
+      k = -(int) ty->size;
+      if (*kind == 0)
+        *kind = k;
+      else if (*kind != k)
+        return -1;
+      return 1;
 
-  return 0;
+    case FFI_TYPE_COMPLEX:
+      k = ty->elements[0]->type;
+      if (k != FFI_TYPE_FLOAT && k != FFI_TYPE_DOUBLE && k != FFI_TYPE_LONGDOUBLE)
+        return -1;
+      if (*kind == 0)
+        *kind = k;
+      else if (*kind != k)
+        return -1;
+      return 2;
+
+    case FFI_TYPE_STRUCT:
+      elements = ty->elements;
+      if (elements == NULL)
+        return -1;
+      total = 0;
+      for (i = 0; elements[i]; ++i)
+        {
+          n = hfa_flatten (elements[i], kind);
+          if (n < 0)
+            return -1;
+          total += n;
+        }
+      return total == 0 ? -1 : total;
+
+    default:
+      return -1;
+    }
 }
-
-
-
-
-static int
-is_hfa1 (const ffi_type *ty, int candidate)
-{
-  ffi_type **elements = ty->elements;
-  int i;
-
-  if (elements != NULL)
-    for (i = 0; elements[i]; ++i)
-      {
-        int t = elements[i]->type;
-        if (t == FFI_TYPE_STRUCT || t == FFI_TYPE_VECTOR
-	    || t == FFI_TYPE_COMPLEX)
-          {
-            if (!is_hfa1 (elements[i], candidate))
-              return 0;
-          }
-        else if (t != candidate)
-          return 0;
-      }
-
-  return 1;
-}
-
 
 
 
@@ -196,31 +186,27 @@ is_hfa1 (const ffi_type *ty, int candidate)
 static int
 is_vfp_type (const ffi_type *ty)
 {
-  ffi_type **elements;
-  int candidate, i;
-  size_t size, ele_count, simd_size;
+  int candidate, count, kind;
+  size_t size;
 
   
-  candidate = ty->type;
-  switch (candidate)
+  switch (ty->type)
     {
     default:
       return 0;
     case FFI_TYPE_FLOAT:
     case FFI_TYPE_DOUBLE:
     case FFI_TYPE_LONGDOUBLE:
-      ele_count = 1;
-      goto done;
+      return (int) ty->type * 4 + (4 - 1);
     case FFI_TYPE_COMPLEX:
       candidate = ty->elements[0]->type;
       switch (candidate)
-	{
-	case FFI_TYPE_FLOAT:
-	case FFI_TYPE_DOUBLE:
-	case FFI_TYPE_LONGDOUBLE:
-	  ele_count = 2;
-	  goto done;
-	}
+        {
+        case FFI_TYPE_FLOAT:
+        case FFI_TYPE_DOUBLE:
+        case FFI_TYPE_LONGDOUBLE:
+          return candidate * 4 + (4 - 2);
+        }
       return 0;
     case FFI_TYPE_STRUCT:
     case FFI_TYPE_VECTOR:
@@ -234,120 +220,22 @@ is_vfp_type (const ffi_type *ty)
 
   
 
-  simd_size = is_simd (ty);
-
-  
-  elements = ty->elements;
-  candidate = elements[0]->type;
-  if (candidate == FFI_TYPE_STRUCT || candidate == FFI_TYPE_VECTOR
-      || candidate == FFI_TYPE_COMPLEX)
-    {
-      for (i = 0; ; ++i)
-        {
-          candidate = is_hfa0 (elements[i]);
-          if (candidate >= 0)
-            break;
-        }
-    }
-
-  if (simd_size)
-    {
-      
-
-
-
-
-
-
-
-
-      size_t reg_size = simd_size;
-      int num_registers;
-      int first_level_element_type;
-
-      
-
-
-
-      if (reg_size < 4 || reg_size > 16 || size % reg_size != 0)
-	return 0;
-      num_registers = (int) (size / reg_size);
-      if (num_registers > 4)
-	return 0;
-
-      
-
-
-
-
-      if (ty->type != FFI_TYPE_VECTOR)
-	for (i = 0; elements[i]; ++i)
-	  if (is_simd (elements[i]) != reg_size)
-	    return 0;
-
-      
-
-      for (i = 0; elements[i]; ++i)
-	{
-	  int t = elements[i]->type;
-	  if (t == FFI_TYPE_STRUCT || t == FFI_TYPE_VECTOR
-	      || t == FFI_TYPE_COMPLEX)
-	    {
-	      if (!is_hfa1 (elements[i], candidate))
-		return 0;
-	    }
-	  else if (t != candidate)
-	    return 0;
-	}
-
-      
-
-
-      first_level_element_type = FFI_TYPE_FLOAT + intlog2 ((int) reg_size) - 2;
-      return first_level_element_type * 4 + (4 - num_registers);
-    }
-
-  
-
-  switch (candidate)
-    {
-    case FFI_TYPE_FLOAT:
-      ele_count = size / sizeof(float);
-      if (size != ele_count * sizeof(float))
-        return 0;
-      break;
-    case FFI_TYPE_DOUBLE:
-      ele_count = size / sizeof(double);
-      if (size != ele_count * sizeof(double))
-        return 0;
-      break;
-    case FFI_TYPE_LONGDOUBLE:
-      ele_count = size / sizeof(long double);
-      if (size != ele_count * sizeof(long double))
-        return 0;
-      break;
-    default:
-      return 0;
-    }
-  if (ele_count > 4)
+  kind = 0;
+  count = hfa_flatten (ty, &kind);
+  if (count < 1 || count > 4)
     return 0;
 
-  
-  for (i = 0; elements[i]; ++i)
+  if (kind < 0)
     {
-      int t = elements[i]->type;
-      if (t == FFI_TYPE_STRUCT || t == FFI_TYPE_COMPLEX)
-        {
-          if (!is_hfa1 (elements[i], candidate))
-            return 0;
-        }
-      else if (t != candidate)
-        return 0;
-    }
+      
 
-  
- done:
-  return candidate * 4 + (4 - (int)ele_count);
+      candidate = FFI_TYPE_FLOAT + intlog2 (-kind) - 2;
+    }
+  else
+    
+    candidate = kind;
+
+  return candidate * 4 + (4 - count);
 }
 
 
@@ -406,6 +294,28 @@ allocate_to_stack (struct arg_state *state, void *stack,
   state->nsaa = nsaa + size;
 
   return (char *)stack + nsaa;
+}
+
+
+
+static void *
+allocate_composite_to_stack (struct arg_state *state, void *stack,
+			     const ffi_type *ty)
+{
+  size_t alignment = ty->alignment;
+  size_t size = ty->size;
+
+
+
+
+
+#if defined (__APPLE__) \
+    && (!defined (__GNUC__) || defined (__clang__))
+  alignment = FFI_ALIGN (alignment, sizeof (void *));
+  size = FFI_ALIGN (size, sizeof (void *));
+#endif
+
+  return allocate_to_stack (state, stack, alignment, size);
 }
 
 
@@ -564,13 +474,9 @@ compress_hfa_type (void *dest, void *reg, int h)
     {
     case AARCH64_RET_S1:
       if (dest == reg)
-	{
-#ifdef __AARCH64EB__
-	  dest += 12;
-#endif
-	}
+	return (char *)dest + BE (12);
       else
-	*(float *)dest = *(float *)reg;
+	*(float *)dest = *(float *)((char *)reg + BE (12));
       break;
     case AARCH64_RET_S2:
       __asm__ ("ldp q16, q17, [%1]\n\t"
@@ -592,13 +498,9 @@ compress_hfa_type (void *dest, void *reg, int h)
 
     case AARCH64_RET_D1:
       if (dest == reg)
-	{
-#ifdef __AARCH64EB__
-	  dest += 8;
-#endif
-	}
+	return (char *)dest + BE (8);
       else
-	*(double *)dest = *(double *)reg;
+	*(double *)dest = *(double *)((char *)reg + BE (8));
       break;
     case AARCH64_RET_D2:
       __asm__ ("ldp q16, q17, [%1]\n\t"
@@ -637,10 +539,11 @@ allocate_int_to_reg_or_stack (struct call_context *context,
 			      void *stack, size_t size)
 {
   if (state->ngrn < N_X_ARG_REG)
-    return &context->x[state->ngrn++];
+    return (char *)&context->x[state->ngrn++] + BE (sizeof (UINT64) - size);
 
   state->ngrn = N_X_ARG_REG;
-  return allocate_to_stack (state, stack, size, size);
+  return (char *)allocate_to_stack (state, stack, size, size)
+	 + BE (sizeof (UINT64) - size);
 }
 
 static void *
@@ -937,7 +840,8 @@ ffi_call_int (ffi_cif *cif, void (*fn)(void), void *orig_rvalue,
                   break;
                 }
                 state.nsrn = N_V_ARG_REG;
-                dest = allocate_to_stack (&state, stack, ty->alignment, s);
+                dest = (char *)allocate_to_stack (&state, stack, ty->alignment, s)
+                       + (t == FFI_TYPE_FLOAT ? BE (sizeof (UINT64) - s) : 0);
               }
 	      }
 	    else if (s > 16)
@@ -951,6 +855,13 @@ ffi_call_int (ffi_cif *cif, void (*fn)(void), void *orig_rvalue,
 		a = &dest;
 		t = FFI_TYPE_POINTER;
 		s = sizeof (void *);
+		
+
+
+
+
+
+		ty = &ffi_type_pointer;
 		goto do_pointer;
 	      }
 	    else
@@ -972,7 +883,7 @@ ffi_call_int (ffi_cif *cif, void (*fn)(void), void *orig_rvalue,
 
 
 		    state.ngrn = N_X_ARG_REG;
-		    dest = allocate_to_stack (&state, stack, ty->alignment, s);
+		    dest = allocate_composite_to_stack (&state, stack, ty);
 		  }
 		}
 	      memcpy (dest, a, s);
@@ -1222,8 +1133,9 @@ ffi_closure_SYSV_inner (ffi_cif *cif,
                     {
                       state.ngrn = N_X_ARG_REG;
                       state.nsrn = N_V_ARG_REG;
-                      avalue[i] = allocate_to_stack(&state, stack,
-                             ty->alignment, s);
+                      avalue[i] = (char *)allocate_to_stack (&state, stack,
+                                                             ty->alignment, s)
+                                  + (t == FFI_TYPE_FLOAT ? BE (sizeof (UINT64) - s) : 0);
                     }
                 }
               else
@@ -1237,8 +1149,9 @@ ffi_closure_SYSV_inner (ffi_cif *cif,
                   else
                     {
                       state.nsrn = N_V_ARG_REG;
-                      avalue[i] = allocate_to_stack(&state, stack,
-                                                   ty->alignment, s);
+                      avalue[i] = (char *)allocate_to_stack (&state, stack,
+                                                             ty->alignment, s)
+                                  + (t == FFI_TYPE_FLOAT ? BE (sizeof (UINT64) - s) : 0);
                     }
                 }
             }
@@ -1270,8 +1183,7 @@ ffi_closure_SYSV_inner (ffi_cif *cif,
               else
                 {
                   state.ngrn = N_X_ARG_REG;
-                  avalue[i] = allocate_to_stack(&state, stack,
-                                           ty->alignment, s);
+                  avalue[i] = allocate_composite_to_stack (&state, stack, ty);
                 }
             }
           break;

@@ -444,6 +444,41 @@ examine_argument (ffi_type *type, enum x86_64_reg_class classes[MAX_CLASSES],
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+static int
+vector_type_unsupported (ffi_type *ty)
+{
+  ffi_type **p;
+
+  if (ty == NULL)
+    return 0;
+  if (ty->type == FFI_TYPE_VECTOR)
+    {
+      if (ty->size == 16)
+	return 0;
+      if (ty->size == 8 && ty->elements[0]->type != FFI_TYPE_DOUBLE)
+	return 0;
+      return 1;
+    }
+  if (ty->type == FFI_TYPE_STRUCT && ty->elements != NULL)
+    for (p = ty->elements; *p != NULL; p++)
+      if (vector_type_unsupported (*p))
+	return 1;
+  return 0;
+}
+
+
+
 #ifndef __ILP32__
 extern ffi_status
 ffi_prep_cif_machdep_efi64(ffi_cif *cif);
@@ -469,6 +504,18 @@ ffi_prep_cif_machdep (ffi_cif *cif)
 
   rtype = cif->rtype;
   rtype_size = rtype->size;
+
+  
+
+
+
+
+  if (vector_type_unsupported (rtype))
+    return FFI_BAD_TYPEDEF;
+  for (i = 0, avn = cif->nargs; i < avn; i++)
+    if (vector_type_unsupported (cif->arg_types[i]))
+      return FFI_BAD_TYPEDEF;
+
   switch (rtype->type)
     {
     case FFI_TYPE_VOID:
@@ -533,7 +580,9 @@ ffi_prep_cif_machdep (ffi_cif *cif)
 	{
 	  _Bool sse0 = SSE_CLASS_P (classes[0]);
 
-	  if (rtype_size == 4 && sse0)
+	  if (classes[0] == X86_64_X87_CLASS)
+	    flags = UNIX64_RET_X87;
+	  else if (rtype_size == 4 && sse0)
 	    flags = UNIX64_RET_XMM32;
 	  else if (rtype_size == 8)
 	    flags = sse0 ? UNIX64_RET_XMM64 : UNIX64_RET_INT64;
@@ -554,6 +603,7 @@ ffi_prep_cif_machdep (ffi_cif *cif)
       break;
     case FFI_TYPE_VECTOR:
       
+
 
       if (rtype_size == 8)
 	flags = UNIX64_RET_XMM64;
@@ -605,15 +655,6 @@ ffi_prep_cif_machdep (ffi_cif *cif)
     default:
       return FFI_BAD_TYPEDEF;
     }
-
-  
-
-
-
-  for (i = 0, avn = cif->nargs; i < avn; i++)
-    if (cif->arg_types[i]->type == FFI_TYPE_VECTOR
-	&& cif->arg_types[i]->size > 16)
-      return FFI_BAD_TYPEDEF;
 
   
 
@@ -934,8 +975,14 @@ build_plan (ffi_cif *cif)
 	  switch (classes[j])
 	    {
 	    case X86_64_NO_CLASS:
-	    case X86_64_SSEUP_CLASS:
 	      continue;			
+	    case X86_64_SSEUP_CLASS:
+	      
+	      m.dst_off = (unsigned) (offsetof (struct register_args, sse)
+				      + (ssecount - 1)
+					* sizeof (union big_int_union) + 8);
+	      m.op = FFI_MOVE_SSE64;
+	      break;
 	    case X86_64_INTEGER_CLASS:
 	    case X86_64_INTEGERSI_CLASS:
 	      m.dst_off = gprcount * 8;	

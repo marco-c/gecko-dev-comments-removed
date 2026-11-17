@@ -546,9 +546,16 @@ ffi_closure_helper_SYSV (ffi_cif *cif,
 #endif
 
       
-      if (type == FFI_TYPE_STRUCT || type == FFI_TYPE_COMPLEX)
+      if (type == FFI_TYPE_STRUCT || type == FFI_TYPE_COMPLEX
+	  || type == FFI_TYPE_SINT128 || type == FFI_TYPE_UINT128)
 	{
-	  if (type == FFI_TYPE_COMPLEX)
+	  if (type == FFI_TYPE_COMPLEX
+	      || type == FFI_TYPE_SINT128 || type == FFI_TYPE_UINT128)
+	    
+
+
+
+
 	    type = FFI_TYPE_POINTER;
 	  else
 	    type = ffi_check_struct_type (*ptr);

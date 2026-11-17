@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------------
-   sysv.S - Copyright (c) 2017  Anthony Green
+   sysv.S - Copyright (c) 2017, 2026  Anthony Green
           - Copyright (c) 2013  The Written Word, Inc.
           - Copyright (c) 1996,1998,2001-2003,2005,2008,2010  Red Hat, Inc.
    
@@ -351,7 +351,7 @@ L(UW13):
 	FFI_CLOSURE_SAVE_REGS
 	FFI_CLOSURE_COPY_TRAMP_DATA
 
-	/* Entry point from preceeding Go closures.  */
+	/* Entry point from preceding Go closures.  */
 L(do_closure_i386):
 
 	FFI_CLOSURE_PREP_CALL
@@ -486,7 +486,7 @@ L(do_closure_REGISTER):
 
 	FFI_CLOSURE_COPY_TRAMP_DATA
 
-	/* Entry point from preceeding Go closure.  */
+	/* Entry point from preceding Go closure.  */
 L(do_closure_STDCALL):
 
 	FFI_CLOSURE_PREP_CALL
@@ -883,6 +883,32 @@ L(UW52):
 	/* cfi_endproc */
 ENDF(C(ffi_closure_raw_THISCALL))
 
+#if defined(FFI_EXEC_STATIC_TRAMP)
+/* Static-trampoline entry points for the raw closures.  The static
+   trampoline leaves the closure pointer at 4(%esp); load it into %eax
+   (where ffi_closure_raw_* expect it), restore the stack, and jump to the
+   normal body.  Mirrors ffi_closure_i386_alt.  */
+	.balign	16
+	.globl	C(ffi_closure_raw_SYSV_alt)
+	FFI_HIDDEN(C(ffi_closure_raw_SYSV_alt))
+C(ffi_closure_raw_SYSV_alt):
+	_CET_ENDBR
+	movl	4(%esp), %eax			/* Load closure in eax */
+	add	$8, %esp			/* Restore the stack */
+	jmp	C(ffi_closure_raw_SYSV)
+ENDF(C(ffi_closure_raw_SYSV_alt))
+
+	.balign	16
+	.globl	C(ffi_closure_raw_THISCALL_alt)
+	FFI_HIDDEN(C(ffi_closure_raw_THISCALL_alt))
+C(ffi_closure_raw_THISCALL_alt):
+	_CET_ENDBR
+	movl	4(%esp), %eax			/* Load closure in eax */
+	add	$8, %esp			/* Restore the stack */
+	jmp	C(ffi_closure_raw_THISCALL)
+ENDF(C(ffi_closure_raw_THISCALL_alt))
+#endif /* FFI_EXEC_STATIC_TRAMP */
+
 #endif /* !FFI_NO_RAW_API */
 
 #ifdef X86_DARWIN
@@ -1269,6 +1295,6 @@ L(EFDE9):
 
 #endif /* ifdef __i386__ */
 
-#if defined __ELF__ && defined __linux__
+#if defined __ELF__ && (defined __linux__ || defined __FreeBSD__)
 	.section	.note.GNU-stack,"",@progbits
 #endif
