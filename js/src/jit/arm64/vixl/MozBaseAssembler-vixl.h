@@ -77,7 +77,10 @@ using ARMBuffer = js::jit::AssemblerBufferWithConstantPools<
 
 class MozBaseAssembler : public js::jit::AssemblerShared {
   
-  static const size_t   BufferMaxPoolOffset = 1024;
+  
+  
+  
+  static const size_t   BufferMaxPoolOffset = 16 * 1024;
   static const unsigned BufferNumDebugNopsToInsert = 0;
 
 #ifdef JS_DISASM_ARM64
