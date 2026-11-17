@@ -67,6 +67,29 @@ async function testSecondaryCacheValidity() {
   
   
   
+  
+  
+  
+  
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   installPackage("secondaryCacheValidity_profile");
 
   info("Initializing storage");

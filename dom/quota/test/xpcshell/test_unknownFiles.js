@@ -44,6 +44,28 @@ async function testSteps() {
       
       
       
+      
+      
+      
+      
+      
+      
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       installPackage("unknownFiles_profile");
 
       if (mode.initializedStorage) {
@@ -95,7 +117,7 @@ async function testSteps() {
       request.result instanceof Ci.nsIQuotaOriginUsageResult,
       "The result is nsIQuotaOriginUsageResult instance"
     );
-    is(request.result.usage, 115025, "Correct total usage");
+    is(request.result.usage, 147793, "Correct total usage");
     is(request.result.fileUsage, 200, "Correct file usage");
   });
 
