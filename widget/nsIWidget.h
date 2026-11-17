@@ -1103,6 +1103,15 @@ class nsIWidget : public nsSupportsWeakReference {
 
   virtual void SetSupportsNativeFullscreen(bool aSupportsNativeFullscreen) {}
 
+  
+
+
+
+
+
+
+  virtual void SetPreventAppSwitching(bool aShouldPreventAppSwitching) {}
+
   enum WindowAnimationType {
     eGenericWindowAnimation,
     eDocumentWindowAnimation

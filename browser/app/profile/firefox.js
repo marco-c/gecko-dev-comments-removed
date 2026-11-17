@@ -392,6 +392,16 @@ pref("browser.warnOnQuit", true);
   pref("browser.fullscreen.autohide", true);
 #endif
 
+
+
+
+
+
+
+
+
+pref("browser.kiosk.lockdown", 2);
+
 pref("browser.overlink-delay", 80);
 
 #if defined(XP_WIN)

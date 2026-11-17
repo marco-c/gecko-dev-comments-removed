@@ -109,6 +109,27 @@ var gBrowserInit = {
     return !!this.getTabToAdopt();
   },
 
+  
+  
+  
+  get isPopupWindow() {
+    return (
+      !window.toolbar.visible ||
+      document.documentElement.hasAttribute("taskbartab")
+    );
+  },
+
+  
+  
+  
+  get kioskLockdown() {
+    if (!BrowserHandler.kiosk || this.isPopupWindow) {
+      return 0;
+    }
+    
+    return Services.prefs.getIntPref("browser.kiosk.lockdown", 2);
+  },
+
   onBeforeInitialXULLayout() {
     this._setupFirstContentWindowPaintPromise();
 
@@ -195,6 +216,20 @@ var gBrowserInit = {
       if (tabToAdopt.hasAttribute("cropped-mini-window")) {
         document.documentElement.setAttribute("cropped-mini-window", "true");
       }
+    }
+
+    
+    
+    
+    
+    
+    
+    let kioskLockdown = this.kioskLockdown;
+    if (kioskLockdown >= 1) {
+      document.documentElement.setAttribute("macnativefullscreen", "false");
+    }
+    if (kioskLockdown >= 2) {
+      document.documentElement.setAttribute("macpreventappswitching", "true");
     }
 
     
@@ -340,9 +375,8 @@ var gBrowserInit = {
     Services.obs.notifyObservers(window, "browser-window-before-show");
 
     if (
-      !window.toolbar.visible ||
-      window.document.documentElement.hasAttribute("taskbartab") ||
-      window.document.documentElement.hasAttribute("cropped-mini-window")
+      this.isPopupWindow ||
+      document.documentElement.hasAttribute("cropped-mini-window")
     ) {
       
       gURLBar.readOnly = true;

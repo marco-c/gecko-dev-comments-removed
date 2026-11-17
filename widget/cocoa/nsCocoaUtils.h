@@ -241,7 +241,11 @@ class nsCocoaUtils {
   static BOOL EventHasPhaseInformation(NSEvent* aEvent);
 
   
-  static void HideOSChromeOnScreen(bool aShouldHide);
+  
+  
+  
+  static void HideOSChromeOnScreen(bool aShouldHide,
+                                   bool aShouldPreventAppSwitching);
 
   static already_AddRefed<nsIWidget> GetHiddenWindowWidget();
 

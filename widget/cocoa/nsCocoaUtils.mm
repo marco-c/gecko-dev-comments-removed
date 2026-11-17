@@ -234,20 +234,41 @@ BOOL nsCocoaUtils::EventHasPhaseInformation(NSEvent* aEvent) {
          [aEvent momentumPhase] != NSEventPhaseNone;
 }
 
-void nsCocoaUtils::HideOSChromeOnScreen(bool aShouldHide) {
+void nsCocoaUtils::HideOSChromeOnScreen(bool aShouldHide,
+                                        bool aShouldPreventAppSwitching) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   
   
+  
+  
+  
+  
+  
   static int sHiddenCount = 0;
+  static int sPreventAppSwitchingCount = 0;
 
   sHiddenCount += aShouldHide ? 1 : -1;
-  NS_ASSERTION(sHiddenCount >= 0, "Unbalanced HideMenuAndDockForWindow calls");
+  NS_ASSERTION(sHiddenCount >= 0, "Unbalanced HideOSChromeOnScreen calls");
+  if (aShouldPreventAppSwitching) {
+    sPreventAppSwitchingCount += aShouldHide ? 1 : -1;
+    NS_ASSERTION(sPreventAppSwitchingCount >= 0,
+                 "Unbalanced HideOSChromeOnScreen app switching requests");
+  }
 
-  NSApplicationPresentationOptions options =
-      sHiddenCount <= 0 ? NSApplicationPresentationDefault
-                        : NSApplicationPresentationHideDock |
-                              NSApplicationPresentationHideMenuBar;
+  NSApplicationPresentationOptions options = NSApplicationPresentationDefault;
+  if (sHiddenCount > 0) {
+    options = NSApplicationPresentationHideDock |
+              NSApplicationPresentationHideMenuBar;
+    if (sPreventAppSwitchingCount > 0) {
+      
+      
+      
+      
+      options |= NSApplicationPresentationDisableProcessSwitching |
+                 NSApplicationPresentationDisableHideApplication;
+    }
+  }
   [NSApp setPresentationOptions:options];
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;

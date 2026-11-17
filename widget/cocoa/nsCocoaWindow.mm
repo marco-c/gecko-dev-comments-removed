@@ -627,6 +627,33 @@ nsresult nsCocoaWindow::SynthesizeNativeTouchpadDoubleTap(
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
 
+nsresult nsCocoaWindow::SynthesizeNativeTouchpadPan(
+    TouchpadGesturePhase aEventPhase, mozilla::LayoutDeviceIntPoint aPoint,
+    double aDeltaX, double aDeltaY, int32_t aModifierFlags,
+    nsISynthesizedEventCallback* aCallback) {
+  CGScrollPhase phase;
+  switch (aEventPhase) {
+    case PHASE_BEGIN:
+      phase = kCGScrollPhaseBegan;
+      break;
+    case PHASE_UPDATE:
+      phase = kCGScrollPhaseChanged;
+      break;
+    case PHASE_END:
+      phase = kCGScrollPhaseEnded;
+      break;
+    default: {
+      AutoSynthesizedEventCallbackNotifier notifier(aCallback);
+      return NS_ERROR_INVALID_ARG;
+    }
+  }
+
+  
+  return SynthesizeNativeMouseScrollEvent(
+      aPoint, phase, -aDeltaX, -aDeltaY, 0,
+      nsIWidget::NativeModifiers::NO_MODIFIERS, 0, aCallback);
+}
+
 bool nsCocoaWindow::SendEventToNativeMenuSystem(NSEvent* aEvent) {
   bool handled = false;
   if (RefPtr<nsMenuBarX> mb = GetMenuBar()) {
@@ -5493,7 +5520,7 @@ void nsCocoaWindow::Destroy() {
 
   if (mInFullScreenMode && !mInNativeFullScreenMode) {
     
-    nsCocoaUtils::HideOSChromeOnScreen(false);
+    nsCocoaUtils::HideOSChromeOnScreen(false, mShouldPreventAppSwitching);
   }
 
   
@@ -6753,7 +6780,7 @@ void nsCocoaWindow::ProcessTransitions() {
           
           
           
-          nsCocoaUtils::HideOSChromeOnScreen(true);
+          nsCocoaUtils::HideOSChromeOnScreen(true, mShouldPreventAppSwitching);
           nsIWidget::InfallibleMakeFullScreen(true);
           mSuppressSizeModeEvents = false;
           UpdateFullscreenState(true, false);
@@ -6789,7 +6816,8 @@ void nsCocoaWindow::ProcessTransitions() {
             
             
             
-            nsCocoaUtils::HideOSChromeOnScreen(false);
+            nsCocoaUtils::HideOSChromeOnScreen(false,
+                                               mShouldPreventAppSwitching);
             nsIWidget::InfallibleMakeFullScreen(false);
             mSuppressSizeModeEvents = false;
             UpdateFullscreenState(false, false);
@@ -7688,6 +7716,10 @@ void nsCocoaWindow::SetSupportsNativeFullscreen(
   }
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
+}
+
+void nsCocoaWindow::SetPreventAppSwitching(bool aShouldPreventAppSwitching) {
+  mShouldPreventAppSwitching = aShouldPreventAppSwitching;
 }
 
 void nsCocoaWindow::SetWindowAnimationType(
