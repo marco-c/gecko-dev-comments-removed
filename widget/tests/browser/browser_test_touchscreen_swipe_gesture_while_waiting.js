@@ -179,6 +179,8 @@ add_task(async function test_second_finger_while_waiting_prevents_swipe() {
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
     
+    content.document.documentElement.style.overscrollBehaviorX = "chain";
+    
     
     content.wrappedJSObject.touchFinished = new content.Promise(resolve => {
       let count = 0;
