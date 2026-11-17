@@ -4,8 +4,6 @@
 
 #include "mozilla/layers/WebRenderBridgeChild.h"
 
-#include "PDMFactory.h"
-#include "gfxPlatform.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/layers/CompositableClient.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
@@ -540,12 +538,6 @@ ipc::IShmemAllocator* WebRenderBridgeChild::GetShmemAllocator() {
 
 RefPtr<KnowsCompositor> WebRenderBridgeChild::GetForMedia() {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  
-  
-  if (!PDMFactory::AllDecodersAreRemote()) {
-    gfxPlatform::GetPlatform()->EnsureDevicesInitialized();
-  }
 
   return MakeAndAddRef<KnowsCompositorMediaProxy>(
       GetTextureFactoryIdentifier());
