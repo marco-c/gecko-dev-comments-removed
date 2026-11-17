@@ -29,6 +29,7 @@
 #include "nsFocusManager.h"
 #include "nsIClipboardOwner.h"
 #include "nsIMutableArray.h"
+#include "nsIPrincipal.h"
 #include "nsIPromptService.h"
 #include "nsISupportsPrimitives.h"
 #include "nsXPCOM.h"
@@ -362,7 +363,7 @@ nsBaseClipboard::~nsBaseClipboard() {
   }
 }
 
-NS_IMPL_ISUPPORTS(nsBaseClipboard, nsIClipboard)
+NS_IMPL_ISUPPORTS(nsBaseClipboard, nsIClipboard, nsBaseClipboard)
 
 
 
@@ -622,18 +623,6 @@ nsresult nsBaseClipboard::SetDataImpl(
   return finish(NS_OK);
 }
 
-nsresult nsBaseClipboard::GetDataFromClipboardCache(
-    nsITransferable* aTransferable, ClipboardType aClipboardType) {
-  MOZ_ASSERT(aTransferable);
-  MOZ_ASSERT(mozilla::StaticPrefs::widget_clipboard_use_cached_data_enabled());
-
-  const auto* clipboardCache = GetClipboardCacheIfValid(aClipboardType);
-  if (!clipboardCache) {
-    return NS_ERROR_FAILURE;
-  }
-  return clipboardCache->GetData(aTransferable);
-}
-
 
 
 
@@ -642,8 +631,18 @@ NS_IMETHODIMP nsBaseClipboard::GetData(
     mozilla::dom::WindowContext* aWindowContext) {
   MOZ_CLIPBOARD_LOG("%s: clipboard=%d", __FUNCTION__, aWhichClipboard);
 
-  return GetDataIfSmallerThanNative(aTransferable, 0, aWhichClipboard,
-                                    aWindowContext);
+  return GetDataImpl(aTransferable, 0, aWhichClipboard, aWindowContext,
+                      true);
+}
+
+nsresult nsBaseClipboard::GetDataWithoutContentAnalysis(
+    nsITransferable* aTransferable, ClipboardType aWhichClipboard,
+    mozilla::dom::WindowContext* aRequestingWindowContext) {
+  MOZ_CLIPBOARD_LOG("%s: clipboard=%d", __FUNCTION__, aWhichClipboard);
+
+  return GetDataImpl(aTransferable, 0, aWhichClipboard,
+                     aRequestingWindowContext,
+                      false);
 }
 
 NS_IMETHODIMP nsBaseClipboard::GetDataIfSmallerThan(
@@ -684,6 +683,14 @@ NS_IMETHODIMP nsBaseClipboard::GetDataIfSmallerThanNative(
     mozilla::dom::WindowContext* aWindowContext) {
   MOZ_CLIPBOARD_LOG("%s: clipboard=%d", __FUNCTION__, aWhichClipboard);
 
+  return GetDataImpl(aTransferable, aThreshold, aWhichClipboard, aWindowContext,
+                      true);
+}
+
+nsresult nsBaseClipboard::GetDataImpl(
+    nsITransferable* aTransferable, uint64_t aThreshold,
+    ClipboardType aWhichClipboard, mozilla::dom::WindowContext* aWindowContext,
+    bool aCheckContentAnalysis) {
   if (!aTransferable) {
     NS_ASSERTION(false, "clipboard given a null transferable");
     return NS_ERROR_FAILURE;
@@ -695,17 +702,35 @@ NS_IMETHODIMP nsBaseClipboard::GetDataIfSmallerThanNative(
     return NS_ERROR_FAILURE;
   }
 
-  if (!aThreshold &&
-      mozilla::StaticPrefs::widget_clipboard_use_cached_data_enabled()) {
-    if (NS_SUCCEEDED(
-            GetDataFromClipboardCache(aTransferable, aWhichClipboard))) {
-      if (!mozilla::contentanalysis::ContentAnalysis::
-              CheckClipboardContentAnalysisSync(
-                  this, aWindowContext->Canonical(), aTransferable,
-                  aWhichClipboard)) {
+  auto checkContentAnalysis = [&]() -> nsresult {
+    if (aCheckContentAnalysis &&
+        !mozilla::contentanalysis::ContentAnalysis::
+            CheckClipboardContentAnalysisSync(
+                this, aWindowContext ? aWindowContext->Canonical() : nullptr,
+                aTransferable, aWhichClipboard)) {
+      aTransferable->ClearAllData();
+      return NS_ERROR_CONTENT_BLOCKED;
+    }
+    return NS_OK;
+  };
+
+  
+  
+  if (auto cachedData =
+          GetClipboardCacheForReading(aWhichClipboard, aWindowContext);
+      cachedData && (!aThreshold || cachedData->mIsKeptCopy)) {
+    if (NS_SUCCEEDED(ClipboardCache::GetData(cachedData->mTransferable,
+                                             aTransferable))) {
+      if (aThreshold &&
+          TransferableExceedsThreshold(aTransferable, aThreshold)) {
         aTransferable->ClearAllData();
-        return NS_ERROR_CONTENT_BLOCKED;
+        return NS_ERROR_CLIPBOARD_TOO_BIG;
       }
+      return checkContentAnalysis();
+    }
+    
+    
+    if (cachedData->mIsKeptCopy) {
       return NS_OK;
     }
   }
@@ -741,14 +766,7 @@ NS_IMETHODIMP nsBaseClipboard::GetDataIfSmallerThanNative(
     return NS_ERROR_CLIPBOARD_TOO_BIG;
   }
 
-  if (!mozilla::contentanalysis::ContentAnalysis::
-          CheckClipboardContentAnalysisSync(this, aWindowContext->Canonical(),
-                                            aTransferable, aWhichClipboard)) {
-    aTransferable->ClearAllData();
-    return NS_ERROR_CONTENT_BLOCKED;
-  }
-
-  return NS_OK;
+  return checkContentAnalysis();
 }
 
 void nsBaseClipboard::MaybeRetryGetAvailableFlavors(
@@ -872,20 +890,23 @@ NS_IMETHODIMP nsBaseClipboard::GetDataSnapshot(
 
   
   
-  if (auto* clipboardCache = GetClipboardCacheIfValid(aWhichClipboard)) {
+  
+  nsCOMPtr<nsIPrincipal> principal;
+  if (PendingCopy* keptCopy =
+          GetKeptCopyForReading(aWhichClipboard, aRequestingWindowContext)) {
+    principal = keptCopy->GetSourcePrincipal();
+  } else if (auto* clipboardCache = GetClipboardCacheIfValid(aWhichClipboard)) {
     nsCOMPtr<nsITransferable> trans = clipboardCache->GetTransferable();
     MOZ_ASSERT(trans);
-
-    if (nsCOMPtr<nsIPrincipal> principal = trans->GetDataPrincipal()) {
-      if (aRequestingPrincipal->Subsumes(principal)) {
-        MOZ_CLIPBOARD_LOG("%s: native clipboard data is from same-origin page.",
-                          __FUNCTION__);
-        GetDataSnapshotInternal(aFlavorList, aWhichClipboard,
-                                aRequestingWindowContext, aRequestingPrincipal,
-                                aCallback);
-        return NS_OK;
-      }
-    }
+    principal = trans->GetDataPrincipal();
+  }
+  if (principal && aRequestingPrincipal->Subsumes(principal)) {
+    MOZ_CLIPBOARD_LOG("%s: clipboard data is from same-origin page.",
+                      __FUNCTION__);
+    GetDataSnapshotInternal(aFlavorList, aWhichClipboard,
+                            aRequestingWindowContext, aRequestingPrincipal,
+                            aCallback);
+    return NS_OK;
   }
 
   RequestUserConfirmation(aWhichClipboard, aFlavorList,
@@ -901,19 +922,15 @@ nsBaseClipboard::MaybeCreateGetRequestFromClipboardCache(
     nsIPrincipal* aRequestingPrincipal) {
   MOZ_DIAGNOSTIC_ASSERT(nsIClipboard::IsClipboardTypeSupported(aClipboardType));
 
-  if (!mozilla::StaticPrefs::widget_clipboard_use_cached_data_enabled()) {
+  
+  
+  auto cachedData =
+      GetClipboardCacheForReading(aClipboardType, aRequestingWindowContext);
+  if (!cachedData) {
     return nullptr;
   }
 
-  
-  
-  
-  ClipboardCache* clipboardCache = GetClipboardCacheIfValid(aClipboardType);
-  if (!clipboardCache) {
-    return nullptr;
-  }
-
-  nsITransferable* cachedTransferable = clipboardCache->GetTransferable();
+  nsITransferable* cachedTransferable = cachedData->mTransferable;
   MOZ_ASSERT(cachedTransferable);
 
   nsTArray<nsCString> transferableFlavors;
@@ -962,7 +979,7 @@ nsBaseClipboard::MaybeCreateGetRequestFromClipboardCache(
   
   
   return mozilla::MakeAndAddRef<ClipboardDataSnapshot>(
-      aClipboardType, clipboardCache->GetSequenceNumber(), std::move(results),
+      aClipboardType, cachedData->mSequenceNumber, std::move(results),
       true , this, aRequestingWindowContext);
 }
 
@@ -1516,14 +1533,16 @@ NS_IMETHODIMP nsBaseClipboard::ClipboardDataSnapshot::GetData(
           });
 
   if (mFromCache) {
-    const auto* clipboardCache =
-        mClipboard->GetClipboardCacheIfValid(mClipboardType);
+    auto cachedData = mClipboard->GetClipboardCacheForReading(
+        mClipboardType, mRequestingWindowContext);
     
     
-    MOZ_DIAGNOSTIC_ASSERT(clipboardCache);
-    MOZ_DIAGNOSTIC_ASSERT(clipboardCache->GetSequenceNumber() ==
-                          mSequenceNumber);
-    if (NS_SUCCEEDED(clipboardCache->GetData(aTransferable))) {
+    MOZ_DIAGNOSTIC_ASSERT(cachedData);
+    MOZ_DIAGNOSTIC_ASSERT(cachedData->mSequenceNumber == mSequenceNumber);
+    
+    if (NS_SUCCEEDED(ClipboardCache::GetData(cachedData->mTransferable,
+                                             aTransferable)) ||
+        cachedData->mIsKeptCopy) {
       mozilla::contentanalysis::ContentAnalysis::CheckClipboardContentAnalysis(
           mClipboard,
           mRequestingWindowContext ? mRequestingWindowContext->Canonical()
@@ -1593,14 +1612,16 @@ NS_IMETHODIMP nsBaseClipboard::ClipboardDataSnapshot::GetDataSync(
   MOZ_ASSERT(mClipboard);
 
   if (mFromCache) {
-    const auto* clipboardCache =
-        mClipboard->GetClipboardCacheIfValid(mClipboardType);
+    auto cachedData = mClipboard->GetClipboardCacheForReading(
+        mClipboardType, mRequestingWindowContext);
     
     
-    MOZ_DIAGNOSTIC_ASSERT(clipboardCache);
-    MOZ_DIAGNOSTIC_ASSERT(clipboardCache->GetSequenceNumber() ==
-                          mSequenceNumber);
-    if (NS_SUCCEEDED(clipboardCache->GetData(aTransferable))) {
+    MOZ_DIAGNOSTIC_ASSERT(cachedData);
+    MOZ_DIAGNOSTIC_ASSERT(cachedData->mSequenceNumber == mSequenceNumber);
+    
+    if (NS_SUCCEEDED(ClipboardCache::GetData(cachedData->mTransferable,
+                                             aTransferable)) ||
+        cachedData->mIsKeptCopy) {
       bool shouldAllowContent = mozilla::contentanalysis::ContentAnalysis::
           CheckClipboardContentAnalysisSync(
               mClipboard,
@@ -1653,14 +1674,14 @@ bool nsBaseClipboard::ClipboardDataSnapshot::IsValid() {
   
   
   if (mFromCache) {
-    const auto* clipboardCache =
-        mClipboard->GetClipboardCacheIfValid(mClipboardType);
-    if (!clipboardCache) {
+    auto cachedData = mClipboard->GetClipboardCacheForReading(
+        mClipboardType, mRequestingWindowContext);
+    if (!cachedData) {
       mClipboard = nullptr;
       return false;
     }
 
-    return mSequenceNumber == clipboardCache->GetSequenceNumber();
+    return mSequenceNumber == cachedData->mSequenceNumber;
   }
 
   auto resultOrError =
@@ -1800,7 +1821,12 @@ NS_IMETHODIMP nsBaseClipboard::ClipboardPopulatedDataSnapshot::GetDataSync(
 }
 
 mozilla::Maybe<uint64_t> nsBaseClipboard::GetClipboardCacheInnerWindowId(
-    ClipboardType aClipboardType) {
+    ClipboardType aClipboardType,
+    mozilla::dom::WindowContext* aRequestingWindowContext) {
+  if (PendingCopy* keptCopy =
+          GetKeptCopyForReading(aClipboardType, aRequestingWindowContext)) {
+    return mozilla::Some(keptCopy->mWindowContext->InnerWindowId());
+  }
   auto* clipboardCache = GetClipboardCacheIfValid(aClipboardType);
   return clipboardCache ? clipboardCache->GetInnerWindowId()
                         : mozilla::Nothing();
@@ -1861,6 +1887,83 @@ bool nsBaseClipboard::CanReadWebCustomFormats(
   return dataPrincipal && aRequestingPrincipal->Subsumes(dataPrincipal);
 }
 
+nsBaseClipboard::PendingCopy* nsBaseClipboard::GetKeptCopyIfValid(
+    ClipboardType aClipboardType) {
+  MOZ_ASSERT(nsIClipboard::IsClipboardTypeSupported(aClipboardType));
+
+  const mozilla::UniquePtr<ClipboardCache>& cache = mCaches[aClipboardType];
+  PendingCopy* keptCopy = cache->GetKeptCopy();
+  if (!keptCopy) {
+    return nullptr;
+  }
+
+  auto changeCountOrError = GetNativeClipboardSequenceNumber(aClipboardType);
+  if (changeCountOrError.isErr()) {
+    return nullptr;
+  }
+
+  if (changeCountOrError.unwrap() != cache->GetKeptCopySequenceNumber() ||
+      keptCopy->mWindowContext->TopWindowContext()->IsDiscarded()) {
+    cache->DropKeptCopy();
+    return nullptr;
+  }
+
+  return keptCopy;
+}
+
+nsBaseClipboard::PendingCopy* nsBaseClipboard::GetKeptCopyForReading(
+    ClipboardType aClipboardType,
+    mozilla::dom::WindowContext* aRequestingWindowContext) {
+  PendingCopy* keptCopy = GetKeptCopyIfValid(aClipboardType);
+  return keptCopy && keptCopy->MayBeReadBy(aRequestingWindowContext) ? keptCopy
+                                                                     : nullptr;
+}
+
+mozilla::Maybe<nsBaseClipboard::CachedDataForReading>
+nsBaseClipboard::GetClipboardCacheForReading(
+    ClipboardType aClipboardType,
+    mozilla::dom::WindowContext* aRequestingWindowContext) {
+  if (PendingCopy* keptCopy =
+          GetKeptCopyForReading(aClipboardType, aRequestingWindowContext)) {
+    return mozilla::Some(CachedDataForReading{
+        keptCopy->mTransferable,
+        mCaches[aClipboardType]->GetKeptCopySequenceNumber(), true});
+  }
+  if (!mozilla::StaticPrefs::widget_clipboard_use_cached_data_enabled()) {
+    return mozilla::Nothing();
+  }
+  const auto* cache = GetClipboardCacheIfValid(aClipboardType);
+  if (!cache) {
+    return mozilla::Nothing();
+  }
+  return mozilla::Some(CachedDataForReading{cache->GetTransferable(),
+                                            cache->GetSequenceNumber(), false});
+}
+
+
+bool nsBaseClipboard::TransferableExceedsThreshold(
+    nsITransferable* aTransferable, uint64_t aThreshold) {
+  nsTArray<nsCString> flavors;
+  if (NS_FAILED(aTransferable->FlavorsTransferableCanExport(flavors))) {
+    return false;
+  }
+  for (const auto& flavor : flavors) {
+    nsCOMPtr<nsISupports> data;
+    if (NS_FAILED(aTransferable->GetTransferData(flavor.get(),
+                                                 getter_AddRefs(data)))) {
+      continue;
+    }
+    if (nsCOMPtr<nsISupportsString> stringData = do_QueryInterface(data)) {
+      nsAutoString str;
+      if (NS_SUCCEEDED(stringData->GetData(str)) &&
+          uint64_t(str.Length()) * sizeof(char16_t) > aThreshold) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 void nsBaseClipboard::ClipboardCache::Clear() {
   if (mClipboardOwner) {
     mClipboardOwner->LosingOwnership(mTransferable);
@@ -1870,10 +1973,66 @@ void nsBaseClipboard::ClipboardCache::Clear() {
   mSequenceNumber = -1;
 }
 
+bool nsBaseClipboard::ClipboardCache::SetKeptCopy(PendingCopy* aPendingCopy,
+                                                  int32_t aSequenceNumber) {
+  MOZ_ASSERT(aPendingCopy);
+  MOZ_ASSERT(aPendingCopy->mWindowContext);
+  MOZ_ASSERT(!mKeptCopy);
+  if (nsCOMPtr<nsIPrincipal> principal = aPendingCopy->GetSourcePrincipal();
+      !principal) {
+    return false;
+  }
+
+  MOZ_CLIPBOARD_LOG("%s: keeping a copy for sequence number %d", __FUNCTION__,
+                    aSequenceNumber);
+  mKeptCopy = aPendingCopy;
+  mKeptCopySequenceNumber = aSequenceNumber;
+  return true;
+}
+
+void nsBaseClipboard::ClipboardCache::RekeyKeptCopy(int32_t aSequenceNumber) {
+  MOZ_ASSERT(mKeptCopy);
+  MOZ_CLIPBOARD_LOG("%s: sequence number %d -> %d", __FUNCTION__,
+                    mKeptCopySequenceNumber, aSequenceNumber);
+  mKeptCopySequenceNumber = aSequenceNumber;
+}
+
+RefPtr<nsBaseClipboard::PendingCopy>
+nsBaseClipboard::ClipboardCache::DropKeptCopy() {
+  if (mKeptCopy) {
+    MOZ_CLIPBOARD_LOG("%s: dropped kept copy", __FUNCTION__);
+  }
+  mKeptCopySequenceNumber = -1;
+  return std::move(mKeptCopy);
+}
+
+already_AddRefed<nsIPrincipal>
+nsBaseClipboard::PendingCopy::GetSourcePrincipal() const {
+  nsCOMPtr<nsIPrincipal> principal = mTransferable->GetDataPrincipal();
+  if (!principal && mWindowContext) {
+    principal = mWindowContext->Canonical()->DocumentPrincipal();
+  }
+  return principal.forget();
+}
+
+bool nsBaseClipboard::PendingCopy::MayBeReadBy(
+    mozilla::dom::WindowContext* aRequestingWindow) const {
+  nsCOMPtr<nsIPrincipal> principal = GetSourcePrincipal();
+  if (!nsIContentAnalysis::MightBeActive() || !mWindowContext ||
+      !mozilla::contentanalysis::ContentAnalysis::IsSamePageAndSite(
+          aRequestingWindow ? aRequestingWindow->Canonical() : nullptr,
+          mWindowContext->TopWindowContext()->InnerWindowId(), principal)) {
+    MOZ_CLIPBOARD_LOG("%s: requesting window may not read the kept copy.",
+                      __FUNCTION__);
+    return false;
+  }
+  return true;
+}
+
+
 nsresult nsBaseClipboard::ClipboardCache::GetData(
-    nsITransferable* aTransferable) const {
+    nsITransferable* aCachedTransferable, nsITransferable* aTransferable) {
   MOZ_ASSERT(aTransferable);
-  MOZ_ASSERT(mozilla::StaticPrefs::widget_clipboard_use_cached_data_enabled());
 
   
   
@@ -1882,7 +2041,7 @@ nsresult nsBaseClipboard::ClipboardCache::GetData(
     return NS_ERROR_FAILURE;
   }
 
-  MOZ_ASSERT(mTransferable);
+  MOZ_ASSERT(aCachedTransferable);
   for (const auto& flavor : flavors) {
     nsCOMPtr<nsISupports> dataSupports;
     
@@ -1892,7 +2051,7 @@ nsresult nsBaseClipboard::ClipboardCache::GetData(
     
     if (flavor.EqualsLiteral(kWebCustomFormatMapType)) {
       nsTArray<nsCString> transferableFlavors;
-      if (NS_FAILED(mTransferable->FlavorsTransferableCanExport(
+      if (NS_FAILED(aCachedTransferable->FlavorsTransferableCanExport(
               transferableFlavors))) {
         return NS_ERROR_FAILURE;
       }
@@ -1931,7 +2090,7 @@ nsresult nsBaseClipboard::ClipboardCache::GetData(
 
     
     
-    if (NS_SUCCEEDED(mTransferable->GetTransferData(
+    if (NS_SUCCEEDED(aCachedTransferable->GetTransferData(
             flavor.get(), getter_AddRefs(dataSupports)))) {
       MOZ_CLIPBOARD_LOG("%s: getting %s from cache.", __FUNCTION__,
                         flavor.get());
