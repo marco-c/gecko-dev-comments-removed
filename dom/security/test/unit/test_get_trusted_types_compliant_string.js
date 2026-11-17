@@ -1,12 +1,5 @@
 "use strict";
 
-add_setup(() => {
-  Services.prefs.setBoolPref("dom.security.trusted_types.enabled", true);
-  registerCleanupFunction(() => {
-    Services.prefs.clearUserPref("dom.security.trusted_types.enabled");
-  });
-});
-
 
 add_task(async function () {
   
