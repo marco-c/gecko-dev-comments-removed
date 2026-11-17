@@ -62,9 +62,6 @@ class MediaTrackListener {
                                    TrackTime aTrackOffset,
                                    const MediaSegment& aQueuedMedia) {}
 
-  virtual void NotifyPrincipalHandleChanged(
-      MediaTrackGraph* aGraph, const PrincipalHandle& aNewPrincipalHandle) {}
-
   
 
 
