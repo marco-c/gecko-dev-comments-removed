@@ -57,6 +57,13 @@ class MsaaAccessible : public ia2Accessible,
 
   static Accessible* GetAccessibleFrom(IUnknown* aUnknown);
 
+  
+
+
+
+
+  void GetInnerHTML(nsAString& aInnerHTML);
+
   DECL_IUNKNOWN
 
   
