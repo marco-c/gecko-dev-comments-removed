@@ -954,7 +954,7 @@ impl<'a, T: Copy + peek_poke::Peek> ::std::iter::ExactSizeIterator for AuxIter<'
 struct CapturedTextRun {
     font_key: FontInstanceKey,
     glyph_options: Option<GlyphOptions>,
-    glyphs: Vec<GlyphInstance>,
+    glyphs: Vec<GlyphInstanceAu>,
 }
 
 #[derive(Clone, Debug)]
@@ -1144,7 +1144,8 @@ pub struct DisplayListBuilder {
     off_grid_coords: u32,
     
     
-    glyph_scratch: Vec<GlyphInstance>,
+    
+    glyph_scratch: Vec<GlyphInstanceAu>,
     
     
     
@@ -1876,16 +1877,16 @@ impl DisplayListBuilder {
         let mut scratch = mem::take(&mut self.glyph_scratch);
         for split_glyphs in glyphs.chunks(MAX_TEXT_RUN_LENGTH) {
             scratch.clear();
-            scratch.extend(split_glyphs.iter().map(|g| GlyphInstance {
+            scratch.extend(split_glyphs.iter().map(|g| GlyphInstanceAu {
                 index: g.index,
-                point: g.point - bounds_origin,
+                point: (g.point - bounds_origin).to_au(),
             }));
 
             
             
             let text_run = if visible {
                 self.intern_text_run(
-                    &scratch,
+                    &mut scratch,
                     run_bounds,
                     &common,
                     font_key,
@@ -1913,9 +1914,11 @@ impl DisplayListBuilder {
 
     
     
+    
+    
     fn intern_text_run(
         &mut self,
-        glyphs: &[GlyphInstance],
+        glyphs: &mut Vec<GlyphInstanceAu>,
         bounds: LayoutRect,
         common: &di::CommonItemProperties,
         font_key: FontInstanceKey,
@@ -1938,18 +1941,14 @@ impl DisplayListBuilder {
             font_key,
             color: color.into(),
             glyph_options,
-            glyphs: glyphs
-                .iter()
-                .map(|glyph| GlyphInstanceAu {
-                    index: glyph.index,
-                    point: glyph.point.to_au(),
-                })
-                .collect(),
+            glyphs: mem::take(glyphs),
             shadow,
             requested_raster_space,
         };
 
-        self.interners.intern(&key)
+        let handle = self.interners.intern(&key);
+        *glyphs = key.glyphs;
+        handle
     }
 
     
@@ -3574,8 +3573,11 @@ impl DisplayListBuilder {
                 })
             }
             CapturedKey::Text(ref text) => {
+                let mut glyphs = mem::take(&mut self.glyph_scratch);
+                glyphs.clear();
+                glyphs.extend_from_slice(&text.glyphs);
                 let text_run = self.intern_text_run(
-                    &text.glyphs,
+                    &mut glyphs,
                     bounds,
                     &common,
                     text.font_key,
@@ -3583,6 +3585,7 @@ impl DisplayListBuilder {
                     text.glyph_options,
                     shadow_mode,
                 );
+                self.glyph_scratch = glyphs;
                 di::DisplayItem::Text(di::TextDisplayItem {
                     spatial_id: common.spatial_id,
                     clip_chain_id: common.clip_chain_id,
