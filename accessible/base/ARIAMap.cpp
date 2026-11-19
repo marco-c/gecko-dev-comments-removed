@@ -1178,6 +1178,26 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eARIAReadonlyOrEditable
   },
   { 
+    nsGkAtoms::sectionfooter,
+    roles::SECTION_FOOTER,
+    kUseMapRole,
+    eNoValue,
+    eNoAction,
+    eNoLiveAttr,
+    kGenericAccType,
+    kNoReqStates
+  },
+  { 
+    nsGkAtoms::sectionheader,
+    roles::SECTION_HEADER,
+    kUseMapRole,
+    eNoValue,
+    eNoAction,
+    eNoLiveAttr,
+    kGenericAccType,
+    kNoReqStates
+  },
+  { 
     nsGkAtoms::separator,
     roles::SEPARATOR,
     kUseMapRole,
