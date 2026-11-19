@@ -1643,7 +1643,7 @@ CompositorBridgeParent::AllocPCompositorWidgetParent(
 #endif
 }
 
-#ifdef XP_MACOSX
+#if defined(XP_MACOSX) || defined(MOZ_WAYLAND)
 mozilla::ipc::IPCResult
 CompositorBridgeParent::RecvPCompositorWidgetConstructor(
     PCompositorWidgetParent* actor, CompositorWidgetInitData&& aInitData) {
@@ -1651,7 +1651,6 @@ CompositorBridgeParent::RecvPCompositorWidgetConstructor(
       CompositorWidgetInitData::THeadlessCompositorWidgetInitData) {
     return IPC_OK();
   }
-  
   
   
   

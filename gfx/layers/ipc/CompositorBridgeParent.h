@@ -254,7 +254,7 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase {
   void InitSameProcess(widget::CompositorWidget* aWidget,
                        const LayersId& aLayerTreeId);
 
-#ifdef XP_MACOSX
+#if defined(XP_MACOSX) || defined(MOZ_WAYLAND)
   
   
   
