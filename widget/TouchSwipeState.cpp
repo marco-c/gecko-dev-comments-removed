@@ -4,6 +4,7 @@
 
 #include "TouchSwipeState.h"
 
+#include "InputData.h"
 #include "TouchSwipeInfo.h"
 #include "Units.h"
 #include "mozilla/DebugOnly.h"
@@ -94,5 +95,20 @@ void TouchSwipeState::ChangePhaseForConsumedTouchInput() {
           "Inputs are queued while waiting for APZ and handled after Start()");
       return;
   }
+}
+
+
+
+
+
+
+
+
+bool TouchSwipeState::ShouldSkipInputOnWindows(
+    const MultiTouchInput& aInput) const {
+  const uint32_t count = touchCounter.GetActiveTouchCount();
+  return phase == TouchSwipeState::Phase::Idle
+             ? aInput.mType != MultiTouchInput::MULTITOUCH_START
+             : aInput.mType == MultiTouchInput::MULTITOUCH_START && count == 1;
 }
 }  

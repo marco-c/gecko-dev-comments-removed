@@ -1530,6 +1530,11 @@ bool nsIWidget::MayTriggerSwipe(const MultiTouchInput& aInput) {
 
 void nsIWidget::HandleTouchInputForSwipe(const MultiTouchInput& aInput,
                                          const APZEventResult& aResult) {
+  
+  if (mTouchSwipeState.ShouldSkipInputOnWindows(aInput)) {
+    return;
+  }
+
   if (mTouchSwipeState.phase == TouchSwipeState::Phase::WaitingForAPZ) {
     
     MOZ_ASSERT(aInput.mType == MultiTouchInput::MULTITOUCH_START &&
@@ -1630,20 +1635,7 @@ void nsIWidget::DispatchTouchInput(MultiTouchInput& aInput) {
         
         
         if (touchSwipeEnabled) {
-          
-          
-          
-          
-          const uint32_t count =
-              mTouchSwipeState.touchCounter.GetActiveTouchCount();
-          const bool ignoreForSwipe =
-              mTouchSwipeState.phase == TouchSwipeState::Phase::Idle
-                  ? aInput.mType != MultiTouchInput::MULTITOUCH_START
-                  : aInput.mType == MultiTouchInput::MULTITOUCH_START &&
-                        count == 1;
-          if (!ignoreForSwipe) {
-            HandleTouchInputForSwipe(aInput, result);
-          }
+          HandleTouchInputForSwipe(aInput, result);
         }
 
         WidgetTouchEvent event = aInput.ToWidgetEvent(this);
