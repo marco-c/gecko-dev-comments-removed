@@ -1951,6 +1951,8 @@ void DocumentLoadListener::SerializeRedirectData(
 
   if (StaticPrefs::dom_location_ancestorOrigins_enabled()) {
     MOZ_ASSERT(XRE_IsParentProcess());
+    Span<const nsCOMPtr<nsIPrincipal>> ancestorPrincipals;
+    auto& ancestorOrigins = aArgs.loadInfo().ancestorOrigins();
     if (RefPtr bc = redirectLoadInfo->GetFrameBrowsingContext()) {
       nsCOMPtr<nsIPrincipal> resultPrincipal;
       
@@ -1963,14 +1965,22 @@ void DocumentLoadListener::SerializeRedirectData(
         bc->Canonical()->CreateRedactedAncestorOriginsList(resultPrincipal,
                                                            referrerPolicy);
       }
+      ancestorPrincipals =
+          bc->Canonical()->GetPossiblyRedactedAncestorOriginsList();
+    } else if (!mIsDocumentLoad && mParentWindowContext) {
+      
+      nsIPrincipal* parentPrincipal = mParentWindowContext->DocumentPrincipal();
+      ancestorOrigins.AppendElement(
+          parentPrincipal->GetIsNullPrincipal() ? nullptr : parentPrincipal);
+      ancestorPrincipals = mParentWindowContext->BrowsingContext()
+                               ->GetPossiblyRedactedAncestorOriginsList();
+    }
 
-      
-      
-      auto& ancestorOrigins = aArgs.loadInfo().ancestorOrigins();
-      for (const auto& ancestorPrincipal :
-           bc->Canonical()->GetPossiblyRedactedAncestorOriginsList()) {
-        ancestorOrigins.AppendElement(ancestorPrincipal);
-      }
+    
+    
+
+    for (const auto& ancestorPrincipal : ancestorPrincipals) {
+      ancestorOrigins.AppendElement(ancestorPrincipal);
     }
   }
 
