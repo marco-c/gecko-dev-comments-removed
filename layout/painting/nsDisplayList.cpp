@@ -3257,6 +3257,12 @@ AppendedBackgroundType nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
     return AppendedBackgroundType::None;
   }
 
+  
+  
+  if (bgSC->GetPseudoType() == PseudoStyleType::Cue) {
+    return AppendedBackgroundType::None;
+  }
+
   bool drawBackgroundColor = false;
   bool drawBackgroundImage = false;
   nscolor color = NS_RGBA(0, 0, 0, 0);
