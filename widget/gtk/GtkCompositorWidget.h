@@ -10,6 +10,8 @@
 #include "WindowSurfaceProvider.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/ipc/Endpoint.h"
+#include "mozilla/layers/NativeLayerRemoteChild.h"
 #include "mozilla/widget/CompositorWidget.h"
 
 class nsIWidget;
@@ -100,6 +102,10 @@ class GtkCompositorWidget : public CompositorWidget {
   RefPtr<nsWindow> mWidget;
 
  private:
+#ifdef MOZ_WAYLAND
+  void CreateNativeLayerRoot();
+#endif
+
   
   
   
@@ -108,11 +114,15 @@ class GtkCompositorWidget : public CompositorWidget {
   
   DataMutex<LayoutDeviceIntSize> mClientSize;
 
+  ipc::Endpoint<mozilla::layers::PNativeLayerRemoteChild> mChildEndpoint;
+
   
   WindowSurfaceProvider mProvider;
 
 #ifdef MOZ_WAYLAND
-  RefPtr<mozilla::layers::NativeLayerRootWayland> mNativeLayerRoot;
+  
+  
+  RefPtr<mozilla::layers::NativeLayerRoot> mNativeLayerRoot;
 #endif
 };
 
