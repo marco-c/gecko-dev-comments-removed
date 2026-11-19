@@ -139,6 +139,10 @@ class UtilityProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
 
   nsCOMPtr<nsITimer> mForceKillTimer;
 
+  
+  
+  nsCOMPtr<nsITimer> mLaunchTimeoutTimer;
+
   MozPromiseHolder<ShutdownPromiseType> mShutdownPromise;
 
   void ResolvePromise();
