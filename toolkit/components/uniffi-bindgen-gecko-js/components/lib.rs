@@ -3,13 +3,9 @@
 
 
 mod reexport_appservices_uniffi_scaffolding {
-    fxcontainers::uniffi_reexport_scaffolding!();
-}
-
-#[cfg(not(any(target_os = "android", target_os = "ios")))]
-mod reexport_desktop_appservices_uniffi_scaffolding {
     ads_client::uniffi_reexport_scaffolding!();
     autofill::uniffi_reexport_scaffolding!();
+    fxcontainers::uniffi_reexport_scaffolding!();
     tabs::uniffi_reexport_scaffolding!();
     relevancy::uniffi_reexport_scaffolding!();
     suggest::uniffi_reexport_scaffolding!();

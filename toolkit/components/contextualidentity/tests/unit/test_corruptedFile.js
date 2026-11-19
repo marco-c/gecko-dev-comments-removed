@@ -56,13 +56,15 @@ function hasCookie(userContextId) {
 
 
 add_task(async function corruptedFile() {
-  const thumbnailPrivateId = ContextualIdentityService.getPrivateIdentity(
-    "userContextIdInternal.thumbnail"
-  ).userContextId;
+  const thumbnailPrivateId = ContextualIdentityService._defaultIdentities
+    .filter(identity => identity.name === "userContextIdInternal.thumbnail")
+    .pop().userContextId;
 
-  const webextStoragePrivateId = ContextualIdentityService.getPrivateIdentity(
-    "userContextIdInternal.webextStorageLocal"
-  ).userContextId;
+  const webextStoragePrivateId = ContextualIdentityService._defaultIdentities
+    .filter(
+      identity => identity.name === "userContextIdInternal.webextStorageLocal"
+    )
+    .pop().userContextId;
 
   
   createCookie(0);
@@ -108,6 +110,14 @@ add_task(async function corruptedFile() {
     "getPublicUserContextIds has matching user context IDs"
   );
 
+  
+  
+  equal(
+    cis._lastUserContextId,
+    thumbnailPrivateId,
+    "Expect cis._lastUserContextId to be equal to the thumbnails userContextId"
+  );
+
   const privThumbnailIdentity = cis.getPrivateIdentity(
     "userContextIdInternal.thumbnail"
   );
@@ -150,7 +160,7 @@ add_task(async function corruptedFile() {
   );
 
   
-  await cis.save();
+  cis.save();
   const stateFileText = await IOUtils.readUTF8(TEST_STORE_FILE_PATH);
   equal(
     JSON.parse(stateFileText).version,

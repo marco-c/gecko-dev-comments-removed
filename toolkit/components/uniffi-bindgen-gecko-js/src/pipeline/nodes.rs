@@ -3,7 +3,7 @@
 
 
 use super::*;
-pub use crate::{filters, ConcurrencyMode, LibraryGroup};
+pub use crate::{filters, ConcurrencyMode};
 use askama::Template;
 use uniffi_bindgen::pipeline::general;
 
@@ -25,16 +25,18 @@ uniffi_pipeline::use_prev_node!(general::Type);
 #[map_node(from(general::Root))]
 #[map_node(root::map_root)]
 pub struct Root {
-    pub libs: Vec<LibraryRoot>,
-    pub ffi_definition_blocks: Vec<FfiDefinitionBlock>,
+    pub lib: LibraryRoot,
+    pub fixtures_lib: LibraryRoot,
     pub module_docs: Vec<ApiModuleDocs>,
 }
+
+
 
 
 #[derive(Debug, Clone, Node)]
 pub struct LibraryRoot {
     
-    pub group: LibraryGroup,
+    pub is_fixtures: bool,
     
     pub namespaces: Vec<Namespace>,
     pub scaffolding_calls: Vec<ScaffoldingCall>,
@@ -44,17 +46,12 @@ pub struct LibraryRoot {
     
     
     
+    pub ffi_definitions: Vec<FfiDefinition>,
+    
+    
+    
+    
     pub cpp_callback_return_handlers: Vec<CppCallbackReturnHandlerClass>,
-}
-
-
-
-
-
-#[derive(Debug, Clone, Node)]
-pub struct FfiDefinitionBlock {
-    pub group: LibraryGroup,
-    pub definitions: Vec<FfiDefinition>,
 }
 
 #[derive(Debug, Clone, MapNode, Node)]
