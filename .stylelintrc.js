@@ -437,6 +437,8 @@ module.exports = {
         "**/test/**",
         "**/tests/**",
         
+        "toolkit/themes/shared/eyedropper-common.css",
+        
         "toolkit/themes/shared/colorpicker-common.css",
         "toolkit/themes/shared/colorpicker.css",
         "toolkit/themes/shared/media/pipToggle.css",
