@@ -748,18 +748,6 @@ https://experimenter.info/nimbus-cli for the full documentation.""",
 )
 @CommandArgument("args", nargs=argparse.REMAINDER)
 def android_nimbus_cli(command_context, update=False, args=()):
-    if not conditions.is_android(command_context):
-        command_context.log(
-            logging.ERROR,
-            "nimbus-cli",
-            {},
-            "nimbus-cli drives Firefox for Android builds, but no Android build "
-            "was detected.\n"
-            "Switch to a Firefox for Android build context or use 'mach bootstrap'\n"
-            "to setup an Android build environment.",
-        )
-        return 1
-
     
     
     nimbus_cli = load_source(
@@ -1040,15 +1028,13 @@ def emulator_reset(command_context):
                 f"Failed to remove the AVD directory: '{avd_home_path}': {e}",
             )
 
-    sdk_manager_tool_path = android.get_sdkmanager_tool_path(
-        android.get_sdk_path(os_name)
-    )
-    if not sdk_manager_tool_path.exists():
+    android_cli_path = android.get_android_cli_path(android.get_sdk_path(os_name))
+    if not android_cli_path.exists():
         command_context.log(
             logging.ERROR,
             "emulator",
             {},
-            f"Unable to proceed - 'sdkmanager' not found at {sdk_manager_tool_path}. "
+            f"Unable to proceed - 'android' not found at {android_cli_path}. "
             f"Please run './mach bootstrap' to reinstall your Android SDK.",
         )
         return 1
@@ -1072,9 +1058,7 @@ def emulator_reset(command_context):
 
     android.ensure_android_packages(
         os_name,
-        os_arch,
         packages,
-        no_interactive=True,
         avd_manifest=avd_manifest,
     )
 
