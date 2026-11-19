@@ -355,6 +355,7 @@ class AudioSegment final : public MediaSegmentBase<AudioSegment, AudioChunk> {
   
   
   
+  
   [[nodiscard]] nsresult ResampleChunks(
       nsAutoRef<SpeexResamplerState>& aResampler,
       uint32_t* aResamplerChannelCount, uint32_t aInRate, uint32_t aOutRate);

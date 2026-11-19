@@ -2,7 +2,6 @@
 
 
 
-
 #include "AudioSegment.h"
 
 #include <speex/speex_resampler.h>
@@ -34,9 +33,11 @@ void AudioSegment::ApplyVolume(float aVolume) {
 }
 
 template <typename T>
-void AudioSegment::Resample(nsAutoRef<SpeexResamplerState>& aResampler,
-                            uint32_t* aResamplerChannelCount, uint32_t aInRate,
-                            uint32_t aOutRate) {
+nsresult AudioSegment::Resample(nsAutoRef<SpeexResamplerState>& aResampler,
+                                uint32_t* aResamplerChannelCount,
+                                uint32_t aInRate, uint32_t aOutRate) {
+  MOZ_ASSERT(aInRate > 0);
+  MOZ_ASSERT(aOutRate > 0);
   mDuration = 0;
 
   for (ChunkIterator ci(*this); !ci.IsEnded(); ci.Next()) {
@@ -49,6 +50,7 @@ void AudioSegment::Resample(nsAutoRef<SpeexResamplerState>& aResampler,
       mDuration += c.mDuration;
       continue;
     }
+    MOZ_ASSERT(c.mDuration > 0);
     uint32_t channels = c.mChannelData.Length();
     
     
@@ -57,22 +59,35 @@ void AudioSegment::Resample(nsAutoRef<SpeexResamplerState>& aResampler,
       SpeexResamplerState* state =
           speex_resampler_init(channels, aInRate, aOutRate,
                                SPEEX_RESAMPLER_QUALITY_DEFAULT, nullptr);
-      MOZ_ASSERT(state);
+      if (!state) {
+        Clear();
+        return NS_ERROR_DOM_MEDIA_OVERFLOW_ERR;
+      }
       aResampler.own(state);
       *aResamplerChannelCount = channels;
     }
     output.SetLength(channels);
     bufferPtrs.SetLength(channels);
-    uint32_t inFrames = c.mDuration;
     
-    NS_ASSERTION((UINT64_MAX - aInRate + 1) / c.mDuration >= aOutRate,
-                 "Dropping samples");
-    uint32_t outSize =
-        (static_cast<uint64_t>(c.mDuration) * aOutRate + aInRate - 1) / aInRate;
+    
+    
+    CheckedUint32 outSizeChecked =
+        ((CheckedInt<uint64_t>(c.mDuration) * aOutRate + (aInRate - 1)) /
+         aInRate)
+            .toChecked<uint32_t>();
+    if (!outSizeChecked.isValid()) {
+      Clear();
+      return NS_ERROR_DOM_MEDIA_OVERFLOW_ERR;
+    }
+    uint32_t outSize = outSizeChecked.value();
     for (uint32_t i = 0; i < channels; i++) {
       T* out = output[i].AppendElements(outSize);
       uint32_t outFrames = outSize;
 
+      
+      
+      
+      uint32_t inFrames = c.mDuration;
       const T* in = static_cast<const T*>(c.mChannelData[i]);
       dom::WebAudioUtils::SpeexResamplerProcess(aResampler.get(), i, in,
                                                 &inFrames, out, &outFrames);
@@ -80,6 +95,7 @@ void AudioSegment::Resample(nsAutoRef<SpeexResamplerState>& aResampler,
 
       bufferPtrs[i] = out;
       output[i].SetLength(outFrames);
+      MOZ_ASSERT(output[i].Length() == output[0].Length());
     }
     MOZ_ASSERT(channels > 0);
     c.mDuration = output[0].Length();
@@ -89,13 +105,14 @@ void AudioSegment::Resample(nsAutoRef<SpeexResamplerState>& aResampler,
     }
     mDuration += c.mDuration;
   }
+  return NS_OK;
 }
 
-void AudioSegment::ResampleChunks(nsAutoRef<SpeexResamplerState>& aResampler,
-                                  uint32_t* aResamplerChannelCount,
-                                  uint32_t aInRate, uint32_t aOutRate) {
+nsresult AudioSegment::ResampleChunks(
+    nsAutoRef<SpeexResamplerState>& aResampler,
+    uint32_t* aResamplerChannelCount, uint32_t aInRate, uint32_t aOutRate) {
   if (mChunks.IsEmpty()) {
-    return;
+    return NS_OK;
   }
 
   AudioSampleFormat format = AUDIO_FORMAT_SILENCE;
@@ -111,14 +128,14 @@ void AudioSegment::ResampleChunks(nsAutoRef<SpeexResamplerState>& aResampler,
     
     case AUDIO_FORMAT_SILENCE:
     case AUDIO_FORMAT_FLOAT32:
-      Resample<float>(aResampler, aResamplerChannelCount, aInRate, aOutRate);
-      break;
+      return Resample<float>(aResampler, aResamplerChannelCount, aInRate,
+                             aOutRate);
     case AUDIO_FORMAT_S16:
-      Resample<int16_t>(aResampler, aResamplerChannelCount, aInRate, aOutRate);
-      break;
+      return Resample<int16_t>(aResampler, aResamplerChannelCount, aInRate,
+                               aOutRate);
     default:
       MOZ_ASSERT(false);
-      break;
+      return NS_ERROR_UNEXPECTED;
   }
 }
 
@@ -205,9 +222,14 @@ static void DownMixChunk(const AudioChunk& aChunk,
   } else {
     
     for (uint32_t channel = 0; channel < aOutputChannels.Length(); channel++) {
-      ConvertAudioSamplesWithScale(channelData[channel],
-                                   aOutputChannels[channel], frameCount,
-                                   aChunk.mVolume);
+      if (channelData[channel]) {
+        ConvertAudioSamplesWithScale(channelData[channel],
+                                     aOutputChannels[channel], frameCount,
+                                     aChunk.mVolume);
+      } else {
+        std::fill_n(aOutputChannels[channel], frameCount,
+                    static_cast<AudioDataValue>(0));
+      }
     }
   }
 }
@@ -278,7 +300,7 @@ void AudioSegment::Mix(AudioMixer& aMixer, uint32_t aOutputChannels,
       
       upMixChunk = c;
       AudioChannelsUpMix<void>(&upMixChunk.mChannelData, aOutputChannels,
-                               SilentChannel::gZeroChannel);
+                               nullptr);
       downMixInput = &upMixChunk;
     }
     downMixInput->DownMixTo(outChannelPtrs);
