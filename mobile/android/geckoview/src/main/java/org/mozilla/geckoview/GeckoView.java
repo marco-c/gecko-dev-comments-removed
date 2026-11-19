@@ -344,11 +344,6 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
         new ColorDrawable(Color.WHITE));
     setBackground(drawable);
 
-    
-    
-    
-    setWillNotCacheDrawing(false);
-
     mSurfaceWrapper = new SurfaceViewWrapper(getContext());
     mSurfaceWrapper.setBackgroundColor(Color.WHITE);
     addView(

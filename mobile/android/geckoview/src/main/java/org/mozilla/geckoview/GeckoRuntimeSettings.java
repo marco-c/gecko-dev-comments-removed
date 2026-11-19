@@ -206,7 +206,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
-
     public @NonNull Builder useMaxScreenDepth(final boolean enable) {
       getSettings().mUseMaxScreenDepth = enable;
       return this;
