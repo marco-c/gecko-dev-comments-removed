@@ -56,6 +56,7 @@ user_pref("browser.urlbar.suggest.searches", false);
 user_pref("browser.fixup.domainsuffixwhitelist.test", true);
 user_pref("browser.warnOnQuit", false);
 user_pref("captivedetect.canonicalURL", "http://{server}/captive-detect/success.txt");
+user_pref("captivedetect.httpsCheck.url", "http://{server}/captive-detect/https-check");
 
 user_pref("consoleservice.logcat", true);
 
