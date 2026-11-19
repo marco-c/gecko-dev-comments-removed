@@ -4755,9 +4755,7 @@ HTMLMediaElement* HTMLMediaElement::LookupMediaElementURITable(nsIURI* aURI) {
     bool equal;
     
     
-    
-    if (elem->OwnerDoc() == OwnerDoc() &&
-        NS_SUCCEEDED(elem->NodePrincipal()->Equals(NodePrincipal(), &equal)) &&
+    if (NS_SUCCEEDED(elem->NodePrincipal()->Equals(NodePrincipal(), &equal)) &&
         equal && elem->mCORSMode == mCORSMode) {
       
       
