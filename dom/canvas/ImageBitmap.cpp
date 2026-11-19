@@ -235,7 +235,20 @@ static already_AddRefed<DataSourceSurface> CropAndCopyDataSourceSurface(
   
   
   
-  const SurfaceFormat format = SurfaceFormat::B8G8R8A8;
+  SurfaceFormat format = aSurface->GetFormat();
+  switch (format) {
+    case SurfaceFormat::B8G8R8X8:
+      format = SurfaceFormat::B8G8R8A8;
+      break;
+    case SurfaceFormat::R8G8B8X8:
+      format = SurfaceFormat::R8G8B8A8;
+      break;
+    case SurfaceFormat::X8R8G8B8:
+      format = SurfaceFormat::A8R8G8B8;
+      break;
+    default:
+      break;
+  }
   const int bytesPerPixel = BytesPerPixel(format);
   const IntSize dstSize =
       IntSize(positiveCropRect.width, positiveCropRect.height);
@@ -735,25 +748,45 @@ SurfaceFromElementResult ImageBitmap::SurfaceFrom(uint32_t aSurfaceFlags) {
       bool(aSurfaceFlags & nsLayoutUtils::SFE_ALLOW_NON_PREMULT);
   bool allowUncropped =
       bool(aSurfaceFlags & nsLayoutUtils::SFE_ALLOW_UNCROPPED_UNSCALED);
-  bool requiresPremult =
-      !allowNonPremult && mAlphaType == gfxAlphaType::NonPremult;
+  enum class Premultiplication { NotNeeded, Required, Skipped };
+  Premultiplication premultiplication = Premultiplication::NotNeeded;
+  if (mAlphaType == gfxAlphaType::NonPremult) {
+    premultiplication = allowNonPremult ? Premultiplication::Skipped
+                                        : Premultiplication::Required;
+  }
   bool requiresCrop = !allowUncropped && hasCropRect;
-  if (wantExactSize || requiresPremult || requiresCrop || mSurface) {
-    RefPtr<DrawTarget> dt = Factory::CreateDrawTarget(
-        BackendType::SKIA, IntSize(1, 1), SurfaceFormat::B8G8R8A8);
-    sfer.mSourceSurface = PrepareForDrawTarget(dt);
+  if (wantExactSize || requiresCrop ||
+      premultiplication == Premultiplication::Required) {
+    if (premultiplication == Premultiplication::Skipped) {
+      RefPtr<SourceSurface> surface = mData->GetAsSourceSurface();
+      RefPtr<DataSourceSurface> dataSurface =
+          surface ? surface->GetDataSurface() : nullptr;
+      if (dataSurface && hasCropRect) {
+        dataSurface = CropAndCopyDataSourceSurface(dataSurface, mPictureRect);
+      }
+      sfer.mSourceSurface = std::move(dataSurface);
+    } else {
+      RefPtr<DrawTarget> dt = Factory::CreateDrawTarget(
+          BackendType::SKIA, IntSize(1, 1), SurfaceFormat::B8G8R8A8);
+      sfer.mSourceSurface = PrepareForDrawTarget(dt);
+    }
 
     if (!sfer.mSourceSurface) {
       return sfer;
     }
 
-    MOZ_ASSERT(mSurface);
+    
+    MOZ_ASSERT(premultiplication == Premultiplication::Skipped || mSurface);
 
     sfer.mSize = sfer.mIntrinsicSize = sfer.mSourceSurface->GetSize();
     sfer.mHasSize = true;
-    sfer.mAlphaType = IsOpaque(sfer.mSourceSurface->GetFormat())
-                          ? gfxAlphaType::Opaque
-                          : gfxAlphaType::Premult;
+    if (premultiplication == Premultiplication::Skipped) {
+      sfer.mAlphaType = gfxAlphaType::NonPremult;
+    } else {
+      sfer.mAlphaType = IsOpaque(sfer.mSourceSurface->GetFormat())
+                            ? gfxAlphaType::Opaque
+                            : gfxAlphaType::Premult;
+    }
     return sfer;
   }
 
