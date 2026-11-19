@@ -52,9 +52,20 @@
 .widget-content {
   flex: 1 1 auto;
   min-block-size: 0;
+  position: relative;
 }
 
-iframe,
+.content {
+  block-size: 100%;
+}
+
+.error-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--card-background-color);
+}
+
+::slotted(iframe),
 ::slotted(browser) {
   display: block;
   inline-size: 100%;
@@ -64,7 +75,7 @@ iframe,
 
 :host([padded]) {
   .widget {
-    gap: var(--space-medium);
+    gap: var(--space-xsmall);
     padding: var(--space-medium);
   }
 
@@ -72,7 +83,7 @@ iframe,
     --widget-header-padding: 0;
   }
 
-  iframe,
+  ::slotted(iframe),
   ::slotted(browser) {
     border-radius: var(--border-radius-medium);
   }
