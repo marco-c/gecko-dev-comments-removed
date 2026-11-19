@@ -1514,6 +1514,8 @@ bool js::SetPrototype(JSContext* cx, HandleObject obj, HandleObject proto,
     }
   }
 
+  MaybePreserveDOMWrapper(cx, obj);
+
   Rooted<TaggedProto> taggedProto(cx, TaggedProto(proto));
   if (!JSObject::setProtoUnchecked(cx, obj, taggedProto)) {
     return false;
@@ -1581,6 +1583,8 @@ bool js::PreventExtensions(JSContext* cx, HandleObject obj,
     
     ObjectElements::PrepareForPreventExtensions(cx, nobj);
   }
+
+  MaybePreserveDOMWrapper(cx, obj);
 
   
   if (!JSObject::setFlag(cx, obj, ObjectFlag::NotExtensible)) {
