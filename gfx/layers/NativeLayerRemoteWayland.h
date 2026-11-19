@@ -102,6 +102,8 @@ class NativeLayerRemoteWayland final : public NativeLayer {
   
   
   RefPtr<widget::WaylandBuffer> mExternalImage;
+  
+  uintptr_t mLastExternalSurface = 0;
   bool mIsDRM = false;
   bool mIsHDR = false;
   gfx::IntSize mSize;
