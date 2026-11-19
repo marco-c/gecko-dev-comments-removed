@@ -663,6 +663,15 @@ bool nsWindow::WidgetTypeSupportsAcceleration() {
 }
 
 bool nsWindow::WidgetTypeSupportsNativeCompositing() {
+#ifdef MOZ_WAYLAND
+  
+  
+  auto* pm = mozilla::gfx::GPUProcessManager::Get();
+  if (GdkIsWaylandDisplay() && pm &&
+      pm->GPUEndpointProcInfo() != mozilla::ipc::EndpointProcInfo::Invalid()) {
+    return true;
+  }
+#endif
   if (IsDragPopup()) {
     return false;
   }

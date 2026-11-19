@@ -97,6 +97,8 @@ static LazyLogModule gDmabufRefLog("DmabufRef");
             ("%s: " str, GetDebugTag().get(), ##__VA_ARGS__))
 #else
 #  define LOGDMABUF(str, ...)
+#  define LOGDMAVERBOSES(str, ...)
+#  define LOGDMABUFS(str, ...)
 #  define LOGDMABUFREF(str, ...)
 #endif 
 
@@ -468,11 +470,9 @@ void DMABufSurface::GlobalRefCountDelete() {
 
 bool DMABufSurface::ReleaseDMABuf() {
   LOGDMABUF("DMABufSurface::ReleaseDMABuf() UID %d", mUID);
-#ifdef MOZ_LOGGING
   for (int i = 0; i < mBufferPlaneCount; i++) {
     Unmap(i);
   }
-#endif
 
   bool released = CloseFileDescriptors();
 
@@ -863,6 +863,10 @@ bool DMABufSurfaceRGBA::Create(mozilla::gl::GLContext* aGLContext, int aWidth,
     }
   } else {
     mFOURCCFormat = aFormat->GetFormat();
+  }
+
+  if (aDMABufSurfaceFlags & DMABUF_CPU_ACCESS) {
+    return CreateGBM(aWidth, aHeight, aDMABufSurfaceFlags, aFormat);
   }
 
   bool useGLSnapshot = gfx::gfxVars::UseDMABufSurfaceExport() && !aGLContext;
@@ -1373,7 +1377,6 @@ wl_buffer* DMABufSurfaceRGBA::CreateWlBuffer() {
 }
 #endif
 
-#ifdef MOZ_LOGGING
 
 
 
@@ -1381,12 +1384,12 @@ wl_buffer* DMABufSurfaceRGBA::CreateWlBuffer() {
 struct dma_buf_sync {
   uint64_t flags;
 };
-#  define DMA_BUF_SYNC_READ (1 << 0)
-#  define DMA_BUF_SYNC_WRITE (2 << 0)
-#  define DMA_BUF_SYNC_START (0 << 2)
-#  define DMA_BUF_SYNC_END (1 << 2)
-#  define DMA_BUF_BASE 'b'
-#  define DMA_BUF_IOCTL_SYNC _IOW(DMA_BUF_BASE, 0, struct dma_buf_sync)
+#define DMA_BUF_SYNC_READ (1 << 0)
+#define DMA_BUF_SYNC_WRITE (2 << 0)
+#define DMA_BUF_SYNC_START (0 << 2)
+#define DMA_BUF_SYNC_END (1 << 2)
+#define DMA_BUF_BASE 'b'
+#define DMA_BUF_IOCTL_SYNC _IOW(DMA_BUF_BASE, 0, struct dma_buf_sync)
 
 static void SyncDmaBuf(int aFd, uint64_t aFlags) {
   struct dma_buf_sync sync = {0};
@@ -1437,6 +1440,7 @@ void* DMABufSurface::MapInternal(uint32_t aX, uint32_t aY, uint32_t aWidth,
   return mMappedRegion[aPlane];
 }
 
+#ifdef MOZ_LOGGING
 void* DMABufSurfaceRGBA::MapReadOnly(uint32_t aX, uint32_t aY, uint32_t aWidth,
                                      uint32_t aHeight, uint32_t* aStride) {
   return MapInternal(aX, aY, aWidth, aHeight, aStride, GBM_BO_TRANSFER_READ);
@@ -1446,6 +1450,7 @@ void* DMABufSurfaceRGBA::MapReadOnly(uint32_t* aStride) {
   return MapInternal(0, 0, mWidth[0], mHeight[0], aStride,
                      GBM_BO_TRANSFER_READ);
 }
+#endif
 
 void* DMABufSurfaceRGBA::Map(uint32_t aX, uint32_t aY, uint32_t aWidth,
                              uint32_t aHeight, uint32_t* aStride) {
@@ -1458,6 +1463,29 @@ void* DMABufSurfaceRGBA::Map(uint32_t* aStride) {
                      GBM_BO_TRANSFER_READ_WRITE);
 }
 
+already_AddRefed<gfx::DrawTarget> DMABufSurfaceRGBA::Lock() {
+  LOGDMABUF("DMABufSurfaceRGBA::Lock() UID %d", mUID);
+  uint32_t stride = 0;
+  void* data = Map(&stride);
+  if (!data) {
+    return nullptr;
+  }
+  RefPtr<gfx::DrawTarget> dt = gfx::Factory::CreateDrawTargetForData(
+      gfx::BackendType::SKIA, static_cast<unsigned char*>(data), GetSize(),
+      stride, GetFormat());
+  if (!dt) {
+    Unmap();
+    return nullptr;
+  }
+  static gfx::UserDataKey sUnmapKey;
+  dt->AddUserData(&sUnmapKey, do_AddRef(this).take(), [](void* aSurface) {
+    RefPtr<DMABufSurfaceRGBA> surface =
+        dont_AddRef(static_cast<DMABufSurfaceRGBA*>(aSurface));
+    surface->Unmap();
+  });
+  return dt.forget();
+}
+
 void DMABufSurface::Unmap(int aPlane) {
   if (mMappedRegion[aPlane]) {
     LOGDMABUF("DMABufSurface::Unmap() UID %d plane %d\n", mUID, aPlane);
@@ -1468,7 +1496,6 @@ void DMABufSurface::Unmap(int aPlane) {
     mMappedRegionStride[aPlane] = 0;
   }
 }
-#endif  
 
 nsresult DMABufSurface::BuildSurfaceDescriptorBuffer(
     SurfaceDescriptorBuffer& aSdBuffer, Image::BuildSdbFlags aFlags,
