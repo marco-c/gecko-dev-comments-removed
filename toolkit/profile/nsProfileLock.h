@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef _nsProfileLock_h_
 #define _nsProfileLock_h_
 
@@ -26,7 +25,7 @@ class nsProfileLock
 {
  public:
   nsProfileLock();
-  nsProfileLock(nsProfileLock& src);
+  nsProfileLock(const nsProfileLock&) = delete;
 
   ~nsProfileLock();
 

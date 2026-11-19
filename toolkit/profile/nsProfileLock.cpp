@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsProfileLock.h"
 #include "nsCOMPtr.h"
 #include "nsQueryObject.h"
@@ -62,8 +61,6 @@ nsProfileLock::nsProfileLock()
   sDisableSignalHandling = PR_GetEnv("MOZ_DISABLE_SIG_HANDLER") ? true : false;
 #endif
 }
-
-nsProfileLock::nsProfileLock(nsProfileLock& src) { *this = src; }
 
 nsProfileLock& nsProfileLock::operator=(nsProfileLock& rhs) {
   Unlock();
