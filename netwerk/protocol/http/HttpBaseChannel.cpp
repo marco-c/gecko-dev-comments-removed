@@ -3424,7 +3424,8 @@ bool HttpBaseChannel::ShouldFilterOpaqueResponse(
   }
 
   auto contentPolicy = mLoadInfo->InternalContentPolicyType();
-  if (contentPolicy == nsIContentPolicy::TYPE_PING) {
+  if (contentPolicy == nsIContentPolicy::TYPE_PING ||
+      contentPolicy == nsIContentPolicy::TYPE_BEACON) {
     return true;
   }
 
