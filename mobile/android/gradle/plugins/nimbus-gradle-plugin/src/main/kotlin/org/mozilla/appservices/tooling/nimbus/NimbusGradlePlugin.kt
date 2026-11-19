@@ -10,7 +10,7 @@ import com.android.build.gradle.LibraryPlugin
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.file.RegularFile
+import org.gradle.api.artifacts.type.ArtifactTypeDefinition
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
@@ -20,6 +20,12 @@ import org.gradle.api.provider.ValueSourceParameters
 import org.gradle.api.tasks.TaskProvider
 import org.mozilla.conventions.isTruthy
 import java.io.File
+
+// Not in the org.mozilla.appservices group, which the conventions plugin substitutes with in-tree
+// or locally published application-services modules.
+private const val FML_GROUP = "org.mozilla.appservices.tools"
+private const val FML_MODULE = "nimbus-fml"
+private const val FML_BINARY_TYPE = "nimbus-fml-binary"
 
 abstract class ApplicationServicesVersionSource : ValueSource<String, ApplicationServicesVersionSource.Parameters> {
     interface Parameters : ValueSourceParameters {
@@ -56,6 +62,14 @@ abstract class NimbusPluginExtension {
     abstract val manifestFile: Property<String>
 
     /**
+     * The .fml.yaml files that `manifestFile` loads transitively using `includes` or `import`. Changing one of them
+     * regenerates the code.
+     *
+     * Paths are relative to the project root. This defaults to an empty list.
+     */
+    abstract val manifestDependencies: ListProperty<String>
+
+    /**
      * The mapping between the build variant and the release channel.
      *
      * Variants that are not in this map are used literally.
@@ -79,8 +93,8 @@ abstract class NimbusPluginExtension {
     /**
      * The directory where a local installation of application services can be found.
      *
-     * This defaults to `null`, in which case the plugin will download a copy of the correct
-     * nimbus-fml binary for this version of the plugin.
+     * This defaults to `null`, in which case the plugin uses the nimbus-fml binary built by
+     * `./mach build`, or the one from the application-services archive for this version.
      */
     abstract val applicationServicesDir: Property<String>
 }
@@ -94,17 +108,14 @@ class NimbusPlugin : Plugin<Project> {
         extension.manifestFile.convention("nimbus.fml.yaml")
         extension.cacheDir.convention("nimbus-cache")
 
-        val validateTask = setupValidateTask(project)
+        // We need to locate our nimbus-fml tool: with application-services in tree, `./mach build`
+        // builds it; otherwise it comes from the application-services archive, resolved like any
+        // other dependency.
+        val mozconfig = project.gradle.extensions.extraProperties["mozconfig"] as Map<*, *>
+        val topsrcdir = mozconfig["topsrcdir"] as String
+        val mozconfigSubsts = mozconfig["substs"] as Map<*, *>
 
-        // We need to locate our nimbus-fml tool - prior to app-services moving into mozilla-firefox, we
-        // download this tool from taskcluster. After the move of app-services, we expect the tool to exist
-        // locally having been built by `./mach build`.
-        @Suppress("UNCHECKED_CAST")
-        val mozconfig = project.gradle.extensions.extraProperties["mozconfig"] as? Map<String, Any>
-        @Suppress("UNCHECKED_CAST")
-        val mozconfigSubsts = mozconfig?.get("substs") as? Map<String, Any>
-
-        if (mozconfigSubsts?.get("MOZ_APPSERVICES_IN_TREE").isTruthy()) {
+        if (mozconfigSubsts["MOZ_APPSERVICES_IN_TREE"].isTruthy()) {
             // This is subtle.  We capture `NIMBUS_FML` in the configuration cache as a `String`.
             // If we access `project.gradle...` in the `provider` `Callable` below, we capture the
             // `Project` in the configuration cache, which is not desirable.
@@ -116,38 +127,43 @@ class NimbusPlugin : Plugin<Project> {
             // Finally: if this process fails, including with an exception, the framework swallows
             // the details and says something like `MissingValueException`, which can be hard to
             // interpret.  Hence, this explanation of the details.
-            val nimbusFmlPath = mozconfigSubsts?.get("NIMBUS_FML") as? String
+            val nimbusFmlPath = mozconfigSubsts["NIMBUS_FML"] as? String
 
             val fmlBinaryString = project.providers.provider {
                 nimbusFmlPath
             }
 
-            // Configure the task with proper file type
-            validateTask.configure {
-                fmlBinary.set(project.layout.file(fmlBinaryString.map { s -> File(s) }))
-            }
-
-            setupAndroidVariants(project, validateTask) { generateTask ->
+            setupAndroidVariants(project) { generateTask ->
                 generateTask.configure {
                     fmlBinary.set(project.layout.file(fmlBinaryString.map { s -> File(s) }))
-                    dependsOn(validateTask)
                 }
             }
         } else {
             // building from an app-services artifact.
-            val fmlBinaryProvider = getOrCreateAssembleToolsFmlBinary(project.rootProject, extension.applicationServicesDir)
+            addFmlRepositories(project, (mozconfigSubsts["NIMBUS_FML_REPOSITORY"] as? String)?.let { File(topsrcdir).resolve(it) })
 
-            validateTask.configure {
-                // Gradle tracks the dependency on the `nimbus-fml` binary that the
-                // `assembleNimbusTools` task produces implicitly; we don't need an
-                // explicit `dependsOn` here.
-                fmlBinary.set(fmlBinaryProvider)
+            val fmlArchive = project.configurations.create("nimbusFml") {
+                isCanBeConsumed = false
             }
+            project.dependencies.addProvider(
+                fmlArchive.name,
+                getProjectVersionProvider(project, topsrcdir).map { "$FML_GROUP:$FML_MODULE:$it@zip" }
+            )
 
-            setupAndroidVariants(project, validateTask) { generateTask ->
+            project.dependencies.registerTransform(NimbusFmlBinaryTransform::class.java) {
+                from.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, ArtifactTypeDefinition.ZIP_TYPE)
+                to.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, FML_BINARY_TYPE)
+                parameters.platform.set(NimbusFmlBinaryTransform.detectPlatform(project.providers))
+            }
+            val fmlBinaryFile = fmlArchive.incoming.artifactView {
+                attributes.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, FML_BINARY_TYPE)
+            }.files.elements.map { it.single().asFile }
+
+            setupAndroidVariants(project) { generateTask ->
                 generateTask.configure {
-                    fmlBinary.set(fmlBinaryProvider)
-                    dependsOn(validateTask)
+                    if (!applicationServicesDir.isPresent) {
+                        fmlBinary.fileProvider(fmlBinaryFile)
+                    }
                 }
             }
         }
@@ -155,7 +171,6 @@ class NimbusPlugin : Plugin<Project> {
 
     private fun setupAndroidVariants(
         project: Project,
-        validateTask: TaskProvider<NimbusValidateTask>,
         configureGenerateTask: (TaskProvider<NimbusFeaturesTask>) -> Unit
     ) {
         project.plugins.withType(AppPlugin::class.java).configureEach {
@@ -196,6 +211,7 @@ class NimbusPlugin : Plugin<Project> {
 
                 configureCommonTaskProperties(this, project, "features${variant.name.replaceFirstChar { it.uppercase() }}")
                 val extension = project.extensions.getByType(NimbusPluginExtension::class.java)
+                manifestDependencies.setFrom(project.files(extension.manifestDependencies))
                 channel.set(extension.channels.getting(variant.name).orElse(variant.name))
                 outputDir.set(project.layout.buildDirectory.dir("generated/source/nimbus/${variant.name}/kotlin"))
             }
@@ -204,95 +220,39 @@ class NimbusPlugin : Plugin<Project> {
         }
     }
 
-    // Everything below here is for downloading a binary.
-    private fun getOrCreateAssembleToolsFmlBinary(
-        rootProject: Project,
-        applicationServicesDir: Property<String>
-    ): Provider<RegularFile> {
-        val taskName = "assembleNimbusTools"
-        val propertyName = "nimbus.fmlBinaryProvider"
-
-        if (rootProject.extensions.extraProperties.has(propertyName)) {
-            @Suppress("UNCHECKED_CAST")
-            return rootProject.extensions.extraProperties[propertyName] as Provider<RegularFile>
+    // Releases are on archive.mozilla.org and nightlies in the Taskcluster index; automation
+    // provides the archive in a local repository with the same layout as archive.mozilla.org.
+    private fun addFmlRepositories(project: Project, localRepository: File?) {
+        fun fmlRepository(url: Any, pattern: String) = project.repositories.ivy {
+            setUrl(url)
+            patternLayout { artifact(pattern) }
+            metadataSources { artifact() }
         }
 
-        val asVersionProvider = getProjectVersionProvider(rootProject)
-        @Suppress("UNCHECKED_CAST")
-        val mozconfig = rootProject.gradle.extensions.extraProperties["mozconfig"] as? Map<String, Any>
-        val topsrcdir = requireNotNull(mozconfig?.get("topsrcdir") as? String) {
-            "topsrcdir not found in mozconfig"
+        val releasePattern = "[revision]/[artifact].[ext]"
+        project.repositories.exclusiveContent {
+            forRepositories(
+                *listOfNotNull(
+                    localRepository?.let { fmlRepository(it, releasePattern) },
+                    fmlRepository("https://archive.mozilla.org/pub/app-services/releases/", releasePattern),
+                    fmlRepository(
+                        "https://firefox-ci-tc.services.mozilla.com/api/index/v1/task/",
+                        "project.application-services.v2.nimbus-fml.[revision]/artifacts/public/build/[artifact].[ext]"
+                    ),
+                ).toTypedArray()
+            )
+            filter { includeModule(FML_GROUP, FML_MODULE) }
         }
-        val rootBuildDir = rootProject.layout.buildDirectory
-        val rootProjectLayout = rootProject.layout
-
-        val taskProvider = rootProject.tasks.register(taskName, NimbusAssembleToolsTask::class.java) {
-            group = "Nimbus"
-            description = "Fetch the Nimbus FML tools from Application Services"
-
-            val cacheDir = asVersionProvider.map { version: String ->
-                val absoluteCachePath = File(topsrcdir, ".gradle/caches/nimbus-fml/$version")
-                val relativeFromProject = rootProjectLayout.projectDirectory.asFile.toPath()
-                    .relativize(absoluteCachePath.toPath())
-                    .toString()
-                rootProjectLayout.projectDirectory.dir(relativeFromProject)
-            }
-
-            archiveFile.set(cacheDir.map { it.file("nimbus-fml.zip") })
-            hashFile.set(cacheDir.map { it.file("nimbus-fml.sha256") })
-            fmlBinary.set(rootBuildDir.flatMap { buildDir ->
-                asVersionProvider.zip(platform) { version, plat ->
-                    buildDir.dir("bin/nimbus/$version").file(NimbusAssembleToolsTask.getBinaryName(plat))
-                }
-            })
-
-            fetch {
-                // Try archive.mozilla.org release first
-                archive.set(asVersionProvider.map { asVersion ->
-                    "https://archive.mozilla.org/pub/app-services/releases/$asVersion/nimbus-fml.zip"
-                })
-                hash.set(asVersionProvider.map { asVersion ->
-                    "https://archive.mozilla.org/pub/app-services/releases/$asVersion/nimbus-fml.sha256"
-                })
-
-                // Fall back to a nightly release
-                fallback {
-                    archive.set(asVersionProvider.map { asVersion ->
-                        "https://firefox-ci-tc.services.mozilla.com/api/index/v1/task/project.application-services.v2.nimbus-fml.$asVersion/artifacts/public/build/nimbus-fml.zip"
-                    })
-                    hash.set(asVersionProvider.map { asVersion ->
-                        "https://firefox-ci-tc.services.mozilla.com/api/index/v1/task/project.application-services.v2.nimbus-fml.$asVersion/artifacts/public/build/nimbus-fml.sha256"
-                    })
-                }
-            }
-
-            unzip {
-                include("${platform.get()}*/release/nimbus-fml*")
-            }
-
-            onlyIf("`applicationServicesDir` == null") {
-                applicationServicesDir.orNull == null
-            }
-        }
-
-        val fmlBinaryProvider = taskProvider.flatMap { it.fmlBinary }
-        rootProject.extensions.extraProperties[propertyName] = fmlBinaryProvider
-        return fmlBinaryProvider
     }
 
-    private fun getProjectVersionProvider(rootProject: Project): Provider<String> {
-        @Suppress("UNCHECKED_CAST")
-        val mozconfig = rootProject.gradle.extensions.extraProperties["mozconfig"] as? Map<String, Any>
-        val topsrcdir = requireNotNull(mozconfig?.get("topsrcdir") as? String) {
-            "topsrcdir not found in mozconfig"
-        }
-        val localPropertiesVersion = if (rootProject.gradle.extensions.extraProperties.has("localProperties.branchBuild.application-services.version")) {
-            rootProject.gradle.extensions.extraProperties["localProperties.branchBuild.application-services.version"] as? String
+    private fun getProjectVersionProvider(project: Project, topsrcdir: String): Provider<String> {
+        val localPropertiesVersion = if (project.gradle.extensions.extraProperties.has("localProperties.branchBuild.application-services.version")) {
+            project.gradle.extensions.extraProperties["localProperties.branchBuild.application-services.version"] as? String
         } else {
             null
         }
 
-        return rootProject.providers.of(ApplicationServicesVersionSource::class.java) {
+        return project.providers.of(ApplicationServicesVersionSource::class.java) {
             parameters.topsrcdir.set(topsrcdir)
             parameters.localPropertiesVersion.set(localPropertiesVersion)
         }
@@ -310,27 +270,5 @@ class NimbusPlugin : Plugin<Project> {
         task.cacheDir.set(project.layout.buildDirectory.dir(extension.cacheDir).map {
             it.dir(cacheDirSuffix)
         })
-    }
-
-    private fun setupValidateTask(project: Project): TaskProvider<NimbusValidateTask> {
-        return project.tasks.register("nimbusValidate", NimbusValidateTask::class.java) {
-            description = "Validate the Nimbus feature manifest for the app"
-            group = "Nimbus"
-
-            doFirst {
-                logger.info("Nimbus FML: validating manifest")
-                logger.info("manifest             {}", inputFile.get().asFile)
-                logger.info("cache dir            {}", cacheDir.get().asFile)
-                logger.info("repo file(s)         {}", repoFiles.files.joinToString())
-            }
-
-            configureCommonTaskProperties(this, project, "validate")
-
-            // `nimbusValidate` doesn't have any outputs, so Gradle will always
-            // run it, even if its inputs haven't changed. This predicate tells
-            // Gradle to ignore the outputs, and only consider the inputs, for
-            // up-to-date checks.
-            outputs.upToDateWhen { true }
-        }
     }
 }
