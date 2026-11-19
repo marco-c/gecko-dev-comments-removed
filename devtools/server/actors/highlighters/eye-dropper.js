@@ -81,7 +81,10 @@ class EyeDropper extends EventEmitter {
   _buildMarkup() {
     
     const container = this.markup.createNode({
-      attributes: { class: "highlighter-container" },
+      attributes: {
+        id: "eye-dropper-container",
+        class: "highlighter-container",
+      },
     });
 
     
@@ -217,7 +220,7 @@ class EyeDropper extends EventEmitter {
 
       const rootElement = this.getElement("eye-dropper-root");
       rootElement.setAttribute("hidden", "true");
-      rootElement.removeAttribute("drawn");
+      this.getElement("eye-dropper-container").removeAttribute("drawn");
       rootElement.removeAttribute("scrolling");
       this.#scrolling = false;
 
@@ -276,7 +279,7 @@ class EyeDropper extends EventEmitter {
 
     
     
-    rootElement.setAttribute("drawn", "true");
+    this.getElement("eye-dropper-container").setAttribute("drawn", "true");
 
     
     rootElement.removeAttribute("hidden");
@@ -438,7 +441,7 @@ class EyeDropper extends EventEmitter {
       case "scrollend":
         this.#scrolling = false;
         this.getElement("eye-dropper-root").removeAttribute("scrolling");
-        this.getElement("eye-dropper-root").removeAttribute("drawn");
+        this.getElement("eye-dropper-container").removeAttribute("drawn");
         this.updateScreenshot();
         break;
       case "FullZoomChange":
@@ -446,7 +449,7 @@ class EyeDropper extends EventEmitter {
         this.show();
         break;
       case "resize":
-        this.getElement("eye-dropper-root").removeAttribute("drawn");
+        this.getElement("eye-dropper-container").removeAttribute("drawn");
         this.#debouncedUpdateScreenshot();
         break;
     }
