@@ -57,7 +57,10 @@ support-files = ["ml_engine_initialization_failure.worker.mjs"]
 ["browser_ml_engine_rs_hub.js"]
 
 ["browser_ml_hwinference_device_discovery.js"]
-skip-if = ["os == 'win' && debug && verify"] # Bug 2082990: utility process launch stalls
+skip-if = [
+  "os == 'win' && debug && verify", # Bug 2082990: utility process launch stalls
+  "macos_vm", # Bug 2088997 - fails only on the macOS tart VMs
+]
 
 ["browser_ml_hwinference_process.js"]
 
@@ -114,6 +117,8 @@ support-files = [
 ["browser_ml_openai.js"]
 
 ["browser_ml_opfs.js"]
+
+["browser_ml_opfs_private_window.js"]
 
 ["browser_ml_perf_test_utils.js"]
 
