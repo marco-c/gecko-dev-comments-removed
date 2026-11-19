@@ -20,6 +20,8 @@
 
 
 
+
+
 const same_origin = get_host_info().HTTPS_ORIGIN;
 const cross_origin = get_host_info().HTTPS_REMOTE_ORIGIN;
 const cookie_key = token();
@@ -37,14 +39,8 @@ const request_origin = variants.get('request_origin') == 'same_origin'
   ? same_origin
   : cross_origin;
 
-
-
 const worker_expected_cookie =
-  request_origin == same_origin
-  ? cookie_same_origin
-  : (worker_dip == dip_credentialless
-    ? undefined
-    : cookie_cross_origin);
+  request_origin == same_origin ? cookie_same_origin : cookie_cross_origin;
 
 
 
