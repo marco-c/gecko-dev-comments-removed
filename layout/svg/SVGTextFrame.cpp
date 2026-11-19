@@ -3475,12 +3475,10 @@ WebRenderCommandsResult SVGTextFrame::CreateWebRenderCommands(
       
       
       
-      wr::WrTransformInfo transformInfo;
-      transformInfo.transform =
+      wr::ReferenceFrameParams rfParams;
+      rfParams.transform =
           wr::ToLayoutTransform(gfx::Matrix4x4::From2D(ToMatrix(runTransform)));
       wr::StackingContextParams params;
-      params.mTransformPtr = &transformInfo;
-      params.reference_frame_kind = wr::WrReferenceFrameKind::Transform;
       params.clip =
           wr::WrStackingContextClip::ClipChain(aBuilder.CurrentClipChainId());
       params.prim_flags = aItem->BackfaceIsHidden()
@@ -3491,14 +3489,12 @@ WebRenderCommandsResult SVGTextFrame::CreateWebRenderCommands(
           LayoutDeviceRect::FromAppUnits(frame->InkOverflowRect(), auPerDevPx);
       runBounds.Inflate(1);
 
-      Maybe<wr::WrSpatialId> spatialId = aBuilder.PushStackingContext(
-          params, wr::ToLayoutRect(LayoutDeviceRect()),
-          wr::RasterSpace::Screen());
+      wr::WrSpatialId spatialId = aBuilder.DefineReferenceFrame(
+          wr::ToLayoutPoint(LayoutDevicePoint()), rfParams);
+      aBuilder.PushStackingContext(params, wr::RasterSpace::Screen(),
+                                   Some(spatialId));
       {
-        Maybe<wr::SpaceAndClipChainHelper> spaceHelper;
-        if (spatialId) {
-          spaceHelper.emplace(aBuilder, *spatialId);
-        }
+        wr::SpaceAndClipChainHelper spaceHelper(aBuilder, spatialId);
         textDrawer->SetBounds(runBounds);
         context.SetMatrix(gfx::Matrix());
 
@@ -3512,7 +3508,7 @@ WebRenderCommandsResult SVGTextFrame::CreateWebRenderCommands(
                          inheritedOpacity);
         textDrawer->TerminateShadows();
       }
-      aBuilder.PopStackingContext(spatialId.isSome());
+      aBuilder.PopStackingContext();
     }
 
     ok = !textDrawer->CheckHasUnsupportedFeatures();
@@ -5363,6 +5359,14 @@ void SVGTextFrame::UpdateGlyphPositioning() {
     return;
   }
 
+  if (HasAnyStateBits(NS_STATE_SVG_TEXT_IN_REFLOW)) {
+    
+    
+    
+    mPositions.Clear();
+    return;
+  }
+
   if (HasAnyStateBits(NS_STATE_SVG_POSITIONING_DIRTY)) {
     DoGlyphPositioning();
   }
@@ -5375,7 +5379,15 @@ void SVGTextFrame::MaybeResolveBidiForAnonymousBlockChild() {
       PresContext()->BidiEnabled()) {
     MOZ_ASSERT(static_cast<nsBlockFrame*>(do_QueryFrame(kid)),
                "Expect anonymous child to be an nsBlockFrame");
+    
+    
+    
+    const bool wasInReflow = HasAnyStateBits(NS_STATE_SVG_TEXT_IN_REFLOW);
+    AddStateBits(NS_STATE_SVG_TEXT_IN_REFLOW);
     nsBidiPresUtils::Resolve(static_cast<nsBlockFrame*>(kid));
+    if (!wasInReflow) {
+      RemoveStateBits(NS_STATE_SVG_TEXT_IN_REFLOW);
+    }
   }
 }
 
