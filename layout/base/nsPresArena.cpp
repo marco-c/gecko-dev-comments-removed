@@ -168,7 +168,12 @@ struct PresArenaSuperblock {
     MOZ_MAKE_MEM_UNDEFINED(aSb, kSuperblockSize);
     aSb->~PresArenaSuperblock();
 #if defined(XP_WIN) && !defined(MOZ_MEMORY)
-    _aligned_free(aSb);
+    
+    
+    
+    
+    
+    
 #else
     free(aSb);
 #endif
