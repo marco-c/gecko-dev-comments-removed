@@ -4755,7 +4755,9 @@ HTMLMediaElement* HTMLMediaElement::LookupMediaElementURITable(nsIURI* aURI) {
     bool equal;
     
     
-    if (NS_SUCCEEDED(elem->NodePrincipal()->Equals(NodePrincipal(), &equal)) &&
+    
+    if (elem->OwnerDoc() == OwnerDoc() &&
+        NS_SUCCEEDED(elem->NodePrincipal()->Equals(NodePrincipal(), &equal)) &&
         equal && elem->mCORSMode == mCORSMode) {
       
       
@@ -6813,6 +6815,15 @@ bool HTMLMediaElement::IsCORSSameOrigin() {
   return (NS_SUCCEEDED(NodePrincipal()->Subsumes(principal, &subsumes)) &&
           subsumes) ||
          ShouldCheckAllowOrigin();
+}
+
+void HTMLMediaElement::UpdateReadyState() {
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdownFinal)) {
+    
+    
+    return;
+  }
+  mWatchManager.ManualNotify(&HTMLMediaElement::UpdateReadyStateInternal);
 }
 
 void HTMLMediaElement::UpdateReadyStateInternal() {
