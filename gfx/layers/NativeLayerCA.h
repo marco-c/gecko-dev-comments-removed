@@ -164,11 +164,8 @@ class NativeLayerRootCA final : public NativeLayerRoot {
       bool aIsOpaque) override;
   already_AddRefed<NativeLayer> CreateLayerForColor(
       gfx::DeviceColor aColor) override;
-
-  
-  
-  already_AddRefed<NativeLayerCA> CreateLayerForSurfacePresentation(
-      const gfx::IntSize& aSize, bool aIsOpaque);
+  already_AddRefed<NativeLayer> CreateLayerForSurfacePresentation(
+      const gfx::IntSize& aSize, bool aIsOpaque) override;
 
   void SetWindowIsFullscreen(bool aFullscreen);
 

@@ -62,6 +62,13 @@ class NativeLayerRoot {
     return nullptr;
   }
 
+  
+  
+  virtual already_AddRefed<NativeLayer> CreateLayerForSurfacePresentation(
+      const gfx::IntSize& aSize, bool aIsOpaque) {
+    return nullptr;
+  }
+
   virtual void LayerDestroyed(NativeLayer* aLayer) {}
 
   virtual void AppendLayer(NativeLayer* aLayer) = 0;
