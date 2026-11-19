@@ -18442,7 +18442,7 @@ interface nsICaptivePortalCallback extends nsISupports {
   
   prepare(): void;
   
-  complete(success: boolean, unlockedPortal?: boolean): void;
+  complete(success: boolean): void;
 }
 
 

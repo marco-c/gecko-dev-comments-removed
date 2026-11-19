@@ -7,9 +7,6 @@
 
 user_pref("app.normandy.api_url", "https://%(server)s/selfsupport-dummy/");
 user_pref("browser.safebrowsing.downloads.remote.url", "https://%(server)s/safebrowsing-dummy");
-
-
-user_pref("captivedetect.httpsCheck.url", "https://localhost:1/captive-detect/https-check");
 user_pref("extensions.systemAddon.update.url", "http://%(server)s/dummy-system-addons.xml");
 
 user_pref("extensions.webextensions.warnings-as-errors", true);
