@@ -618,6 +618,14 @@ void SharedScriptCache::SaveToDiskCache() {
       continue;
     }
 
+    if (!item.mLoadedScript->HasDiskCacheReference()) {
+      
+      
+      item.mLoadedScript->DropSRIOrSRIAndSerializedStencil();
+      TRACE_FOR_TEST(item.mLoadedScript, "diskcache:failed");
+      continue;
+    }
+
     if (!ScriptLoader::SaveToDiskCache(item.mLoadedScript, item.mCompressed)) {
       item.mLoadedScript->DropDiskCacheReference();
       item.mLoadedScript->DropSRIOrSRIAndSerializedStencil();
