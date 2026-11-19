@@ -10,8 +10,6 @@
 
 package org.webrtc;
 
-import org.jni_zero.NativeMethods;
-
 
 public class MediaSource {
   
@@ -36,7 +34,7 @@ public class MediaSource {
   }
 
   public State state() {
-    return lifecycleLock.call(nativeSource -> MediaSourceJni.get().getState(nativeSource));
+    return lifecycleLock.call(nativeSource -> nativeGetState(nativeSource));
   }
 
   public void dispose() {
@@ -62,8 +60,5 @@ public class MediaSource {
     }
   }
 
-  @NativeMethods
-  interface Natives {
-    State getState(long pointer);
-  }
+  private static native State nativeGetState(long pointer);
 }

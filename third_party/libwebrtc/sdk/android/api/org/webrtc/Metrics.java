@@ -12,7 +12,6 @@ package org.webrtc;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.jni_zero.NativeMethods;
 
 
 
@@ -69,18 +68,14 @@ public class Metrics {
   
   
   public static void enable() {
-    MetricsJni.get().enable();
+    nativeEnable();
   }
 
   
   public static Metrics getAndReset() {
-    return MetricsJni.get().getAndReset();
+    return nativeGetAndReset();
   }
 
-  @NativeMethods
-  interface Natives {
-    void enable();
-
-    Metrics getAndReset();
-  }
+  private static native void nativeEnable();
+  private static native Metrics nativeGetAndReset();
 }
