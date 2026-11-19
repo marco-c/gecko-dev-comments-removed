@@ -1634,9 +1634,6 @@ void nsIWidget::DispatchTouchInput(MultiTouchInput& aInput) {
           
           
           
-          
-          
-          
           const uint32_t count =
               mTouchSwipeState.touchCounter.GetActiveTouchCount();
           const bool ignoreForSwipe =
