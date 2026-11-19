@@ -7,11 +7,13 @@
 #include <algorithm>
 #include <utility>
 
+#include "HTMLEditUtils.h"
 #include "mozilla/BinarySearch.h"
 #include "mozilla/EditorBase.h"
 #include "mozilla/HTMLEditor.h"
 #include "mozilla/Logging.h"
 #include "mozilla/RangeBoundary.h"
+#include "mozilla/ServoBindings.h"
 #include "mozilla/ToString.h"
 #include "mozilla/dom/CharacterDataBuffer.h"
 #include "mozilla/dom/Element.h"
@@ -23,6 +25,7 @@
 #include "nsUnicodeProperties.h"
 #include "nsServiceManagerUtils.h"
 #include "nsIContent.h"
+#include "nsIContentInlines.h"
 #include "nsContentUtils.h"
 #include "nsIFrame.h"
 
@@ -756,6 +759,21 @@ static bool ContainsDOMWordSeparator(nsINode* aNode, int32_t aBeforeOffset,
   return false;
 }
 
+
+
+static bool WillConstructFrame(const dom::Element& aElement) {
+  bool needsFrame = false;
+  for (const nsIContent* content = &aElement; content;
+       content = content->GetFlattenedTreeParent()) {
+    if (const nsIFrame* frame = content->GetPrimaryFrame()) {
+      
+      return needsFrame && !frame->IsLeaf();
+    }
+    needsFrame |= content->HasFlag(NODE_NEEDS_FRAME);
+  }
+  return needsFrame;
+}
+
 static bool IsBreakElement(nsINode* aNode) {
   if (!aNode->IsElement()) {
     return false;
@@ -766,14 +784,34 @@ static bool IsBreakElement(nsINode* aNode) {
     return true;
   }
 
-  
-  
-  nsIFrame* frame = element->GetPrimaryFrame();
-  if (!frame) {
-    return false;
+  const nsStyleDisplay* disp = nullptr;
+  if (nsIFrame* frame = element->GetPrimaryFrame()) {
+    disp = frame->StyleDisplay();
+  } else {
+    
+    
+    
+    if (!WillConstructFrame(*element)) {
+      return false;
+    }
+    
+    
+    
+    if (!element->HasServoData()) {
+      return HTMLEditUtils::IsBlockElement(
+          *element, BlockInlineCheck::UseHTMLDefaultStyle);
+    }
+    const ComputedStyle* style = Servo_Element_GetMaybeOutOfDateStyle(element);
+    if (!style) {
+      return false;
+    }
+    disp = style->StyleDisplay();
+    if (disp->mDisplay == StyleDisplay::None ||
+        disp->mDisplay == StyleDisplay::Contents) {
+      return false;
+    }
   }
 
-  auto* disp = frame->StyleDisplay();
   
   
   
