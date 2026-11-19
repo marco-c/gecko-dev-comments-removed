@@ -1037,8 +1037,8 @@ static Result<RefPtr<VideoFrame>, MediaResult> CreateVideoFrameFromBuffer(
 
   const Sequence<PlaneLayout>* optLayout = OptionalToPointer(aInit.mLayout);
 
-  CombinedBufferLayout combinedLayout =
-      MOZ_TRY(ComputeLayoutAndAllocationSize(parsedRect, format, optLayout));
+  CombinedBufferLayout combinedLayout = MOZ_TRY(ComputeLayoutAndAllocationSize(
+      gfx::IntRect({0, 0}, codedSize), format, optLayout));
 
   Maybe<uint64_t> duration = OptionalToMaybe(aInit.mDuration);
 
@@ -1050,15 +1050,6 @@ static Result<RefPtr<VideoFrame>, MediaResult> CreateVideoFrameFromBuffer(
           -> Result<RefPtr<layers::Image>, MediaResult> {
         if (aData.Length() <
             static_cast<size_t>(combinedLayout.mAllocationSize)) {
-          return Err(MediaResult(NS_ERROR_INVALID_ARG, "data is too small"_ns));
-        }
-
-        
-        
-        
-        
-        size_t byteCount = MOZ_TRY(format.ByteCount(codedSize));
-        if (aData.Length() < byteCount) {
           return Err(MediaResult(NS_ERROR_INVALID_ARG, "data is too small"_ns));
         }
 
