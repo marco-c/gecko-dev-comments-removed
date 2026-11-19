@@ -1165,6 +1165,9 @@ void NativeLayerWayland::Unmap() {
   WaylandSurfaceLock surfaceLock(mSurface);
 
   if (!mSurface->IsMapped()) {
+    
+    
+    DiscardBackbuffersLocked(surfaceLock,  true);
     return;
   }
 
