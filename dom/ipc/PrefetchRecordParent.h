@@ -25,6 +25,8 @@
 #include "nsString.h"
 #include "nsTArray.h"
 
+class nsIPrincipal;
+
 namespace mozilla::dom {
 
 class WindowGlobalParent;
@@ -69,6 +71,12 @@ class PrefetchRecordParent final : public PPrefetchRecordParent,
   const nsString& SourcePartitionKey() const { return mSourcePartitionKey; }
   const nsString& IsolatedPartitionKey() const { return mIsolatedPartitionKey; }
   bool HadConflictingCredentials() const { return mHadConflictingCredentials; }
+  
+  
+  
+  
+  
+  already_AddRefed<nsIURI> CacheEntryURI() const;
   const nsTArray<Maybe<nsString>>& Tags() const { return mTags; }
   const nsString& NoVarySearchHint() const { return mNoVarySearchHint; }
   bool IsEligibleForPrefetch() const { return mIsEligibleForPrefetch; }
@@ -112,6 +120,9 @@ class PrefetchRecordParent final : public PPrefetchRecordParent,
   bool IsCrossOriginToDocument(nsIURI* aURI) const;
   void PopulateIsolatedPartitionKey(mozilla::OriginAttributes& aAttrs);
   void ConfigureSecPurpose(nsIChannel* aChannel);
+  void ConfigureSpeculationTags(nsIChannel* aChannel,
+                                nsIPrincipal* aDocumentPrincipal,
+                                bool aIsCrossSite);
   bool PrefetchIPAnonymizationPolicyRequiresAnonymity(nsIURI* aURI) const;
   void AppendRedirectChainEntry(nsIURI* aURI);
   void FillResponseOnLastEntry(nsIChannel* aChannel);
