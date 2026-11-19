@@ -41,7 +41,7 @@ pushed on try or only applied locally (e.g. to run the tp6/tp6m webextensions pe
 third party extension installed to gather some metrics and/or GeckoProfiler data), then it can be
 safely ignored.
 
-On the contrary, if the patch or phabricator revision is meant to be landed on mozilla-central,
+On the contrary, if the patch or phabricator revision is meant to be landed in the Firefox repository,
 the linting error have to be fixed before or along landing the change, either by:
 
 - removing the addition to the customization file if it wasn't intended to include that addon to all runs
@@ -61,7 +61,7 @@ to avoid re-downloading the same xpi from a remote urls every time the condition
 (which for tp6/tp6m perftests will happen once per job being executed) condprof is going to look first if the expected xpi file
 names are already available in `$MOZ_FETCHES_DIR/firefox-addons`.
 
-### firefox-addons taskcluser fetch config section not found
+### firefox-addons taskcluster fetch config section not found
 
 This linting error is hit if the linter does not find the expected `firefox-addons` task defined in {searchfox}`taskcluster/kinds/fetch/browsertime.yml`
 or it is missing the expected `fetch` attribute.
