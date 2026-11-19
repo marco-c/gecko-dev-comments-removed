@@ -5136,6 +5136,15 @@ void SVGTextFrame::DoGlyphPositioning() {
     return;
   }
 
+  if (kid && HasAnyStateBits(NS_STATE_SVG_TEXT_CORRESPONDENCE_DIRTY) &&
+      kid->HasAnyStateBits(NS_BLOCK_NEEDS_BIDI_RESOLUTION) &&
+      PresContext()->BidiEnabled()) {
+    
+    
+    AddStateBits(NS_STATE_SVG_POSITIONING_DIRTY);
+    return;
+  }
+
   
   
   TextNodeCorrespondenceRecorder::RecordCorrespondence(this);
