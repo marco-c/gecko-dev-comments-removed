@@ -634,6 +634,8 @@ static int update_filter(SpeexResamplerState *st)
       if (multiply_frac(&st->filt_len,st->filt_len,st->num_rate,st->den_rate) != RESAMPLER_ERR_SUCCESS)
          goto fail;
       
+      if (st->filt_len > UINT32_MAX - 7)
+         goto fail;
       st->filt_len = ((st->filt_len-1)&(~0x7))+8;
       if (2*st->den_rate < st->num_rate)
          st->oversample >>= 1;
