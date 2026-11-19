@@ -4166,6 +4166,17 @@ pref("extensions.formautofill.creditCards.storage.rust.migrationTestAttempts", 0
 
 
 pref("extensions.formautofill.creditCards.storage.rust.migrationAttempts", 0);
+
+
+pref("extensions.formautofill.creditCards.storage.rust.migrationUndecryptableAttempts", 0);
+
+
+
+pref("extensions.formautofill.creditCards.storage.rust.dropUndecryptable", false);
+
+
+
+pref("extensions.formautofill.creditCards.storage.rust.dropUndecryptableAfterAttempts", 3);
 pref("extensions.formautofill.creditCards.supported", "on");
 pref("extensions.formautofill.creditCards.enabled", true);
 pref("extensions.formautofill.creditCards.ignoreAutocompleteOff", true);
