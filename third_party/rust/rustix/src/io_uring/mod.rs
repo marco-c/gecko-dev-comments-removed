@@ -1996,8 +1996,8 @@ mod tests {
         use sys as c;
 
         
-        assert_eq_size!(io_uring_ptr, u64);
-        assert_eq_align!(io_uring_ptr, u64);
+        static_assertions::assert_eq_size!(io_uring_ptr, u64);
+        static_assertions::assert_eq_align!(io_uring_ptr, u64);
 
         
         
@@ -2014,8 +2014,8 @@ mod tests {
         }
 
         
-        assert_eq_size!(io_uring_user_data, u64);
-        assert_eq_align!(io_uring_user_data, u64);
+        static_assertions::assert_eq_size!(io_uring_user_data, u64);
+        static_assertions::assert_eq_align!(io_uring_user_data, u64);
 
         
         

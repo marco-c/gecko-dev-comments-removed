@@ -170,7 +170,6 @@ pub(crate) fn tcgetpgrp(fd: BorrowedFd<'_>) -> io::Result<Pid> {
         
         
         
-        #[cfg(linux_kernel)]
         if pid == 0 {
             return Err(io::Errno::OPNOTSUPP);
         }

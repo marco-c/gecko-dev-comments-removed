@@ -37,12 +37,12 @@ use core::mem::forget;
 
 #[derive(Copy, Clone)]
 #[repr(transparent)]
-#[cfg_attr(rustc_attrs, rustc_layout_scalar_valid_range_start(0))]
 
 
 
-#[cfg_attr(rustc_attrs, rustc_layout_scalar_valid_range_end(0xFF_FF_FF_FE))]
-#[cfg_attr(rustc_attrs, rustc_nonnull_optimization_guaranteed)]
+
+
+
 #[cfg_attr(staged_api, stable(feature = "io_safety", since = "1.63.0"))]
 pub struct BorrowedFd<'fd> {
     fd: RawFd,
@@ -61,13 +61,13 @@ pub struct BorrowedFd<'fd> {
 
 
 #[repr(transparent)]
-#[cfg_attr(rustc_attrs, rustc_layout_scalar_valid_range_start(0))]
 
 
 
-#[cfg_attr(rustc_attrs, rustc_layout_scalar_valid_range_end(0xFF_FF_FF_FE))]
+
+
 #[cfg_attr(staged_api, unstable(feature = "io_safety", issue = "87074"))]
-#[cfg_attr(rustc_attrs, rustc_nonnull_optimization_guaranteed)]
+
 pub struct OwnedFd {
     fd: RawFd,
 }

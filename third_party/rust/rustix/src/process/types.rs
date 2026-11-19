@@ -4,8 +4,11 @@
 
 #![allow(unsafe_code)]
 
+#[cfg(not(target_os = "horizon"))]
 use crate::backend::c;
+#[cfg(not(target_os = "horizon"))]
 use crate::pid::Pid;
+#[cfg(not(target_os = "horizon"))]
 use core::mem::transmute;
 
 

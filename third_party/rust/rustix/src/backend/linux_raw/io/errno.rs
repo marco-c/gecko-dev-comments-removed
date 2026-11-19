@@ -8,7 +8,7 @@
 
 
 #![allow(unsafe_code)]
-#![cfg_attr(not(rustc_attrs), allow(unused_unsafe))]
+#![allow(unused_unsafe)]
 
 use crate::backend::c;
 use crate::backend::fd::RawFd;
@@ -46,8 +46,8 @@ use linux_raw_sys::errno;
 #[derive(Eq, PartialEq, Hash, Copy, Clone)]
 
 
-#[cfg_attr(rustc_attrs, rustc_layout_scalar_valid_range_start(0xf001))]
-#[cfg_attr(rustc_attrs, rustc_layout_scalar_valid_range_end(0xffff))]
+
+
 pub struct Errno(u16);
 
 impl Errno {

@@ -156,6 +156,7 @@ use crate::net::xdp::{XdpMmapOffsets, XdpOptionsFlags, XdpStatistics, XdpUmemReg
     target_os = "emscripten",
     target_os = "espidf",
     target_os = "haiku",
+    target_os = "horizon",
     target_os = "netbsd",
     target_os = "nto",
     target_os = "vita",
@@ -1079,7 +1080,7 @@ pub fn set_ip_add_membership_with_ifindex<Fd: AsFd>(
 
 
 
-#[cfg(any(apple, freebsdlike, linux_like, solarish, target_os = "aix"))]
+#[cfg(any(apple, target_os = "freebsd", linux_like, solarish, target_os = "aix"))]
 #[inline]
 #[doc(alias = "IP_ADD_SOURCE_MEMBERSHIP")]
 pub fn set_ip_add_source_membership<Fd: AsFd>(
@@ -1101,7 +1102,7 @@ pub fn set_ip_add_source_membership<Fd: AsFd>(
 
 
 
-#[cfg(any(apple, freebsdlike, linux_like, solarish, target_os = "aix"))]
+#[cfg(any(apple, target_os = "freebsd", linux_like, solarish, target_os = "aix"))]
 #[inline]
 #[doc(alias = "IP_DROP_SOURCE_MEMBERSHIP")]
 pub fn set_ip_drop_source_membership<Fd: AsFd>(
@@ -1814,6 +1815,6 @@ mod tests {
 
         
         
-        assert_eq_size!(Timeout, c_int);
+        static_assertions::assert_eq_size!(Timeout, c_int);
     }
 }

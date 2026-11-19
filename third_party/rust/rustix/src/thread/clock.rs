@@ -7,7 +7,6 @@ pub use crate::timespec::{Nsecs, Secs, Timespec};
     apple,
     target_os = "dragonfly",
     target_os = "espidf",
-    target_os = "freebsd", 
     target_os = "openbsd",
     target_os = "redox",
     target_os = "vita",
@@ -27,12 +26,13 @@ pub use crate::clockid::ClockId;
 
 
 
+
+
 #[cfg(not(any(
     apple,
     target_os = "dragonfly",
     target_os = "emscripten",
     target_os = "espidf",
-    target_os = "freebsd", 
     target_os = "haiku",
     target_os = "horizon",
     target_os = "openbsd",
@@ -57,12 +57,13 @@ pub fn clock_nanosleep_relative(id: ClockId, request: &Timespec) -> NanosleepRel
 
 
 
+
+
 #[cfg(not(any(
     apple,
     target_os = "dragonfly",
     target_os = "emscripten",
     target_os = "espidf",
-    target_os = "freebsd", 
     target_os = "haiku",
     target_os = "horizon",
     target_os = "openbsd",
@@ -74,6 +75,8 @@ pub fn clock_nanosleep_relative(id: ClockId, request: &Timespec) -> NanosleepRel
 pub fn clock_nanosleep_absolute(id: ClockId, request: &Timespec) -> io::Result<()> {
     backend::thread::syscalls::clock_nanosleep_absolute(id, request)
 }
+
+
 
 
 

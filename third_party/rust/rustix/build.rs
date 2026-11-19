@@ -62,10 +62,8 @@ fn main() {
     
     
     if rustc_dep_of_std {
-        use_feature("rustc_attrs");
         use_feature("core_intrinsics");
     } else if rustix_use_experimental_features {
-        use_feature_or_nothing("rustc_attrs");
         use_feature_or_nothing("core_intrinsics");
     }
 
@@ -77,11 +75,6 @@ fn main() {
         use_feature_or_nothing("alloc_c_string");
         use_feature_or_nothing("alloc_ffi");
         use_feature_or_nothing("error_in_core");
-    }
-
-    
-    if use_static_assertions() {
-        use_feature("static_assertions");
     }
 
     
@@ -195,11 +188,11 @@ fn main() {
     println!("cargo:rerun-if-env-changed=CARGO_FEATURE_USE_LIBC");
     println!("cargo:rerun-if-env-changed=CARGO_FEATURE_RUSTC_DEP_OF_STD");
     println!("cargo:rerun-if-env-changed=CARGO_CFG_MIRI");
-}
 
-fn use_static_assertions() -> bool {
     
-    can_compile("const unsafe fn foo(p: *const u8) -> isize { p.offset_from(p) }")
+    
+    
+    let _ = std::fs::remove_file(probe_file());
 }
 
 fn use_thumb_mode() -> bool {
@@ -231,6 +224,10 @@ fn has_feature(feature: &str) -> bool {
     ))
 }
 
+fn probe_file() -> PathBuf {
+    PathBuf::from(var("OUT_DIR").unwrap()).join("rustix_test_can_compile")
+}
+
 
 fn can_compile<T: AsRef<str>>(test: T) -> bool {
     use std::process::Stdio;
@@ -254,14 +251,12 @@ fn can_compile<T: AsRef<str>>(test: T) -> bool {
         std::process::Command::new(rustc)
     };
 
-    let out_dir = var("OUT_DIR").unwrap();
-    let out_file = PathBuf::from(out_dir).join("rustix_test_can_compile");
     cmd.arg("--crate-type=rlib") 
         .arg("--emit=metadata") 
         .arg("--target")
         .arg(target)
         .arg("-o")
-        .arg(out_file)
+        .arg(probe_file())
         .stdout(Stdio::null()); 
 
     

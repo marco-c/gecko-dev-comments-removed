@@ -5,8 +5,8 @@
 
 macro_rules! check_type {
     ($struct:ident) => {
-        assert_eq_size!($struct, c::$struct);
-        assert_eq_align!($struct, c::$struct);
+        ::static_assertions::assert_eq_size!($struct, c::$struct);
+        ::static_assertions::assert_eq_align!($struct, c::$struct);
     };
 }
 
@@ -14,8 +14,8 @@ macro_rules! check_type {
 
 macro_rules! check_renamed_type {
     ($to:ident, $from:ident) => {
-        assert_eq_size!($to, c::$from);
-        assert_eq_align!($to, c::$from);
+        ::static_assertions::assert_eq_size!($to, c::$from);
+        ::static_assertions::assert_eq_align!($to, c::$from);
     };
 }
 
@@ -23,7 +23,7 @@ macro_rules! check_renamed_type {
 
 macro_rules! check_struct_field {
     ($struct:ident, $field:ident) => {
-        const_assert_eq!(
+        ::static_assertions::const_assert_eq!(
             memoffset::offset_of!($struct, $field),
             memoffset::offset_of!(c::$struct, $field)
         );
@@ -41,7 +41,7 @@ macro_rules! check_struct_field {
 
 macro_rules! check_struct_renamed_field {
     ($struct:ident, $to:ident, $from:ident) => {
-        const_assert_eq!(
+        ::static_assertions::const_assert_eq!(
             memoffset::offset_of!($struct, $to),
             memoffset::offset_of!(c::$struct, $from)
         );
@@ -58,7 +58,7 @@ macro_rules! check_struct_renamed_field {
 
 macro_rules! check_renamed_struct_field {
     ($to_struct:ident, $from_struct:ident, $field:ident) => {
-        const_assert_eq!(
+        ::static_assertions::const_assert_eq!(
             memoffset::offset_of!($to_struct, $field),
             memoffset::offset_of!(c::$from_struct, $field)
         );
@@ -75,7 +75,7 @@ macro_rules! check_renamed_struct_field {
 
 macro_rules! check_renamed_struct_renamed_field {
     ($to_struct:ident, $from_struct:ident, $to:ident, $from:ident) => {
-        const_assert_eq!(
+        ::static_assertions::const_assert_eq!(
             memoffset::offset_of!($to_struct, $to),
             memoffset::offset_of!(c::$from_struct, $from)
         );

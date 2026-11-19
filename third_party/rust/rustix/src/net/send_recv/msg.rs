@@ -344,7 +344,7 @@ impl<'buf, 'slice, 'fd> SendAncillaryBuffer<'buf, 'slice, 'fd> {
         self.length = new_length;
 
         
-        let last_header = leap!(messages::Messages::new(buffer).last());
+        let (last_header, _) = leap!(messages::Messages::new(buffer).last());
 
         
         last_header.cmsg_len = unsafe { c::CMSG_LEN(source_len) } as _;
@@ -533,34 +533,48 @@ impl<'buf> AncillaryDrain<'buf> {
         }
     }
 
+    
     fn advance(
         read_and_length: &mut Option<(&'buf mut usize, &'buf mut usize)>,
         msg: &c::cmsghdr,
+        space: usize,
     ) -> Option<RecvAncillaryMessage<'buf>> {
         
+        
+        
+        
+        let msg_len = (msg.cmsg_len as usize).min(space);
+
+        
         if let Some((read, length)) = read_and_length {
-            let msg_len = msg.cmsg_len as usize;
             **read += msg_len;
             **length -= msg_len;
         }
 
-        Self::cvt_msg(msg)
+        Self::cvt_msg(msg, msg_len)
     }
 
     
-    fn cvt_msg(msg: &c::cmsghdr) -> Option<RecvAncillaryMessage<'buf>> {
+    fn cvt_msg(msg: &c::cmsghdr, msg_len: usize) -> Option<RecvAncillaryMessage<'buf>> {
         unsafe {
             
-            let payload = c::CMSG_DATA(msg);
-            let payload_len = msg.cmsg_len as usize - c::CMSG_LEN(0) as usize;
-
             
-            let payload: &'buf mut [u8] = slice::from_raw_parts_mut(payload, payload_len);
+            
+            
+            let payload = c::CMSG_DATA(msg);
+            let payload_len = msg_len.checked_sub(c::CMSG_LEN(0) as usize)?;
 
             
             let (level, msg_type) = (msg.cmsg_level, msg.cmsg_type);
             match (level as _, msg_type as _) {
                 (c::SOL_SOCKET, c::SCM_RIGHTS) => {
+                    
+                    
+                    let payload_len = payload_len - payload_len % size_of::<OwnedFd>();
+
+                    
+                    let payload: &'buf mut [u8] = slice::from_raw_parts_mut(payload, payload_len);
+
                     
                     let fds = AncillaryIter::new(payload);
 
@@ -569,7 +583,7 @@ impl<'buf> AncillaryDrain<'buf> {
                 #[cfg(linux_kernel)]
                 (c::SOL_SOCKET, c::SCM_CREDENTIALS) => {
                     if payload_len >= size_of::<UCred>() {
-                        let ucred = payload.as_ptr().cast::<UCred>().read_unaligned();
+                        let ucred = payload.cast::<UCred>().read_unaligned();
                         Some(RecvAncillaryMessage::ScmCredentials(ucred))
                     } else {
                         None
@@ -586,7 +600,7 @@ impl<'buf> Iterator for AncillaryDrain<'buf> {
 
     fn next(&mut self) -> Option<Self::Item> {
         self.messages
-            .find_map(|ev| Self::advance(&mut self.read_and_length, ev))
+            .find_map(|(msg, space)| Self::advance(&mut self.read_and_length, msg, space))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -600,13 +614,13 @@ impl<'buf> Iterator for AncillaryDrain<'buf> {
         F: FnMut(B, Self::Item) -> B,
     {
         self.messages
-            .filter_map(|ev| Self::advance(&mut self.read_and_length, ev))
+            .filter_map(|(msg, space)| Self::advance(&mut self.read_and_length, msg, space))
             .fold(init, f)
     }
 
     fn count(mut self) -> usize {
         self.messages
-            .filter_map(|ev| Self::advance(&mut self.read_and_length, ev))
+            .filter_map(|(msg, space)| Self::advance(&mut self.read_and_length, msg, space))
             .count()
     }
 
@@ -615,7 +629,7 @@ impl<'buf> Iterator for AncillaryDrain<'buf> {
         Self: Sized,
     {
         self.messages
-            .filter_map(|ev| Self::advance(&mut self.read_and_length, ev))
+            .filter_map(|(msg, space)| Self::advance(&mut self.read_and_length, msg, space))
             .last()
     }
 
@@ -624,7 +638,7 @@ impl<'buf> Iterator for AncillaryDrain<'buf> {
         Self: Sized,
     {
         self.messages
-            .filter_map(|ev| Self::advance(&mut self.read_and_length, ev))
+            .filter_map(|(msg, space)| Self::advance(&mut self.read_and_length, msg, space))
             .collect()
     }
 }
@@ -951,12 +965,20 @@ mod messages {
     }
 
     impl<'a> Iterator for Messages<'a> {
-        type Item = &'a mut c::cmsghdr;
+        
+        
+        
+        type Item = (&'a mut c::cmsghdr, usize);
 
         #[inline]
         fn next(&mut self) -> Option<Self::Item> {
             
             let header = self.header?;
+
+            
+            
+            let end = (self.msghdr.msg_control as usize) + (self.msghdr.msg_controllen as usize);
+            let space = end.saturating_sub(header.as_ptr() as usize);
 
             
             self.header = NonNull::new(unsafe { c::CMSG_NXTHDR(&self.msghdr, header.as_ptr()) });
@@ -967,7 +989,7 @@ mod messages {
             }
 
             
-            Some(unsafe { &mut *header.as_ptr() })
+            Some((unsafe { &mut *header.as_ptr() }, space))
         }
 
         fn size_hint(&self) -> (usize, Option<usize>) {

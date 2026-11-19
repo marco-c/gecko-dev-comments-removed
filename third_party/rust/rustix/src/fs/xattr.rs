@@ -7,6 +7,7 @@ use crate::{backend, ffi, io, path};
 use backend::c;
 use backend::fd::AsFd;
 use bitflags::bitflags;
+use core::ptr::null_mut;
 
 bitflags! {
     /// `XATTR_*` constants for use with [`setxattr`], and other `*setxattr`
@@ -37,6 +38,10 @@ bitflags! {
 
 
 
+
+
+
+
 #[inline]
 pub fn getxattr<P: path::Arg, Name: path::Arg, Buf: Buffer<u8>>(
     path: P,
@@ -45,13 +50,49 @@ pub fn getxattr<P: path::Arg, Name: path::Arg, Buf: Buffer<u8>>(
 ) -> io::Result<Buf::Output> {
     path.into_with_c_str(|path| {
         name.into_with_c_str(|name| {
+            let parts = value.parts_mut();
             
-            let len = unsafe { backend::fs::syscalls::getxattr(path, name, value.parts_mut())? };
-            
-            unsafe { Ok(value.assume_init(len)) }
+            let len = unsafe { backend::fs::syscalls::getxattr(path, name, parts)? };
+            if parts.1 == 0 {
+                
+                
+                unsafe { Ok(value.assume_init(0)) }
+            } else {
+                
+                
+                unsafe { Ok(value.assume_init(len)) }
+            }
         })
     })
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn getxattr_query<P: path::Arg, Name: path::Arg>(path: P, name: Name) -> io::Result<usize> {
+    path.into_with_c_str(|path| {
+        name.into_with_c_str(|name| {
+            
+            unsafe { backend::fs::syscalls::getxattr(path, name, (null_mut(), 0)) }
+        })
+    })
+}
+
+
+
+
 
 
 
@@ -69,13 +110,48 @@ pub fn lgetxattr<P: path::Arg, Name: path::Arg, Buf: Buffer<u8>>(
 ) -> io::Result<Buf::Output> {
     path.into_with_c_str(|path| {
         name.into_with_c_str(|name| {
+            let parts = value.parts_mut();
             
-            let len = unsafe { backend::fs::syscalls::lgetxattr(path, name, value.parts_mut())? };
-            
-            unsafe { Ok(value.assume_init(len)) }
+            let len = unsafe { backend::fs::syscalls::lgetxattr(path, name, parts)? };
+            if parts.1 == 0 {
+                
+                
+                unsafe { Ok(value.assume_init(0)) }
+            } else {
+                
+                
+                unsafe { Ok(value.assume_init(len)) }
+            }
         })
     })
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn lgetxattr_query<P: path::Arg, Name: path::Arg>(path: P, name: Name) -> io::Result<usize> {
+    path.into_with_c_str(|path| {
+        name.into_with_c_str(|name| {
+            
+            unsafe { backend::fs::syscalls::lgetxattr(path, name, (null_mut(), 0)) }
+        })
+    })
+}
+
+
+
+
 
 
 
@@ -93,10 +169,40 @@ pub fn fgetxattr<Fd: AsFd, Name: path::Arg, Buf: Buffer<u8>>(
     mut value: Buf,
 ) -> io::Result<Buf::Output> {
     name.into_with_c_str(|name| {
+        let parts = value.parts_mut();
         
-        let len = unsafe { backend::fs::syscalls::fgetxattr(fd.as_fd(), name, value.parts_mut())? };
+        let len = unsafe { backend::fs::syscalls::fgetxattr(fd.as_fd(), name, parts)? };
+        if parts.1 == 0 {
+            
+            
+            unsafe { Ok(value.assume_init(0)) }
+        } else {
+            
+            
+            unsafe { Ok(value.assume_init(len)) }
+        }
+    })
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn fgetxattr_query<Fd: AsFd, Name: path::Arg>(fd: Fd, name: Name) -> io::Result<usize> {
+    name.into_with_c_str(|name| {
         
-        unsafe { Ok(value.assume_init(len)) }
+        unsafe { backend::fs::syscalls::fgetxattr(fd.as_fd(), name, (null_mut(), 0)) }
     })
 }
 
@@ -168,15 +274,54 @@ pub fn fsetxattr<Fd: AsFd, Name: path::Arg>(
 
 
 
+
+
+
+
+
 #[inline]
 pub fn listxattr<P: path::Arg, Buf: Buffer<u8>>(path: P, mut list: Buf) -> io::Result<Buf::Output> {
     path.into_with_c_str(|path| {
+        let parts = list.parts_mut();
         
-        let len = unsafe { backend::fs::syscalls::listxattr(path, list.parts_mut())? };
-        
-        unsafe { Ok(list.assume_init(len)) }
+        let len = unsafe { backend::fs::syscalls::listxattr(path, parts)? };
+        if parts.1 == 0 {
+            
+            
+            unsafe { Ok(list.assume_init(0)) }
+        } else {
+            
+            
+            unsafe { Ok(list.assume_init(len)) }
+        }
     })
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn listxattr_query<P: path::Arg>(path: P) -> io::Result<usize> {
+    path.into_with_c_str(|path| {
+        
+        unsafe { backend::fs::syscalls::listxattr(path, (null_mut(), 0)) }
+    })
+}
+
+
+
+
 
 
 
@@ -191,10 +336,18 @@ pub fn llistxattr<P: path::Arg, Buf: Buffer<u8>>(
     mut list: Buf,
 ) -> io::Result<Buf::Output> {
     path.into_with_c_str(|path| {
+        let parts = list.parts_mut();
         
-        let len = unsafe { backend::fs::syscalls::llistxattr(path, list.parts_mut())? };
-        
-        unsafe { Ok(list.assume_init(len)) }
+        let len = unsafe { backend::fs::syscalls::llistxattr(path, parts)? };
+        if parts.1 == 0 {
+            
+            
+            unsafe { Ok(list.assume_init(0)) }
+        } else {
+            
+            
+            unsafe { Ok(list.assume_init(len)) }
+        }
     })
 }
 
@@ -207,12 +360,63 @@ pub fn llistxattr<P: path::Arg, Buf: Buffer<u8>>(
 
 
 
+
+
+
+
+#[inline]
+pub fn llistxattr_query<P: path::Arg>(path: P) -> io::Result<usize> {
+    path.into_with_c_str(|path| {
+        
+        unsafe { backend::fs::syscalls::llistxattr(path, (null_mut(), 0)) }
+    })
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[inline]
 pub fn flistxattr<Fd: AsFd, Buf: Buffer<u8>>(fd: Fd, mut list: Buf) -> io::Result<Buf::Output> {
+    let parts = list.parts_mut();
     
-    let len = unsafe { backend::fs::syscalls::flistxattr(fd.as_fd(), list.parts_mut())? };
+    let len = unsafe { backend::fs::syscalls::flistxattr(fd.as_fd(), parts)? };
+    if parts.1 == 0 {
+        
+        
+        unsafe { Ok(list.assume_init(0)) }
+    } else {
+        
+        
+        unsafe { Ok(list.assume_init(len)) }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn flistxattr_query<Fd: AsFd>(fd: Fd) -> io::Result<usize> {
     
-    unsafe { Ok(list.assume_init(len)) }
+    unsafe { backend::fs::syscalls::flistxattr(fd.as_fd(), (null_mut(), 0)) }
 }
 
 

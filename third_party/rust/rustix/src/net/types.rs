@@ -740,7 +740,7 @@ impl AddressFamily {
     #[cfg(target_os = "freebsd")]
     pub const SLOW: Self = Self(c::AF_SLOW as _);
     
-    #[cfg(apple)]
+    #[cfg(target_os = "macos")]
     pub const SYS_CONTROL: Self = Self(c::AF_SYS_CONTROL as _);
     
     #[cfg(apple)]
@@ -1116,6 +1116,7 @@ pub mod ipproto {
 }
 
 
+#[cfg(target_os = "macos")]
 pub mod sysproto {
     #[cfg(apple)]
     use {
@@ -1124,11 +1125,9 @@ pub mod sysproto {
     };
 
     
-    #[cfg(apple)]
     pub const EVENT: Protocol = Protocol(new_raw_protocol(c::SYSPROTO_EVENT as _));
 
     
-    #[cfg(apple)]
     pub const CONTROL: Protocol = Protocol(new_raw_protocol(c::SYSPROTO_CONTROL as _));
 }
 
@@ -2114,14 +2113,14 @@ mod tests {
 
         
         
-        assert_eq_size!(RawProtocol, c_int);
-        assert_eq_size!(Protocol, c_int);
-        assert_eq_size!(Option<RawProtocol>, c_int);
-        assert_eq_size!(Option<Protocol>, c_int);
-        assert_eq_size!(RawSocketType, c_int);
-        assert_eq_size!(SocketType, c_int);
-        assert_eq_size!(SocketFlags, c_int);
-        assert_eq_size!(SocketAddrStorage, c::sockaddr_storage);
+        static_assertions::assert_eq_size!(RawProtocol, c_int);
+        static_assertions::assert_eq_size!(Protocol, c_int);
+        static_assertions::assert_eq_size!(Option<RawProtocol>, c_int);
+        static_assertions::assert_eq_size!(Option<Protocol>, c_int);
+        static_assertions::assert_eq_size!(RawSocketType, c_int);
+        static_assertions::assert_eq_size!(SocketType, c_int);
+        static_assertions::assert_eq_size!(SocketFlags, c_int);
+        static_assertions::assert_eq_size!(SocketAddrStorage, c::sockaddr_storage);
 
         
         
@@ -2135,13 +2134,13 @@ mod tests {
         }
 
         #[cfg(linux_kernel)]
-        assert_eq_size!(UCred, libc::ucred);
+        static_assertions::assert_eq_size!(UCred, libc::ucred);
 
         #[cfg(target_os = "linux")]
-        assert_eq_size!(super::xdp::XdpUmemReg, c::xdp_umem_reg);
+        static_assertions::assert_eq_size!(super::xdp::XdpUmemReg, c::xdp_umem_reg);
         #[cfg(target_os = "linux")]
-        assert_eq_size!(super::xdp::XdpOptions, c::xdp_options);
+        static_assertions::assert_eq_size!(super::xdp::XdpOptions, c::xdp_options);
         #[cfg(target_os = "linux")]
-        assert_eq_size!(super::xdp::XdpDesc, c::xdp_desc);
+        static_assertions::assert_eq_size!(super::xdp::XdpDesc, c::xdp_desc);
     }
 }
