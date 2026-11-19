@@ -2351,6 +2351,12 @@ nsIContentHandle* nsHtml5TreeBuilder::getShadowRootFromHost(
   aShadowRootReferenceTarget.ToString(shadowRootReferenceTarget);
 
   if (mBuilder) {
+    if (MOZ_UNLIKELY(mSanitizerState) &&
+        mSanitizerState->IsReplacedWithChildren(
+            static_cast<nsIContent*>(aHost))) {
+      return nullptr;
+    }
+
     
     
     

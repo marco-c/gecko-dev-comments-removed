@@ -2001,6 +2001,7 @@ class nsContentUtils {
   static const int32_t kParseFragmentPrivilegedDefaultSanitization = -1;
   
   
+  
   static const int32_t kParseFragmentNoSanitization = -2;
 
   
@@ -2017,7 +2018,13 @@ class nsContentUtils {
 
   enum class SanitizerMode { Safe, Unsafe };
 
+  enum class DeclarativeShadowRoots { Allow, Disallow };
+
   
+
+
+
+
 
 
 
@@ -2057,7 +2064,9 @@ class nsContentUtils {
       mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
           aCustomElementRegistry,
       mozilla::dom::Sanitizer* aSanitizer = nullptr,
-      SanitizerMode aSanitizerMode = SanitizerMode::Unsafe);
+      SanitizerMode aSanitizerMode = SanitizerMode::Unsafe,
+      DeclarativeShadowRoots aDeclarativeShadowRoots =
+          DeclarativeShadowRoots::Disallow);
 
   
 

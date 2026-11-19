@@ -6901,14 +6901,20 @@ void nsContentUtils::DropFragmentParsers() {
 void nsContentUtils::XPCOMShutdown() { nsContentUtils::DropFragmentParsers(); }
 
 
+
+
+
+
+
+
 static void SetAndFilterHTML(
     FragmentOrElement* aTarget, Element* aContext, const nsAString& aHTML,
-    const OwningSanitizerOrSanitizerConfigOrSanitizerPresets& aSanitizerOptions,
+    const OwningSanitizerOrSanitizerConfigOrSanitizerPresets* aSanitizerOptions,
     nsContentUtils::SanitizerMode aSanitizerMode, ErrorResult& aError) {
   const bool safe = aSanitizerMode == nsContentUtils::SanitizerMode::Safe;
+  MOZ_ASSERT_IF(safe, aSanitizerOptions);
   const RefPtr<Document> doc = aTarget->OwnerDoc();
 
-  
   
   
   if (safe && (aContext->IsHTMLElement(nsGkAtoms::script) ||
@@ -6921,16 +6927,19 @@ static void SetAndFilterHTML(
 
   
   
-  nsCOMPtr<nsPIDOMWindowInner> window =
-      do_QueryInterface(aTarget->GetRelevantGlobal());
-  if (!window) {
-    aError.ThrowInvalidStateError("Missing owner global.");
-    return;
-  }
-  RefPtr<Sanitizer> sanitizer =
-      Sanitizer::GetInstance(window, aSanitizerOptions, safe, aError);
-  if (aError.Failed()) {
-    return;
+  RefPtr<Sanitizer> sanitizer;
+  if (aSanitizerOptions) {
+    nsCOMPtr<nsPIDOMWindowInner> window =
+        do_QueryInterface(aTarget->GetRelevantGlobal());
+    if (!window) {
+      aError.ThrowInvalidStateError("Missing owner global.");
+      return;
+    }
+    sanitizer =
+        Sanitizer::GetInstance(window, *aSanitizerOptions, safe, aError);
+    if (aError.Failed()) {
+      return;
+    }
   }
 
   aTarget->NotifyDevToolsOfRemovalsOfChildren();
@@ -6947,21 +6956,19 @@ static void SetAndFilterHTML(
 
   
   
-  
-  
-  
 
   
   
-
-  RefPtr<Document> inertDoc = nsContentUtils::CreateInertHTMLDocument(doc);
-  if (!inertDoc) {
-    aError = NS_ERROR_FAILURE;
-    return;
+  RefPtr<Document> parseDoc = doc;
+  if (sanitizer) {
+    parseDoc = nsContentUtils::CreateInertHTMLDocument(doc);
+    if (!parseDoc) {
+      aError = NS_ERROR_FAILURE;
+      return;
+    }
   }
-
-  RefPtr<DocumentFragment> fragment = new (inertDoc->NodeInfoManager())
-      DocumentFragment(inertDoc->NodeInfoManager());
+  RefPtr<DocumentFragment> fragment = new (parseDoc->NodeInfoManager())
+      DocumentFragment(parseDoc->NodeInfoManager());
 
   nsAtom* contextLocalName = aContext->NodeInfo()->NameAtom();
   int32_t contextNameSpaceID = aContext->GetNameSpaceID();
@@ -6969,14 +6976,30 @@ static void SetAndFilterHTML(
       safe ? nsContentUtils::kParseFragmentNoSanitization
            : nsContentUtils::kParseFragmentPrivilegedDefaultSanitization;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  Maybe<RefPtr<CustomElementRegistry>> customElementRegistry;
+  if (!sanitizer &&
+      StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+    customElementRegistry.emplace(aContext->GetCustomElementRegistry());
+  }
+
   const bool sanitizeWhileParsing =
-      StaticPrefs::dom_security_sanitizer_while_parsing();
+      sanitizer && StaticPrefs::dom_security_sanitizer_while_parsing();
 
   aError = nsContentUtils::ParseFragmentHTML(
       aHTML, fragment, contextLocalName, contextNameSpaceID,
-       false,  true, flags,
-      mozilla::Nothing(), sanitizeWhileParsing ? sanitizer.get() : nullptr,
-      aSanitizerMode);
+      doc->GetCompatibilityMode() == eCompatibility_NavQuirks,
+       true, flags,
+      std::move(customElementRegistry),
+      sanitizeWhileParsing ? sanitizer.get() : nullptr, aSanitizerMode,
+      nsContentUtils::DeclarativeShadowRoots::Allow);
   if (aError.Failed()) {
     return;
   }
@@ -6986,7 +7009,7 @@ static void SetAndFilterHTML(
   
   nsAutoScriptBlockerSuppressNodeRemoved scriptBlocker;
 
-  if (!sanitizeWhileParsing) {
+  if (sanitizer && !sanitizeWhileParsing) {
     
     sanitizer->Sanitize(fragment, safe, aError);
     if (aError.Failed()) {
@@ -7008,10 +7031,9 @@ void nsContentUtils::SetHTML(FragmentOrElement* aTarget, Element* aContext,
                              const nsAString& aHTML,
                              const SetHTMLOptions& aOptions,
                              ErrorResult& aError) {
-  SetAndFilterHTML(aTarget, aContext, aHTML, aOptions.mSanitizer,
+  SetAndFilterHTML(aTarget, aContext, aHTML, &aOptions.mSanitizer,
                    SanitizerMode::Safe, aError);
 }
-
 
 
 
@@ -7039,52 +7061,11 @@ void nsContentUtils::SetHTMLUnsafe(
   }
 
   
-  if (aOptions.mSanitizer.WasPassed()) {
-    return SetAndFilterHTML(aTarget, aContext, *compliantString,
-                            aOptions.mSanitizer.Value(), SanitizerMode::Unsafe,
-                            aError);
-  }
-
-  RefPtr<DocumentFragment> fragment;
-  {
-    MOZ_ASSERT(!sFragmentParsingActive,
-               "Re-entrant fragment parsing attempted.");
-    mozilla::AutoRestore<bool> guard(sFragmentParsingActive);
-    sFragmentParsingActive = true;
-    if (!sHTMLFragmentParser) {
-      NS_ADDREF(sHTMLFragmentParser = new nsHtml5StringParser());
-      
-    }
-
-    nsAtom* contextLocalName = aContext->NodeInfo()->NameAtom();
-    int32_t contextNameSpaceID = aContext->GetNameSpaceID();
-
-    
-    
-    
-    
-    Maybe<RefPtr<CustomElementRegistry>> customElementRegistry;
-    if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
-      customElementRegistry.emplace(aContext->GetCustomElementRegistry());
-    }
-
-    RefPtr<Document> doc = aTarget->OwnerDoc();
-    fragment = doc->CreateDocumentFragment();
-
-    
-    
-    nsresult rv = sHTMLFragmentParser->ParseFragment(
-        *compliantString, fragment, contextLocalName, contextNameSpaceID,
-        fragment->OwnerDoc()->GetCompatibilityMode() ==
-            eCompatibility_NavQuirks,
-        true, true, std::move(customElementRegistry));
-    if (NS_FAILED(rv)) {
-      NS_WARNING("Failed to parse fragment for SetHTMLUnsafe");
-    }
-  }
-
   
-  aTarget->ReplaceChildren(fragment, IgnoreErrors());
+  SetAndFilterHTML(
+      aTarget, aContext, *compliantString,
+      aOptions.mSanitizer.WasPassed() ? &aOptions.mSanitizer.Value() : nullptr,
+      SanitizerMode::Unsafe, aError);
 }
 
 
@@ -7154,7 +7135,8 @@ nsresult nsContentUtils::ParseFragmentHTML(
     bool aPreventScriptExecution, int32_t aFlags,
     mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
         aCustomElementRegistry,
-    Sanitizer* aSanitizer, SanitizerMode aSanitizerMode) {
+    Sanitizer* aSanitizer, SanitizerMode aSanitizerMode,
+    DeclarativeShadowRoots aDeclarativeShadowRoots) {
   MOZ_ASSERT(!aSanitizer ||
              StaticPrefs::dom_security_sanitizer_while_parsing());
   if (nsContentUtils::sFragmentParsingActive) {
@@ -7203,8 +7185,9 @@ nsresult nsContentUtils::ParseFragmentHTML(
 
   nsresult rv = sHTMLFragmentParser->ParseFragment(
       aSourceBuffer, target, aContextLocalName, aContextNamespace, aQuirks,
-      aPreventScriptExecution, false, std::move(aCustomElementRegistry),
-      aSanitizer, aSanitizerMode);
+      aPreventScriptExecution,
+      aDeclarativeShadowRoots == DeclarativeShadowRoots::Allow,
+      std::move(aCustomElementRegistry), aSanitizer, aSanitizerMode);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (fragment) {
