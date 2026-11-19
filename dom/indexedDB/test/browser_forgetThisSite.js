@@ -17,6 +17,24 @@ const testPageURL2 = "http://" + domains[1] + addPath;
 const testPageURL3 = "http://" + domains[0] + getPath;
 const testPageURL4 = "http://" + domains[1] + getPath;
 
+
+
+
+
+registerCleanupFunction(async () => {
+  for (let site of ["mochi.test", "example.com"]) {
+    await new Promise(resolve =>
+      Services.clearData.deleteDataFromSite(
+        site,
+        {},
+        false,
+        Services.clearData.CLEAR_DOM_QUOTA,
+        resolve
+      )
+    );
+  }
+});
+
 add_task(async function test1() {
   requestLongerTimeout(2);
   
