@@ -10,7 +10,7 @@
 
 package org.webrtc;
 
-import org.webrtc.VideoDecoder;
+import org.jni_zero.NativeMethods;
 
 
 
@@ -31,7 +31,8 @@ class VideoDecoderWrapper {
     public void onDecodedFrame(VideoFrame frame, Integer decodeTimeMs, Integer qp) {
       lifecycleLock.runIfAlive(
           (long nativeDecoder)
-              -> nativeOnDecodedFrame(nativeDecoder, frame, decodeTimeMs, qp));
+              -> VideoDecoderWrapperJni.get().onDecodedFrame(
+                  nativeDecoder, frame, decodeTimeMs, qp));
     }
 
     
@@ -47,6 +48,9 @@ class VideoDecoderWrapper {
     return new NativeDecoderCallback(nativeDecoder);
   }
 
-  private static native void nativeOnDecodedFrame(
-      long nativeVideoDecoderWrapper, VideoFrame frame, Integer decodeTimeMs, Integer qp);
+  @NativeMethods
+  interface Natives {
+    void onDecodedFrame(
+        long nativeVideoDecoderWrapper, VideoFrame frame, Integer decodeTimeMs, Integer qp);
+  }
 }
