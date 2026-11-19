@@ -5,6 +5,9 @@
 #include "CompositorWidgetVsyncObserver.h"
 
 #include "mozilla/gfx/VsyncBridgeChild.h"
+#ifdef MOZ_WAYLAND
+#  include "mozilla/WidgetUtilsGtk.h"
+#endif
 
 namespace mozilla {
 namespace widget {
@@ -21,8 +24,13 @@ CompositorWidgetVsyncObserver::~CompositorWidgetVsyncObserver() = default;
 
 void CompositorWidgetVsyncObserver::NotifyVsync(const VsyncEvent& aVsync) {
   
+  
   MOZ_ASSERT(XRE_IsParentProcess());
+#ifdef MOZ_WAYLAND
+  MOZ_ASSERT(!NS_IsMainThread() || GdkIsWaylandDisplay());
+#else
   MOZ_ASSERT(!NS_IsMainThread());
+#endif
 
   mVsyncBridge->NotifyVsync(aVsync, mRootLayerTreeId);
 }
