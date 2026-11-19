@@ -346,8 +346,8 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
 
 #if defined(MOZ_WIDGET_GTK)
   char* display_name = PR_GetEnv("MOZ_GDK_DISPLAY");
+  bool waylandEnabled = false;
   if (!display_name) {
-    bool waylandEnabled = false;
 #  ifdef MOZ_WAYLAND
     waylandEnabled = IsWaylandEnabled();
 #  endif
@@ -363,9 +363,12 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
                     nullptr, option_name, display_name, nullptr};
     char** argvp = argv;
     gtk_init(&argc, &argvp);
-  } else {
+  } else if (!waylandEnabled) {
     gtk_init(nullptr, nullptr);
   }
+  
+  
+  
 
   
   

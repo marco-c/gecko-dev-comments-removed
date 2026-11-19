@@ -909,6 +909,16 @@ bool CreateConfig(EglDisplay& aEgl, EGLConfig* aConfig, int32_t aDepth,
       return false;
   }
 
+#ifdef MOZ_WIDGET_GTK
+  
+  
+  
+  if (!gdk_display_get_default()) {
+    MOZ_ASSERT(attribs[0] == LOCAL_EGL_SURFACE_TYPE);
+    attribs[1] = -1;  
+  }
+#endif
+
   if (aUseGles) {
     attribs.push_back(LOCAL_EGL_RENDERABLE_TYPE);
     attribs.push_back(LOCAL_EGL_OPENGL_ES2_BIT);
