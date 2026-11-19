@@ -9,6 +9,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AppInfo: "chrome://remote/content/shared/AppInfo.sys.mjs",
   assert: "chrome://remote/content/shared/webdriver/Assert.sys.mjs",
+  browserVersionMatches:
+    "chrome://remote/content/shared/webdriver/BrowserVersion.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   pprint: "chrome://remote/content/shared/Format.sys.mjs",
   truncate: "chrome://remote/content/shared/Format.sys.mjs",
@@ -24,9 +26,17 @@ ChromeUtils.defineLazyGetter(lazy, "userAgent", () => {
 
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
-  "shutdownTimeout",
+  "asyncShutdownCrashTimeout",
   "toolkit.asyncshutdown.crash_timeout"
 );
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "asyncShutdownCrashAdditionalWait",
+  "toolkit.asyncshutdown.crash_timeout_additional_wait"
+);
+
+const TIMEOUT_SHUTDOWN_EXTRA_WAIT = 3000;
 
 // List of capabilities which are only relevant for Webdriver Classic.
 export const WEBDRIVER_CLASSIC_CAPABILITIES = [
@@ -492,7 +502,7 @@ export class Capabilities extends Map {
       ["moz:platformVersion", Services.sysinfo.getProperty("version")],
       ["moz:processID", lazy.AppInfo.processID],
       ["moz:profile", maybeProfile()],
-      ["moz:shutdownTimeout", lazy.shutdownTimeout],
+      ["moz:shutdownTimeout", getShutdownTimeout()],
     ];
 
     if (!isBidi) {
@@ -882,6 +892,17 @@ export class Capabilities extends Map {
   }
 }
 
+function getShutdownTimeout() {
+  // Clients should wait at least this long before forcefully terminating
+  // Firefox. This gives the shutdown hang monitor enough time to detect
+  // and terminate the process in case of a shutdown hang.
+  return (
+    lazy.asyncShutdownCrashTimeout +
+    lazy.asyncShutdownCrashAdditionalWait +
+    TIMEOUT_SHUTDOWN_EXTRA_WAIT
+  );
+}
+
 function getWebDriverBrowserName() {
   // Similar to chromedriver which reports "chrome" as browser name for all
   // WebView apps, we will report "firefox" for all GeckoView apps.
@@ -1056,7 +1077,7 @@ export function validateCapabilities(capabilities) {
  * @param {object} params.capabilities
  *     Capabilities which need to be processed.
  *
- * @returns {object} Processed capabilities.
+ * @returns {object|null} Processed capabilities, or null if none match.
  *
  * @throws {InvalidArgumentError}
  *     If <var>capabilities</var> do not satisfy the criteria.
@@ -1092,11 +1113,30 @@ export function processCapabilities(params) {
     mergedCapabilities.push(merged);
   });
 
-  // TODO: Bug 1836288. Implement the capability matching logic
-  // for "browserName", "browserVersion", "platformName", and
-  // "unhandledPromptBehavior" features,
-  // for now we can just pick the first merged capability.
-  const matchedCapabilities = mergedCapabilities[0];
+  const browserName = getWebDriverBrowserName();
+  const platformName = getWebDriverPlatformName();
+  const browserVersion = lazy.AppInfo.version;
+  for (const candidate of mergedCapabilities) {
+    if (
+      ("browserName" in candidate && candidate.browserName !== browserName) ||
+      ("platformName" in candidate && candidate.platformName !== platformName)
+    ) {
+      continue;
+    }
 
-  return matchedCapabilities;
+    if ("browserVersion" in candidate) {
+      if (
+        !lazy.browserVersionMatches(browserVersion, candidate.browserVersion)
+      ) {
+        continue;
+      }
+      candidate.browserVersion = browserVersion;
+    }
+
+    // TODO Bug 1862018. Reconsider when supporting multiple sessions.
+    // With only one session allowed, no existing prompt handler can conflict
+    // with a validated unhandledPromptBehavior capability.
+    return candidate;
+  }
+  return null;
 }
