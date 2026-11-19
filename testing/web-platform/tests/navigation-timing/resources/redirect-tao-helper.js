@@ -54,6 +54,43 @@ function navigation_entry_after_redirects(hops, {referrerPolicy} = {}) {
 }
 
 
+
+
+const CROSS_ORIGIN_DESTINATION =
+    new URL(make_absolute_url({subdomain: "www", path: "/"})).origin;
+
+
+
+const CROSS_ORIGIN_FINAL_URL = make_absolute_url({
+  subdomain: "www",
+  path: "/navigation-timing/resources/report-navigation-redirect-timing.html",
+});
+
+
+
+
+
+function cross_origin_destination_navigation_entry(tao) {
+  return new Promise(resolve => {
+    const frame = document.createElement("iframe");
+    frame.style.cssText = "width: 250px; height: 250px;";
+    const onMessage = event => {
+      if (event.source !== frame.contentWindow)
+        return;
+      window.removeEventListener("message", onMessage);
+      resolve(event.data);
+    };
+    window.addEventListener("message", onMessage);
+    const tao_query = tao === null ? "" : "tao=" + encodeURIComponent(tao) + "&";
+    frame.src = make_absolute_url({
+      path: "/navigation-timing/resources/redirect-tao.py",
+      query: tao_query + "location=" + encodeURIComponent(CROSS_ORIGIN_FINAL_URL),
+    });
+    document.body.appendChild(frame);
+  });
+}
+
+
 function assert_redirect_timing_exposed(entry, expectedCount) {
   assert_equals(entry.type, "navigate", "navigation type");
   assert_equals(entry.redirectCount, expectedCount, "redirectCount");
