@@ -297,6 +297,8 @@ void NativeLayerRootWayland::Shutdown() {
     mRootSurface->ClearMapCallbackLocked(lock);
     mRootSurface->ClearUnmapCallbackLocked(lock);
     mRootSurface->ClearGdkCommitCallbackLocked(lock);
+    mRootSurface->SetVSyncCallbackStateHandlerLocked(lock, nullptr);
+    mRootSurface->SetVSyncEmulateCheckLocked(lock, nullptr,  true);
     mRootSurface->DisableDMABufFormatsLocked(lock);
   }
 
@@ -698,11 +700,15 @@ void NativeLayerRootWayland::VSyncCallbackHandler(uint32_t aTime,
                                                   bool aEmulated) {
   MOZ_DIAGNOSTIC_ASSERT(!aEmulated,
                         "VSyncCallbackHandler() is supposed to be HW only");
+  RefPtr<WaylandSurface> rootSurface = mRootSurface;
+  if (!rootSurface) {
+    return;
+  }
   {
     
     
     
-    WaylandSurfaceLock lock(mRootSurface);
+    WaylandSurfaceLock lock(rootSurface);
   }
 
   if (aTime <= mLastFrameCallbackTime) {
@@ -717,9 +723,9 @@ void NativeLayerRootWayland::VSyncCallbackHandler(uint32_t aTime,
   LOG_VSYNC(
       "NativeLayerRootWayland::VSyncCallbackHandler() time %d emulated [%d]",
       aTime, aEmulated);
-  mRootSurface->VSyncCallbackHandler(nullptr, aTime,
-                                      aEmulated,
-                                      true);
+  rootSurface->VSyncCallbackHandler(nullptr, aTime,
+                                     aEmulated,
+                                     true);
 }
 
 
