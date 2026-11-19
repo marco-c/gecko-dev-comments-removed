@@ -204,7 +204,10 @@ class DataChannelConnection : public net::NeckoTargetHolder {
   
   virtual bool ResetStreams(nsTArray<uint16_t>& aStreams) = 0;
   
-  virtual void Destroy();
+  virtual void CloseAssociation() = 0;
+  
+  
+  RefPtr<GenericNonExclusivePromise> Destroy();
 
   
   void SetMaxMessageSize(uint64_t aMaxMessageSize);
@@ -235,8 +238,7 @@ class DataChannelConnection : public net::NeckoTargetHolder {
   void EndOfStream(const RefPtr<DataChannel>& aChannel);
   void FinishClose_s(const RefPtr<DataChannel>& aChannel,
                      Maybe<dom::RTCErrorParams> aError = Nothing());
-  void CloseAll();
-  void CloseAll_s(Maybe<dom::RTCErrorParams> aError = Nothing());
+  void CloseChannels_s(Maybe<dom::RTCErrorParams> aError = Nothing());
   void MarkStreamAvailable(uint16_t aStream);
 
   nsISerialEventTarget* GetIOThread();

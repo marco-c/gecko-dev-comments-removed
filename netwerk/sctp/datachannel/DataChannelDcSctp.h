@@ -20,7 +20,7 @@ class DataChannelConnectionDcSctp : public DataChannelConnection,
                               MediaTransportHandler* aHandler);
 
   
-  void Destroy() override;
+  void CloseAssociation() override;
   bool RaiseStreamLimitTo(uint16_t aNewLimit) override;
   uint16_t GetStreamIdCeiling() const override;
   void OnTransportReady() override;
@@ -56,6 +56,12 @@ class DataChannelConnectionDcSctp : public DataChannelConnection,
   std::unique_ptr<Timeout> CreateTimeout(
       webrtc::TaskQueueBase::DelayPrecision aPrecision) override;
   void HandleTimeout(TimeoutID aId);
+
+  
+  
+  
+  
+  webrtc::Timestamp Now() override;
 
   
   

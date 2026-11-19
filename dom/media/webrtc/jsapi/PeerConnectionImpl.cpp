@@ -2439,10 +2439,13 @@ PeerConnectionImpl::Close() {
   if (mJsepSession) {
     mJsepSession->Close();
   }
+
+  nsTArray<RefPtr<GenericNonExclusivePromise>> preNetworkTeardownPromises;
+
   if (mDataConnection) {
     CSFLogInfo(LOGTAG, "%s: Destroying DataChannelConnection %p for %s",
                __FUNCTION__, (void*)mDataConnection.get(), mHandle.c_str());
-    mDataConnection->Destroy();
+    preNetworkTeardownPromises.EmplaceBack(mDataConnection->Destroy());
     mDataConnection =
         nullptr;  
   }
@@ -2491,19 +2494,16 @@ PeerConnectionImpl::Close() {
   mRtcpStateChangeListener.DisconnectIfExists();
 
   
-  RefPtr<GenericPromise> callDestroyPromise;
   if (mCall) {
     
     
     auto callThread = mCall->mCallThread;
-    callDestroyPromise =
+    preNetworkTeardownPromises.EmplaceBack(
         InvokeAsync(callThread, __func__, [call = std::move(mCall)]() {
           call->Destroy();
-          return GenericPromise::CreateAndResolve(
+          return GenericNonExclusivePromise::CreateAndResolve(
               true, "PCImpl->WebRtcCallWrapper::Destroy");
-        });
-  } else {
-    callDestroyPromise = GenericPromise::CreateAndResolve(true, __func__);
+        }));
   }
 
   mFinalStatsQuery =
@@ -2521,15 +2521,23 @@ PeerConnectionImpl::Close() {
                                                                     __func__);
               });
 
+  preNetworkTeardownPromises.AppendElement(mFinalStatsQuery);
+
   
   
   
   
   
   
-  mFinalStatsQuery
-      ->Then(GetMainThreadSerialEventTarget(), __func__,
-             [callDestroyPromise]() mutable { return callDestroyPromise; })
+  
+  
+  
+  
+  
+  
+  
+  GenericNonExclusivePromise::AllSettled(GetMainThreadSerialEventTarget(),
+                                         preNetworkTeardownPromises)
       ->Then(
           GetMainThreadSerialEventTarget(), __func__,
           [this, self = RefPtr<PeerConnectionImpl>(this)]() mutable {
