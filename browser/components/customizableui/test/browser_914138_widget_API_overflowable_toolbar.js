@@ -22,6 +22,26 @@ const kSearchBox = "search-container";
 var originalWindowWidth;
 
 
+
+async function unensureToolbarOverflowAndWait() {
+  let resized =
+    window.outerWidth != originalWindowWidth &&
+    BrowserTestUtils.waitForEvent(
+      window,
+      "resize",
+      false,
+      () => window.outerWidth == originalWindowWidth
+    );
+  unensureToolbarOverflow(window, originalWindowWidth);
+  await resized;
+  await BrowserTestUtils.waitForMutationCondition(
+    navbar,
+    { attributeFilter: ["overflowing"] },
+    () => !navbar.hasAttribute("overflowing")
+  );
+}
+
+
 add_task(async function subsequent_widget() {
   let sidebarRevampEnabled = Services.prefs.getBoolPref(
     "sidebar.revamp",
@@ -109,8 +129,7 @@ add_task(async function subsequent_widget() {
     } button.`
   );
 
-  unensureToolbarOverflow(window, originalWindowWidth);
-  await TestUtils.waitForCondition(() => !navbar.hasAttribute("overflowing"));
+  await unensureToolbarOverflowAndWait();
   ok(
     !navbar.hasAttribute("overflowing"),
     "Should not have an overflowing toolbar."
@@ -155,8 +174,7 @@ add_task(async function subsequent_widget() {
   CustomizableUI.removeWidgetFromArea(
     !sidebarRevampEnabled ? kSidebarBtn : kTestBtn2
   );
-  unensureToolbarOverflow(window, originalWindowWidth);
-  await TestUtils.waitForCondition(() => !navbar.hasAttribute("overflowing"));
+  await unensureToolbarOverflowAndWait();
 });
 
 
@@ -203,8 +221,7 @@ add_task(async function remove_widget() {
     "Test button should be in the palette"
   );
 
-  unensureToolbarOverflow(window, originalWindowWidth);
-  await TestUtils.waitForCondition(() => !navbar.hasAttribute("overflowing"));
+  await unensureToolbarOverflowAndWait();
   ok(
     !navbar.hasAttribute("overflowing"),
     "Should not have an overflowing toolbar."
@@ -214,8 +231,7 @@ add_task(async function remove_widget() {
     CustomizableUI.removeWidgetFromArea(kTestBtn2);
     el.remove();
   }
-  unensureToolbarOverflow(window, originalWindowWidth);
-  await TestUtils.waitForCondition(() => !navbar.hasAttribute("overflowing"));
+  await unensureToolbarOverflowAndWait();
 });
 
 
@@ -307,8 +323,7 @@ add_task(async function construct_widget() {
   CustomizableUI.removeWidgetFromArea(
     !sidebarRevampEnabled ? kSidebarBtn : kTestBtn2
   );
-  unensureToolbarOverflow(window, originalWindowWidth);
-  await TestUtils.waitForCondition(() => !navbar.hasAttribute("overflowing"));
+  await unensureToolbarOverflowAndWait();
 });
 
 add_task(async function insertBeforeFirstItemInOverflow() {
@@ -406,14 +421,13 @@ add_task(async function insertBeforeFirstItemInOverflow() {
 
   urlbar.style.removeProperty("min-width");
   CustomizableUI.removeWidgetFromArea(kLibraryButton);
-  unensureToolbarOverflow(window, originalWindowWidth);
-  await TestUtils.waitForCondition(() => !navbar.hasAttribute("overflowing"));
+  await unensureToolbarOverflowAndWait();
   await resetCustomization();
 });
 
 registerCleanupFunction(async function asyncCleanup() {
+  
   document.getElementById("urlbar-container").style.removeProperty("min-width");
-  window.resizeTo(originalWindowWidth, window.outerHeight);
-  await TestUtils.waitForCondition(() => !navbar.hasAttribute("overflowing"));
+  await unensureToolbarOverflowAndWait();
   await resetCustomization();
 });
