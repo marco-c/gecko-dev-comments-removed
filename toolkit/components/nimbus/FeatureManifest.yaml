@@ -634,6 +634,12 @@ urlbar:
       description: >-
         When selecting and hovering over certain types of urlbar results,
         replace their URLs with strings that explain why they're shown.
+    resultTargetMenuFeatureGate:
+      type: boolean
+      fallbackPref: browser.urlbar.resultTargetMenu.featureGate
+      description: >-
+        Whether urlbar result menus offer "Open in New Tab", "Open in New
+        Window", etc.
     semanticHistoryEnable:
       type: boolean
       setPref:
@@ -2379,6 +2385,21 @@ autofill-suppress-unrecognized-autocomplete:
         If true, a field with an unrecognized autocomplete value is left
         unclassified: it is offered no dropdown of its own, and it is not
         filled when autofill is triggered from another field in the same form.
+
+autocomplete-remove-records:
+  description: >-
+    Let users remove saved records directly from the autocomplete dropdown.
+  owner: klu@mozilla.com
+  hasExposure: false
+  variables:
+    enabled:
+      type: boolean
+      setPref:
+        branch: default
+        pref: browser.autocomplete.removeRecords.enabled
+      description: >-
+        If true, dropdown entries for saved logins, credit cards, addresses,
+        and form history show an action that removes that record.
 
 autofill-addresses-rust-storage:
   description: Application Services (Rust) storage backend for saved addresses
