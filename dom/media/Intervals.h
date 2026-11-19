@@ -328,7 +328,8 @@ class IntervalSet {
     }
     
     
-    if (aInterval.RightOf(last)) {
+    if (last.mStart <= aInterval.mStart) {
+      MOZ_ASSERT(aInterval.RightOf(last));
       mIntervals.AppendElement(aInterval);
       return *this;
     }
