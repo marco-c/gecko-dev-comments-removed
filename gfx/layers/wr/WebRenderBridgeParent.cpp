@@ -2341,7 +2341,7 @@ void WebRenderBridgeParent::AddPipelineIdForCompositable(
   
   
   
-  if (mLateInit->mAsyncImageManager->HasLivePipeline(aPipelineId)) {
+  if (mLateInit->mAsyncImageManager->HasPipeline(aPipelineId)) {
     gfxCriticalNote << "Content attempted AddPipelineIdForCompositable with "
                        "pipelineId already registered";
     return;
