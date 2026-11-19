@@ -3930,6 +3930,8 @@ pref("browser.ipProtection.bandwidth.maxInGb", 50);
 
 pref("browser.ipProtection.egressLocation", "");
 
+pref("browser.ipProtection.locationUnlockMessageDismissed", false);
+
 pref("browser.ipProtection.bandwidthThreshold", 0);
 
 
