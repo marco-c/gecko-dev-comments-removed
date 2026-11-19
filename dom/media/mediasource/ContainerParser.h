@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_CONTAINERPARSER_H_
 #define MOZILLA_CONTAINERPARSER_H_
 
@@ -57,6 +55,18 @@ class ContainerParser : public DecoderDoctorLifeLogger<ContainerParser> {
 
   virtual int64_t GetRoundingError();
 
+  
+  
+  
+  virtual bool HasImplicitInitSegment() const { return false; }
+
+  
+  
+  
+  
+  
+  virtual size_t SkipIgnorableBytesAtStart(const MediaSpan& aData) { return 0; }
+
   MediaByteBuffer* InitData();
 
   bool HasInitData() { return mHasInitData; }
@@ -65,6 +75,8 @@ class ContainerParser : public DecoderDoctorLifeLogger<ContainerParser> {
   
   
   bool HasCompleteInitData();
+  
+  
   
   
   MediaByteRange InitSegmentRange();

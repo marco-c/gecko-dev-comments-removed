@@ -525,6 +525,12 @@ void TrackBuffersManager::CompleteResetParserState() {
                "we must have an init segment");
     
     CreateDemuxerforMIMEType();
+    if (mParser->HasImplicitInitSegment()) {
+      
+      
+      RecreateParser(false);
+      return;
+    }
     
     
     mInputBuffer = Some(MediaSpan::WithCopyOf(mInitData));
@@ -947,6 +953,14 @@ void TrackBuffersManager::SegmentParserLoop() {
     
     
     
+    if (mSourceBufferAttributes->GetAppendState() ==
+        AppendState::WAITING_FOR_SEGMENT) {
+      if (size_t ignored = mParser->SkipIgnorableBytesAtStart(*mInputBuffer)) {
+        MSE_DEBUGV("Ignoring {} bytes", ignored);
+        mInputBuffer->RemoveFront(ignored);
+        continue;
+      }
+    }
 
     
     
@@ -1011,7 +1025,9 @@ void TrackBuffersManager::SegmentParserLoop() {
     
     if (mSourceBufferAttributes->GetAppendState() ==
         AppendState::PARSING_INIT_SEGMENT) {
-      if (mParser->InitSegmentRange().IsEmpty()) {
+      if (mParser->HasImplicitInitSegment()
+              ? !mParser->HasCompleteInitData()
+              : mParser->InitSegmentRange().IsEmpty()) {
         mInputBuffer.reset();
         NeedMoreData();
         return;
