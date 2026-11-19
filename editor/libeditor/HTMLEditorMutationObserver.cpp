@@ -491,14 +491,16 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void HTMLEditor::CharacterDataChanged(
   
   
   
-  if (!mInlineSpellChecker || !aContent->IsEditable() ||
+  if (!mInlineSpellChecker || !aContent->IsText() || !aContent->IsEditable() ||
       (GetTopLevelEditSubAction() != EditSubAction::eNone &&
        !IsFiringTextUpdate())) {
     return;
   }
 
   nsIContent* parent = aContent->GetParent();
-  if (!parent || !parent->InclusiveDescendantMayNeedSpellchecking(this)) {
+  
+  
+  if (!parent || !mozInlineSpellChecker::ShouldSpellCheckNode(this, aContent)) {
     return;
   }
 
