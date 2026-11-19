@@ -46,6 +46,8 @@ class HWInferenceProcess final {
   void OnActorDestroyed(HWInferenceParent* aActor,
                         ipc::IProtocol::ActorDestroyReason aReason);
 
+  void OnLaunchFailed(HWInferenceParent* aActor);
+
   void RetireActor(HWInferenceParent* aActor);
 
   RefPtr<HWInferenceParent> mActor;

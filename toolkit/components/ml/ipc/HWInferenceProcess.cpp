@@ -66,12 +66,15 @@ already_AddRefed<ipc::UtilityProcessKeepAlive> HWInferenceProcess::Acquire() {
   
   
   
+  
   if (mActor) {
     LOGD("{} - retiring the actor", __func__);
     if (mActor->CanSend()) {
       mRestarts = 0;
+      RetireActor(mActor);
+    } else {
+      OnLaunchFailed(mActor);
     }
-    RetireActor(mActor);
   }
 
   
@@ -110,6 +113,17 @@ void HWInferenceProcess::OnActorDestroyed(
 
   
   mRestarts = aReason == ipc::IProtocol::NormalShutdown ? 0 : mRestarts + 1;
+  RetireActor(aActor);
+}
+
+void HWInferenceProcess::OnLaunchFailed(HWInferenceParent* aActor) {
+  AssertIsOnMainThread();
+  MOZ_ASSERT(aActor == mActor);
+
+  
+  if (mKeepAlive) {
+    mRestarts++;
+  }
   RetireActor(aActor);
 }
 
