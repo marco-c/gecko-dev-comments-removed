@@ -44,6 +44,7 @@ class HWInferenceParent final : public PHWInferenceParent {
   }
 
   
+  
   nsresult BindToUtilityProcess(
       const RefPtr<ipc::UtilityProcessParent>& aUtilityParent);
 
