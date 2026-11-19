@@ -694,7 +694,7 @@ nsCSPContext::GetAllowsInline(CSPDirective aDirective, bool aHasUnsafeHash,
 #endif
 
       
-      if (mPolicies[i]->allows(aDirective, CSP_NONCE, aNonce)) {
+      if (mPolicies[i]->allowsByNonce(aDirective, aNonce)) {
         continue;
       }
     }

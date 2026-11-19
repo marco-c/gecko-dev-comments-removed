@@ -961,19 +961,6 @@ nsCSPNonceSrc::nsCSPNonceSrc(const nsAString& aNonce) : mNonce(aNonce) {}
 
 nsCSPNonceSrc::~nsCSPNonceSrc() = default;
 
-bool nsCSPNonceSrc::allows(enum CSPKeyword aKeyword,
-                           const nsAString& aContentOrNonce) const {
-  CSPUTILSLOG(("nsCSPNonceSrc::allows, aKeyWord: %s, a aContentOrNonce: %s",
-               CSP_EnumToUTF8Keyword(aKeyword),
-               NS_ConvertUTF16toUTF8(aContentOrNonce).get()));
-
-  if (aKeyword != CSP_NONCE) {
-    return false;
-  }
-  
-  return mNonce.Equals(aContentOrNonce);
-}
-
 bool nsCSPNonceSrc::visit(nsCSPSrcVisitor* aVisitor) const {
   return aVisitor->visitNonceSrc(*this);
 }
@@ -1186,12 +1173,8 @@ static bool DoesNonceMatchSourceList(nsILoadInfo* aLoadInfo,
   for (nsCSPBaseSrc* src : aSrcs) {
     
     
-    if (src->isNonce()) {
-      nsAutoString srcNonce;
-      static_cast<nsCSPNonceSrc*>(src)->getNonce(srcNonce);
-      if (srcNonce == nonce) {
-        return true;
-      }
+    if (src->isNonce() && static_cast<nsCSPNonceSrc*>(src)->nonce() == nonce) {
+      return true;
     }
   }
 
@@ -1403,6 +1386,20 @@ bool nsCSPDirective::allows(enum CSPKeyword aKeyword,
 
   for (uint32_t i = 0; i < mSrcs.Length(); i++) {
     if (mSrcs[i]->allows(aKeyword, aContentOrNonce)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+
+
+
+bool nsCSPDirective::allowsByNonce(const nsAString& aNonce) const {
+  for (const nsCSPBaseSrc* src : mSrcs) {
+    if (src->isNonce() &&
+        static_cast<const nsCSPNonceSrc*>(src)->nonce() == aNonce) {
       return true;
     }
   }
@@ -1890,6 +1887,17 @@ bool nsCSPPolicy::allows(CSPDirective aDirective, enum CSPKeyword aKeyword,
   
   
   
+  
+  
+  return true;
+}
+
+bool nsCSPPolicy::allowsByNonce(CSPDirective aDirective,
+                                const nsAString& aNonce) const {
+  if (nsCSPDirective* directive = matchingOrDefaultDirective(aDirective)) {
+    return directive->allowsByNonce(aNonce);
+  }
+
   
   
   return true;
