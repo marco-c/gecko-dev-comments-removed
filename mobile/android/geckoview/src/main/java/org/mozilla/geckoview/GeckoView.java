@@ -601,7 +601,7 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
     
     mSession.getCompositorController().setClearColor(defaultColor());
 
-    if (ViewCompat.isAttachedToWindow(this)) {
+    if (isAttachedToWindow()) {
       mDisplay.acquire(session.acquireDisplay());
     }
 
