@@ -366,7 +366,7 @@ export class WeatherSuggestions extends SuggestProvider {
       {
         name: RESULT_MENU_COMMAND.INACCURATE_LOCATION,
         l10n: {
-          id: "urlbar-result-menu-report-inaccurate-location2",
+          id: "urlbar-result-menu-report-inaccurate-location3",
         },
       },
     ];
@@ -375,7 +375,7 @@ export class WeatherSuggestions extends SuggestProvider {
       commands.push({
         name: RESULT_MENU_COMMAND.SHOW_LESS_FREQUENTLY,
         l10n: {
-          id: "urlbar-result-menu-show-less-frequently2",
+          id: "urlbar-result-menu-show-less-frequently3",
         },
       });
     }
@@ -384,7 +384,7 @@ export class WeatherSuggestions extends SuggestProvider {
       {
         name: RESULT_MENU_COMMAND.DISMISS,
         l10n: {
-          id: "urlbar-result-menu-dont-show-weather-suggestions2",
+          id: "urlbar-result-menu-dont-show-weather-suggestions3",
         },
       },
       { name: "separator" },
@@ -405,6 +405,12 @@ export class WeatherSuggestions extends SuggestProvider {
     return commands;
   }
 
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {object} details
+   * @param {string} searchString
+   */
   onEngagement(queryContext, controller, details, searchString) {
     let { result } = details;
     switch (details.selType) {
@@ -418,17 +424,18 @@ export class WeatherSuggestions extends SuggestProvider {
       case RESULT_MENU_COMMAND.DISMISS:
         this.logger.info("Dismissing weather result");
         lazy.UrlbarPrefs.set("suggest.weather", false);
-        result.acknowledgeDismissalL10n = {
-          id: "urlbar-dismissal-acknowledgment-weather",
-        };
-        controller.removeResult(result);
+        controller.removeResult(result, {
+          acknowledgeDismissalL10n: {
+            id: "urlbar-dismissal-acknowledgment-weather",
+          },
+        });
         break;
       case RESULT_MENU_COMMAND.INACCURATE_LOCATION:
         // Currently the only way we record this feedback is in the Glean
         // engagement event. As with all commands, it will be recorded with an
         // `engagement_type` value that is the command's name, in this case
         // `inaccurate_location`.
-        controller.view.acknowledgeFeedback(result);
+        controller.view.acknowledgeFeedback(result.id);
         break;
       case RESULT_MENU_COMMAND.SHOW_LESS_FREQUENTLY:
         this.handleShowLessFrequently(controller, result);
