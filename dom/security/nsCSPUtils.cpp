@@ -1008,35 +1008,44 @@ void nsCSPHashSrcBase::toString(nsAString& outStr) const {
 
 
 
-bool nsCSPHashSrc::allows(enum CSPKeyword aKeyword,
-                          const nsAString& aContentOrNonce) const {
-  CSPUTILSLOG(("nsCSPHashSrc::allows, aKeyWord: %s, a aContentOrNonce: %s",
-               CSP_EnumToUTF8Keyword(aKeyword),
-               NS_ConvertUTF16toUTF8(aContentOrNonce).get()));
+bool nsCSPHashSrcBase::matchesDigestOf(CSPHashDigestsCache& aCache) const {
+  Maybe<const nsCString&> digest = aCache.GetOrComputeDigest(mAlgorithm);
+  return digest && mHash.EqualsASCII(digest->get(), digest->Length());
+}
 
-  if (aKeyword != CSP_HASH) {
-    return false;
+
+
+Maybe<const nsCString&> CSPHashDigestsCache::GetOrComputeDigest(
+    const nsAString& aAlgorithm) {
+  for (size_t i = 0; i < std::size(kAlgorithms); i++) {
+    if (!aAlgorithm.EqualsASCII(kAlgorithms[i])) {
+      continue;
+    }
+
+    if (mDigests[i].isNothing()) {
+      nsCOMPtr<nsICryptoHash> hasher;
+      nsresult rv = NS_NewCryptoHash(nsDependentCString(kAlgorithms[i]),
+                                     getter_AddRefs(hasher));
+      NS_ENSURE_SUCCESS(rv, Nothing());
+
+      rv = hasher->Update(
+          reinterpret_cast<const uint8_t*>(mValue.BeginReading()),
+          mValue.Length());
+      NS_ENSURE_SUCCESS(rv, Nothing());
+
+      nsAutoCString digest;
+      rv = hasher->Finish(true, digest);
+      NS_ENSURE_SUCCESS(rv, Nothing());
+
+      mDigests[i].emplace(digest);
+    }
+    return SomeRef<const nsCString>(mDigests[i].ref());
   }
 
-  
-
-  
-  NS_ConvertUTF16toUTF8 content(aContentOrNonce);
-
-  nsCOMPtr<nsICryptoHash> hasher;
-  nsresult rv = NS_NewCryptoHash(NS_ConvertUTF16toUTF8(mAlgorithm),
-                                 getter_AddRefs(hasher));
-  NS_ENSURE_SUCCESS(rv, false);
-
-  rv = hasher->Update((uint8_t*)content.get(), content.Length());
-  NS_ENSURE_SUCCESS(rv, false);
-
-  nsAutoCString hash;
-  rv = hasher->Finish(true, hash);
-  NS_ENSURE_SUCCESS(rv, false);
-
-  return mHash.EqualsASCII(hash.get(), hash.Length());
+  return Nothing();
 }
+
+
 
 bool nsCSPHashSrc::visit(nsCSPSrcVisitor* aVisitor) const {
   return aVisitor->visitHashSrc(*this);
@@ -1400,6 +1409,42 @@ bool nsCSPDirective::allowsByNonce(const nsAString& aNonce) const {
   for (const nsCSPBaseSrc* src : mSrcs) {
     if (src->isNonce() &&
         static_cast<const nsCSPNonceSrc*>(src)->nonce() == aNonce) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+
+
+
+
+bool nsCSPDirective::allowsByHash(const nsAString& aContent) const {
+  
+  
+  
+  
+  
+  
+  bool hasHashSource = false;
+  for (const nsCSPBaseSrc* src : mSrcs) {
+    if (src->isHash()) {
+      hasHashSource = true;
+      break;
+    }
+  }
+  if (!hasHashSource) {
+    return false;
+  }
+
+  
+  
+  NS_ConvertUTF16toUTF8 content(aContent);
+  CSPHashDigestsCache cache(content);
+  for (const nsCSPBaseSrc* src : mSrcs) {
+    if (src->isHash() &&
+        static_cast<const nsCSPHashSrc*>(src)->matchesDigestOf(cache)) {
       return true;
     }
   }
@@ -1896,6 +1941,17 @@ bool nsCSPPolicy::allowsByNonce(CSPDirective aDirective,
                                 const nsAString& aNonce) const {
   if (nsCSPDirective* directive = matchingOrDefaultDirective(aDirective)) {
     return directive->allowsByNonce(aNonce);
+  }
+
+  
+  
+  return true;
+}
+
+bool nsCSPPolicy::allowsByHash(CSPDirective aDirective,
+                               const nsAString& aContent) const {
+  if (nsCSPDirective* directive = matchingOrDefaultDirective(aDirective)) {
+    return directive->allowsByHash(aContent);
   }
 
   
