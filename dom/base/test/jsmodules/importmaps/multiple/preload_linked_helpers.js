@@ -15,6 +15,35 @@ function waitForResponse(name) {
   });
 }
 
+const requestWaiters = new Map();
+
+
+
+
+function waitForRequest(name, { hold = false } = {}) {
+  return new Promise(resolve => requestWaiters.set(name, { resolve, hold }));
+}
+
+const requestObserver = {
+  observe(subject) {
+    const channel = subject.QueryInterface(SpecialPowers.Ci.nsIChannel);
+    const name = channel.URI.spec.split("?")[0].split("/").pop();
+    const waiter = requestWaiters.get(name);
+    if (!waiter) {
+      return;
+    }
+    requestWaiters.delete(name);
+    if (waiter.hold) {
+      channel.suspend();
+    }
+    waiter.resolve(channel);
+  },
+};
+SpecialPowers.addObserver(requestObserver, "http-on-opening-request");
+SimpleTest.registerCleanupFunction(() => {
+  SpecialPowers.removeObserver(requestObserver, "http-on-opening-request");
+});
+
 function addPreload(href) {
   return new Promise((resolve, reject) => {
     const link = document.createElement("link");
