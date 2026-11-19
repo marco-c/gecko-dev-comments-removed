@@ -10,8 +10,10 @@
 
 #include <memory>
 
+#include "mozilla/ArenaAllocator.h"
 #include "mozilla/ArenaObjectID.h"
 #include "mozilla/DisplayListArenaObjectId.h"
+#include "mozilla/MemoryReporting.h"
 #include "nsDisplayItemTypes.h"
 #include "nsQueryFrame.h"
 #include "nsTArray.h"
@@ -23,22 +25,14 @@ class SizeOfState;
 enum class PresArenaKind { Frames, DisplayList };
 }  
 
-namespace mozilla::detail {
-struct PresArenaSlabMetadata;
-struct PresArenaSuperblock;
-}  
-
-
-
-
-
-template <typename ObjectId, size_t ObjectIdCount>
+template <size_t ArenaSize, typename ObjectId, size_t ObjectIdCount>
 class nsPresArena {
  public:
   constexpr nsPresArena() = default;
   ~nsPresArena();
 
   
+
 
 
   void* Allocate(ObjectId aCode, size_t aSize);
@@ -52,7 +46,7 @@ class nsPresArena {
   void AddSizeOfExcludingThis(mozilla::SizeOfState&, nsArenaSizes&,
                               mozilla::PresArenaKind) const;
 
-  void Check();
+  void Check() { mPool.Check(); }
 
   
 
@@ -64,36 +58,24 @@ class nsPresArena {
 
 
 
-
-  bool Purge(bool aAll);
+  void SortFreeLists();
 
  private:
-  using SlabMetadata = mozilla::detail::PresArenaSlabMetadata;
-  using Superblock = mozilla::detail::PresArenaSuperblock;
+  class FreeList {
+   public:
+    nsTArray<void*> mEntries;
+    size_t mEntrySize = 0;
+    size_t mEntriesEverAllocated = 0;
 
-  struct TypeHeap {
-    nsTArray<SlabMetadata*> mSlabs;
-    
-    nsTArray<uint64_t> mSlabsWithSpace;
-    uint32_t mEntrySize = 0;
-    uint32_t mSlotsPerSlab = 0;
-    uint32_t mPagesPerSlab = 0;
-    
-    uint32_t mFirstSlabWithSpace = 0;
+    constexpr FreeList() = default;
 
-    constexpr TypeHeap() = default;
+    size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
+      return mEntries.ShallowSizeOfExcludingThis(aMallocSizeOf);
+    }
   };
 
-  void InitHeap(TypeHeap&, size_t aSize);
-  SlabMetadata* FindSlabWithSpace(TypeHeap&);
-  char* AllocatePages(size_t aCount);
-
-  TypeHeap mHeaps[ObjectIdCount];
-  nsTArray<Superblock*> mSuperblocks;
-  
-  uint32_t mNextPage = 0;
-  uint32_t mEpoch = 0;
-  uint32_t mEmptyCommittedSlabs = 0;
+  FreeList mFreeLists[ObjectIdCount];
+  mozilla::ArenaAllocator<ArenaSize, 8> mPool;
 #ifdef DEBUG
   
   
@@ -106,10 +88,10 @@ class nsPresArena {
 #endif
 };
 
-extern template class nsPresArena<mozilla::ArenaObjectID,
+extern template class nsPresArena<8192, mozilla::ArenaObjectID,
                                   mozilla::eArenaObjectID_COUNT>;
 extern template class nsPresArena<
-    mozilla::DisplayListArenaObjectId,
+    32768, mozilla::DisplayListArenaObjectId,
     size_t(mozilla::DisplayListArenaObjectId::COUNT)>;
 
 namespace mozilla {
@@ -117,10 +99,10 @@ namespace mozilla {
 
 
 
-template <typename ObjectId, size_t ObjectIdCount>
+template <size_t ArenaSize, typename ObjectId, size_t ObjectIdCount>
 class StaticPresArena {
  public:
-  using Arena = nsPresArena<ObjectId, ObjectIdCount>;
+  using Arena = nsPresArena<ArenaSize, ObjectId, ObjectIdCount>;
 
   static void* Allocate(ObjectId aId, size_t aSize) {
     return sInstance.Allocate(aId, aSize);
@@ -132,14 +114,15 @@ class StaticPresArena {
     sInstance.AddSizeOfExcludingThis(aState, aSizes, aKind);
   }
   static void AssertNoLiveAllocations() { sInstance.AssertNoLiveAllocations(); }
-  static bool Purge(bool aAll) { return sInstance.Purge(aAll); }
+  static void SortFreeLists() { sInstance.SortFreeLists(); }
 
  private:
   static Arena sInstance;
 };
 
-extern template class StaticPresArena<ArenaObjectID, eArenaObjectID_COUNT>;
-extern template class StaticPresArena<DisplayListArenaObjectId,
+extern template class StaticPresArena<8192, ArenaObjectID,
+                                      eArenaObjectID_COUNT>;
+extern template class StaticPresArena<32768, DisplayListArenaObjectId,
                                       size_t(DisplayListArenaObjectId::COUNT)>;
 
 
@@ -148,8 +131,9 @@ extern template class StaticPresArena<DisplayListArenaObjectId,
 
 
 
+
 class FrameArena final
-    : public StaticPresArena<ArenaObjectID, eArenaObjectID_COUNT> {
+    : public StaticPresArena<8192, ArenaObjectID, eArenaObjectID_COUNT> {
  public:
   using StaticPresArena::Allocate;
   using StaticPresArena::Free;
@@ -176,7 +160,7 @@ class FrameArena final
 
 
 class DisplayListArena final
-    : public StaticPresArena<DisplayListArenaObjectId,
+    : public StaticPresArena<32768, DisplayListArenaObjectId,
                              size_t(DisplayListArenaObjectId::COUNT)> {
  public:
   using StaticPresArena::Allocate;
