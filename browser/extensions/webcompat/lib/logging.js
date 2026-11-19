@@ -13,4 +13,18 @@ const loggingPrefValue = browser.aboutConfigPrefs.getPref(
   false
 );
 
-const debugLog = loggingPrefValue ? console.debug : () => {};
+const debugLog = (function () {
+  if (!loggingPrefValue) {
+    return () => {};
+  }
+  if (browser.appConstants.getPlatform() == "android") {
+    
+    return function () {
+      console.debug.apply(
+        this,
+        [...arguments].map(a => (typeof a == "string" ? a : JSON.stringify(a)))
+      );
+    };
+  }
+  return console.debug;
+})();
