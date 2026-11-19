@@ -3154,6 +3154,8 @@ bool CompilationStencil::delazifySelfHostedFunction(
         return false;
       }
 
+      
+      
       jit::BaselineOptions options(
           {jit::BaselineOption::ForceMainThreadCompilation});
       jit::MethodStatus result =
@@ -3163,13 +3165,16 @@ bool CompilationStencil::delazifySelfHostedFunction(
       }
       MOZ_ASSERT(script->hasBaselineScript());
 
+      
+      
+      AutoAllocInAtomsZone ar(cx);
       jit::BaselineScript* baselineScript =
           jit::BaselineScript::Copy(cx, script->baselineScript());
       if (!baselineScript) {
         return false;
       }
       if (!jitCache.put(jitCacheKey, baselineScript)) {
-        jit::BaselineScript::Destroy(cx->gcContext(), baselineScript);
+        jit::BaselineScript::Destroy(cx->zone(), baselineScript);
         ReportOutOfMemory(cx);
         return false;
       }

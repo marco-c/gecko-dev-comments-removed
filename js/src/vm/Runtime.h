@@ -515,6 +515,7 @@ struct JSRuntime {
 
   
   
+  
   js::MainThreadData<js::GCHashMap<JitCacheKey, js::jit::BaselineScript*,
                                    JitCacheKeyHasher, js::SystemAllocPolicy>>
       selfHostJitCache;

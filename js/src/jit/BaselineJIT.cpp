@@ -6,7 +6,6 @@
 
 #include "mozilla/BinarySearch.h"
 #include "mozilla/CheckedInt.h"
-#include "mozilla/MemoryReporting.h"
 #include "mozilla/ScopeExit.h"
 
 #include <algorithm>
@@ -31,6 +30,7 @@
 #include "vm/Interpreter.h"
 
 #include "debugger/DebugAPI-inl.h"
+#include "gc/BufferAllocator-inl.h"
 #include "gc/GC-inl.h"
 #include "gc/WeakMap-inl.h"
 #include "jit/JitHints-inl.h"
@@ -353,7 +353,8 @@ static bool DispatchOffThreadBaselineBatchImpl(JSContext* cx, bool isEager) {
 
     auto* offThreadSnapshot = alloc->new_<OffThreadBaselineSnapshot>(
         script, globalLexical, globalThis, baseWarmUpThreshold,
-        isIonCompileable, compileDebugInstrumentation);
+        isIonCompileable, compileDebugInstrumentation,
+         false);
     if (!offThreadSnapshot) {
       ReportOutOfMemory(cx);
       return false;
@@ -407,6 +408,8 @@ MethodStatus jit::BaselineCompile(JSContext* cx, JSScript* script,
   bool compileDebugInstrumentation =
       script->isDebuggee() ||
       options.hasFlag(BaselineOption::ForceDebugInstrumentation);
+  bool compileDebugModeOSRResumeTargets =
+      options.hasFlag(BaselineOption::CompileDebugModeOSRResumeTargets);
   bool forceMainThread =
       compileDebugInstrumentation ||
       options.hasFlag(BaselineOption::ForceMainThreadCompilation);
@@ -429,9 +432,9 @@ MethodStatus jit::BaselineCompile(JSContext* cx, JSScript* script,
       OptimizationInfo::baseWarmUpThresholdForScript(cx, script);
   bool isIonCompileable = IsIonEnabled(cx) && CanIonCompileScript(cx, script);
 
-  BaselineSnapshot snapshot(script, globalLexical, globalThis,
-                            baseWarmUpThreshold, isIonCompileable,
-                            compileDebugInstrumentation);
+  BaselineSnapshot snapshot(
+      script, globalLexical, globalThis, baseWarmUpThreshold, isIonCompileable,
+      compileDebugInstrumentation, compileDebugModeOSRResumeTargets);
 
   if (BaselineCompileTask::OffThreadBaselineCompilationAvailable(cx, script) &&
       !forceMainThread) {
@@ -581,41 +584,6 @@ bool jit::CanBaselineCompileScript(JSContext* cx, JSScript* script) {
   return true;
 }
 
-static bool MaybeCreateBaselineInterpreterEntryScript(JSContext* cx,
-                                                      JSScript* script) {
-  MOZ_ASSERT(script->hasJitScript());
-
-  Zone* zone = script->zone();
-  EntryTrampolineMap* map =
-      zone->jitZone()->getOrCreateInterpreterEntryMap(zone);
-  if (!map) {
-    return false;
-  }
-
-  JitRuntime* jitRuntime = cx->runtime()->jitRuntime();
-  if (script->jitCodeRaw() != jitRuntime->baselineInterpreter().codeRaw()) {
-    
-#ifdef DEBUG
-    auto ptr = map->lookup(script);
-    MOZ_ASSERT(ptr);
-    MOZ_ASSERT(ptr->value()->raw() == script->jitCodeRaw());
-#endif
-    return true;
-  }
-
-  auto ptr = map->lookupForAdd(script);
-  if (!ptr) {
-    Rooted<JitCode*> code(
-        cx, jitRuntime->generateEntryTrampolineForScript(cx, script));
-    if (!code || !map->relookupOrAdd(ptr, script, code)) {
-      return false;
-    }
-  }
-
-  script->updateJitCodeRaw(cx->runtime());
-  return true;
-}
-
 static MethodStatus CanEnterBaselineInterpreter(JSContext* cx,
                                                 JSScript* script) {
   MOZ_ASSERT(IsBaselineInterpreterEnabled());
@@ -649,12 +617,6 @@ static MethodStatus CanEnterBaselineInterpreter(JSContext* cx,
     jitHints->setEagerBaselineInterpreterHint(script);
   }
 
-  if (JitOptions.emitInterpreterEntryTrampoline) {
-    if (!MaybeCreateBaselineInterpreterEntryScript(cx, script)) {
-      ReportOutOfMemory(cx);
-      return Method_Error;
-    }
-  }
   return Method_Compiled;
 }
 
@@ -820,11 +782,13 @@ BaselineScript* BaselineScript::New(
   }
 
   
-  void* raw = cx->pod_malloc<uint8_t>(size.value());
-  MOZ_ASSERT(uintptr_t(raw) % alignof(BaselineScript) == 0);
+  JS::Zone* zone = cx->zone();
+  void* raw = gc::AllocBuffer(zone, size.value(),  false);
   if (!raw) {
+    ReportOutOfMemory(cx);
     return nullptr;
   }
+  MOZ_ASSERT(uintptr_t(raw) % alignof(BaselineScript) == 0);
   BaselineScript* script = new (raw)
       BaselineScript(warmUpCheckPrologueOffset, profilerEnterToggleOffset,
                      profilerExitToggleOffset, debugModeOSREpilogueOffset);
@@ -903,20 +867,28 @@ void BaselineScript::trace(JSTracer* trc) {
   TraceEdge(trc, &method_, "baseline-method");
 }
 
-void BaselineScript::Destroy(JS::GCContext* gcx, BaselineScript* script) {
+void BaselineScript::addSizeOfIncludingThis(JS::Zone* zone,
+                                            size_t* data) const {
+  *data += gc::GetAllocSize(zone, this);
+}
+
+void BaselineScript::Destroy(JS::Zone* zone, BaselineScript* script) {
   MOZ_ASSERT(!script->hasPendingIonCompileTask());
+  MOZ_ASSERT(!CurrentThreadIsGCSweeping() && !CurrentThreadIsGCFinalizing());
 
   
   script->method_ = nullptr;
 
   
-  gcx->deleteUntracked(script);
+  
+  gc::DeleteBuffer(zone, script);
 }
 
-void JS::DeletePolicy<js::jit::BaselineScript>::operator()(
-    const js::jit::BaselineScript* script) {
-  BaselineScript::Destroy(rt_->gcContext(),
-                          const_cast<BaselineScript*>(script));
+void JS::GCPolicy<js::jit::BaselineScript*>::trace(
+    JSTracer* trc, js::jit::BaselineScript** thingp, const char* name) {
+  
+  TraceBufferRoot(trc, thingp, name);
+  (*thingp)->trace(trc);
 }
 
 const RetAddrEntry& BaselineScript::retAddrEntryFromReturnOffset(
@@ -1307,14 +1279,20 @@ void jit::FinishDiscardBaselineScript(JS::GCContext* gcx, JSScript* script) {
 
   BaselineScript* baseline =
       script->jitScript()->clearBaselineScript(gcx, script);
-  BaselineScript::Destroy(gcx, baseline);
+  MOZ_ASSERT(!baseline->hasPendingIonCompileTask());
+
+  if (gcx->isPreparing()) {
+    
+    
+    return;
+  }
+
+  BaselineScript::Destroy(script->zone(), baseline);
 }
 
-void jit::AddSizeOfBaselineData(JSScript* script,
-                                mozilla::MallocSizeOf mallocSizeOf,
-                                size_t* data) {
+void jit::AddSizeOfBaselineData(JSScript* script, size_t* data) {
   if (script->hasBaselineScript()) {
-    script->baselineScript()->addSizeOfIncludingThis(mallocSizeOf, data);
+    script->baselineScript()->addSizeOfIncludingThis(script->zone(), data);
   }
 }
 

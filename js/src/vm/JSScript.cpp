@@ -3505,6 +3505,12 @@ void JSScript::updateJitCodeRaw(JSRuntime* rt) {
             setJitCodeRaw(ptr->value()->raw());
             usingEntryTrampoline = true;
           }
+          
+          
+          
+          MOZ_ASSERT_IF(!JS::RuntimeHeapIsBusy() &&
+                            !gc::IsAboutToBeFinalizedUnbarriered(this),
+                        usingEntryTrampoline);
         }
       }
     }
@@ -4005,7 +4011,7 @@ JS::ubi::Base::Size JS::ubi::Concrete<BaseScript>::size(
     size += allocSitesSize;
 
     size_t baselineSize = 0;
-    jit::AddSizeOfBaselineData(script, mallocSizeOf, &baselineSize);
+    jit::AddSizeOfBaselineData(script, &baselineSize);
     size += baselineSize;
 
     size += jit::SizeOfIonData(script, mallocSizeOf);

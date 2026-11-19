@@ -9,7 +9,8 @@
 #include "mozilla/ThreadLocal.h"
 
 #include "jspubtd.h"
-#include "jstypes.h"                  
+#include "jstypes.h"  
+
 #include "gc/GCEnum.h"                
 #include "jit/ExecutableAllocator.h"  
 #include "js/Utility.h"               
@@ -33,6 +34,9 @@ enum class GCUse {
 
   
   Unspecified,
+
+  
+  Preparing,
 
   
   
@@ -107,6 +111,9 @@ class GCContext {
 
   js::gc::GCUse gcUse() const { return gcUse_; }
   bool isCollecting() const { return gcUse() != js::gc::GCUse::None; }
+  bool isPreparing() const { return gcUse_ == js::gc::GCUse::Preparing; }
+  bool isMarking() const { return gcUse_ == js::gc::GCUse::Marking; }
+  bool isSweeping() const { return gcUse_ == js::gc::GCUse::Sweeping; }
   bool isFinalizing() const { return gcUse_ == js::gc::GCUse::Finalizing; }
 
 #ifdef DEBUG
