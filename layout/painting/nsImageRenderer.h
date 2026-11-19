@@ -7,10 +7,12 @@
 
 #include "Units.h"
 #include "mozilla/AspectRatio.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/SurfaceFromElementResult.h"
 #include "nsStyleStruct.h"
 
 class gfxDrawable;
+class nsIFrame;
 
 namespace mozilla {
 class nsDisplayItem;
@@ -25,6 +27,21 @@ namespace wr {
 class DisplayListBuilder;
 class IpcResourceUpdateQueue;
 }  
+
+
+
+struct MOZ_STACK_CLASS WebRenderImageItemInfo {
+  MOZ_IMPLICIT WebRenderImageItemInfo(nsDisplayItem* aItem);
+  WebRenderImageItemInfo(nsIFrame* aFrame, bool aBackfaceHidden,
+                         uint32_t aPerFrameKey)
+      : mFrame(aFrame),
+        mBackfaceHidden(aBackfaceHidden),
+        mPerFrameKey(aPerFrameKey) {}
+
+  nsIFrame* mFrame;
+  bool mBackfaceHidden;
+  uint32_t mPerFrameKey;
+};
 
 
 
@@ -209,9 +226,10 @@ class nsImageRenderer {
       nsPresContext* aPresContext, mozilla::wr::DisplayListBuilder& aBuilder,
       mozilla::wr::IpcResourceUpdateQueue& aResource,
       const mozilla::layers::StackingContextHelper& aSc,
-      mozilla::layers::RenderRootStateManager* aManager, nsDisplayItem* aItem,
-      const nsRect& aDest, const nsRect& aFill, const nsPoint& aAnchor,
-      const nsRect& aDirty, const nsSize& aRepeatSize, float aOpacity);
+      mozilla::layers::RenderRootStateManager* aManager,
+      const WebRenderImageItemInfo& aItem, const nsRect& aDest,
+      const nsRect& aFill, const nsPoint& aAnchor, const nsRect& aDirty,
+      const nsSize& aRepeatSize, float aOpacity);
 
   
 
@@ -288,10 +306,11 @@ class nsImageRenderer {
       nsPresContext* aPresContext, mozilla::wr::DisplayListBuilder& aBuilder,
       mozilla::wr::IpcResourceUpdateQueue& aResources,
       const mozilla::layers::StackingContextHelper& aSc,
-      mozilla::layers::RenderRootStateManager* aManager, nsDisplayItem* aItem,
-      const nsRect& aDirtyRect, const nsRect& aDest, const nsRect& aFill,
-      const nsPoint& aAnchor, const nsSize& aRepeatSize,
-      const mozilla::CSSIntRect& aSrc, float aOpacity = 1.0);
+      mozilla::layers::RenderRootStateManager* aManager,
+      const WebRenderImageItemInfo& aItem, const nsRect& aDirtyRect,
+      const nsRect& aDest, const nsRect& aFill, const nsPoint& aAnchor,
+      const nsSize& aRepeatSize, const mozilla::CSSIntRect& aSrc,
+      float aOpacity = 1.0);
 
   
 

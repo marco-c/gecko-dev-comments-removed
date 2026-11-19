@@ -10,6 +10,7 @@
 #include "mozilla/SVGIntegrationUtils.h"  
 #include "mozilla/layers/ClipManager.h"
 #include "mozilla/layers/HitTestInfoManager.h"
+#include "mozilla/layers/StackingContextHelper.h"
 #include "mozilla/layers/WebRenderMessages.h"
 #include "mozilla/layers/WebRenderScrollData.h"
 #include "mozilla/layers/WebRenderUserData.h"
@@ -19,6 +20,8 @@
 #include "nsTHashSet.h"
 
 namespace mozilla {
+
+struct WebRenderImageItemInfo;
 
 namespace image {
 class WebRenderImageProvider;
@@ -60,15 +63,33 @@ class WebRenderCommandBuilder final {
                           const wr::WrSpatialId& aSpatialId);
   void PopOverrideForASR(const ActiveScrolledRoot* aASR);
 
+  
+  
+  enum class FrameReferenceFrame : uint8_t {
+    Transform,
+    TransformSeparator,
+    SVGOrigin,
+    Perspective,
+    OwnLayer,
+  };
+
+  
+  
+  DefinedReferenceFrame DefineReferenceFrame(
+      wr::DisplayListBuilder& aBuilder, nsIFrame* aFrame,
+      FrameReferenceFrame aKind, const LayoutDevicePoint& aOrigin,
+      const wr::ReferenceFrameParams& aParams);
+
   Maybe<wr::ImageKey> CreateImageKey(
-      nsDisplayItem* aItem, ImageContainer* aContainer,
+      const WebRenderImageItemInfo& aItem, ImageContainer* aContainer,
       mozilla::wr::DisplayListBuilder& aBuilder,
       mozilla::wr::IpcResourceUpdateQueue& aResources,
       mozilla::wr::ImageRendering aRendering, const StackingContextHelper& aSc,
       gfx::IntSize& aSize, const Maybe<LayoutDeviceRect>& aAsyncImageBounds);
 
   Maybe<wr::ImageKey> CreateImageProviderKey(
-      nsDisplayItem* aItem, image::WebRenderImageProvider* aProvider,
+      nsIFrame* aFrame, uint32_t aPerFrameKey,
+      image::WebRenderImageProvider* aProvider,
       image::ImgDrawResult aDrawResult,
       mozilla::wr::IpcResourceUpdateQueue& aResources);
 
@@ -76,12 +97,14 @@ class WebRenderCommandBuilder final {
     return &mWebRenderUserDatas;
   }
 
-  bool PushImage(nsDisplayItem* aItem, ImageContainer* aContainer,
+  bool PushImage(const WebRenderImageItemInfo& aItem,
+                 ImageContainer* aContainer,
                  mozilla::wr::DisplayListBuilder& aBuilder,
                  mozilla::wr::IpcResourceUpdateQueue& aResources,
                  const StackingContextHelper& aSc,
                  const LayoutDeviceRect& aRect, const LayoutDeviceRect& aClip);
 
+  
   bool PushImageProvider(nsDisplayItem* aItem,
                          image::WebRenderImageProvider* aProvider,
                          image::ImgDrawResult aDrawResult,
@@ -89,7 +112,18 @@ class WebRenderCommandBuilder final {
                          mozilla::wr::IpcResourceUpdateQueue& aResources,
                          const LayoutDeviceRect& aRect,
                          const LayoutDeviceRect& aClip,
-                         bool aRasterizedForRect = false);
+                         bool aRasterizedForRect = false,
+                         float aOpacity = 1.0f);
+  bool PushImageProvider(nsIFrame* aFrame, uint32_t aPerFrameKey,
+                         bool aBackfaceHidden, bool aAntialiased,
+                         image::WebRenderImageProvider* aProvider,
+                         image::ImgDrawResult aDrawResult,
+                         mozilla::wr::DisplayListBuilder& aBuilder,
+                         mozilla::wr::IpcResourceUpdateQueue& aResources,
+                         const LayoutDeviceRect& aRect,
+                         const LayoutDeviceRect& aClip,
+                         bool aRasterizedForRect = false,
+                         float aOpacity = 1.0f);
 
   Maybe<wr::ImageMask> BuildWrMaskImage(
       nsDisplayMasksAndClipPaths* aMaskItem, wr::DisplayListBuilder& aBuilder,
