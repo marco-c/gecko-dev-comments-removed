@@ -8,6 +8,7 @@
 #include "mozilla/Assertions.h"  
 #include "mozilla/Atomics.h"     
 #include "mozilla/Attributes.h"  
+#include "mozilla/Likely.h"      
 #include "mozilla/Maybe.h"       
 
 #include <stddef.h>  
@@ -15,6 +16,7 @@
 #include "js/AllocPolicy.h"  
 #include "js/ErrorReport.h"  
 #include "js/experimental/CompileScript.h"  
+#include "js/friend/StackLimits.h"  
 #include "js/Stack.h"  
 #include "js/Vector.h"          
 #include "vm/ErrorReporting.h"  
@@ -259,6 +261,31 @@ class FrontendContext {
   void ReportOutOfMemory();
   void addPendingOutOfMemory();
 };
+
+
+
+
+MOZ_ALWAYS_INLINE bool AutoCheckRecursionLimit::check(
+    FrontendContext* fc) const {
+  if (MOZ_UNLIKELY(!checkDontReport(fc))) {
+    ReportOverRecursed(fc);
+    return false;
+  }
+  return true;
+}
+
+MOZ_ALWAYS_INLINE bool AutoCheckRecursionLimit::checkDontReport(
+    FrontendContext* fc) const {
+  return checkWithStackPointerDontReport(fc, __builtin_frame_address(0));
+}
+
+MOZ_ALWAYS_INLINE bool AutoCheckRecursionLimit::checkWithStackPointerDontReport(
+    FrontendContext* fc, void* sp) const {
+#ifdef DEBUG
+  fc->checkAndUpdateFrontendContextRecursionLimit(sp);
+#endif
+  return checkLimitImpl(fc->stackLimit(), sp);
+}
 
 
 class MOZ_STACK_CLASS AutoReportFrontendContext : public FrontendContext {

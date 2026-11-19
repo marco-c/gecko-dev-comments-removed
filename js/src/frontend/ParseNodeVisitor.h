@@ -7,13 +7,11 @@
 
 #include "mozilla/Assertions.h"
 
+#include "frontend/FrontendContext.h"  
 #include "frontend/ParseNode.h"
 #include "js/friend/StackLimits.h"  
 
 namespace js {
-
-class FrontendContext;
-
 namespace frontend {
 
 
