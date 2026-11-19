@@ -44,11 +44,14 @@ class NativeMenuGtk : public NativeMenu {
   RefPtr<dom::Element> Element() override;
 
   MOZ_CAN_RUN_SCRIPT void OnUnmap();
+  void QueueResizeToContent();
 
  protected:
   virtual ~NativeMenuGtk();
 
   MOZ_CAN_RUN_SCRIPT void FireEvent(EventMessage);
+
+  void ResizeToContent();
 
   
   
@@ -57,6 +60,7 @@ class NativeMenuGtk : public NativeMenu {
   bool mPoppedUp = false;
   
   bool mClosePending = false;
+  bool mResizePending = false;
   RefPtr<GtkWidget> mNativeMenu;
   RefPtr<MenuModelGMenu> mMenuModel;
 };
