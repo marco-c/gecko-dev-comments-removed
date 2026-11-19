@@ -59,7 +59,7 @@ Services.prefs.setBoolPref(
 
 
 
-SearchSettings.SETTNGS_INVALIDATION_DELAY = 250;
+SearchSettings.SETTINGS_INVALIDATION_DELAY = 250;
 
 async function promiseSettingsData() {
   let path = PathUtils.join(PathUtils.profileDir, SETTINGS_FILENAME);
