@@ -1660,7 +1660,9 @@ bool jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
   
   
   
-  SnapshotIterator snapIter(iter, activation->bailoutData()->machineState());
+  Rooted<SnapshotIterator> rootedSnapIter(
+      cx, iter, activation->bailoutData()->machineState());
+  SnapshotIterator& snapIter = rootedSnapIter.get();
   if (!snapIter.initInstructionResults(recoverBailout)) {
     return false;
   }

@@ -365,7 +365,7 @@ class RResumePoint;
 
 
 
-class SnapshotIterator {
+class MOZ_STACK_CLASS SnapshotIterator {
  protected:
   SnapshotReader snapshot_;
   RecoverReader recover_;
@@ -621,6 +621,8 @@ class SnapshotIterator {
   
   Value maybeReadAllocByIndex(size_t index);
 
+  void trace(JSTracer* trc);
+
 #ifdef TRACK_SNAPSHOTS
   void spewBailingFrom() const { snapshot_.spewBailingFrom(); }
 #endif
@@ -628,7 +630,7 @@ class SnapshotIterator {
 
 
 
-class InlineFrameIterator {
+class MOZ_STACK_CLASS InlineFrameIterator : public JS::CustomAutoRooter {
   const JSJitFrameIter* frame_;
   SnapshotIterator start_;
   SnapshotIterator si_;
@@ -647,10 +649,10 @@ class InlineFrameIterator {
   
   
   
-  RootedFunction calleeTemplate_;
+  JSFunction* calleeTemplate_;
   RValueAllocation calleeRVA_;
 
-  RootedScript script_;
+  JSScript* script_;
   jsbytecode* pc_;
   uint32_t numActualArgs_;
 
@@ -857,6 +859,8 @@ class InlineFrameIterator {
     MOZ_ASSERT(frameCount_ != UINT32_MAX);
     return frameCount_;
   }
+
+  void trace(JSTracer* trc) override;
 };
 
 }  
