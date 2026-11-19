@@ -95,9 +95,11 @@ class ArrayIterator {
   
   
   value_type* operator->() const {
-    return const_cast<value_type*>(&(*mArray)[mIndex]);
+    return const_cast<value_type*>(&mArray->ElementAt(mIndex));
   }
-  Element operator*() const { return const_cast<Element>((*mArray)[mIndex]); }
+  Element operator*() const {
+    return const_cast<Element>(mArray->ElementAt(mIndex));
+  }
 
   iterator_type& operator++() {
     ++mIndex;
