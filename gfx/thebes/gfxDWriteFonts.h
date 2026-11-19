@@ -78,6 +78,10 @@ class gfxDWriteFont final : public gfxFont {
 
   bool GetFakeMetricsForArialBlack(DWRITE_FONT_METRICS* aFontMetrics);
 
+  
+  
+  void HandleFontFaceException(const char* aOperation);
+
   bool HasBitmapStrikeForSize(uint32_t aSize);
 
   gfxFloat MeasureGlyphWidth(uint16_t aGlyph);
