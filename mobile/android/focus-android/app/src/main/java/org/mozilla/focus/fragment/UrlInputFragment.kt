@@ -19,9 +19,12 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
 import mozilla.components.browser.domains.autocomplete.CustomDomainsProvider
 import mozilla.components.browser.domains.autocomplete.ShippedDomainsProvider
+import mozilla.components.browser.state.search.SearchAccessPoint
 import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.state.TabSessionState
+import mozilla.components.compose.menu.store.MenuState
+import mozilla.components.compose.menu.store.MenuStore
 import mozilla.components.feature.top.sites.TopSitesConfig
 import mozilla.components.feature.top.sites.TopSitesFeature
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
@@ -41,8 +44,10 @@ import org.mozilla.focus.ext.hasSearchTerms
 import org.mozilla.focus.ext.requireComponents
 import org.mozilla.focus.ext.settings
 import org.mozilla.focus.input.InputToolbarIntegration
-import org.mozilla.focus.menu.home.HomeMenu
+import org.mozilla.focus.menu.MenuButton
 import org.mozilla.focus.menu.home.HomeMenuItem
+import org.mozilla.focus.menu.home.HomeMenuMiddleware
+import org.mozilla.focus.menu.home.homeMenuGroups
 import org.mozilla.focus.searchsuggestions.SearchSuggestionsViewModel
 import org.mozilla.focus.searchsuggestions.ui.SearchSuggestionsFragment
 import org.mozilla.focus.state.AppAction
@@ -257,7 +262,7 @@ class UrlInputFragment : BaseFragment(), View.OnClickListener {
                     storage = requireComponents.topSitesStorage,
                     config = {
                         TopSitesConfig(
-                            totalSites = TOP_SITES_MAX_LIMIT,
+                            targetSitesCount = TOP_SITES_MAX_LIMIT,
                             frecencyConfig = null,
                             providerConfig = null,
                         )
@@ -305,14 +310,32 @@ class UrlInputFragment : BaseFragment(), View.OnClickListener {
     }
 
     private fun setHomeMenu() {
-        binding.menuView.menuBuilder =
-            HomeMenu(requireContext()) { menuItem ->
-                    when (menuItem) {
-                        is HomeMenuItem.Help -> openHelpPage()
-                        is HomeMenuItem.Settings -> openSettingsPage()
+        binding.menuView.apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                FocusTheme {
+                    MenuButton { _, onDismiss ->
+                        MenuStore(
+                            initialState = MenuState(menuGroups = homeMenuGroups()),
+                            middleware =
+                                listOf(
+                                    HomeMenuMiddleware(
+                                        onItemTapped = ::handleHomeMenuItem,
+                                        onDismiss = onDismiss,
+                                    )
+                                ),
+                        )
                     }
                 }
-                .getMenuBuilder()
+            }
+        }
+    }
+
+    private fun handleHomeMenuItem(menuItem: HomeMenuItem) {
+        when (menuItem) {
+            is HomeMenuItem.Help -> openHelpPage()
+            is HomeMenuItem.Settings -> openSettingsPage()
+        }
     }
 
     private fun openHelpPage() {
@@ -579,9 +602,16 @@ class UrlInputFragment : BaseFragment(), View.OnClickListener {
             requireComponents.searchUseCases.defaultSearch.invoke(searchTerms, tab.id)
             requireComponents.appStore.dispatch(AppAction.FinishEdit(tab.id))
         } else {
+            val screen = requireComponents.appStore.state.screen
             requireComponents.searchUseCases.newPrivateTabSearch.invoke(
                 searchTerms = searchTerms,
                 source = SessionState.Source.Internal.UserEntered,
+                accessPoint =
+                    if (screen is Screen.Home) {
+                        screen.accessPoint
+                    } else {
+                        SearchAccessPoint.DEFAULT
+                    },
             )
         }
 
