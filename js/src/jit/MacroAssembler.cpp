@@ -4289,9 +4289,8 @@ void MacroAssembler::loadJitCodeRawNoIon(Register func, Register dest,
 
   
   
-  branchPtr(Assembler::BelowOrEqual,
-            Address(scratch, JitScript::offsetOfIonScript()),
-            ImmPtr(IonCompilingScriptPtr), &useJitCodeRaw);
+  branchPtr(Assembler::Equal, Address(scratch, JitScript::offsetOfIonScript()),
+            ImmPtr(nullptr), &useJitCodeRaw);
   loadPtr(Address(scratch, JitScript::offsetOfBaselineScript()), scratch);
 
 #ifdef DEBUG

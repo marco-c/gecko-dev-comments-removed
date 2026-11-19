@@ -55,22 +55,6 @@ class JitZone;
 
 
 
-static constexpr uintptr_t DisabledScript = 0x1;
-static constexpr uintptr_t QueuedScript = 0x3;
-static constexpr uintptr_t CompilingScript = 0x5;
-
-static constexpr uint32_t SpecialScriptBit = 0x1;
-static_assert((DisabledScript & SpecialScriptBit) != 0);
-static_assert((QueuedScript & SpecialScriptBit) != 0);
-static_assert((CompilingScript & SpecialScriptBit) != 0);
-
-static IonScript* const IonDisabledScriptPtr =
-    reinterpret_cast<IonScript*>(DisabledScript);
-static IonScript* const IonCompilingScriptPtr =
-    reinterpret_cast<IonScript*>(CompilingScript);
-
-
-
 
 
 
@@ -368,11 +352,12 @@ class alignas(uintptr_t) JitScript final
   enum class ScriptState : uint8_t {
     None = 0,
     HasScript,
-    Queued,
+    Queued,  
     Compiling,
     Disabled,
   };
   ScriptState baselineState_ = ScriptState::None;
+  ScriptState ionState_ = ScriptState::None;
 
   struct Flags {
     
@@ -449,6 +434,9 @@ class alignas(uintptr_t) JitScript final
   }
   static constexpr size_t offsetOfIonScript() {
     return offsetof(JitScript, ionScript_);
+  }
+  static constexpr size_t offsetOfIonState() {
+    return offsetof(JitScript, ionState_);
   }
   static constexpr size_t offsetOfICScript() {
     return offsetof(JitScript, icScript_);
@@ -603,11 +591,16 @@ class alignas(uintptr_t) JitScript final
   }
 
  private:
-  
+  void checkIonState() const {
+    MOZ_ASSERT(ionState_ != ScriptState::Queued);
+    MOZ_ASSERT((ionState_ == ScriptState::HasScript) == bool(ionScript_));
+  }
+
   
   void setIonScriptImpl(JS::GCContext* gcx, JSScript* script,
-                        IonScript* ionScript);
-  void setIonScriptImpl(JSScript* script, IonScript* ionScript);
+                        IonScript* ionScript, ScriptState ionState);
+  void setIonScriptImpl(JSScript* script, IonScript* ionScript,
+                        ScriptState ionState);
 
   
   
@@ -616,45 +609,57 @@ class alignas(uintptr_t) JitScript final
   template <typename F>
   void forEachICScript(const F& f) const;
 
-  static bool IsIonScript(IonScript* ionScript) {
-    return ionScript && ionScript != IonDisabledScriptPtr &&
-           ionScript != IonCompilingScriptPtr;
-  }
-
  public:
   
   bool hasIonScript() const {
-    bool res = IsIonScript(ionScript_);
-    MOZ_ASSERT_IF(res, baselineScript_);
-    return res;
+    checkIonState();
+    MOZ_ASSERT_IF(ionScript_, baselineScript_);
+    return ionScript_;
   }
   IonScript* ionScript() const {
     MOZ_ASSERT(hasIonScript());
     return ionScript_;
   }
+  IonScript* maybeIonScriptForProfiler() const {
+    
+    return ionScript_;
+  }
   void setIonScript(JSScript* script, IonScript* ionScript) {
+    MOZ_ASSERT(ionScript);
     MOZ_ASSERT(!hasIonScript());
-    setIonScriptImpl(script, ionScript);
+    setIonScriptImpl(script, ionScript, ScriptState::HasScript);
     MOZ_ASSERT(hasIonScript());
   }
   [[nodiscard]] IonScript* clearIonScript(JS::GCContext* gcx,
                                           JSScript* script) {
     IonScript* ion = ionScript();
-    setIonScriptImpl(gcx, script, nullptr);
+    setIonScriptImpl(gcx, script, nullptr, ScriptState::None);
     return ion;
+  }
+
+  bool isIonDisabled() const {
+    checkIonState();
+    return ionState_ == ScriptState::Disabled;
+  }
+  void setIsIonDisabled() {
+    checkIonState();
+    MOZ_ASSERT(ionScript_ == nullptr);
+    ionState_ = ScriptState::Disabled;
   }
 
   
   bool isIonCompilingOffThread() const {
-    return ionScript_ == IonCompilingScriptPtr;
+    checkIonState();
+    return ionState_ == ScriptState::Compiling;
   }
   void setIsIonCompilingOffThread(JSScript* script) {
     MOZ_ASSERT(ionScript_ == nullptr);
-    setIonScriptImpl(script, IonCompilingScriptPtr);
+    MOZ_ASSERT(ionState_ == ScriptState::None);
+    setIonScriptImpl(script, nullptr, ScriptState::Compiling);
   }
   void clearIsIonCompilingOffThread(JSScript* script) {
     MOZ_ASSERT(isIonCompilingOffThread());
-    setIonScriptImpl(script, nullptr);
+    setIonScriptImpl(script, nullptr, ScriptState::None);
   }
   ICScript* icScript() { return &icScript_; }
 

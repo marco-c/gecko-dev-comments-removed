@@ -1747,14 +1747,12 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
 
   
   
-  constexpr int32_t offset = -int32_t(JitScript::offsetOfICScript()) +
-                             int32_t(JitScript::offsetOfIonScript());
-  masm.loadPtr(Address(scriptReg, offset), scriptReg);
-
+  constexpr int32_t ionStateOffset = -int32_t(JitScript::offsetOfICScript()) +
+                                     int32_t(JitScript::offsetOfIonState());
   
   
-  masm.branchTestPtr(Assembler::NonZero, scriptReg, Imm32(SpecialScriptBit),
-                     &done);
+  masm.branch8(Assembler::AboveOrEqual, Address(scriptReg, ionStateOffset),
+               Imm32(JitScript::firstSpecialScriptState()), &done);
 
   
   if (JSOp(*pc) == JSOp::LoopHead) {
