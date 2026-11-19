@@ -437,6 +437,8 @@ module.exports = {
         "**/test/**",
         "**/tests/**",
         
+        "toolkit/themes/shared/eyedropper-common.css",
+        
         "toolkit/themes/shared/colorpicker-common.css",
         "toolkit/themes/shared/colorpicker.css",
         "toolkit/themes/shared/media/pipToggle.css",
@@ -488,9 +490,14 @@ module.exports = {
       },
     },
     {
-      
       name: "logical-properties-rule-off",
-      files: ["devtools/**"],
+      files: [
+        
+        "devtools/**",
+        
+        "browser/installer/windows/nsis/content/**",
+        "browser/branding/**/stubinstaller/**",
+      ],
       rules: {
         "csstools/use-logical": null,
       },
