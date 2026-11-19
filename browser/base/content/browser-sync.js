@@ -1396,6 +1396,15 @@ var gSync = {
       ) {
         this.updateAllUI(state);
       }
+    } else if (
+      this._hasSignedOutOfSync &&
+      document.documentElement.getAttribute("fxastatus") == "not_configured"
+    ) {
+      
+      
+      
+      
+      this.updateAllUI(UIState.get());
     }
   },
 
