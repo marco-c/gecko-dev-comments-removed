@@ -114,7 +114,8 @@ struct Mp3CodecSpecificData final {
   bool operator==(const Mp3CodecSpecificData& rhs) const = default;
 
   auto MutTiedFields() {
-    return std::tie(mEncoderDelayFrames, mEncoderPaddingFrames);
+    return std::tie(mEncoderDelayFrames, mEncoderPaddingFrames,
+                    mDecoderDelayFrames);
   }
 
   
@@ -126,6 +127,11 @@ struct Mp3CodecSpecificData final {
   
   
   uint32_t mEncoderPaddingFrames{0};
+
+  
+  
+  
+  uint32_t mDecoderDelayFrames{0};
 };
 
 struct OpusCodecSpecificData {

@@ -2,8 +2,6 @@
 
 
 
-
-
 #if !defined(MediaSourceDemuxer_h_)
 #  define MediaSourceDemuxer_h_
 
@@ -145,6 +143,10 @@ class MediaSourceTrackDemuxer
   already_AddRefed<MediaRawData> GetSample(MediaResult& aError);
   
   media::TimeUnit GetNextRandomAccessPoint();
+  
+  
+  
+  void CompensateDecoderDelay(MediaRawData* aSample);
 
   RefPtr<MediaSourceDemuxer> mParent;
 
@@ -167,6 +169,14 @@ class MediaSourceTrackDemuxer
   
   
   const media::TimeUnit mPreRoll;
+
+  
+  
+  
+  Maybe<uint32_t> mLastStreamID;
+  
+  
+  Maybe<media::TimeUnit> mTrimBefore;
 };
 
 }  

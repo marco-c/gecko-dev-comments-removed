@@ -29,6 +29,19 @@ using media::TimeUnit;
 
 static constexpr size_t kMPEGAudioPeekSize = mpeg_audio::kMaxFrameLength;
 
+
+
+
+
+
+
+
+static constexpr uint32_t kLayer3DecoderDelay = 529;
+
+
+
+static constexpr uint32_t kLayer1And2DecoderDelay = 241;
+
 static MediaResult InvalidMPEGAudioData() {
   return MediaResult(NS_ERROR_DOM_MEDIA_DEMUXER_ERR,
                      "Invalid MPEG audio byte stream");
@@ -89,6 +102,11 @@ bool MPEGAudioByteStreamTrackDemuxer::Init() {
   mInfo.mRate = mConfig.mSampleRate;
   mInfo.mChannels = mConfig.mChannels;
   mInfo.mBitDepth = 16;
+  Mp3CodecSpecificData mp3CodecSpecificData;
+  mp3CodecSpecificData.mDecoderDelayFrames =
+      mConfig.mLayer == 3 ? kLayer3DecoderDelay : kLayer1And2DecoderDelay;
+  mInfo.mCodecSpecificConfig =
+      AudioCodecSpecificVariant{std::move(mp3CodecSpecificData)};
   
   mOffset = sizeof(header);
   MSE_DEBUG("layer={} rate={} channels={}", mConfig.mLayer, mInfo.mRate,
