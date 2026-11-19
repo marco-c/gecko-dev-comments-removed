@@ -832,8 +832,9 @@ void HandleException(ResumeFromException* rfe) {
 
       
       
-      IonScript* ionScript = nullptr;
-      bool invalidated = frame.checkInvalidation(&ionScript);
+      IonScript* rawIonScript = nullptr;
+      bool invalidated = frame.checkInvalidation(&rawIonScript);
+      RootedBuffer<IonScript> ionScript(cx, rawIonScript);
 
       
       
