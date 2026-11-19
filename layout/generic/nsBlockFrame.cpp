@@ -2070,7 +2070,8 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
     reflowStatus =
         TrialReflow(aPresContext, aMetrics, aReflowInput, trialState);
 
-    if (IsLineClampRoot(this) && !trialState.mLineClamping) {
+    if (IsLineClampRoot(this) && !trialState.mLineClamping &&
+        !trialState.mDidApplyLineClamp) {
       
       
       
@@ -2464,7 +2465,7 @@ nsReflowStatus nsBlockFrame::TrialReflow(nsPresContext* aPresContext,
   
   
   
-  state.mFlags.mShouldApplyLineClamp =
+  state.mFlags.mDoApplyLineClamp =
       aTrialState.mLineClamping ||
       aReflowInput.mFlags.mDimensionsReadyForLineClamp;
 
@@ -2621,6 +2622,7 @@ nsReflowStatus nsBlockFrame::TrialReflow(nsPresContext* aPresContext,
   aTrialState.mBlockEndEdgeOfChildren =
       ComputeFinalSize(aReflowInput, state, aMetrics);
   aTrialState.mContainerWidth = state.ContainerSize().width;
+  aTrialState.mDidApplyLineClamp = state.mFlags.mDoApplyLineClamp;
 
   
   AlignContent(state, aMetrics, aTrialState.mBlockEndEdgeOfChildren);
@@ -2859,6 +2861,26 @@ Maybe<nscoord> nsBlockFrame::ApplySmallestLineClamp(
   return Some(picked.clampedBSize);
 }
 
+static bool HasBlockChildren(const nsBlockFrame* aFrame) {
+  for (auto& line : aFrame->Lines()) {
+    if (line.IsBlock()) {
+      
+      
+      
+      return true;
+    }
+  }
+  return false;
+}
+
+static bool ShouldClamp(bool aShouldClamp, const nsBlockFrame* aThisFrame,
+                        const nsBlockFrame* aLineClampRoot) {
+  
+  
+  return aShouldClamp ||
+         (aThisFrame == aLineClampRoot && !HasBlockChildren(aThisFrame));
+}
+
 nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
                                        BlockReflowState& aState,
                                        ReflowOutput& aMetrics) {
@@ -2949,7 +2971,9 @@ nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     
     
     nsBlockFrame* lineClampRoot = GetLineClampRoot();
-    if (lineClampRoot && aState.mFlags.mShouldApplyLineClamp) {
+    aState.mFlags.mDoApplyLineClamp =
+        ShouldClamp(aState.mFlags.mDoApplyLineClamp, this, lineClampRoot);
+    if (aState.mFlags.mDoApplyLineClamp) {
       const auto numberedLineClampTarget =
           FindLineClampNumberedTarget(lineClampRoot);
 
@@ -3009,7 +3033,9 @@ nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     nscoord autoBSize =
         aReflowInput.ApplyMinMaxBSize(contentBSize, aState.mConsumedBSize);
     nsBlockFrame* lineClampRoot = GetLineClampRoot();
-    if (aState.mFlags.mShouldApplyLineClamp) {
+    aState.mFlags.mDoApplyLineClamp =
+        ShouldClamp(aState.mFlags.mDoApplyLineClamp, this, lineClampRoot);
+    if (aState.mFlags.mDoApplyLineClamp) {
       const auto numberedLineClampTarget =
           FindLineClampNumberedTarget(lineClampRoot);
 
@@ -5330,7 +5356,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
     }
 
     childReflowInput->mFlags.mDimensionsReadyForLineClamp =
-        aState.mFlags.mShouldApplyLineClamp;
+        aState.mFlags.mDoApplyLineClamp;
 
     nsFloatManager::SavedState floatManagerState;
     nsReflowStatus frameReflowStatus;

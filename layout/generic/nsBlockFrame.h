@@ -606,6 +606,8 @@ class nsBlockFrame : public nsContainerFrame {
     
     bool mUsedOverflowWrap = false;
     
+    bool mDidApplyLineClamp = false;
+    
     bool mBalancing = false;
     
     
@@ -633,6 +635,7 @@ class nsBlockFrame : public nsContainerFrame {
       mBlockEndEdgeOfChildren = 0;
       mContainerWidth = 0;
       mUsedOverflowWrap = false;
+      mDidApplyLineClamp = false;
     }
 
     
