@@ -33,7 +33,6 @@
 #include "DataChannelDcSctp.h"
 #include "DataChannelLog.h"
 #include "DataChannelProtocol.h"
-#include "DataChannelUsrsctp.h"
 
 namespace mozilla {
 
@@ -103,14 +102,8 @@ Maybe<RefPtr<DataChannelConnection>> DataChannelConnection::Create(
     const uint16_t aLocalPort, const uint16_t aNumStreams) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  RefPtr<DataChannelConnection> connection;
-  if (Preferences::GetBool("media.peerconnection.sctp.use_dcsctp", false)) {
-    connection = new DataChannelConnectionDcSctp(aListener, aTarget,
+  RefPtr<DataChannelConnection> connection = new DataChannelConnectionDcSctp(aListener, aTarget,
                                                  aHandler);  
-  } else {
-    connection = new DataChannelConnectionUsrsctp(
-        aListener, aTarget, aHandler);  
-  }
   return connection->Init(aLocalPort, aNumStreams) ? Some(connection)
                                                    : Nothing();
 }

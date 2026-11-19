@@ -341,7 +341,6 @@ class CppEclipseBackend(CommonBackend):
                 if d[:2] == "-U":
                     
                     
-                    
                     continue
                 d = d[2:]  
                 name_value = d.split("=", 1)
