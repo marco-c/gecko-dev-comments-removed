@@ -72,6 +72,19 @@ add_task(async function test_dragging_splitview_bookmarks_toolbar() {
   let srcWindowUtils = EventUtils._getDOMWindowUtils(window);
   const srcDragSession = srcWindowUtils.dragSession;
   srcDragSession.endDragSession(true);
+  
+  
+  
+  
+  EventUtils.sendDragEvent(
+    { type: "dragend", dataTransfer },
+    tab1.splitview,
+    window
+  );
+  Assert.ok(
+    !gBrowser.tabContainer.hasAttribute("movingtab"),
+    "tab strip state is no longer in drag-drop mode"
+  );
 
   await promiseItemAddedNotification;
 
