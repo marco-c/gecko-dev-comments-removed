@@ -338,8 +338,7 @@ class alignas(uintptr_t) JitScript final
   GCBuffer<BaselineScript*> baselineScript_;
 
   
-  
-  GCStructPtr<IonScript*> ionScript_;
+  GCBuffer<IonScript*> ionScript_;
 
   
   Offset endOffset_ = 0;
@@ -624,12 +623,8 @@ class alignas(uintptr_t) JitScript final
     setIonScriptImpl(script, ionScript, ScriptState::HasScript);
     MOZ_ASSERT(hasIonScript());
   }
-  [[nodiscard]] IonScript* clearIonScript(JS::GCContext* gcx,
-                                          JSScript* script) {
-    IonScript* ion = ionScript();
-    setIonScriptImpl(gcx, script, nullptr, ScriptState::None);
-    return ion;
-  }
+  [[nodiscard]] IonScript* clearIonScript(JS::GCContext* gcx, JSScript* script);
+  void clearIonScriptOnFinalize(JS::GCContext* gcx);
 
   bool isIonDisabled() const {
     checkIonState();

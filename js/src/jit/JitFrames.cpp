@@ -845,7 +845,7 @@ void HandleException(ResumeFromException* rfe) {
         if (rfe->kind == ExceptionResumeKind::Bailout ||
             rfe->kind == ExceptionResumeKind::ForcedReturnIon) {
           if (invalidated) {
-            ionScript->decrementInvalidationCount(cx->gcContext());
+            ionScript->decrementInvalidationCount();
           }
           return;
         }
@@ -872,7 +872,7 @@ void HandleException(ResumeFromException* rfe) {
       
       
       if (invalidated) {
-        ionScript->decrementInvalidationCount(cx->gcContext());
+        ionScript->decrementInvalidationCount();
       }
 
     } else if (frame.isBaselineJS()) {
@@ -1090,7 +1090,7 @@ static void TraceIonJSFrame(JSTracer* trc, const JSJitFrameIter& frame) {
     
     
     
-    ionScript->trace(trc);
+    TraceEdgeAndBuffer(trc, &ionScript, "ion-frame-ionscript");
   } else {
     ionScript = frame.ionScriptFromCalleeToken();
   }
