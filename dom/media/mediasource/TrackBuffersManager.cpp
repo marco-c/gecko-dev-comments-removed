@@ -2286,6 +2286,22 @@ void TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples,
         }
         trackBuffer.mNeedRandomAccessPoint = true;
         needDiscontinuityCheck = true;
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (mSourceBufferAttributes->mGenerateTimestamps &&
+            sampleInterval.mEnd <= appendWindow.mStart) {
+          mSourceBufferAttributes->SetTimestampOffset(sampleInterval.mEnd);
+          if (trackBuffer.mLastDecodeTimestamp.isSome()) {
+            trackBuffer.mLastDecodeTimestamp = Some(decodeTimestamp);
+          }
+        }
         continue;
       }
     }
