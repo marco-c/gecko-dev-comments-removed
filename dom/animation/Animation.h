@@ -374,8 +374,6 @@ class Animation : public DOMEventTargetHelper,
     NonOwningAnimationTarget mTarget;
     uint64_t mIndex;
   };
-  
-  
   int32_t CompareCompositeOrder(const Maybe<EventContext>& aContext,
                                 const Animation& aOther,
                                 const Maybe<EventContext>& aOtherContext,

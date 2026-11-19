@@ -183,10 +183,14 @@ void CSSAnimation::Tick(TickState& aState) {
 }
 
 int32_t CSSAnimation::CompareCompositeOrder(
-    const CSSAnimation& aOther, nsContentUtils::NodeIndexCache& aCache) const {
-  MOZ_ASSERT(IsTiedToMarkup() && aOther.IsTiedToMarkup(),
+    const Maybe<EventContext>& aContext, const CSSAnimation& aOther,
+    const Maybe<EventContext>& aOtherContext,
+    nsContentUtils::NodeIndexCache& aCache) const {
+  MOZ_ASSERT((IsTiedToMarkup() || aContext) &&
+                 (aOther.IsTiedToMarkup() || aOtherContext),
              "Should only be called for CSS animations that are sorted "
-             "as CSS animations (i.e. tied to CSS markup)");
+             "as CSS animations (i.e. tied to CSS markup) or with overridden "
+             "target and animation index");
 
   
   if (&aOther == this) {
@@ -194,10 +198,29 @@ int32_t CSSAnimation::CompareCompositeOrder(
   }
 
   
-  if (!mOwningElement.Equals(aOther.mOwningElement)) {
-    return mOwningElement.Compare(aOther.mOwningElement, aCache);
+  const OwningElementRef& owningElement1 =
+      IsTiedToMarkup() ? mOwningElement : OwningElementRef(aContext->mTarget);
+  const OwningElementRef& owningElement2 =
+      aOther.IsTiedToMarkup() ? aOther.mOwningElement
+                              : OwningElementRef(aOtherContext->mTarget);
+  if (!owningElement1.Equals(owningElement2)) {
+    return owningElement1.Compare(owningElement2, aCache);
   }
 
+  
+  
+  
+  
+  
+  if (!IsTiedToMarkup() && !aOther.IsTiedToMarkup()) {
+    return aContext->mIndex < aOtherContext->mIndex ? -1 : 1;
+  }
+  
+  
+  if (IsTiedToMarkup() != aOther.IsTiedToMarkup()) {
+    return !IsTiedToMarkup() ? -1 : 1;
+  }
+  
   
   MOZ_ASSERT(mAnimationIndex != aOther.mAnimationIndex);
   return mAnimationIndex < aOther.mAnimationIndex ? -1 : 1;
