@@ -33,23 +33,6 @@ add_setup(async function () {
 
 
 
-async function waitForSelectedModel(browser, expectedModel) {
-  await SpecialPowers.spawn(browser, [expectedModel], async expected => {
-    const aiWindowElement = content.document.querySelector("ai-window");
-    await ContentTaskUtils.waitForMutationCondition(
-      aiWindowElement,
-      { attributes: true },
-      () => aiWindowElement.selectedModelId === expected
-    );
-  });
-}
-
-
-
-
-
-
-
 
 async function getCheckedModelChoiceIds(browser) {
   return SpecialPowers.spawn(browser, [], async () => {
