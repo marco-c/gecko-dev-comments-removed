@@ -6,7 +6,7 @@ use std::str::CharIndices;
 
 
 fn acceptable_arg_character(c: char) -> bool {
-    c.is_alphanumeric() || c == '.' || c == '-' || c == '<' || c == '>' || c == '=' || c == '*'
+    c.is_alphanumeric() || c == '.' || c == '-' || c == '<' || c == '>' || c == '=' || c == '*' || c == '_'
 }
 
 
@@ -131,4 +131,5 @@ fn test() {
     assert_eq!(parse_function("drop-shadow(0, [1, 2, [3, 4]], 5)").1[1], "[1, 2, [3, 4]]");
     assert_eq!(parse_function("func(nest([1, 2]), [3, 4])").1[0], "nest([1, 2])");
     assert_eq!(parse_function("func(nest([1, 2]), [nest(3), nest(4)])").1[1], "[nest(3), nest(4)]");
+    assert_eq!(parse_function("if(platform(swgl),color_targets(3))").1[1], "color_targets(3)");
 }
