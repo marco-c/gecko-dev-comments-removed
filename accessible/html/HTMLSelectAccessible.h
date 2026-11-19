@@ -185,6 +185,9 @@ class HTMLComboboxAccessible final : public AccessibleWrap {
 
 
   LocalAccessible* SelectedOption() const;
+
+  static void SelectedOptionLabelMaybeChanged(DocAccessible* aDoc,
+                                              nsIContent* aContent);
 };
 
 
