@@ -2,11 +2,12 @@
 
 
 
-use std::ffi::OsString;
 use std::path::PathBuf;
 
 use chrono::Utc;
 use clap::{Args, Parser, Subcommand};
+
+use crate::config::{App, Channel};
 
 #[derive(Parser)]
 #[command(
@@ -16,11 +17,11 @@ use clap::{Args, Parser, Subcommand};
 pub(crate) struct Cli {
     
     #[arg(short, long, value_name = "APP")]
-    pub(crate) app: Option<String>,
+    pub(crate) app: Option<App>,
 
     
     #[arg(short, long, value_name = "CHANNEL")]
-    pub(crate) channel: Option<String>,
+    pub(crate) channel: Option<Channel>,
 
     
     #[arg(short, long, value_name = "DEVICE_ID")]
@@ -178,11 +179,10 @@ pub(crate) enum CliCommand {
     },
 
     
-    
-    
-    
-    
-    Fml { args: Vec<OsString> },
+    Fml {
+        #[command(subcommand)]
+        args: nimbus_fml::command_line::Command,
+    },
 
     
     Info {
@@ -425,7 +425,7 @@ pub(crate) struct ExperimentListFilterArgs {
     pub(crate) enrolling_on: Option<String>,
 
     #[arg(short = 'C', long, value_name = "CHANNEL")]
-    pub(crate) channel: Option<String>,
+    pub(crate) channel: Option<Channel>,
 
     #[arg(short = 'R', long, value_name = "FLAG")]
     pub(crate) is_rollout: Option<bool>,

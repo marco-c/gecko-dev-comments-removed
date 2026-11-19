@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use crate::command_line::commands::GenerateExperimenterManifestCmd;
 use crate::error::{FMLError, Result};
 use crate::intermediate_representation::{
-    FeatureDef, FeatureManifest, GeckoPrefDef, PropDef, TargetLanguage, TypeRef,
+    FeatureDef, FeatureManifest, GeckoPrefDef, PropDef, TypeRef,
 };
 
 pub(crate) type ExperimenterManifest = BTreeMap<String, ExperimenterFeature>;
@@ -155,19 +155,10 @@ pub(crate) fn generate_manifest(
     ir: FeatureManifest,
     cmd: &GenerateExperimenterManifestCmd,
 ) -> Result<()> {
-    let experiment_manifest: ExperimenterManifest = ir.try_into()?;
-    let output_str = match cmd.language {
-        TargetLanguage::ExperimenterJSON => serde_json::to_string_pretty(&experiment_manifest)?,
-        
-        
-        
-        
-        TargetLanguage::ExperimenterYAML => serde_yaml::to_string(&experiment_manifest)?,
+    let experimenter_manifest: ExperimenterManifest = ir.try_into()?;
 
-        
-        _ => serde_json::to_string(&experiment_manifest)?,
-    };
+    let mut f = std::fs::File::create(&cmd.output)?;
+    serde_yaml::to_writer(&mut f, &experimenter_manifest)?;
 
-    std::fs::write(&cmd.output, output_str)?;
     Ok(())
 }

@@ -17,43 +17,45 @@ pub struct App {
     pub subcommand: Command,
 }
 
-#[derive(Subcommand)]
+#[derive(Clone, Subcommand)]
 pub enum Command {
     
-    Generate(Generate),
+    Generate(GenerateArgs),
 
     
-    GenerateExperimenter(GenerateExperimenter),
+    GenerateExperimenter(GenerateExperimenterArgs),
 
     
-    Fetch(Fetch),
+    Fetch(FetchArgs),
 
     
     
-    SingleFile(SingleFile),
+    SingleFile(SingleFileArgs),
 
     
-    Validate(Validate),
+    Validate(ValidateArgs),
 
     
-    Lint(Lint),
+    Lint(LintArgs),
 
     
-    Channels(Channels),
+    Channels(ChannelsArgs),
 
     
-    Info(Info),
+    Info(InfoArgs),
 }
 
-#[derive(Args)]
-pub struct Generate {
+#[derive(Args, Clone)]
+pub struct GenerateArgs {
     
-    #[arg(value_name = "INPUT")]
-    pub input: String,
+    
+    
+    #[arg(value_name = "MANIFEST")]
+    pub manifest: String,
 
     
     #[arg(value_name = "OUTPUT")]
-    pub output: String,
+    pub output: PathBuf,
 
     
     #[arg(long)]
@@ -64,18 +66,20 @@ pub struct Generate {
     pub channel: String,
 
     #[command(flatten)]
-    pub loader_info: LoaderInfo,
+    pub loader_args: LoaderArgs,
 }
 
-#[derive(Args)]
-pub struct GenerateExperimenter {
+#[derive(Args, Clone)]
+pub struct GenerateExperimenterArgs {
     
-    #[arg(value_name = "INPUT")]
-    pub input: String,
+    
+    
+    #[arg(value_name = "MANIFEST")]
+    pub manifest: String,
 
     
     #[arg(value_name = "OUTPUT")]
-    pub output: String,
+    pub output: PathBuf,
 
     
     #[arg(long)]
@@ -83,55 +87,63 @@ pub struct GenerateExperimenter {
     pub channel: Option<String>,
 
     #[command(flatten)]
-    pub loader_info: LoaderInfo,
+    pub loader_args: LoaderArgs,
 }
 
-#[derive(Args)]
-pub struct Fetch {
+#[derive(Args, Clone)]
+pub struct FetchArgs {
     
-    #[arg(value_name = "INPUT")]
-    pub input: String,
+    
+    
+    #[arg(value_name = "MANIFEST")]
+    pub manifest: String,
 
     #[command(flatten)]
-    pub loader_info: LoaderInfo,
+    pub loader_args: LoaderArgs,
 }
 
-#[derive(Args)]
-pub struct SingleFile {
+#[derive(Args, Clone)]
+pub struct SingleFileArgs {
     
-    #[arg(value_name = "INPUT")]
-    pub input: String,
+    
+    
+    #[arg(value_name = "MANIFEST")]
+    pub manifest: String,
 
     
     #[arg(value_name = "OUTPUT")]
-    pub output: String,
+    pub output: PathBuf,
 
     
     #[arg(long)]
     pub channel: Option<String>,
 
     #[command(flatten)]
-    pub loader_info: LoaderInfo,
+    pub loader_args: LoaderArgs,
 }
 
-#[derive(Args)]
-pub struct Validate {
+#[derive(Args, Clone)]
+pub struct ValidateArgs {
     
-    #[arg(value_name = "INPUT")]
-    pub input: String,
+    
+    
+    #[arg(value_name = "MANIFEST")]
+    pub manifest: String,
 
     #[command(flatten)]
-    pub loader_info: LoaderInfo,
+    pub loader_args: LoaderArgs,
 }
 
-#[derive(Args)]
-pub struct Lint {
+#[derive(Args, Clone)]
+pub struct LintArgs {
     
-    #[arg(value_name = "INPUT", required_unless_present = "list")]
-    pub input: Option<String>,
+    
+    
+    #[arg(value_name = "MANIFEST", required_unless_present = "list")]
+    pub manifest: Option<String>,
 
     #[command(flatten)]
-    pub loader_info: LoaderInfo,
+    pub loader_args: LoaderArgs,
 
     
     #[arg(long, value_name = "PATH")]
@@ -142,25 +154,29 @@ pub struct Lint {
     pub list: bool,
 }
 
-#[derive(Args)]
-pub struct Channels {
+#[derive(Args, Clone)]
+pub struct ChannelsArgs {
     
-    #[arg(value_name = "INPUT")]
-    pub input: String,
+    
+    
+    #[arg(value_name = "MANIFEST")]
+    pub manifest: String,
 
     #[command(flatten)]
-    pub loader_info: LoaderInfo,
+    pub loader_args: LoaderArgs,
 
     
     #[arg(long)]
     pub json: bool,
 }
 
-#[derive(Args)]
-pub struct Info {
+#[derive(Args, Clone)]
+pub struct InfoArgs {
     
-    #[arg(value_name = "INPUT")]
-    pub input: String,
+    
+    
+    #[arg(value_name = "MANIFEST")]
+    pub manifest: String,
 
     
     #[arg(long)]
@@ -171,7 +187,7 @@ pub struct Info {
     pub feature: Option<String>,
 
     #[command(flatten)]
-    pub loader_info: LoaderInfo,
+    pub loader_args: LoaderArgs,
 
     
     #[arg(long)]
@@ -184,8 +200,8 @@ pub enum Language {
     Kotlin,
 }
 
-#[derive(Args)]
-pub struct LoaderInfo {
+#[derive(Args, Clone)]
+pub struct LoaderArgs {
     
     #[arg(long)]
     pub cache_dir: Option<String>,
