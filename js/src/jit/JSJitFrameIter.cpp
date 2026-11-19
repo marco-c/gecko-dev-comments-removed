@@ -515,6 +515,7 @@ JSJitProfilingFrameIterator::JSJitProfilingFrameIterator(
 
 bool JSJitProfilingFrameIterator::tryInitWithPC(void* pc) {
   JSScript* callee = frameScript();
+  JitScript* jitScript = callee->jitScript();
 
   
   if (callee->hasIonScript() &&
@@ -525,11 +526,13 @@ bool JSJitProfilingFrameIterator::tryInitWithPC(void* pc) {
   }
 
   
-  if (callee->hasBaselineScript() &&
-      callee->baselineScript()->method()->containsNativePC(pc)) {
-    type_ = FrameType::BaselineJS;
-    resumePCinCurrentFrame_ = pc;
-    return true;
+  if (BaselineScript* baselineScript =
+          jitScript->maybeBaselineScriptForProfiler()) {
+    if (baselineScript->method()->containsNativePC(pc)) {
+      type_ = FrameType::BaselineJS;
+      resumePCinCurrentFrame_ = pc;
+      return true;
+    }
   }
 
   return false;

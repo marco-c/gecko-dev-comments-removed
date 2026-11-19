@@ -959,7 +959,7 @@ void MacroAssembler::initTypedArraySlots(
 
   static_assert(
       FixedLengthTypedArrayObject::FIXED_DATA_START ==
-          FixedLengthTypedArrayObject::DATA_SLOT + 1,
+          FixedLengthTypedArrayObject::DATA_SLOT.index() + 1,
       "fixed inline element data assumed to begin after the data slot");
 
   static_assert(
@@ -1011,7 +1011,7 @@ void MacroAssembler::initTypedArraySlotsInline(
 
   static_assert(
       FixedLengthTypedArrayObject::FIXED_DATA_START ==
-          FixedLengthTypedArrayObject::DATA_SLOT + 1,
+          FixedLengthTypedArrayObject::DATA_SLOT.index() + 1,
       "fixed inline element data assumed to begin after the data slot");
 
   static_assert(
@@ -4297,8 +4297,7 @@ void MacroAssembler::loadJitCodeRawNoIon(Register func, Register dest,
 #ifdef DEBUG
   
   Label hasBaselineScript;
-  branchPtr(Assembler::Above, scratch, ImmPtr(BaselineCompilingScriptPtr),
-            &hasBaselineScript);
+  branchPtr(Assembler::NotEqual, scratch, ImmPtr(nullptr), &hasBaselineScript);
   assumeUnreachable("JitScript has IonScript without BaselineScript");
   bind(&hasBaselineScript);
 #endif

@@ -1902,20 +1902,20 @@ bool BaselineInterpreterCodeGen::emitWarmUpCounterIncrement() {
     masm.branch32(Assembler::BelowOrEqual, countReg,
                   Imm32(JitOptions.baselineJitWarmUpThreshold), &done);
 
-    
-    Label notSpecial;
     masm.loadPtr(baselineScriptAddr, scratch);
-    masm.branchTestPtr(Assembler::Zero, scratch, Imm32(SpecialScriptBit),
-                       &notSpecial);
 
     
+    Label notSpecial;
+    Address baselineStateAddr(scriptReg, JitScript::offsetOfBaselineState());
+    masm.branch8(Assembler::Below, baselineStateAddr,
+                 Imm32(JitScript::firstSpecialScriptState()), &notSpecial);
+
     
     
     
     uint32_t eagerWarmUpThreshold = JitOptions.baselineJitWarmUpThreshold * 2;
-    masm.branchPtr(Assembler::NotEqual, scratch,
-                   ImmPtr(BaselineQueuedScriptPtr), &done);
-
+    masm.branch8(Assembler::NotEqual, baselineStateAddr,
+                 Imm32(JitScript::queuedScriptState()), &done);
     masm.branch32(Assembler::Below, countReg, Imm32(eagerWarmUpThreshold),
                   &done);
 
@@ -1925,8 +1925,7 @@ bool BaselineInterpreterCodeGen::emitWarmUpCounterIncrement() {
 
     
     Label notCompiled;
-    masm.branchPtr(Assembler::BelowOrEqual, scratch,
-                   ImmPtr(BaselineCompilingScriptPtr), &notCompiled);
+    masm.branchPtr(Assembler::Equal, scratch, ImmPtr(nullptr), &notCompiled);
 
     
     saveInterpreterPCReg();
@@ -1951,7 +1950,7 @@ bool BaselineInterpreterCodeGen::emitWarmUpCounterIncrement() {
 
     
     
-    masm.storePtr(ImmPtr(BaselineQueuedScriptPtr), baselineScriptAddr);
+    masm.store8(Imm32(JitScript::queuedScriptState()), baselineStateAddr);
 
     Register queueReg = scratch;
     masm.loadBaselineCompileQueue(queueReg);
@@ -2005,9 +2004,9 @@ bool BaselineInterpreterCodeGen::emitWarmUpCounterIncrement() {
   masm.branch32(Assembler::BelowOrEqual, countReg,
                 Imm32(JitOptions.baselineJitWarmUpThreshold), &done);
 
-  masm.branchTestPtr(Assembler::NonZero,
-                     Address(scriptReg, JitScript::offsetOfBaselineScript()),
-                     Imm32(SpecialScriptBit), &done);
+  masm.branch8(Assembler::AboveOrEqual,
+               Address(scriptReg, JitScript::offsetOfBaselineState()),
+               Imm32(JitScript::firstSpecialScriptState()), &done);
   {
     prepareVMCall();
 

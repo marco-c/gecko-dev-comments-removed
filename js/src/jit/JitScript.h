@@ -64,13 +64,6 @@ static_assert((DisabledScript & SpecialScriptBit) != 0);
 static_assert((QueuedScript & SpecialScriptBit) != 0);
 static_assert((CompilingScript & SpecialScriptBit) != 0);
 
-static BaselineScript* const BaselineDisabledScriptPtr =
-    reinterpret_cast<BaselineScript*>(DisabledScript);
-static BaselineScript* const BaselineQueuedScriptPtr =
-    reinterpret_cast<BaselineScript*>(QueuedScript);
-static BaselineScript* const BaselineCompilingScriptPtr =
-    reinterpret_cast<BaselineScript*>(CompilingScript);
-
 static IonScript* const IonDisabledScriptPtr =
     reinterpret_cast<IonScript*>(DisabledScript);
 static IonScript* const IonCompilingScriptPtr =
@@ -352,19 +345,17 @@ class alignas(uintptr_t) JitScript final
   
   
   
+  
+  
+  
+  GCPtr<EnvironmentObject*> templateEnv_;
+
+  
   GCStructPtr<BaselineScript*> baselineScript_;
 
   
   
   GCStructPtr<IonScript*> ionScript_;
-
-  
-  
-  
-  
-  
-  
-  GCPtr<EnvironmentObject*> templateEnv_;
 
   
   Offset endOffset_ = 0;
@@ -373,6 +364,15 @@ class alignas(uintptr_t) JitScript final
   
   enum class UsesEnvironmentChain : uint8_t { Unknown = 0, Yes, No };
   UsesEnvironmentChain usesEnvironmentChain_ = UsesEnvironmentChain::Unknown;
+
+  enum class ScriptState : uint8_t {
+    None = 0,
+    HasScript,
+    Queued,
+    Compiling,
+    Disabled,
+  };
+  ScriptState baselineState_ = ScriptState::None;
 
   struct Flags {
     
@@ -444,6 +444,9 @@ class alignas(uintptr_t) JitScript final
   static constexpr size_t offsetOfBaselineScript() {
     return offsetof(JitScript, baselineScript_);
   }
+  static constexpr size_t offsetOfBaselineState() {
+    return offsetof(JitScript, baselineState_);
+  }
   static constexpr size_t offsetOfIonScript() {
     return offsetof(JitScript, ionScript_);
   }
@@ -452,6 +455,16 @@ class alignas(uintptr_t) JitScript final
   }
   static constexpr size_t offsetOfWarmUpCount() {
     return offsetOfICScript() + ICScript::offsetOfWarmUpCount();
+  }
+
+  static constexpr uint32_t firstSpecialScriptState() {
+    static_assert(ScriptState::HasScript < ScriptState::Queued);
+    static_assert(ScriptState::Compiling > ScriptState::Queued);
+    static_assert(ScriptState::Disabled > ScriptState::Queued);
+    return uint32_t(ScriptState::Queued);
+  }
+  static constexpr uint32_t queuedScriptState() {
+    return uint32_t(ScriptState::Queued);
   }
 
   uint32_t warmUpCount() const { return icScript_.warmUpCount_; }
@@ -512,64 +525,81 @@ class alignas(uintptr_t) JitScript final
   bool hasEnvAllocSite() const { return icScript_.envAllocSite_; }
 
  private:
+  void checkBaselineState() const {
+    MOZ_ASSERT((baselineState_ == ScriptState::HasScript) ==
+               bool(baselineScript_));
+  }
   
-  
-  void setBaselineScriptImpl(JSScript* script, BaselineScript* baselineScript);
+  void setBaselineScriptImpl(JSScript* script, BaselineScript* baselineScript,
+                             ScriptState baselineState);
   void setBaselineScriptImpl(JS::GCContext* gcx, JSScript* script,
-                             BaselineScript* baselineScript);
+                             BaselineScript* baselineScript,
+                             ScriptState baselineState);
   void maybeRemoveFromCompileQueue(JSScript* script) {
     if (isBaselineQueued()) {
       script->realm()->jitRealm().removeFromCompileQueue(script);
     }
   }
 
-  static bool IsBaselineScript(BaselineScript* baselineScript) {
-    return baselineScript && baselineScript != BaselineDisabledScriptPtr &&
-           baselineScript != BaselineQueuedScriptPtr &&
-           baselineScript != BaselineCompilingScriptPtr;
-  }
-
  public:
   
   bool hasBaselineScript() const {
-    bool res = IsBaselineScript(baselineScript_);
-    MOZ_ASSERT_IF(!res, !hasIonScript());
-    return res;
+    checkBaselineState();
+    MOZ_ASSERT_IF(!baselineScript_, !hasIonScript());
+    return baselineScript_;
   }
   BaselineScript* baselineScript() const {
     MOZ_ASSERT(hasBaselineScript());
     return baselineScript_;
   }
+  BaselineScript* maybeBaselineScriptForProfiler() const {
+    
+    return baselineScript_;
+  }
   void setBaselineScript(JSScript* script, BaselineScript* baselineScript) {
+    MOZ_ASSERT(baselineScript);
     MOZ_ASSERT(!hasBaselineScript());
+
     maybeRemoveFromCompileQueue(script);
-    setBaselineScriptImpl(script, baselineScript);
+    setBaselineScriptImpl(script, baselineScript, ScriptState::HasScript);
     MOZ_ASSERT(hasBaselineScript());
   }
   [[nodiscard]] BaselineScript* clearBaselineScript(JS::GCContext* gcx,
                                                     JSScript* script) {
     BaselineScript* baseline = baselineScript();
-    setBaselineScriptImpl(gcx, script, nullptr);
+    setBaselineScriptImpl(gcx, script, nullptr, ScriptState::None);
     return baseline;
   }
+  bool isBaselineDisabled() const {
+    checkBaselineState();
+    return baselineState_ == ScriptState::Disabled;
+  }
+  void setIsBaselineDisabled() {
+    checkBaselineState();
+    MOZ_ASSERT(baselineScript_ == nullptr);
+    baselineState_ = ScriptState::Disabled;
+  }
   bool isBaselineQueued() const {
-    return baselineScript_ == BaselineQueuedScriptPtr;
+    checkBaselineState();
+    return baselineState_ == ScriptState::Queued;
   }
   void clearIsBaselineQueued(JSScript* script) {
     MOZ_ASSERT(isBaselineQueued());
-    setBaselineScriptImpl(script, nullptr);
+    setBaselineScriptImpl(script, nullptr, ScriptState::None);
   }
   bool isBaselineCompiling() const {
-    return baselineScript_ == BaselineCompilingScriptPtr;
+    checkBaselineState();
+    return baselineState_ == ScriptState::Compiling;
   }
   void setIsBaselineCompiling(JSScript* script) {
     MOZ_ASSERT(baselineScript_ == nullptr);
+    MOZ_ASSERT(baselineState_ == ScriptState::None);
     maybeRemoveFromCompileQueue(script);
-    setBaselineScriptImpl(script, BaselineCompilingScriptPtr);
+    baselineState_ = ScriptState::Compiling;
   }
   void clearIsBaselineCompiling(JSScript* script) {
     MOZ_ASSERT(isBaselineCompiling());
-    setBaselineScriptImpl(script, nullptr);
+    baselineState_ = ScriptState::None;
   }
 
  private:
