@@ -6,32 +6,55 @@
 
 
 const TEST_URI = "data:text/html;charset=utf8,<!DOCTYPE html>";
+const MODULE_URI = "moz-src:///dom/base/ContentAreaDropListener.sys.mjs";
 
 add_task(async function () {
-  await addTab(TEST_URI);
-
   await pushPref("devtools.chrome.enabled", true);
+  await pushPref("devtools.browsertoolbox.scope", "everything");
+
+  
+  
+  const tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    url: TEST_URI,
+    forceNewProcess: true,
+  });
+  const pid = tab.linkedBrowser.browsingContext.currentWindowGlobal.osPid;
 
   info("Open the Browser Console");
   const hud = await BrowserConsoleManager.toggleBrowserConsole();
 
-  await executeResolveHookWithSideEffect(hud);
+  info(`Select the content process target (pid ${pid})`);
+  const processItem = await waitFor(() =>
+    getContextSelectorItems(hud).find(el =>
+      el.querySelector(".label")?.innerText?.startsWith(`(pid ${pid}) `)
+    )
+  );
+  processItem.click();
+  await waitFor(() =>
+    hud.ui.outputNode
+      .querySelector(".webconsole-evaluation-selector-button")
+      .innerText.startsWith(`(pid ${pid}) `)
+  );
+
+  await executeResolveHookWithSideEffect(hud, tab.linkedBrowser);
+
+  
+  
+  await safeCloseBrowserConsole({ clearOutput: true });
+  BrowserTestUtils.removeTab(tab);
 });
 
-async function executeResolveHookWithSideEffect(hud) {
-  
-  
-  
+async function executeResolveHookWithSideEffect(hud, browser) {
   
   
   
   
   
   is(
-    Cu.isESModuleLoaded(
-      "resource://gre/modules/ContentAreaDropListener.sys.mjs"
-    ),
-    false
+    await isModuleLoadedInContentProcess(browser),
+    false,
+    "The module isn't loaded in the new content process"
   );
 
   setInputValue(hud, `Services.droppedLinkHandler`);
@@ -51,14 +74,19 @@ async function executeResolveHookWithSideEffect(hud) {
   );
 
   is(
-    Cu.isESModuleLoaded(
-      "resource://gre/modules/ContentAreaDropListener.sys.mjs"
-    ),
-    true
+    await isModuleLoadedInContentProcess(browser),
+    true,
+    "The module got loaded by the evaluation"
   );
 
   
   setInputValue(hud, `Services.droppedLinkHandler`);
   await wait(500);
   await waitForEagerEvaluationResult(hud, /XPCWrappedNative_NoHelper/);
+}
+
+function isModuleLoadedInContentProcess(browser) {
+  return SpecialPowers.spawn(browser, [MODULE_URI], uri =>
+    Cu.isESModuleLoaded(uri)
+  );
 }
