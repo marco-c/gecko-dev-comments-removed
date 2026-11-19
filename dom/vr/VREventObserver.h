@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_VREventObserver_h
 #define mozilla_dom_VREventObserver_h
 
@@ -43,7 +41,6 @@ class VREventObserver final : public gfx::VRManagerEventObserver {
   bool IsWebVR(uint32_t aDisplayID) const;
 
   RefPtr<nsGlobalWindowInner> mWindow;
-  bool mIs2DView;
   bool mStopActivity;
 };
 
