@@ -40,7 +40,7 @@ function report(what) {
 
 ```javascript
 const { addDebuggerToGlobal } = ChromeUtils.importESModule(
-  "resource://gre/modules/jsdebugger.sys.mjs"
+  "moz-src:///devtools/platform/jsdebugger.sys.mjs"
 );
 const { console } = ChromeUtils.importESModule(
   "resource://gre/modules/Console.sys.mjs"
@@ -113,4 +113,4 @@ Watermark:
 
 Changeset:
 
-: [ffa775dd5bd4](https://hg.mozilla.org/mozilla-central/rev/ffa775dd5bd4)
+: [d446aadd185e](https://github.com/mozilla-firefox/firefox/commit/d446aadd185e716de508a777e6378ef31a94694c)
