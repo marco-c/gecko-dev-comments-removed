@@ -10926,6 +10926,10 @@ interface nsIMockNetworkLayerController extends nsISupports {
   
   clearPausedTCPConnect(): void;
   
+  pauseTCPWrite(aAddr: nsINetAddr): void;
+  
+  clearPausedTCPWrite(): void;
+  
   blockUDPAddrIO(aAddr: nsINetAddr): void;
   
   clearBlockedUDPAddr(): void;
@@ -21623,6 +21627,14 @@ interface nsIUrlClassifierPrefixSet extends nsISupports {
 
 
 
+interface nsIUrlClassifierRealTimeKeyService extends nsISupports {
+  
+  getKeyConfig(): Promise<any>;
+}
+
+
+
+
 interface nsIUrlClassifierRemoteSettingsService extends nsISupports {
   
   fetchList(aPayload: string, aListener: nsIStreamListener): void;
@@ -27590,6 +27602,7 @@ interface nsIXPCComponents_Interfaces {
   nsIUrlClassifierGetCacheCallback: nsJSIID<nsIUrlClassifierGetCacheCallback>;
   nsIUrlClassifierInfo: nsJSIID<nsIUrlClassifierInfo>;
   nsIUrlClassifierPrefixSet: nsJSIID<nsIUrlClassifierPrefixSet>;
+  nsIUrlClassifierRealTimeKeyService: nsJSIID<nsIUrlClassifierRealTimeKeyService>;
   nsIUrlClassifierRemoteSettingsService: nsJSIID<nsIUrlClassifierRemoteSettingsService>;
   nsIUrlClassifierStreamUpdater: nsJSIID<nsIUrlClassifierStreamUpdater>;
   nsIUrlClassifierTestUtils: nsJSIID<nsIUrlClassifierTestUtils>;

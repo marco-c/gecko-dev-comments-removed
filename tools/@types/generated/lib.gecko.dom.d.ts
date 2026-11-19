@@ -7270,13 +7270,6 @@ interface UtilityActorsDictionary {
     actorName?: WebIDLUtilityActorName;
 }
 
-interface VRDisplayEventInit extends EventInit {
-    
-    display: VRDisplay;
-    
-    reason?: VRDisplayEventReason;
-}
-
 interface VRLayer {
     
     leftBounds?: number[] | Float32Array;
@@ -13721,6 +13714,21 @@ declare var CustomStateSet: {
 };
 
 
+interface CycleCollectorUnlinkTester {
+    
+    readonly unlinked: boolean;
+    
+    crashIfUnlinked(): void;
+}
+
+declare var CycleCollectorUnlinkTester: {
+    prototype: CycleCollectorUnlinkTester;
+    new(): CycleCollectorUnlinkTester;
+    
+    isInstance: IsInstance<CycleCollectorUnlinkTester>;
+};
+
+
 interface DOMApplication {
 }
 
@@ -14951,7 +14959,6 @@ interface Document extends Node, ARIANotifyMixin, DocumentOrShadowRoot, FontFace
     createEvent(eventInterface: "UIEvent"): UIEvent;
     createEvent(eventInterface: "UIEvents"): UIEvent;
     createEvent(eventInterface: "UserProximityEvent"): UserProximityEvent;
-    createEvent(eventInterface: "VRDisplayEvent"): VRDisplayEvent;
     createEvent(eventInterface: "WebGLContextEvent"): WebGLContextEvent;
     createEvent(eventInterface: "WheelEvent"): WheelEvent;
     createEvent(eventInterface: "XRInputSourceEvent"): XRInputSourceEvent;
@@ -26291,8 +26298,6 @@ interface Navigator extends GlobalPrivacyControl, NavigatorAutomationInformation
     
     requestMediaKeySystemAccess(keySystem: string, supportedConfigurations: MediaKeySystemConfiguration[]): Promise<MediaKeySystemAccess>;
     
-    requestVRPresentation(display: VRDisplay): void;
-    
     requestVRServiceTest(): VRServiceTest;
     
     sendBeacon(url: string, data?: BodyInit | null): boolean;
@@ -36048,24 +36053,6 @@ declare var VRDisplayCapabilities: {
 
 
 
-interface VRDisplayEvent extends Event {
-    
-    readonly display: VRDisplay;
-    
-    readonly reason: VRDisplayEventReason | null;
-}
-
-declare var VRDisplayEvent: {
-    prototype: VRDisplayEvent;
-    new(type: string, eventInitDict: VRDisplayEventInit): VRDisplayEvent;
-    
-    isInstance: IsInstance<VRDisplayEvent>;
-};
-
-
-
-
-
 interface VREyeParameters {
     
     readonly fieldOfView: VRFieldOfView;
@@ -45450,7 +45437,6 @@ type TransferFunction = "hlg" | "pq" | "srgb";
 type UnderlineStyle = "dashed" | "dotted" | "none" | "solid" | "wavy";
 type UnderlineThickness = "none" | "thick" | "thin";
 type UniFFIScaffoldingCallCode = "error" | "internal-error" | "success";
-type VRDisplayEventReason = "mounted" | "navigation" | "requested" | "unmounted";
 type VREye = "left" | "right";
 type VideoColorPrimaries = "bt2020" | "bt470bg" | "bt709" | "smpte170m" | "smpte432";
 type VideoEncoderBitrateMode = "constant" | "quantizer" | "variable";
