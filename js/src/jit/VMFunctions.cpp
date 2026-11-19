@@ -1845,42 +1845,53 @@ static MOZ_ALWAYS_INLINE bool MaybeGetNativePropertyAndWriteToCache(
   }
 }
 
+
+
+static MOZ_ALWAYS_INLINE bool GetNativeDataPropertyFromCacheEntry(
+    NativeObject* nobj, const MegamorphicCacheEntry& entry, Value* vp) {
+  MOZ_ASSERT(!entry.isMissingOwnProperty());
+  if (entry.isDataProperty()) {
+    for (size_t i = 0, numHops = entry.numHops(); i < numHops; i++) {
+      nobj = &nobj->staticPrototype()->as<NativeObject>();
+    }
+    uint32_t offset = entry.slotOffset().offset();
+    if (entry.slotOffset().isFixedSlot()) {
+      size_t index = NativeObject::getFixedSlotIndexFromOffset(offset);
+      *vp = nobj->getFixedSlot(index);
+    } else {
+      size_t index = NativeObject::getDynamicSlotIndexFromOffset(offset);
+      *vp = nobj->getDynamicSlot(index);
+    }
+    return true;
+  }
+  if (entry.isMissingProperty()) {
+    vp->setUndefined();
+    return true;
+  }
+  MOZ_ASSERT(entry.isAccessorProperty());
+  return false;
+}
+
+
+
+
+
+
 bool GetNativeDataPropertyPureWithCacheLookup(JSContext* cx, JSObject* obj,
                                               PropertyKey key,
                                               MegamorphicCacheEntry* entry,
                                               Value* vp) {
   AutoUnsafeCallWithABI unsafe;
 
-  
-  
   Shape* receiverShape = obj->shape();
   MegamorphicCache& cache = cx->caches().megamorphicCache;
 
   if (cache.lookup(receiverShape, key, &entry)) {
     NativeObject* nobj = &obj->as<NativeObject>();
     VerifyCacheEntry(cx, nobj, key, *entry);
-    if (entry->isDataProperty()) {
-      for (size_t i = 0, numHops = entry->numHops(); i < numHops; i++) {
-        nobj = &nobj->staticPrototype()->as<NativeObject>();
-      }
-      uint32_t offset = entry->slotOffset().offset();
-      if (entry->slotOffset().isFixedSlot()) {
-        size_t index = NativeObject::getFixedSlotIndexFromOffset(offset);
-        *vp = nobj->getFixedSlot(index);
-      } else {
-        size_t index = NativeObject::getDynamicSlotIndexFromOffset(offset);
-        *vp = nobj->getDynamicSlot(index);
-      }
-      return true;
+    if (!entry->isMissingOwnProperty()) {
+      return GetNativeDataPropertyFromCacheEntry(nobj, *entry, vp);
     }
-    if (entry->isMissingProperty()) {
-      vp->setUndefined();
-      return true;
-    }
-    if (entry->isAccessorProperty()) {
-      return false;
-    }
-    MOZ_ASSERT(entry->isMissingOwnProperty());
   }
 
   return MaybeGetNativePropertyAndWriteToCache<NoGC>(cx, obj, key, entry, vp);
@@ -1988,11 +1999,18 @@ bool GetNativeDataPropertyByValuePure(JSContext* cx, JSObject* obj,
 
   Shape* receiverShape = obj->shape();
   MegamorphicCache& cache = cx->caches().megamorphicCache;
+  Value* res = vp + 1;
   if (!entry) {
-    cache.lookup(receiverShape, key, &entry);
+    
+    if (cache.lookup(receiverShape, key, &entry)) {
+      NativeObject* nobj = &obj->as<NativeObject>();
+      VerifyCacheEntry(cx, nobj, key, *entry);
+      if (!entry->isMissingOwnProperty()) {
+        return GetNativeDataPropertyFromCacheEntry(nobj, *entry, res);
+      }
+    }
   }
 
-  Value* res = vp + 1;
   return MaybeGetNativePropertyAndWriteToCache<NoGC>(cx, obj, key, entry, res);
 }
 
@@ -2657,22 +2675,23 @@ void AllocateAndInitTypedArrayBuffer(JSContext* cx,
   
   
   MOZ_RELEASE_ASSERT(
-      obj->getFixedSlot(TypedArrayObject::DATA_SLOT).isUndefined(),
+      obj->getFixedSlotTyped(TypedArrayObject::DATA_SLOT).isUndefined(),
       "DATA_SLOT initialized to UndefinedValue in JIT code");
 
   
-  MOZ_ASSERT(obj->getFixedSlot(TypedArrayObject::BUFFER_SLOT).isFalse(),
+  MOZ_ASSERT(obj->getFixedSlotTyped(TypedArrayObject::BUFFER_SLOT).isFalse(),
              "BUFFER_SLOT initialized to FalseValue in JIT code");
-  MOZ_ASSERT(obj->getFixedSlot(TypedArrayObject::BYTEOFFSET_SLOT) ==
+  MOZ_ASSERT(obj->getFixedSlotTyped(TypedArrayObject::BYTEOFFSET_SLOT) ==
                  PrivateValue(size_t(0)),
-             "BUFFER_SLOT initialized to PrivateValue(0) in JIT code");
+             "BYTEOFFSET_SLOT initialized to PrivateValue(0) in JIT code");
 
   
   
   constexpr size_t byteLengthLimit = TypedArrayObject::ByteLengthLimit;
   size_t bytesPerElement = obj->bytesPerElement();
   if (count < 0 || size_t(count) > byteLengthLimit / bytesPerElement) {
-    obj->setFixedSlot(TypedArrayObject::LENGTH_SLOT, PrivateValue(size_t(0)));
+    obj->setFixedSlotTyped(TypedArrayObject::LENGTH_SLOT,
+                           PrivateValue(size_t(0)));
     return;
   }
 
@@ -2680,7 +2699,7 @@ void AllocateAndInitTypedArrayBuffer(JSContext* cx,
   MOZ_ASSERT(nbytes <= byteLengthLimit);
 
   
-  obj->setFixedSlot(TypedArrayObject::LENGTH_SLOT, PrivateValue(count));
+  obj->setFixedSlotTyped(TypedArrayObject::LENGTH_SLOT, PrivateValue(count));
 
   
   
@@ -2695,7 +2714,7 @@ void AllocateAndInitTypedArrayBuffer(JSContext* cx,
     }
 #endif
 
-    obj->initFixedSlot(TypedArrayObject::DATA_SLOT, PrivateValue(data));
+    obj->initFixedSlotTyped(TypedArrayObject::DATA_SLOT, PrivateValue(data));
     return;
   }
 
@@ -2713,7 +2732,7 @@ void AllocateAndInitTypedArrayBuffer(JSContext* cx,
   void* buf = cx->nursery().allocateZeroedBuffer(obj, nbytes,
                                                  js::ArrayBufferContentsArena);
   if (buf) {
-    InitReservedSlot(obj, TypedArrayObject::DATA_SLOT, buf, nbytes,
+    InitReservedSlot(obj, TypedArrayObject::DATA_SLOT.index(), buf, nbytes,
                      MemoryUse::TypedArrayElements);
   }
 }
