@@ -252,6 +252,22 @@ public class IPProtectionController {
     default @NonNull GeckoResult<String> onTokenRequest() {
       return GeckoResult.fromException(new RuntimeException(ERROR_LOGIN_NEEDED));
     }
+
+    
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default @NonNull GeckoResult<Void> onTokenRejected(final @NonNull String token) {
+      return GeckoResult.fromValue(null);
+    }
   }
 
   
@@ -300,6 +316,7 @@ public class IPProtectionController {
             "GeckoView:IPProtection:IPPProxyManager:UsageChanged",
             "GeckoView:IPProtection:ServerList:ListChanged",
             "GeckoView:IPProtection:GetToken",
+            "GeckoView:IPProtection:TokenRejected",
             "GeckoView:IPProtection:GPI:WarmUp",
             "GeckoView:IPProtection:GPI:RequestToken");
   }
@@ -784,6 +801,18 @@ public class IPProtectionController {
                           result.putString("token", token);
                           return result;
                         }));
+            break;
+          }
+        case "GeckoView:IPProtection:TokenRejected":
+          {
+            final AuthProvider provider = tryAuthProvider(event, callback);
+            if (provider == null) return;
+            final String token = message.getString("token", "");
+            if (token.isEmpty()) {
+              callback.sendError(ERROR_LOGIN_NEEDED);
+              break;
+            }
+            callback.resolveTo(provider.onTokenRejected(token));
             break;
           }
         case "GeckoView:IPProtection:GPI:WarmUp":

@@ -51,7 +51,16 @@ class IPPAndroidFxAAuthProviderSingleton extends IPPFxaActivateAuthProviderSingl
     if (!token) {
       throw AUTH_ERRORS.LOGIN_NEEDED;
     }
-    return { token, [Symbol.dispose]: () => {} };
+    return {
+      token,
+      // The Android layer owns the token's lifetime, so all Gecko can do is ask
+      // it to drop this one.
+      onTokenRejected: () =>
+        lazy.EventDispatcher.instance.sendRequestForResult(
+          "GeckoView:IPProtection:TokenRejected",
+          { token }
+        ),
+    };
   }
 }
 
