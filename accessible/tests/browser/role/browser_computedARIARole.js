@@ -78,7 +78,7 @@ addAccessibleTask(
     testComputedARIARole("htmlSection", "generic");
     
     
-    testComputedARIARole("htmlSectionHeader", "sectionheader");
+    testComputedARIARole("htmlSectionHeader", "generic");
     testComputedARIARole("htmlRegion", "region");
     
     

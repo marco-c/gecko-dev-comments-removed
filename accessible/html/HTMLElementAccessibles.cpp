@@ -198,7 +198,6 @@ bool HTMLSummaryAccessible::IsWidget() const { return true; }
 role HTMLHeaderOrFooterAccessible::NativeRole() const {
   
   
-  
   nsIContent* parent = mContent->GetParent();
   while (parent) {
     if (parent->IsAnyOfHTMLElements(
@@ -216,8 +215,7 @@ role HTMLHeaderOrFooterAccessible::NativeRole() const {
     return roles::LANDMARK;
   }
 
-  return mContent->IsHTMLElement(nsGkAtoms::footer) ? roles::SECTION_FOOTER
-                                                    : roles::SECTION_HEADER;
+  return roles::SECTION;
 }
 
 
