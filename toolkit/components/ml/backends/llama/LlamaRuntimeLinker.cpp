@@ -12,6 +12,10 @@
 #include "nsXULAppAPI.h"
 #include "prlink.h"
 
+#if defined(XP_MACOSX) && defined(__x86_64__)
+#  include "nsCocoaFeatures.h"
+#endif
+
 #ifdef XP_WIN
 #  include <windows.h>
 #endif
@@ -212,7 +216,12 @@ bool LlamaRuntimeLinker::Init() {
   
   
   
-  if (XRE_IsContentProcess()) {
+  bool disableMetal = XRE_IsContentProcess();
+#  if defined(__x86_64__)
+  
+  disableMetal = disableMetal || !nsCocoaFeatures::ProcessIsRosettaTranslated();
+#  endif
+  if (disableMetal) {
     sLlamaLib.ggml_backend_metal_disable();
   }
 #endif
