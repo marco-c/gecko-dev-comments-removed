@@ -186,6 +186,9 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
   int32_t mNumPendingSpellChecks;
 
   
+  RefPtr<mozilla::dom::Range> mPendingDOMMutationRange;
+
+  
   int32_t mNumPendingUpdateCurrentDictionary;
 
   
@@ -262,7 +265,14 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
 
   nsresult CleanupRangesInSelection(mozilla::dom::Selection* aSelection);
 
-  nsresult SpellCheckRangeIgnoringWordAtCaret(mozilla::dom::Range* aRange);
+  
+
+
+
+
+  nsresult SpellCheckNodesIgnoringWordAtCaret(nsINode& aContainer,
+                                              nsIContent& aStartContent,
+                                              nsIContent& aEndContent);
 
   
 

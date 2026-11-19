@@ -573,7 +573,8 @@ NS_IMPL_CYCLE_COLLECTING_ADDREF(mozInlineSpellChecker)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(mozInlineSpellChecker)
 
 NS_IMPL_CYCLE_COLLECTION_WEAK(mozInlineSpellChecker, mEditorBase, mSpellCheck,
-                              mCurrentSelectionAnchorNode, mPendingSpellCheck)
+                              mCurrentSelectionAnchorNode, mPendingSpellCheck,
+                              mPendingDOMMutationRange)
 
 mozInlineSpellChecker::SpellCheckingState
     mozInlineSpellChecker::gCanEnableSpellChecking =
@@ -670,6 +671,7 @@ mozInlineSpellChecker::Cleanup(bool aDestroyingFrames) {
   }
 
   mFullSpellCheckScheduled = false;
+  mPendingDOMMutationRange = nullptr;
 
   return rv;
 }
@@ -838,7 +840,7 @@ nsresult mozInlineSpellChecker::EditorSpellCheckInited() {
 
 void mozInlineSpellChecker::ChangeNumPendingSpellChecks(
     int32_t aDelta, EditorBase* aEditorBase) {
-  int8_t oldNumPending = mNumPendingSpellChecks;
+  const int32_t oldNumPending = mNumPendingSpellChecks;
   mNumPendingSpellChecks += aDelta;
   MOZ_ASSERT(mNumPendingSpellChecks >= 0,
              "Unbalanced ChangeNumPendingSpellChecks calls!");
@@ -920,8 +922,8 @@ nsresult mozInlineSpellChecker::SpellCheckRange(dom::Range* aRange) {
   return ScheduleSpellCheck(std::move(status));
 }
 
-nsresult mozInlineSpellChecker::SpellCheckRangeIgnoringWordAtCaret(
-    dom::Range* aRange) {
+nsresult mozInlineSpellChecker::SpellCheckNodesIgnoringWordAtCaret(
+    nsINode& aContainer, nsIContent& aStartContent, nsIContent& aEndContent) {
   if (!mSpellCheck) {
     NS_WARNING_ASSERTION(
         mPendingSpellCheck,
@@ -929,9 +931,61 @@ nsresult mozInlineSpellChecker::SpellCheckRangeIgnoringWordAtCaret(
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  UniquePtr<mozInlineSpellStatus> status = mozInlineSpellStatus::CreateForRange(
-      *this, aRange, mozInlineSpellStatus::SetAnchorToCaret::Yes);
-  return ScheduleSpellCheck(std::move(status));
+  if (mFullSpellCheckScheduled) {
+    
+    return NS_OK;
+  }
+
+  MOZ_LOG(sInlineSpellCheckerLog, LogLevel::Debug,
+          ("%s: pending=%d, coalescing=%d", __FUNCTION__,
+           mNumPendingSpellChecks, !!mPendingDOMMutationRange));
+  if (mPendingDOMMutationRange) {
+    const RawRangeBoundary start = RawRangeBoundary::FromChild(aStartContent);
+    const RawRangeBoundary end = RawRangeBoundary::After(aEndContent);
+    const Maybe<int32_t> compareStart =
+        nsContentUtils::ComparePoints<TreeKind::DOM>(
+            start, mPendingDOMMutationRange->StartRef());
+    const Maybe<int32_t> compareEnd =
+        nsContentUtils::ComparePoints<TreeKind::DOM>(
+            end, mPendingDOMMutationRange->EndRef());
+    if (compareStart.isSome() && compareEnd.isSome()) [[likely]] {
+      if (*compareStart >= 0 && *compareEnd <= 0) {
+        
+        
+        return NS_OK;
+      }
+      const RawRangeBoundary mergedStart =
+          *compareStart < 0 ? start
+                            : mPendingDOMMutationRange->StartRef().AsRaw();
+      const RawRangeBoundary mergedEnd =
+          *compareEnd > 0 ? end : mPendingDOMMutationRange->EndRef().AsRaw();
+      if (NS_SUCCEEDED(mPendingDOMMutationRange->SetStartAndEnd(
+              mergedStart, mergedEnd))) [[likely]] {
+        return NS_OK;
+      }
+    }
+    
+    
+    mPendingDOMMutationRange = nullptr;
+  }
+
+  RefPtr<dom::Range> range = dom::Range::Create(&aStartContent);
+  range->SelectNodesInContainer(&aContainer, &aStartContent, &aEndContent);
+  
+  
+  if (mNumPendingSpellChecks >=
+      std::max(
+          0,
+          StaticPrefs::
+              extensions_spellcheck_inline_dom_mutation_coalescing_threshold())) {
+    mPendingDOMMutationRange = range;
+  }
+  const nsresult rv = ScheduleSpellCheck(mozInlineSpellStatus::CreateForRange(
+      *this, range, mozInlineSpellStatus::SetAnchorToCaret::Yes));
+  if (NS_FAILED(rv) && mPendingDOMMutationRange == range) {
+    mPendingDOMMutationRange = nullptr;
+  }
+  return rv;
 }
 
 
@@ -1673,6 +1727,10 @@ nsresult mozInlineSpellChecker::ResumeCheck(
   
   
   AutoChangeNumPendingSpellChecks autoChangeNumPending(this, -1);
+
+  if (mPendingDOMMutationRange == aStatus->mRange) {
+    mPendingDOMMutationRange = nullptr;
+  }
 
   if (aStatus->IsFullSpellCheck()) {
     
