@@ -577,7 +577,11 @@ struct Texture {
 
   
   IntRect sample_bounds(const IntRect& req, bool invertY = false) const {
-    IntRect bb = bounds().intersect(req) - req.origin();
+    IntRect bb = bounds().intersect(req);
+    if (bb.is_empty()) {
+      return IntRect();
+    }
+    bb = bb - req.origin();
     if (invertY) bb.invert_y(req.height());
     return bb;
   }
