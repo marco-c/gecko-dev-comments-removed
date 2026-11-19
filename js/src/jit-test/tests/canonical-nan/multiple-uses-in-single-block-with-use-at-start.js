@@ -1,5 +1,3 @@
-
-
 function f(f64, c, fn) {
   
   var x = f64[0];

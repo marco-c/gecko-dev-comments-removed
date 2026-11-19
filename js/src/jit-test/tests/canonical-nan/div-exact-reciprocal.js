@@ -1,5 +1,3 @@
-
-
 load(libdir + "nans.js");
 
 testWithFloatTypedArrays((FloatArray, UintArray, NaNs) => {

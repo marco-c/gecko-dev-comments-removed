@@ -1,5 +1,3 @@
-
-
 load(libdir + "nans.js");
 
 
@@ -27,4 +25,3 @@ testWithFloatTypedArrays(FloatArray => {
     }
   }
 });
-

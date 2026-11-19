@@ -135,7 +135,7 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(disableObjectKeysScalarReplacement, false);
 
   
-  SET_DEFAULT(disableCanonicalizeNaNAtUses, true);
+  SET_DEFAULT(disableCanonicalizeNaNAtUses, false);
 
 #ifdef ENABLE_PORTABLE_BASELINE_INTERP
   

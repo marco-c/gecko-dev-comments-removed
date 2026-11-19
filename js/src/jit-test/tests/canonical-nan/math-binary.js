@@ -1,5 +1,3 @@
-
-
 load(libdir + "nans.js");
 
 function testBinary(fn) {
