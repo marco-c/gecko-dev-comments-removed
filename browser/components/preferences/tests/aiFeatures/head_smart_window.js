@@ -21,6 +21,7 @@
 
 
 
+
 ChromeUtils.defineESModuleGetters(this, {
   getModelForChoice:
     "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
@@ -159,4 +160,23 @@ async function selectCustomModel(doc) {
     () => BrowserTestUtils.isVisible(doc.getElementById("customModelName"))
   );
   return doc.getElementById("customModelName");
+}
+
+
+
+
+
+
+
+
+async function waitForModelRadio(doc, l10nId) {
+  const modelSelection = doc.getElementById("modelSelection");
+  await modelSelection.updateComplete;
+  const findRadio = () =>
+    modelSelection.querySelector(`moz-radio[data-l10n-id="${l10nId}"]`);
+  return BrowserTestUtils.waitForMutationCondition(
+    modelSelection,
+    { attributes: true, childList: true, subtree: true },
+    findRadio
+  );
 }

@@ -73,10 +73,11 @@ describe("Smart Window custom model selection", () => {
     );
 
     
-    const fastRadio = doc.querySelector(
-      'moz-radio[data-l10n-id="smart-window-model-fast-v2"]'
+    const geminiRadio = await waitForModelRadio(
+      doc,
+      "smart-window-model-gemini"
     );
-    fastRadio.click();
+    geminiRadio.click();
 
     await BrowserTestUtils.waitForMutationCondition(
       doc.body,
@@ -84,9 +85,11 @@ describe("Smart Window custom model selection", () => {
       () => !BrowserTestUtils.isVisible(doc.getElementById("customModelName"))
     );
 
-    fastRadio.focus();
     
-    EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
+    const presetRadios = doc
+      .getElementById("modelSelection")
+      .querySelectorAll('moz-radio:not([value="0"])');
+    presetRadios[presetRadios.length - 1].focus();
     EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
 
     await BrowserTestUtils.waitForMutationCondition(
@@ -179,10 +182,11 @@ describe("Smart Window custom model selection", () => {
 
     ({ doc, win } = await openSmartWindowPanel());
 
-    const fastRadio = doc.querySelector(
-      'moz-radio[data-l10n-id="smart-window-model-fast-v2"]'
+    const geminiRadio = await waitForModelRadio(
+      doc,
+      "smart-window-model-gemini"
     );
-    fastRadio.click();
+    geminiRadio.click();
 
     await BrowserTestUtils.waitForMutationCondition(
       doc.body,
