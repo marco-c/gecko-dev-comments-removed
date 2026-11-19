@@ -4089,8 +4089,8 @@ void WasmStructMemoryView::visitResumePoint(MResumePoint* rp) {}
 
 void WasmStructMemoryView::visitWasmStoreField(MWasmStoreField* ins) {
   
-  MDefinition* base = ins->base();
-  if (base != struct_) {
+  MDefinition* object = ins->wasmObject();
+  if (object != struct_) {
     return;
   }
 
@@ -4110,8 +4110,8 @@ void WasmStructMemoryView::visitWasmStoreField(MWasmStoreField* ins) {
 
 void WasmStructMemoryView::visitWasmStoreFieldRef(MWasmStoreFieldRef* ins) {
   
-  MDefinition* base = ins->base();
-  if (base != struct_) {
+  MDefinition* object = ins->wasmObject();
+  if (object != struct_) {
     return;
   }
 
@@ -4131,8 +4131,8 @@ void WasmStructMemoryView::visitWasmStoreFieldRef(MWasmStoreFieldRef* ins) {
 
 void WasmStructMemoryView::visitWasmLoadField(MWasmLoadField* ins) {
   
-  MDefinition* base = ins->base();
-  if (base != struct_) {
+  MDefinition* object = ins->wasmObject();
+  if (object != struct_) {
     return;
   }
 

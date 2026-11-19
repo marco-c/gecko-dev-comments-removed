@@ -338,21 +338,6 @@ MDefinition::AliasType MWasmLoadGlobalCell::mightAlias(
   return AliasType::MayAlias;
 }
 
-template <typename T>
-static wasm::MaybeRefType GetBaseRefTypeForWasmLoadOrStore(T ins) {
-  const MDefinition* structObject;
-  if (ins->base()->type() == MIRType::WasmStructData &&
-      ins->base()->isWasmLoadField()) {
-    
-    
-    
-    structObject = ins->base()->toWasmLoadField()->base();
-  } else {
-    structObject = ins->base();
-  }
-  return structObject->wasmRefType().asNonNullable();
-}
-
 
 
 
@@ -375,11 +360,11 @@ MDefinition::AliasType MWasmLoadField::mightAlias(
   uint32_t insOffset;
   if (ins->isWasmStoreField()) {
     const MWasmStoreField* store = ins->toWasmStoreField();
-    insType = GetBaseRefTypeForWasmLoadOrStore(store);
+    insType = store->wasmObject()->wasmRefType().asNonNullable();
     insOffset = store->offset();
   } else if (ins->isWasmStoreFieldRef()) {
     const MWasmStoreFieldRef* store = ins->toWasmStoreFieldRef();
-    insType = GetBaseRefTypeForWasmLoadOrStore(store);
+    insType = store->wasmObject()->wasmRefType().asNonNullable();
     insOffset = store->offset();
   } else {
     
@@ -388,7 +373,7 @@ MDefinition::AliasType MWasmLoadField::mightAlias(
     return AliasType::MayAlias;
   }
 
-  wasm::MaybeRefType thisType = GetBaseRefTypeForWasmLoadOrStore(this);
+  wasm::MaybeRefType thisType = wasmObject()->wasmRefType().asNonNullable();
   if (offset() != insOffset ||
       !wasm::MaybeRefType::mayHaveValuesInCommon(thisType, insType)) {
     return AliasType::NoAlias;
