@@ -240,7 +240,8 @@ class AccAttributes {
 
 
 
-  void CopyTo(AccAttributes* aDest, bool aOnlyMissing = false) const;
+  using CopyReq = FunctionRef<bool(nsAtom* aAttrName)>;
+  void CopyTo(AccAttributes* aDest, CopyReq aCopyReq = nullptr) const;
 
   
   class Entry {

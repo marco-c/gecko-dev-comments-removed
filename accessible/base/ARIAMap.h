@@ -103,28 +103,29 @@ const bool kUseNativeRole = false;
 
 const uint8_t ATTR_BYPASSOBJ = 0x1 << 0;
 const uint8_t ATTR_BYPASSOBJ_IF_FALSE = 0x1 << 1;
+const uint8_t ATTR_BYPASSOBJ_IF_EMPTY = 0x1 << 2;
 
 
 
 
 
-const uint8_t ATTR_VALTOKEN = 0x1 << 2;
+const uint8_t ATTR_VALTOKEN = 0x1 << 3;
 
 
 
 
 
-const uint8_t ATTR_GLOBAL = 0x1 << 3;
+const uint8_t ATTR_GLOBAL = 0x1 << 4;
 
 
 
 
-const uint8_t ATTR_VALINT = 0x1 << 4;
+const uint8_t ATTR_VALINT = 0x1 << 5;
 
 
 
 
-const uint8_t ATTR_REFLECT_ELEMENTS = 0x1 << 5;
+const uint8_t ATTR_REFLECT_ELEMENTS = 0x1 << 6;
 
 
 

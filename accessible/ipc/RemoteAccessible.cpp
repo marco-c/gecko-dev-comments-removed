@@ -1875,7 +1875,9 @@ already_AddRefed<AccAttributes> RemoteAccessible::DefaultTextAttributes() {
 
     if (const AccAttributes* parentAttrs = parent->GetCachedTextAttributes()) {
       
-      parentAttrs->CopyTo(result, true);
+      parentAttrs->CopyTo(result, [&result](nsAtom* attrName) {
+        return !result->HasAttribute(attrName);
+      });
     }
   }
 
@@ -2066,7 +2068,17 @@ already_AddRefed<AccAttributes> RemoteAccessible::Attributes() {
     }
 
     if (auto ariaAttrs = GetCachedARIAAttributes()) {
-      ariaAttrs->CopyTo(attributes);
+      ariaAttrs->CopyTo(attributes, [&](nsAtom* attrName) {
+        if ((attrName == nsGkAtoms::aria_roledescription ||
+             attrName == nsGkAtoms::aria_brailleroledescription) &&
+            IsGeneric()) {
+          
+          
+          return false;
+        }
+
+        return true;
+      });
     }
 
     nsAccUtils::SetLiveContainerAttributes(attributes, this);
@@ -2140,18 +2152,6 @@ already_AddRefed<AccAttributes> RemoteAccessible::Attributes() {
   nsAutoString name;
   if (Name(name) != eNameFromSubtree && !name.IsVoid()) {
     attributes->SetAttribute(nsGkAtoms::explicit_name, true);
-  }
-
-  
-  
-  
-  
-  
-  
-  if (HasNumericValue()) {
-    nsString valuetext;
-    Value(valuetext);
-    attributes->SetAttribute(nsGkAtoms::aria_valuetext, std::move(valuetext));
   }
 
   return attributes.forget();

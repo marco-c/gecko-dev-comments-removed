@@ -722,11 +722,7 @@ class Accessible {
 
 
 
-  bool IsGeneric() const {
-    role accRole = Role();
-    return accRole == roles::TEXT || accRole == roles::TEXT_CONTAINER ||
-           accRole == roles::SECTION;
-  }
+  bool IsGeneric() const;
 
   
 

@@ -1154,6 +1154,15 @@ already_AddRefed<AccAttributes> LocalAccessible::Attributes() {
       
       continue;
     }
+
+    if ((attribIter.AttrName() == nsGkAtoms::aria_roledescription ||
+         attribIter.AttrName() == nsGkAtoms::aria_brailleroledescription) &&
+        IsGeneric()) {
+      
+      
+      continue;
+    }
+
     attribIter.ExposeAttr(attributes);
   }
 
@@ -1198,16 +1207,6 @@ already_AddRefed<AccAttributes> LocalAccessible::Attributes() {
 
 already_AddRefed<AccAttributes> LocalAccessible::NativeAttributes() {
   auto attributes = MakeRefPtr<AccAttributes>();
-
-  
-  
-  
-  
-  if (HasNumericValue()) {
-    nsString valuetext;
-    Value(valuetext);
-    attributes->SetAttribute(nsGkAtoms::aria_valuetext, std::move(valuetext));
-  }
 
   
   if (State() & states::CHECKABLE) {
