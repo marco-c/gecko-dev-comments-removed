@@ -323,6 +323,9 @@ class gfxFontEntry {
   }
 
   inline bool HasCharacter(uint32_t ch) MOZ_EXCLUDES(mLock) {
+    if (mUnusable) {
+      return false;
+    }
     if (const auto* map = GetShmemCharacterMap()) {
       return map->test(ch);
     }
@@ -357,6 +360,13 @@ class gfxFontEntry {
   
   
   virtual nsresult ReadCMAP(FontInfoData* aFontInfoData = nullptr);
+
+  
+  
+  
+  
+  void MarkUnusable() { mUnusable = true; }
+  bool IsUnusable() const { return mUnusable; }
 
   bool TryGetSVGData(const gfxFont* aFont);
   bool HasSVGGlyph(uint32_t aGlyphId);
@@ -622,6 +632,9 @@ class gfxFontEntry {
   const SharedBitSet* GetShmemCharacterMap() const {
     return mShmemCharacterMap;
   }
+
+  
+  mozilla::Atomic<bool, mozilla::Relaxed> mUnusable{false};
 
   mozilla::Atomic<const uint8_t*> mUVSData;
   const uint8_t* GetUVSData() const { return mUVSData; }

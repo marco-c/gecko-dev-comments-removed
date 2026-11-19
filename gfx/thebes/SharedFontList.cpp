@@ -554,7 +554,9 @@ void Family::SearchAllFontsForChar(FontList* aList,
         RefPtr<gfxFontEntry> fe =
             gfxPlatformFontList::PlatformFontList()->GetOrCreateFontEntry(face,
                                                                           this);
-        if (!fe) {
+        
+        
+        if (!fe || fe->IsUnusable()) {
           continue;
         }
         if (!charmap && !fe->HasCharacter(aMatchData->mCh)) {

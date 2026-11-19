@@ -2353,7 +2353,7 @@ already_AddRefed<gfxFont> gfxFontGroup::GetFirstValidFont(
   
   
   auto isValidForChar = [](gfxFont* aFont, uint32_t aCh) -> bool {
-    if (!aFont) {
+    if (!aFont || !aFont->Valid()) {
       return false;
     }
     if (aCh == kCSSFirstAvailableFont) {

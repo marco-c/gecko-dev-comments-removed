@@ -1057,6 +1057,10 @@ gfxFont::~gfxFont() {
 }
 
 void gfxFont::InitMetrics() {
+  if (mFontEntry->IsUnusable()) {
+    return;
+  }
+
   
   
   mAdjustedSize = GetAdjustedSize();
@@ -4539,8 +4543,14 @@ bool gfxFont::InitMetricsFromSkrifa() {
     return false;
   }
 
-  SkrifaLocation* location = skrifa_font_resolve_variations_to_location(
-      skf, &mStyle.variationSettings);
+  
+  
+  
+  AutoTArray<gfxFontVariation, 8> variations;
+  mFontEntry->GetVariationsForStyle(variations, mStyle);
+
+  SkrifaLocation* location =
+      skrifa_font_resolve_variations_to_location(skf, &variations);
   SkrifaMetrics metrics;
   skrifa_font_get_metrics(skf, GetAdjustedSize(), location, &metrics);
 

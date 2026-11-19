@@ -291,13 +291,20 @@ void gfxDWriteFont::UpdateClearTypeVars() {
 
 gfxFont* gfxDWriteFont::CopyWithAntialiasOption(
     AntialiasOption anAAOption) const {
+  if (!Valid()) {
+    return nullptr;
+  }
   auto entry = static_cast<gfxDWriteFontEntry*>(mFontEntry.get());
   RefPtr<UnscaledFontDWrite> unscaledFont =
       static_cast<UnscaledFontDWrite*>(mUnscaledFont.get());
   gfxFont* newFont =
       new gfxDWriteFont(unscaledFont, entry, &mStyle, mFontFace, anAAOption);
   newFont->InitMetrics();
-  return newFont->Valid() ? newFont : nullptr;
+  if (!newFont->Valid()) {
+    newFont->Destroy();
+    return nullptr;
+  }
+  return newFont;
 }
 
 bool gfxDWriteFont::GetFakeMetricsForArialBlack(
@@ -702,9 +709,8 @@ gfxFloat gfxDWriteFont::MeasureGlyphWidth(uint16_t aGlyph) {
     
     
     
-    mIsValid = false;
-    GetFontEntry()->mCharacterMap = new gfxCharacterMap(0);
-    GetFontEntry()->mShmemCharacterMap = nullptr;
+    
+    GetFontEntry()->MarkUnusable();
     gfxCriticalError() << "Exception occurred measuring glyph width for "
                        << GetFontEntry()->Name().get();
   }
@@ -731,9 +737,8 @@ bool gfxDWriteFont::GetGlyphBounds(uint16_t aGID, gfxRect* aBounds,
     
     
     
-    mIsValid = false;
-    GetFontEntry()->mCharacterMap = new gfxCharacterMap(0);
-    GetFontEntry()->mShmemCharacterMap = nullptr;
+    
+    GetFontEntry()->MarkUnusable();
     gfxCriticalError() << "Exception occurred measuring glyph bounds for "
                        << GetFontEntry()->Name().get();
   }
