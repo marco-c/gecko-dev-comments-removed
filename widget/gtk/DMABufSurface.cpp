@@ -553,6 +553,20 @@ void DMABufSurface::FenceSet() {
 }
 
 
+
+static void PollSyncFd(int aRawFd) {
+  if (aRawFd < 0) {
+    return;
+  }
+  constexpr int kSyncPollTimeoutMs = 100;
+  struct pollfd pfd = {aRawFd, POLLIN, 0};
+  int ret = poll(&pfd, 1, kSyncPollTimeoutMs);
+  if (!(ret == 1 && (pfd.revents & POLLIN))) {
+    gfxCriticalNoteOnce << "poll failed: " << ret;
+  }
+}
+
+
 void DMABufSurface::FenceWaitFd(RefPtr<gl::GLContext> aGL,
                                 RefPtr<gfx::FileHandleWrapper> aSyncFd) {
   const auto& gle = gl::GLContextEGL::Cast(aGL);
@@ -565,17 +579,8 @@ void DMABufSurface::FenceWaitFd(RefPtr<gl::GLContext> aGL,
       egl->fCreateSyncKHR(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, attribs);
   if (!sync) {
     gfxCriticalNoteOnce << "CreateSync failed";
-    int rawFd = syncFd.get();
-    if (rawFd >= 0) {
-      
-      
-      constexpr int kSyncPollTimeoutMs = 100;
-      struct pollfd pfd = {rawFd, POLLIN, 0};
-      int ret = poll(&pfd, 1, kSyncPollTimeoutMs);
-      if (!(ret == 1 && (pfd.revents & POLLIN))) {
-        gfxCriticalNoteOnce << "poll failed: " << ret;
-      }
-    }
+    
+    PollSyncFd(syncFd.get());
     return;
   }
 
@@ -599,15 +604,16 @@ void DMABufSurface::FenceWait(mozilla::gl::GLContext* aGLContext) {
     if (!gl) {
       gl = aGLContext;
     }
-    if (!gl) {
-      gfxCriticalNoteOnce
-          << "DMABufSurface::FenceWait() failed: missing GL context";
-      return;
-    }
     syncFd = mSyncFd.forget();
   }
 
   LOGDMABUF("DMABufSurface::FenceWait() UID %d", mUID);
+  if (!gl) {
+    
+    
+    PollSyncFd(syncFd->GetHandle());
+    return;
+  }
   FenceWaitFd(std::move(gl), std::move(syncFd));
 }
 
@@ -1155,6 +1161,9 @@ bool DMABufSurfaceRGBA::ImportSurfaceDescriptor(
   mUID = desc.uid();
   mPID = desc.pid();
   mHDRMetadata = mozilla::gfx::HDRMetadata();
+  mColorRange = desc.colorRange();
+  mColorPrimaries = desc.colorPrimaries();
+  mTransferFunction = desc.transferFunction();
 
   LOGDMABUF(
       "DMABufSurfaceRGBA::ImportSurfaceDescriptor() UID %d size %d x %d\n",
@@ -1227,8 +1236,7 @@ bool DMABufSurfaceRGBA::Serialize(
   aOutDescriptor = SurfaceDescriptorDMABuf(
       GetSurfaceType(), mFOURCCFormat, modifiers, mGbmBufferFlags, fds, width,
       height, width, height, tmp, strides, offsets, GetYUVColorSpace(),
-      mColorRange, mozilla::gfx::ColorSpace2::UNKNOWN,
-      mozilla::gfx::TransferFunction::Default, 0, fenceFDs, mUID,
+      mColorRange, mColorPrimaries, mTransferFunction, 0, fenceFDs, mUID,
       mCanRecycle ? getpid() : 0, refCountFDs,
        nullptr,  false, mHDRMetadata);
   return true;
