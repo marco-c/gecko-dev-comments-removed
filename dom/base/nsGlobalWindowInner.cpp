@@ -175,7 +175,6 @@
 #include "mozilla/dom/TrustedTypeUtils.h"
 #include "mozilla/dom/TrustedTypesConstants.h"
 #include "mozilla/dom/VRDisplay.h"
-#include "mozilla/dom/VRDisplayEvent.h"
 #include "mozilla/dom/VRDisplayEventBinding.h"
 #include "mozilla/dom/VREventObserver.h"
 #include "mozilla/dom/VisualViewport.h"
@@ -2494,16 +2493,6 @@ nsresult nsGlobalWindowInner::PostHandleEvent(EventChainPostVisitor& aVisitor) {
 
     if (mVREventObserver) {
       mVREventObserver->NotifyAfterLoad();
-    }
-
-    uint32_t autoActivateVRDisplayID = 0;
-    nsGlobalWindowOuter* outer = GetOuterWindowInternal();
-    if (outer) {
-      autoActivateVRDisplayID = outer->GetAutoActivateVRDisplayID();
-    }
-    if (autoActivateVRDisplayID) {
-      DispatchVRDisplayActivate(autoActivateVRDisplayID,
-                                VRDisplayEventReason::Navigation);
     }
   }
 
@@ -7107,154 +7096,6 @@ void nsGlobalWindowInner::NotifyPresentationGenerationChanged(
   for (const auto& display : mVRDisplays) {
     if (display->DisplayId() == aDisplayID) {
       display->OnPresentationGenerationChanged();
-    }
-  }
-}
-
-void nsGlobalWindowInner::DispatchVRDisplayActivate(
-    uint32_t aDisplayID, mozilla::dom::VRDisplayEventReason aReason) {
-  
-  VRDisplay::UpdateVRDisplays(mVRDisplays, this);
-
-  
-  
-  for (const auto& display : mVRDisplays) {
-    if (display->DisplayId() == aDisplayID) {
-      if (aReason != VRDisplayEventReason::Navigation &&
-          display->IsAnyPresenting(gfx::kVRGroupContent)) {
-        
-        
-        
-        continue;
-      }
-
-      VRDisplayEventInit init;
-      init.mBubbles = false;
-      init.mCancelable = false;
-      init.mDisplay = display;
-      init.mReason.Construct(aReason);
-
-      RefPtr<VRDisplayEvent> event =
-          VRDisplayEvent::Constructor(this, u"vrdisplayactivate"_ns, init);
-      
-      
-      
-      event->SetTrusted(true);
-      
-      
-      
-      display->StartHandlingVRNavigationEvent();
-      DispatchEvent(*event);
-      display->StopHandlingVRNavigationEvent();
-      
-      
-      return;
-    }
-  }
-}
-
-void nsGlobalWindowInner::DispatchVRDisplayDeactivate(
-    uint32_t aDisplayID, mozilla::dom::VRDisplayEventReason aReason) {
-  
-  VRDisplay::UpdateVRDisplays(mVRDisplays, this);
-
-  
-  
-  for (const auto& display : mVRDisplays) {
-    if (display->DisplayId() == aDisplayID && display->IsPresenting()) {
-      
-      
-
-      VRDisplayEventInit init;
-      init.mBubbles = false;
-      init.mCancelable = false;
-      init.mDisplay = display;
-      init.mReason.Construct(aReason);
-
-      RefPtr<VRDisplayEvent> event =
-          VRDisplayEvent::Constructor(this, u"vrdisplaydeactivate"_ns, init);
-      event->SetTrusted(true);
-      DispatchEvent(*event);
-      
-      
-      return;
-    }
-  }
-}
-
-void nsGlobalWindowInner::DispatchVRDisplayConnect(uint32_t aDisplayID) {
-  
-  VRDisplay::UpdateVRDisplays(mVRDisplays, this);
-
-  
-  
-  for (const auto& display : mVRDisplays) {
-    if (display->DisplayId() == aDisplayID) {
-      
-      VRDisplayEventInit init;
-      init.mBubbles = false;
-      init.mCancelable = false;
-      init.mDisplay = display;
-      
-
-      RefPtr<VRDisplayEvent> event =
-          VRDisplayEvent::Constructor(this, u"vrdisplayconnect"_ns, init);
-      event->SetTrusted(true);
-      DispatchEvent(*event);
-      
-      
-      return;
-    }
-  }
-}
-
-void nsGlobalWindowInner::DispatchVRDisplayDisconnect(uint32_t aDisplayID) {
-  
-  VRDisplay::UpdateVRDisplays(mVRDisplays, this);
-
-  
-  
-  for (const auto& display : mVRDisplays) {
-    if (display->DisplayId() == aDisplayID) {
-      
-      VRDisplayEventInit init;
-      init.mBubbles = false;
-      init.mCancelable = false;
-      init.mDisplay = display;
-      
-
-      RefPtr<VRDisplayEvent> event =
-          VRDisplayEvent::Constructor(this, u"vrdisplaydisconnect"_ns, init);
-      event->SetTrusted(true);
-      DispatchEvent(*event);
-      
-      
-      return;
-    }
-  }
-}
-
-void nsGlobalWindowInner::DispatchVRDisplayPresentChange(uint32_t aDisplayID) {
-  
-  VRDisplay::UpdateVRDisplays(mVRDisplays, this);
-
-  
-  
-  for (const auto& display : mVRDisplays) {
-    if (display->DisplayId() == aDisplayID) {
-      
-      VRDisplayEventInit init;
-      init.mBubbles = false;
-      init.mCancelable = false;
-      init.mDisplay = display;
-      
-      RefPtr<VRDisplayEvent> event =
-          VRDisplayEvent::Constructor(this, u"vrdisplaypresentchange"_ns, init);
-      event->SetTrusted(true);
-      DispatchEvent(*event);
-      
-      
-      return;
     }
   }
 }
