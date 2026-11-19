@@ -979,7 +979,7 @@ bool nsCSPNonceSrc::visit(nsCSPSrcVisitor* aVisitor) const {
 }
 
 void nsCSPNonceSrc::toString(nsAString& outStr) const {
-  outStr.Append(CSP_EnumToUTF16Keyword(CSP_NONCE));
+  outStr.Append(kCSPNonceSourcePrefix);
   outStr.Append(mNonce);
   outStr.AppendLiteral("'");
 }
@@ -1237,6 +1237,74 @@ static nsTArray<SRIMetadata> ParseSRIMetadata(const nsAString& aMetadata) {
   return result;
 }
 
+
+
+
+
+static bool DoesIntegrityMetadataMatchSourceList(
+    nsILoadInfo* aLoadInfo,
+    const nsTArray<nsCSPHashSrc*>& aIntegrityExpressions) {
+  
+  if (aIntegrityExpressions.IsEmpty()) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  nsAutoString integrityMetadata;
+  aLoadInfo->GetIntegrityMetadata(integrityMetadata);
+
+  nsTArray<SRIMetadata> integritySources = ParseSRIMetadata(integrityMetadata);
+
+  
+  
+  if (integritySources.IsEmpty()) {
+    return false;
+  }
+
+  nsAutoCString sourceAlgorithmUTF8;
+  nsAutoCString sourceHashUTF8;
+  nsAutoString sourceAlgorithm;
+  nsAutoString sourceHash;
+  nsAutoString algorithm;
+  nsAutoString hash;
+
+  
+  for (const SRIMetadata& source : integritySources) {
+    source.GetAlgorithm(&sourceAlgorithmUTF8);
+    sourceAlgorithm = NS_ConvertUTF8toUTF16(sourceAlgorithmUTF8);
+    source.GetHash(0, &sourceHashUTF8);
+    sourceHash = NS_ConvertUTF8toUTF16(sourceHashUTF8);
+
+    
+    
+    
+    
+    bool found = false;
+    for (const nsCSPHashSrc* hashSrc : aIntegrityExpressions) {
+      hashSrc->getAlgorithm(algorithm);
+      hashSrc->getHash(hash);
+
+      
+      
+      if (sourceAlgorithm == algorithm && sourceHash == hash) {
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      return false;
+    }
+  }
+
+  
+  return true;
+}
+
 bool nsCSPDirective::permits(CSPDirective aDirective, nsILoadInfo* aLoadInfo,
                              nsIURI* aUri, bool aWasRedirected,
                              bool aReportOnly, bool aUpgradeInsecure) const {
@@ -1275,80 +1343,22 @@ bool nsCSPDirective::permits(CSPDirective aDirective, nsILoadInfo* aLoadInfo,
       
       
       nsTArray<nsCSPHashSrc*> integrityExpressions;
-      bool hasStrictDynamicKeyword =
-          false;  
-      for (uint32_t i = 0; i < mSrcs.Length(); i++) {
-        if (mSrcs[i]->isHash()) {
-          integrityExpressions.AppendElement(
-              static_cast<nsCSPHashSrc*>(mSrcs[i]));
-        } else if (mSrcs[i]->isKeyword(CSP_STRICT_DYNAMIC)) {
+      bool hasStrictDynamicKeyword = false;
+      for (nsCSPBaseSrc* src : mSrcs) {
+        if (src->isHash()) {
+          integrityExpressions.AppendElement(static_cast<nsCSPHashSrc*>(src));
+        } else if (src->isKeyword(CSP_STRICT_DYNAMIC)) {
           hasStrictDynamicKeyword = true;
         }
       }
 
       
-      if (!integrityExpressions.IsEmpty()) {
-        
-        
-        
-        nsAutoString integrityMetadata;
-        aLoadInfo->GetIntegrityMetadata(integrityMetadata);
-
-        nsTArray<SRIMetadata> integritySources =
-            ParseSRIMetadata(integrityMetadata);
-
-        
-        
-        if (!integritySources.IsEmpty()) {
-          
-          bool bypass = true;
-
-          nsAutoCString sourceAlgorithmUTF8;
-          nsAutoCString sourceHashUTF8;
-          nsAutoString sourceAlgorithm;
-          nsAutoString sourceHash;
-          nsAutoString algorithm;
-          nsAutoString hash;
-
-          
-          for (const SRIMetadata& source : integritySources) {
-            source.GetAlgorithm(&sourceAlgorithmUTF8);
-            sourceAlgorithm = NS_ConvertUTF8toUTF16(sourceAlgorithmUTF8);
-            source.GetHash(0, &sourceHashUTF8);
-            sourceHash = NS_ConvertUTF8toUTF16(sourceHashUTF8);
-
-            
-            
-            
-            
-            
-            bool found = false;
-            for (const nsCSPHashSrc* hashSrc : integrityExpressions) {
-              hashSrc->getAlgorithm(algorithm);
-              hashSrc->getHash(hash);
-
-              
-              
-              if (sourceAlgorithm == algorithm && sourceHash == hash) {
-                found = true;
-                break;
-              }
-            }
-
-            if (!found) {
-              bypass = false;
-              break;
-            }
-          }
-
-          
-          
-          if (bypass) {
-            CSPUTILSLOG(
-                ("  Allowed by matching integrity metadata (script-like)"));
-            return true;
-          }
-        }
+      
+      
+      if (DoesIntegrityMetadataMatchSourceList(aLoadInfo,
+                                               integrityExpressions)) {
+        CSPUTILSLOG(("  Allowed by matching integrity metadata (script-like)"));
+        return true;
       }
 
       

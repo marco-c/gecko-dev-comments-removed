@@ -331,6 +331,11 @@ class nsCSPKeywordSrc : public nsCSPBaseSrc {
 
 
 
+
+
+
+inline constexpr nsLiteralString kCSPNonceSourcePrefix = u"'nonce-"_ns;
+
 class nsCSPNonceSrc : public nsCSPBaseSrc {
  public:
   explicit nsCSPNonceSrc(const nsAString& aNonce);

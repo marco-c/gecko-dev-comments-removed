@@ -566,8 +566,7 @@ nsCSPNonceSrc* nsCSPParser::nonceSource() {
                 NS_ConvertUTF16toUTF8(mCurValue).get()));
 
   
-  if (!StringBeginsWith(mCurToken,
-                        nsDependentString(CSP_EnumToUTF16Keyword(CSP_NONCE)),
+  if (!StringBeginsWith(mCurToken, kCSPNonceSourcePrefix,
                         nsASCIICaseInsensitiveStringComparator) ||
       mCurToken.Last() != SINGLEQUOTE) {
     return nullptr;
