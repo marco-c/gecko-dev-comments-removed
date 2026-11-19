@@ -191,9 +191,11 @@ async function openGeneratedAITab(context, viewerURL) {
 
 async function selectAITabTestTab(tab) {
   const win = tab.documentGlobal;
+  tab.scrollIntoView({ behavior: "instant" });
   await BrowserTestUtils.switchTab(win.gBrowser, () => {
     EventUtils.synthesizeMouseAtCenter(tab, {}, win);
   });
+  Assert.equal(win.gBrowser.selectedTab, tab, "The clicked tab becomes active");
 }
 
 async function waitForAITabHeading(tab, title) {
@@ -229,3 +231,152 @@ const PAGE_CONFIG = {
     { id: "untyped", title: "A block with no component" },
   ],
 };
+
+
+
+
+
+
+
+
+function getTabConversation(tab) {
+  return tab.linkedBrowser.contentDocument?.querySelector("ai-window")
+    ?.conversation;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+async function activateAndWaitForAITab(
+  win,
+  activate,
+  { expectCurrentChatUntouched = true } = {}
+) {
+  const { MESSAGE_ROLE } = ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/ui/modules/ChatEnums.sys.mjs"
+  );
+  const selectedTab = win.gBrowser.selectedTab;
+  const tabOpened = BrowserTestUtils.waitForEvent(
+    win.gBrowser.tabContainer,
+    "TabOpen"
+  );
+  await activate();
+  const tab = (await tabOpened).target;
+
+  let conversation;
+  try {
+    
+    
+    await TestUtils.waitForCondition(
+      () => {
+        conversation = getTabConversation(tab);
+        return conversation?.messages.some(m => m.role === MESSAGE_ROLE.USER);
+      },
+      "Wait for the new tab's chat to submit its conversation",
+      100,
+      150
+    );
+  } catch (e) {
+    throw new Error(
+      `${e.message ?? e} | url=${tab.linkedBrowser.currentURI.spec}` +
+        ` conversation=${conversation?.id} messages=${conversation?.messageCount}`
+    );
+  }
+
+  Assert.equal(
+    tab.linkedBrowser.currentURI.spec,
+    AIWINDOW_URL,
+    "The new tab is a full page chat"
+  );
+  Assert.equal(
+    win.gBrowser.selectedTab,
+    selectedTab,
+    "The new tab opened in the background"
+  );
+  if (expectCurrentChatUntouched) {
+    Assert.ok(
+      !AIWindow.getActiveConversation(win)?.messageCount,
+      "The current tab's chat is left alone"
+    );
+  }
+  return tab;
+}
+
+
+
+
+
+
+
+
+
+
+
+async function assertAITabCreationPrompt(tab, urls, mockEngineManager) {
+  const { MESSAGE_ROLE } = ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/ui/modules/ChatEnums.sys.mjs"
+  );
+  const l10n = new Localization(["preview/aiWindow.ftl"]);
+  const userMessages = getTabConversation(tab).messages.filter(
+    m => m.role === MESSAGE_ROLE.USER
+  );
+  Assert.equal(userMessages.length, 1, "The conversation has one user turn");
+  const prompt = await l10n.formatValue("ai-tab-create-page-prompt", {
+    tabCount: urls.length,
+  });
+  Assert.equal(
+    userMessages[0].content.body,
+    [prompt, ...urls].join("\n"),
+    "The user turn is the localized prompt followed by the tab URLs"
+  );
+  Assert.ok(
+    !userMessages[0].content.contextPageUrl,
+    "The user turn carries no page context besides the listed URLs"
+  );
+  const { request, respond } = await mockEngineManager.captureRequest({
+    purpose: "chat",
+  });
+  Assert.ok(request, "The submitted conversation requested a model response");
+  respond("Mock AI Tab reply.");
+}
+
+
+
+
+
+
+
+
+async function openTabContextMenu(win, tab) {
+  tab.scrollIntoView({ behavior: "instant" });
+  const menu = win.document.getElementById("tabContextMenu");
+  const shown = BrowserTestUtils.waitForPopupEvent(menu, "shown");
+  EventUtils.synthesizeMouseAtCenter(
+    tab,
+    { type: "contextmenu", button: 2 },
+    win
+  );
+  await shown;
+  return menu;
+}
+
+
+
+
+
+
+
+
+async function activateItemAndWait(menu, item) {
+  const hidden = BrowserTestUtils.waitForPopupEvent(menu, "hidden");
+  menu.activateItem(item);
+  await hidden;
+}
