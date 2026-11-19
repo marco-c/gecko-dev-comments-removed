@@ -360,7 +360,6 @@ class XPCJSContext final : public mozilla::CycleCollectedJSContext,
     IDX_INDEXEDDB,
     IDX_STRUCTUREDCLONE,
     IDX_LOCKS,
-    IDX_STORAGE,
     IDX_SUPPRESSED,
     IDX_ERROR,
     
@@ -2799,7 +2798,6 @@ bool SandboxCreateCrypto(JSContext* cx, JS::Handle<JSObject*> obj);
 bool SandboxCreateFetch(JSContext* cx, JS::Handle<JSObject*> obj);
 bool SandboxCreateStructuredClone(JSContext* cx, JS::Handle<JSObject*> obj);
 bool SandboxCreateLocks(JSContext* cx, JS::Handle<JSObject*> obj);
-bool SandboxCreateStorage(JSContext* cx, JS::Handle<JSObject*> obj);
 
 }  
 

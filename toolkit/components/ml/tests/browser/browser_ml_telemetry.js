@@ -19,11 +19,6 @@ const { MLTelemetry } = ChromeUtils.importESModule(
   "chrome://global/content/ml/MLTelemetry.sys.mjs"
 );
 
-
-registerCleanupFunction(() => {
-  Services.env.set("MOZ_ALLOW_EXTERNAL_ML_HUB", "");
-});
-
 function getGleanCount(metricsName, engineId = "default-engine") {
   var metrics = Glean.firefoxAiRuntime[metricsName];
 
