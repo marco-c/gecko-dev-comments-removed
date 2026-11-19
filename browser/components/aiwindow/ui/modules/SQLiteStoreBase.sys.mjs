@@ -21,7 +21,7 @@ const DEFAULT_MAX_DB_SIZE_BYTES = 75 * 1024 * 1024;
  * @example
  * class MyStore extends SQLiteStoreBase {
  *   get logPrefix() { return "MyStore"; }
- *   get logLevelPref() { return "browser.mystore.loglevel"; }
+ *   get logLevelPref() { return "browser.mystore.logLevel"; }
  *   get shutdownBlockerName() { return "MyStore: Shutdown"; }
  *   get CURRENT_SCHEMA_VERSION() { return 1; }
  *   get databaseFileName() { return "my-store.sqlite"; }
@@ -115,7 +115,7 @@ export class SQLiteStoreBase {
   get log() {
     if (!this.#log) {
       this.#log = console.createInstance({
-        prefix: this.logPrefix,
+        logModule: this.logPrefix,
         maxLogLevelPref: this.logLevelPref,
       });
     }

@@ -14,8 +14,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 ChromeUtils.defineLazyGetter(lazy, "log", function () {
   return console.createInstance({
-    prefix: "ChatStore",
-    maxLogLevelPref: "browser.smartwindow.chatStore.loglevel",
+    logModule: "ChatStore",
+    maxLogLevelPref: "browser.smartwindow.chatStore.logLevel",
   });
 });
 
