@@ -4627,7 +4627,7 @@ bool nsBlockFrame::ReflowLine(BlockReflowState& aState, LineIterator aLine,
   
   nsIFrame* firstChild = aLine->mFirstChild;
   if (firstChild->IsHiddenByContentVisibilityOfInFlowParentForLayout() &&
-      !HasAnyStateBits(NS_FRAME_OWNS_ANON_BOXES)) {
+      !HasAnyStateBits(NS_FRAME_OWNS_ANON_BOXES) && !GetNextContinuation()) {
     return false;
   }
 
