@@ -7,8 +7,11 @@ package mozilla.components.feature.listentopage
 import java.util.Locale
 import kotlin.time.Duration.Companion.seconds
 import mozilla.components.feature.listentopage.playback.ArticleMeasurements
+import mozilla.components.feature.listentopage.playback.PlaybackPhase
+import mozilla.components.feature.listentopage.playback.PlaybackSpeed
 import mozilla.components.feature.listentopage.playback.shownDurationMs
 import mozilla.components.feature.listentopage.synthesis.SpeechRate
+import mozilla.components.feature.listentopage.voices.Voice
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -53,18 +56,10 @@ class ListenReducerTest {
 
     @Test
     fun `test that a listen request drops everything the previous session held`() {
-        val state = listenReducer(fullState, ListenAction.Session.ListenRequested("tab-2", URL))
-
-        assertEquals("tab-2", state.tabId)
-        assertEquals(URL, state.url)
-        assertNull(state.title)
-        assertNull(state.site)
-        assertNull(state.error)
-        assertEquals(PlayerMode.Expanded, state.mode)
-        assertEquals("de-DE", state.languageTag)
-        assertEquals(fullState.voiceState, state.voiceState)
-        assertEquals(PlaybackState(), state.playbackState)
-        assertEquals(ArticleProgress(), state.articleProgress)
+        assertEquals(
+            ListenState(tabId = "tab-2", url = URL),
+            listenReducer(fullState, ListenAction.Session.ListenRequested("tab-2", URL)),
+        )
     }
 
     @Test
