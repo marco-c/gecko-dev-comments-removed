@@ -13,6 +13,7 @@
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/ClientInfo.h"
+#include "mozilla/dom/DatagramQueueCharge.h"
 #include "mozilla/dom/InternalHeaders.h"
 #include "mozilla/dom/WebTransportBinding.h"
 #include "mozilla/dom/WebTransportLog.h"
@@ -754,8 +755,7 @@ WebTransportParent::OnSessionReady(uint64_t aSessionId) {
 
   mSessionReady = true;
   mSessionId = aSessionId;
-  mDatagramCreditGranter.SetDatagramPrefixBytes(
-      DatagramPrefixBytes(aSessionId));
+  mDatagramPrefixBytes = DatagramPrefixBytes(aSessionId);
 
   
   
@@ -803,8 +803,6 @@ WebTransportParent::OnSessionReady(uint64_t aSessionId) {
           
           
           self->mWebTransport->GetMaxDatagramSize();
-          self->mDatagramCreditGranter.SetMaxDatagramSize(
-              self->mMaxDatagramSizeValue);
           
           
           self->MaybeSendDatagramCapacity();
@@ -1191,8 +1189,12 @@ WebTransportParent::OnIncomingBidirectionalStreamAvailable(
           ("Dropping datagram: age %f ms exceeds outgoingMaxAge %f ms "
            "before reaching neqo",
            ageMs, mDatagramMaxAge));
-      mDatagramCreditGranter.OnExpiredBeforeForwarding(
-          datagram.data().Length());
+      mParentExpiredOutgoing++;
+      
+      
+      mCumulativeDatagramsRetired++;
+      mCumulativeBytesRetired +=
+          DatagramQueueCharge(datagram.data().Length(), mDatagramPrefixBytes);
       continue;
     }
 
@@ -1221,7 +1223,9 @@ WebTransportParent::OnIncomingBidirectionalStreamAvailable(
     (void)mWebTransport->SendDatagramAt(datagram.data(), datagram.sendGroupId(),
                                         datagram.sendOrder(),
                                         mLastOutgoingDatagramTimestamp);
-    mDatagramCreditGranter.OnForwarded(datagram.data().Length());
+    mCumulativeDatagramsRetired++;
+    mCumulativeBytesRetired +=
+        DatagramQueueCharge(datagram.data().Length(), mDatagramPrefixBytes);
   }
 
   
@@ -1248,27 +1252,86 @@ void WebTransportParent::MaybeSendDatagramCapacity() {
                                        &maxQueuedBytes)) {
     return;
   }
-  DatagramQueueSample sample;
-  sample.mRemainingBytes = remainingBytes;
-  sample.mQueuedDatagrams = queuedDatagrams;
-  sample.mMaxQueuedBytes = maxQueuedBytes;
-  if (!proxy->GetDatagramSessionStats(&sample.mSent, &sample.mExpired,
-                                      &sample.mDropped)) {
+  uint64_t sentOutgoing = 0;
+  uint64_t expiredOutgoingFromNeqo = 0;
+  uint64_t droppedOutgoing = 0;
+  if (!proxy->GetDatagramSessionStats(&sentOutgoing, &expiredOutgoingFromNeqo,
+                                      &droppedOutgoing)) {
     return;
   }
 
-  Maybe<DatagramCapacityUpdate> update = mDatagramCreditGranter.Compute(sample);
-  if (update && CanSend()) {
-    mDatagramCreditGranter.Commit(*update);
+  
+  
+  
+  
+  
+  
+  
+  
+  uint64_t withheld =
+      DatagramQueueCharge(mMaxDatagramSizeValue, mDatagramPrefixBytes);
+  uint64_t bytesGrant =
+      mCumulativeBytesRetired +
+      (remainingBytes > withheld ? remainingBytes - withheld : 0);
+  
+  
+  
+  
+  
+  uint64_t retiredDatagrams =
+      mCumulativeDatagramsRetired -
+      std::min<uint64_t>(queuedDatagrams, mCumulativeDatagramsRetired);
+  
+  
+  
+  
+  uint64_t datagramsGrant =
+      retiredDatagrams + (mOutgoingMaxBufferedDatagrams > 0
+                              ? mOutgoingMaxBufferedDatagrams - 1
+                              : 0);
+
+  uint64_t sentDelta = sentOutgoing - mLastObservedSentOutgoing;
+  uint64_t expiredDelta =
+      (expiredOutgoingFromNeqo - mLastObservedExpiredOutgoingFromNeqo) +
+      (mParentExpiredOutgoing - mLastObservedParentExpiredOutgoing);
+  uint64_t droppedDelta = droppedOutgoing - mLastObservedDroppedOutgoing;
+
+  
+  
+  
+  
+  
+  bool bytesAdvancedEnough =
+      bytesGrant > mLastGrantedCumulativeBytes && maxQueuedBytes > 0 &&
+      bytesGrant - mLastGrantedCumulativeBytes >= maxQueuedBytes / 2;
+  bool datagramsAdvancedEnough =
+      datagramsGrant > mLastGrantedCumulativeDatagrams &&
+      mOutgoingMaxBufferedDatagrams > 0 &&
+      datagramsGrant - mLastGrantedCumulativeDatagrams >=
+          mOutgoingMaxBufferedDatagrams / 2;
+  bool neverGranted =
+      mLastGrantedCumulativeBytes == 0 && mLastGrantedCumulativeDatagrams == 0;
+  bool hasDeltaToReport = sentDelta > 0 || expiredDelta > 0 || droppedDelta > 0;
+
+  if (!bytesAdvancedEnough && !datagramsAdvancedEnough && !neverGranted &&
+      !hasDeltaToReport) {
+    return;
+  }
+
+  if (CanSend()) {
+    mLastGrantedCumulativeBytes = bytesGrant;
+    mLastGrantedCumulativeDatagrams = datagramsGrant;
+    mLastObservedSentOutgoing = sentOutgoing;
+    mLastObservedExpiredOutgoingFromNeqo = expiredOutgoingFromNeqo;
+    mLastObservedDroppedOutgoing = droppedOutgoing;
+    mLastObservedParentExpiredOutgoing = mParentExpiredOutgoing;
     LOG(("WebTransportParent sending DatagramCapacity datagrams=%" PRIu64
          " bytes=%" PRIu64 " sentDelta=%" PRIu64 " expiredDelta=%" PRIu64
          " droppedDelta=%" PRIu64,
-         update->mCumulativeDatagrams, update->mCumulativeBytes,
-         update->mSentDelta, update->mExpiredDelta, update->mDroppedDelta));
-    (void)SendDatagramCapacity(update->mCumulativeDatagrams,
-                               update->mCumulativeBytes, update->mSentDelta,
-                               update->mExpiredDelta, update->mDroppedDelta,
-                               mDatagramCreditGranter.DatagramPrefixBytes());
+         datagramsGrant, bytesGrant, sentDelta, expiredDelta, droppedDelta));
+    (void)SendDatagramCapacity(datagramsGrant, bytesGrant, sentDelta,
+                               expiredDelta, droppedDelta,
+                               mDatagramPrefixBytes);
   }
 }
 
@@ -1284,7 +1347,7 @@ void WebTransportParent::MaybeSendDatagramCapacity() {
   mWebTransport->SetDatagramMaxBufferedDatagrams(aOutgoingMaxBufferedDatagrams);
   mWebTransport->SetDatagramMaxAge(aOutgoingMaxAge);
   mDatagramMaxAge = aOutgoingMaxAge;
-  mDatagramCreditGranter.SetMaxBufferedDatagrams(aOutgoingMaxBufferedDatagrams);
+  mOutgoingMaxBufferedDatagrams = aOutgoingMaxBufferedDatagrams;
 
   return IPC_OK();
 }
@@ -1372,8 +1435,7 @@ NS_IMETHODIMP WebTransportParent::OnStatsAvailable(
 void WebTransportParent::AddParentExpiredOutgoing(
     WebTransportStatsData& aStats) const {
   MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
-  aStats.datagrams().expiredOutgoing() +=
-      mDatagramCreditGranter.ParentExpired();
+  aStats.datagrams().expiredOutgoing() += mParentExpiredOutgoing;
 }
 
 void WebTransportParent::ResolvePendingGetStats(

@@ -9,7 +9,6 @@
 
 #include "ErrorList.h"
 #include "mozilla/dom/ClientIPCTypes.h"
-#include "mozilla/dom/DatagramCredit.h"
 #include "mozilla/dom/FlippedOnce.h"
 #include "mozilla/dom/PWebTransportParent.h"
 #include "mozilla/ipc/Endpoint.h"
@@ -159,6 +158,9 @@ class WebTransportParent : public PWebTransportParent,
   
   bool mRetargeted = false;
   uint64_t mSessionId{0};
+  
+  
+  uint64_t mDatagramPrefixBytes{0};
 
   mozilla::Mutex mMutex{"WebTransportParent::mMutex"};
   std::function<void(ResolveType)> mResolver MOZ_GUARDED_BY(mMutex);
@@ -170,16 +172,48 @@ class WebTransportParent : public PWebTransportParent,
   
   
   
+  
   double mDatagramMaxAge{std::numeric_limits<double>::infinity()};
   
   TimeStamp mLastOutgoingDatagramTimestamp;
-  
-  
-  OutgoingDatagramCreditGranter mDatagramCreditGranter;
+  uint32_t mOutgoingMaxBufferedDatagrams{5};
   
   
   
   bool mInOutgoingDatagramsBatch{false};
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint64_t mCumulativeDatagramsRetired{0};
+  uint64_t mCumulativeBytesRetired{0};
+  
+  
+  
+  
+  
+  uint64_t mLastGrantedCumulativeDatagrams{0};
+  uint64_t mLastGrantedCumulativeBytes{0};
+  
+  
+  
+  
+  
+  uint64_t mParentExpiredOutgoing{0};
+  
+  
+  uint64_t mLastObservedSentOutgoing{0};
+  uint64_t mLastObservedExpiredOutgoingFromNeqo{0};
+  uint64_t mLastObservedDroppedOutgoing{0};
+  uint64_t mLastObservedParentExpiredOutgoing{0};
   
   
   
