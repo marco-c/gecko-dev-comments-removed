@@ -44,19 +44,11 @@ WebTransportIncomingStreamsAlgorithms::PullCallbackImpl(
   
   
   
+  
+  
+  
   RefPtr<Promise> promise =
       Promise::CreateInfallible(mTransport->GetParentObject());
-
-  
-  
-  if (mTransport->mState == WebTransport::WebTransportState::CLOSED ||
-      mTransport->mState == WebTransport::WebTransportState::FAILED) {
-    promise->MaybeRejectWithInvalidStateError("WebTransport closed or failed");
-    return promise.forget();
-  }
-
-  
-  
   RefPtr<WebTransportIncomingStreamsAlgorithms> self(this);
   
   
@@ -105,13 +97,6 @@ void WebTransportIncomingStreamsAlgorithms::BuildStream(JSContext* aCx,
                                                         ErrorResult& aRv) {
   
   
-  
-  
-  
-  if (mTransport->mState == WebTransport::WebTransportState::CLOSED ||
-      mTransport->mState == WebTransport::WebTransportState::FAILED) {
-    return;
-  }
   LOG(("Incoming%sDirectionalStreams Pull building a stream",
        mUnidirectional == StreamType::Unidirectional ? "Uni" : "Bi"));
   if (mUnidirectional == StreamType::Unidirectional) {
