@@ -4136,7 +4136,7 @@
 # Enable mutiple import maps.
 - name: dom.multiple_import_maps.enabled
   type: bool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
 
 # Limit of navigations initiated by content in a time span per
@@ -9210,9 +9210,9 @@
   value: false
   mirror: always
 
-- name: gfx.remote-texture.recycle.disabled
+- name: gfx.remote-texture.recycle.enabled
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
 
 - name: gfx.remote-texture.wait-owner-at-image-host
@@ -20789,11 +20789,7 @@
 # When true, right-clicking selects the word/link under the cursor.
 - name: ui.mouse.right_click.select_under_cursor
   type: bool
-#ifdef XP_MACOSX
-  value: @IS_NIGHTLY_BUILD@
-#else
-  value: false
-#endif
+  value: @IS_XP_MACOSX@
   mirror: always
 
 # When true, right-clicking selects the word under the cursor in editable
