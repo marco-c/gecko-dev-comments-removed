@@ -68,11 +68,25 @@ void WebTransportChild::CloseAll() {
   return IPC_OK();
 }
 
-::mozilla::ipc::IPCResult WebTransportChild::RecvIncomingDatagram(
-    nsTArray<uint8_t>&& aData, const TimeStamp& aRecvTimeStamp) {
-  if (mTransport) {
-    RefPtr<WebTransport> self(mTransport);
-    self->NewDatagramReceived(std::move(aData), aRecvTimeStamp);
+::mozilla::ipc::IPCResult WebTransportChild::RecvIncomingDatagrams(
+    nsTArray<IncomingDatagram>&& aDatagrams) {
+  if (!mTransport) {
+    return IPC_OK();
+  }
+
+  
+  
+  
+  
+  
+  
+  for (auto& datagram : aDatagrams) {
+    NS_DispatchToCurrentThread(NS_NewRunnableFunction(
+        "WebTransportChild::RecvIncomingDatagrams",
+        [self = RefPtr{mTransport}, data = std::move(datagram.data()),
+         ts = datagram.receivedTime()]() mutable {
+          self->NewDatagramReceived(std::move(data), ts);
+        }));
   }
   return IPC_OK();
 }
