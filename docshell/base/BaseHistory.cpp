@@ -4,6 +4,8 @@
 
 #include "BaseHistory.h"
 #include "nsAboutProtocolUtils.h"
+#include "nsIFileURL.h"
+#include "nsNetUtil.h"
 #include "nsThreadUtils.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Document.h"
@@ -23,7 +25,7 @@ static constexpr nsLiteralCString kDisallowedSchemes[] = {
     "javascript"_ns,    "mailbox"_ns,        "news"_ns,
     "page-icon"_ns,     "resource"_ns,       "view-source"_ns,
     "moz-extension"_ns, "moz-page-thumb"_ns, "moz-src"_ns,
-    "x-moz-ews"_ns,     "x-moz-graph"_ns};
+    "x-moz-ews"_ns,     "x-moz-graph"_ns,    "moz-newtab-wallpaper"_ns};
 
 
 
@@ -52,6 +54,16 @@ bool BaseHistory::CanStore(nsIURI* aURI) {
     }
   }
 
+  
+  nsCOMPtr<nsIURI> innermost = NS_GetInnermostURI(aURI);
+  if (!innermost) {
+    return false;
+  }
+  nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(innermost);
+  if (fileURL && !innermost->SchemeIs("file")) {
+    return false;
+  }
+
   nsAutoCString spec;
   aURI->GetSpec(spec);
   return spec.Length() <= StaticPrefs::browser_history_maxUrlLength();
@@ -59,6 +71,9 @@ bool BaseHistory::CanStore(nsIURI* aURI) {
 
 void BaseHistory::ScheduleVisitedQuery(nsIURI* aURI,
                                        dom::ContentParent* aForProcess) {
+  if (!CanStore(aURI)) {
+    return;
+  }
   mPendingQueries.WithEntryHandle(aURI, [&](auto&& entry) {
     auto& set = entry.OrInsertWith([] { return ContentParentSet(); });
     if (aForProcess) {
