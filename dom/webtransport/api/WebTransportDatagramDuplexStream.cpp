@@ -545,20 +545,6 @@ already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallbackImpl(
   size_t dataLength = data.Length();
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  if (mCleanedUp) {
-    promise->MaybeResolveWithUndefined();
-    return promise.forget();
-  }
-
-  
   if (mChild) {
     
     
@@ -721,7 +707,6 @@ void OutgoingDatagramStreamAlgorithms::UpdateQueueParams(
 }
 
 void OutgoingDatagramStreamAlgorithms::Cleanup() {
-  mCleanedUp = true;
   for (const auto& pending : mPendingDatagramPromises) {
     pending.mPromise->MaybeResolveWithUndefined();
   }
