@@ -2181,8 +2181,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealDragEvent(
     if (dragSession) {
       
       
-      dragSession->FireDragEventAtSource(eDrag, aEvent.mModifiers,
-                                         aEvent.mRefPoint);
+      dragSession->FireDragEventAtSource(eDrag, aEvent.mModifiers);
     }
   }
 
