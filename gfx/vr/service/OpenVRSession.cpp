@@ -33,7 +33,7 @@
 #include "binding/OpenVRKnucklesBinding.h"
 #include "binding/OpenVRViveBinding.h"
 #include "mozilla/dom/GamepadBinding.h"
-#include "mozilla/dom/GamepadEventTypes.h"
+#include "mozilla/dom/GamepadPoseState.h"
 #if defined(XP_WIN)  
 #  include "OpenVRWMRMapper.h"
 #  include "binding/OpenVRWMRBinding.h"

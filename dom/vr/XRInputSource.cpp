@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/XRInputSource.h"
 
 #include "VRDisplayClient.h"
@@ -12,6 +10,7 @@
 #include "XRNativeOriginViewer.h"
 #include "mozilla/dom/Gamepad.h"
 #include "mozilla/dom/GamepadManager.h"
+#include "mozilla/dom/GamepadPoseState.h"
 #include "mozilla/dom/XRInputSourceEvent.h"
 
 namespace mozilla::dom {

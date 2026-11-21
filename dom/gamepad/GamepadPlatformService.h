@@ -19,7 +19,6 @@ namespace mozilla::dom {
 
 class GamepadEventChannelParent;
 enum class GamepadLightIndicatorType : uint8_t;
-struct GamepadPoseState;
 class GamepadTestChannelParent;
 struct GamepadTouchState;
 class GamepadPlatformService;
@@ -97,10 +96,6 @@ class GamepadPlatformService final {
   
   
   void NewAxisMoveEvent(GamepadHandle aHandle, uint32_t aAxis, double aValue)
-      MOZ_EXCLUDES(mMutex);
-  
-  
-  void NewPoseEvent(GamepadHandle aHandle, const GamepadPoseState& aState)
       MOZ_EXCLUDES(mMutex);
   
   
