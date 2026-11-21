@@ -1,7 +1,7 @@
 
 
 
-function breakInEval() {
+function breakInEval(suffix = "") {
   eval(`
     debugger;
 
@@ -10,5 +10,5 @@ function breakInEval() {
       var bar = 2;
       return foo + bar;
     };
-  `);
+  ${suffix && `// ${suffix}`}`);
 }
