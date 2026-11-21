@@ -182,6 +182,12 @@ class Http3WebTransportSession final : public WebTransportSessionBase,
 
   
   mozilla::dom::WebTransportStatsData mCachedStats;
+
+  
+  
+  
+  
+  uint64_t mFailedOutgoingDatagrams{0};
 };
 
 }  
