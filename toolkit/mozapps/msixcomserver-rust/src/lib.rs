@@ -14,6 +14,7 @@ use windows::ApplicationModel::Background::{
 };
 use windows::ApplicationModel::FullTrustProcessLauncher;
 use windows::Win32::Foundation::{CLASS_E_CLASSNOTAVAILABLE, S_FALSE, S_OK};
+use windows::Win32::System::Diagnostics::Debug::OutputDebugStringW;
 use windows::Win32::System::WinRT::{IActivationFactory, IActivationFactory_Impl};
 use windows_core::{
     implement, IInspectable, OutRef, Ref, Result as WindowsResult, HRESULT, HSTRING,
@@ -56,7 +57,15 @@ impl IBackgroundTask_Impl for FirefoxBackgroundTask_Impl {
             return Ok(());
         };
 
-        let name = instance.Task()?.Name()?.to_string();
+        
+        
+        let name = match instance.Task().and_then(|task| task.Name()) {
+            Ok(name) => name.to_string(),
+            Err(e) => {
+                debug_log(&format!("Could not read the task name: {e}"));
+                return Ok(());
+            }
+        };
         if name.is_empty() {
             return Ok(());
         }
@@ -65,8 +74,16 @@ impl IBackgroundTask_Impl for FirefoxBackgroundTask_Impl {
         
         
         
-        launch_full_trust(&name)
+        if let Err(e) = launch_full_trust(&name) {
+            debug_log(&format!("Could not launch task {name}: {e}"));
+        }
+        Ok(())
     }
+}
+
+fn debug_log(message: &str) {
+    let message = HSTRING::from(format!("msixcomserver: {message}\n"));
+    unsafe { OutputDebugStringW(&message) };
 }
 
 
