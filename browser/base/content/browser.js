@@ -4973,6 +4973,9 @@ var gDialogBox = {
     "key_browserToolbox",
 
     
+    "cmd_lockWindows",
+
+    
     "key_undo",
     "key_redo",
 
