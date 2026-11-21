@@ -2500,6 +2500,13 @@ pref("browser.smartwindow.smartformfill.disallowedRegions", "FR");
 
 pref("browser.smartwindow.smartformfill.minFormFields", 4);
 
+
+
+pref("browser.smartwindow.smartformfill.maxPageContentLength", 10000);
+
+
+pref("browser.smartwindow.smartformfill.maxTabs", 30);
+
 #ifdef NIGHTLY_BUILD
 pref("browser.smartwindow.aitab.menus", true);
 #else
@@ -3047,6 +3054,11 @@ pref("browser.migrate.firefox.enabled", true);
 pref("browser.migrate.opera.enabled", true);
 pref("browser.migrate.opera-gx.enabled", true);
 pref("browser.migrate.safari.enabled", true);
+
+pref("browser.migrate.safari.history.limit", 0);
+
+
+pref("browser.migrate.safari.history.visit.limit", 5);
 pref("browser.migrate.vivaldi.enabled", true);
 
 pref("browser.migrate.content-modal.import-all.enabled", true);
@@ -3806,6 +3818,11 @@ pref("browser.fireButton.enabled", false);
 
 
 pref("browser.fireButton.flow", "panel");
+
+
+
+
+pref("browser.privatebrowsing.lockOnScreenLock.enabled", false);
 
 
 
