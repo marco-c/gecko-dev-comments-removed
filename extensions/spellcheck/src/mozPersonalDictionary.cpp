@@ -419,9 +419,9 @@ NS_IMETHODIMP mozPersonalDictionary::EndSession() {
   return NS_OK;
 }
 
-NS_IMETHODIMP mozPersonalDictionary::Observe(nsISupports* aSubject,
+NS_IMETHODIMP mozPersonalDictionary::Observe(nsISupports* ,
                                              const char* aTopic,
-                                             const char16_t* aData) {
+                                             const char16_t* ) {
   if (!nsCRT::strcmp(aTopic, "profile-do-change")) {
     
     

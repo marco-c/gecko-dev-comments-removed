@@ -64,11 +64,11 @@ void nsAutoConfig::SetConfigURL(const char* aConfigURL) {
 }
 
 NS_IMETHODIMP
-nsAutoConfig::OnStartRequest(nsIRequest* request) { return NS_OK; }
+nsAutoConfig::OnStartRequest(nsIRequest* ) { return NS_OK; }
 
 NS_IMETHODIMP
-nsAutoConfig::OnDataAvailable(nsIRequest* request, nsIInputStream* aIStream,
-                              uint64_t aSourceOffset, uint32_t aLength) {
+nsAutoConfig::OnDataAvailable(nsIRequest* , nsIInputStream* aIStream,
+                              uint64_t , uint32_t aLength) {
   uint32_t amt, size;
   nsresult rv;
   char buf[1024];
@@ -130,7 +130,7 @@ nsAutoConfig::OnStopRequest(nsIRequest* request, nsresult aStatus) {
 }
 
 
-NS_IMETHODIMP nsAutoConfig::Notify(nsITimer* timer) {
+NS_IMETHODIMP nsAutoConfig::Notify(nsITimer* ) {
   downloadAutoConfig();
   return NS_OK;
 }
@@ -146,8 +146,9 @@ nsAutoConfig::GetName(nsACString& aName) {
 
 
 
-NS_IMETHODIMP nsAutoConfig::Observe(nsISupports* aSubject, const char* aTopic,
-                                    const char16_t* someData) {
+NS_IMETHODIMP nsAutoConfig::Observe(nsISupports* ,
+                                    const char* aTopic,
+                                    const char16_t* ) {
   nsresult rv = NS_OK;
   if (!nsCRT::strcmp(aTopic, "profile-after-change")) {
     
@@ -414,7 +415,7 @@ nsresult nsAutoConfig::getEmailAddr(nsACString& emailAddr) {
                                   prefValue);
     if (NS_FAILED(rv) || prefValue.IsEmpty())
       return PromptForEMailAddress(emailAddr);
-    emailAddr = prefValue;
+    emailAddr = std::move(prefValue);
   } else {
     
     rv = mPrefBranch->GetCharPref("mail.identity.useremail", prefValue);
