@@ -17,7 +17,6 @@
 #include "mozilla/Perfetto.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/ScopeExit.h"
-#include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/StaticPrefs_memory.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/VsyncTaskManager.h"
@@ -1008,15 +1007,6 @@ namespace mozilla {
 
 
 
-static uint32_t MaxPurgeDelay() {
-  return StaticPrefs::javascript_options_gc_delay() * 3;
-}
-
-
-
-
-
-
 
 
 
@@ -1042,9 +1032,8 @@ void CheckMemoryCleanupNeeded(nsITimer* aTimer, void* aClosure) {
     sMemoryCleanupWantsLaterScheduled = false;
   }
 
-  auto result = moz_may_purge_now(
-       true, reuseGracePeriod, MaxPurgeDelay(), nullptr,
-      nullptr);
+  auto result = moz_may_purge_now( true, reuseGracePeriod,
+                                  nullptr, nullptr);
   switch (result) {
     case may_purge_now_result_t::Done:
       
@@ -1142,13 +1131,12 @@ Task::TaskResult InterruptiblePurgeTask::Run() {
 
   uint32_t reuseGracePeriod =
       StaticPrefs::memory_lazypurge_reuse_grace_period();
-  uint32_t maxPurgeDelay = MaxPurgeDelay();
 
   may_purge_now_result_t result;
   do {
     num_calls++;
     result = moz_may_purge_now( false, reuseGracePeriod,
-                               maxPurgeDelay, KeepPurging, this);
+                               KeepPurging, this);
   } while ((result == may_purge_now_result_t::NeedsMore) && !mInterrupted);
 
   const char* last_result;

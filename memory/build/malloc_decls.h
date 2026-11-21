@@ -159,13 +159,8 @@ MALLOC_DECL(moz_enable_deferred_purge, bool, bool)
 
 
 
-
-
-
-
-
 #    ifdef __cplusplus
-MALLOC_DECL(moz_may_purge_now, may_purge_now_result_t, bool, uint32_t, uint32_t,
+MALLOC_DECL(moz_may_purge_now, may_purge_now_result_t, bool, uint32_t,
             purge_keep_going_t, void*)
 #    endif
 
