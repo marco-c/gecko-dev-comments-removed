@@ -646,6 +646,86 @@ BigInt* BigInt::absoluteSub(JSContext* cx, HandleBigInt x, HandleBigInt y,
 
 
 
+#if defined(__x86_64__) || defined(__i386__)
+static constexpr size_t LargeDividendLength = 6;
+#else
+static constexpr size_t LargeDividendLength = 2;
+#endif
+
+MOZ_ALWAYS_INLINE BigInt::Digit BigInt::modDigitsByDigit(ConstDigits u,
+                                                         Digit m) {
+  return u.size() < LargeDividendLength ? modSmallDigitsByDigit(u, m)
+                                        : modLargeDigitsByDigit(u, m);
+}
+
+MOZ_ALWAYS_INLINE BigInt::Digit BigInt::modSmallDigitsByDigit(ConstDigits u,
+                                                              Digit m) {
+  Digit remainder = 0;
+  for (size_t i = u.size(); i-- > 0;) {
+    digitDiv(remainder, u[i], m, &remainder);
+  }
+  return remainder;
+}
+
+BigInt::Digit BigInt::modLargeDigitsByDigit(ConstDigits u, Digit m) {
+  MOZ_RELEASE_ASSERT(u.size() >= LargeDividendLength);
+  unsigned shift = std::countl_zero(m);
+  Digit divisor = m << shift;
+  Digit inverse = normalizedDigitInverse(divisor);
+  size_t i = u.size();
+  Digit remainder = shift ? u[i - 1] >> (DigitBits - shift) : 0;
+  while (i-- > 0) {
+    Digit low = u[i] << shift;
+    if (shift && i > 0) {
+      low |= u[i - 1] >> (DigitBits - shift);
+    }
+    digitDivByMultiplication(remainder, low, divisor, inverse, &remainder);
+  }
+  return remainder >> shift;
+}
+
+
+
+
+
+MOZ_ALWAYS_INLINE BigInt::Digit BigInt::divDigitsByDigit(ConstDigits u, Digit m,
+                                                         Digits q) {
+  return u.size() < LargeDividendLength ? divSmallDigitsByDigit(u, m, q)
+                                        : divLargeDigitsByDigit(u, m, q);
+}
+
+MOZ_ALWAYS_INLINE BigInt::Digit BigInt::divSmallDigitsByDigit(ConstDigits u,
+                                                              Digit m,
+                                                              Digits q) {
+  q = q.First(u.size());
+  Digit remainder = 0;
+  for (size_t i = u.size(); i-- > 0;) {
+    q[i] = digitDiv(remainder, u[i], m, &remainder);
+  }
+  return remainder;
+}
+
+BigInt::Digit BigInt::divLargeDigitsByDigit(ConstDigits u, Digit m, Digits q) {
+  MOZ_RELEASE_ASSERT(u.size() >= LargeDividendLength);
+  q = q.First(u.size());
+  unsigned shift = std::countl_zero(m);
+  Digit divisor = m << shift;
+  Digit inverse = normalizedDigitInverse(divisor);
+  size_t i = u.size();
+  Digit remainder = shift ? u[i - 1] >> (DigitBits - shift) : 0;
+  while (i-- > 0) {
+    Digit low = u[i] << shift;
+    if (shift && i > 0) {
+      low |= u[i - 1] >> (DigitBits - shift);
+    }
+    q[i] =
+        digitDivByMultiplication(remainder, low, divisor, inverse, &remainder);
+  }
+  return remainder >> shift;
+}
+
+
+
 
 
 
@@ -687,13 +767,8 @@ bool BigInt::absoluteDivWithDigitDivisor(JSContext* cx, HandleBigInt x,
     quotient.set(q);
   }
 
-  auto xDigits = x->digits();
-  auto quotientDigits = quotient->digits();
-  for (int i = length - 1; i >= 0; i--) {
-    Digit q = digitDiv(*remainder, xDigits[i], divisor, remainder);
-    quotientDigits[i] = q;
-  }
-
+  *remainder = divDigitsByDigit(x->unguardedDigits(), divisor,
+                                quotient->unguardedDigits());
   return true;
 }
 
@@ -1508,19 +1583,17 @@ JSLinearString* BigInt::toStringGeneric(JSContext* cx, HandleBigInt x,
   
   
   
-  
-  
-  
-  
-  RootedBigInt dividend(cx, x);
   do {
     Digit chunk;
-    if (!absoluteDivWithDigitDivisor(cx, dividend, chunkDivisor, &rest, &chunk,
-                                     dividend->isNegative())) {
-      return nullptr;
+    if (!rest) {
+      if (!absoluteDivWithDigitDivisor(cx, x, chunkDivisor, &rest, &chunk,
+                                       x->isNegative())) {
+        return nullptr;
+      }
+    } else {
+      Digits restDigits = rest->unguardedDigits().First(nonZeroDigit + 1);
+      chunk = divDigitsByDigit(restDigits, chunkDivisor, restDigits);
     }
-
-    dividend = rest;
     for (unsigned i = 0; i < chunkChars; i++) {
       MOZ_ASSERT(writePos > 0);
       resultString[--writePos] = radixDigits[chunk % radix];
@@ -2126,8 +2199,16 @@ BigInt* BigInt::mod(JSContext* cx, HandleBigInt x, HandleBigInt y) {
     return x;
   }
 
-  size_t length = x->digitLength();
   size_t n = y->digitLength();
+
+  
+  
+  if (n == 1) {
+    Digit mod = modDigitsByDigit(x->unguardedDigits(), y->individualDigit(0));
+    return mod ? createFromDigit(cx, mod, x->isNegative()) : zero(cx);
+  }
+
+  size_t length = x->digitLength();
   Vector<Digit, 16, SystemAllocPolicy> u;
   
   
@@ -2143,6 +2224,55 @@ BigInt* BigInt::mod(JSContext* cx, HandleBigInt x, HandleBigInt y) {
   }
   u.shrinkTo(n);
   return createFromDigitVector(cx, u, x->isNegative());
+}
+
+BigInt* BigInt::mulMod(JSContext* cx, HandleBigInt x, HandleBigInt y,
+                       HandleBigInt m) {
+  size_t length = x->digitLength() + y->digitLength();
+  if (length > MaxDigitLength) {
+    ReportOversizedAllocation(cx, JSMSG_BIGINT_TOO_LARGE);
+    return nullptr;
+  }
+
+  if (m->isZero()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_BIGINT_DIVISION_BY_ZERO);
+    return nullptr;
+  }
+
+  if (x->isZero() || y->isZero()) {
+    return zero(cx);
+  }
+
+  bool isNegative = x->isNegative() != y->isNegative();
+  size_t n = m->digitLength();
+  Vector<Digit, 32, SystemAllocPolicy> storage;
+  if (!storage.resizeUninitialized(length + 1)) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+  Digits product = Digits(storage).First(length);
+  schoolbookMultiplyDigits(x->unguardedDigits(), y->unguardedDigits(),
+                           product);
+  while (!product[length - 1]) {
+    length--;
+  }
+
+  ConstDigits mDigits = m->unguardedDigits();
+  if (length < n ||
+      (length == n && absoluteCompare(product.First(length), mDigits) < 0)) {
+    storage.shrinkTo(length);
+    return createFromDigitVector(cx, storage, isNegative);
+  }
+
+  Digits u = Digits(storage).First(length + 1);
+  u[length] = 0;
+  if (!modDigitsInPlace(u, mDigits)) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+  storage.shrinkTo(n);
+  return createFromDigitVector(cx, storage, isNegative);
 }
 
 bool BigInt::shouldModuloByCrandallReduction(ConstDigits m, uint32_t* k,
@@ -2277,11 +2407,7 @@ bool BigInt::modDigitsInPlace(Digits u, ConstDigits m) {
   MOZ_ASSERT(!u[u.size() - 1]);
 
   if (n == 1) {
-    Digit remainder = 0;
-    for (size_t i = u.size(); i-- > 0;) {
-      digitDiv(remainder, u[i], m[0], &remainder);
-    }
-    u[0] = remainder;
+    u[0] = modDigitsByDigit(u, m[0]);
     return true;
   }
 

@@ -2695,6 +2695,14 @@ void LIRGenerator::visitBigIntMod(MBigIntMod* ins) {
   assignSafepoint(lir, ins);
 }
 
+void LIRGenerator::visitBigIntMulMod(MBigIntMulMod* ins) {
+  auto* lir = new (alloc()) LBigIntMulMod(useRegisterAtStart(ins->lhs()),
+                                          useRegisterAtStart(ins->rhs()),
+                                          useRegisterAtStart(ins->modulus()));
+  defineReturn(lir, ins);
+  assignSafepoint(lir, ins);
+}
+
 void LIRGenerator::visitBigIntPow(MBigIntPow* ins) {
   auto* lir = new (alloc()) LBigIntPow(useRegisterAtStart(ins->lhs()),
                                        useRegisterAtStart(ins->rhs()));
@@ -7768,6 +7776,9 @@ void LIRGenerator::visitGeneratorResume(MGeneratorResume* ins) {
       tempFixed(CallTempReg3), tempFixed(CallTempReg4));
   defineReturn(lir, ins);
   assignSafepoint(lir, ins);
+
+  
+  lirGraph_.addExtraSafepointUses(1);
 }
 
 void LIRGenerator::visitCanSkipAwait(MCanSkipAwait* ins) {

@@ -256,6 +256,9 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
   static BigInt* mul(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
   static BigInt* div(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
   static BigInt* mod(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
+  
+  static BigInt* mulMod(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y,
+                        Handle<BigInt*> m);
   static BigInt* pow(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
   static BigInt* neg(JSContext* cx, Handle<BigInt*> x);
   static BigInt* inc(JSContext* cx, Handle<BigInt*> x);
@@ -480,6 +483,16 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
   
   
   [[nodiscard]] static bool modDigitsInPlace(Digits u, ConstDigits m);
+  
+  
+  
+  static Digit modDigitsByDigit(ConstDigits u, Digit m);
+  static Digit modSmallDigitsByDigit(ConstDigits u, Digit m);
+  static Digit modLargeDigitsByDigit(ConstDigits u, Digit m);
+  
+  static Digit divDigitsByDigit(ConstDigits u, Digit m, Digits q);
+  static Digit divSmallDigitsByDigit(ConstDigits u, Digit m, Digits q);
+  static Digit divLargeDigitsByDigit(ConstDigits u, Digit m, Digits q);
 
   static bool productGreaterThan(Digit factor1, Digit factor2, Digit high,
                                  Digit low);
