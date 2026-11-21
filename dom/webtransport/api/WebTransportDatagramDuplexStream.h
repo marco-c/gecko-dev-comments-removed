@@ -190,16 +190,19 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
   
   
   
-  
-  
-  
-  void Cleanup();
+  [[nodiscard]] nsTArray<RefPtr<WebTransportDatagramsWritable>> Cleanup();
 
   
   
   
-  
   MOZ_CAN_RUN_SCRIPT void CloseOrErrorWritables(
+      JSContext* aCx,
+      const nsTArray<RefPtr<WebTransportDatagramsWritable>>& aWritables,
+      bool aClean, JS::Handle<JS::Value> aErrorValue);
+
+  
+  
+  MOZ_CAN_RUN_SCRIPT void CloseOrErrorReadable(
       JSContext* aCx, bool aClean, JS::Handle<JS::Value> aErrorValue);
 
   void NewDatagramReceived(nsTArray<uint8_t>&& aData,

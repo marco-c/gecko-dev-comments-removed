@@ -1574,6 +1574,10 @@ void WebTransport::Cleanup(WebTransportError* aError,
   RefPtr<ReadableStream> incomingUnidirectionalStreams =
       mIncomingUnidirectionalStreams;
   RefPtr<WebTransportDatagramDuplexStream> datagrams = mDatagrams;
+  nsTArray<RefPtr<WebTransportDatagramsWritable>> outgoingDatagramWritables;
+  if (datagrams) {
+    outgoingDatagramWritables = datagrams->Cleanup();
+  }
 
   
   
@@ -1624,6 +1628,13 @@ void WebTransport::Cleanup(WebTransportError* aError,
     incomingBidirectionalStreams->CloseNative(cx, IgnoreErrors());
     
     incomingUnidirectionalStreams->CloseNative(cx, IgnoreErrors());
+    if (datagrams) {
+      
+      datagrams->CloseOrErrorWritables(cx, outgoingDatagramWritables, true,
+                                       errorValue);
+      
+      datagrams->CloseOrErrorReadable(cx, true, errorValue);
+    }
   } else {
     
     
@@ -1639,21 +1650,18 @@ void WebTransport::Cleanup(WebTransportError* aError,
     incomingBidirectionalStreams->ErrorNative(cx, errorValue, IgnoreErrors());
     
     incomingUnidirectionalStreams->ErrorNative(cx, errorValue, IgnoreErrors());
+    if (datagrams) {
+      
+      
+      datagrams->CloseOrErrorWritables(cx, outgoingDatagramWritables, false,
+                                       errorValue);
+      
+      datagrams->CloseOrErrorReadable(cx, false, errorValue);
+    }
   }
   
   mIncomingBidirectionalAlgorithm = nullptr;
   mIncomingUnidirectionalAlgorithm = nullptr;
-
-  
-  
-  
-  
-  
-  
-  if (datagrams) {
-    datagrams->Cleanup();
-    datagrams->CloseOrErrorWritables(cx, !!aCloseInfo, errorValue);
-  }
 
   
   NotifyToWindow(false);

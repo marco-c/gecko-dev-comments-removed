@@ -223,6 +223,10 @@ WebTransportDatagramDuplexStream::CreateWritable(
 void WebTransportDatagramDuplexStream::NewDatagramReceived(
     nsTArray<uint8_t>&& aData, const mozilla::TimeStamp& aTimeStamp) {
   LOG(("received Datagram, size = %zu", aData.Length()));
+  if (mWebTransport->mState == WebTransport::WebTransportState::CLOSED ||
+      mWebTransport->mState == WebTransport::WebTransportState::FAILED) {
+    return;
+  }
 
   
   
@@ -755,9 +759,21 @@ void OutgoingDatagramStreamAlgorithms::Cleanup() {
   mWaitConnectQueue.Clear();
 }
 
-void WebTransportDatagramDuplexStream::Cleanup() {
+nsTArray<RefPtr<WebTransportDatagramsWritable>>
+WebTransportDatagramDuplexStream::Cleanup() {
+  
+  nsTArray<RefPtr<WebTransportDatagramsWritable>> writables =
+      std::move(mAllWritables);
+  mCreatedWritables.Clear();
+  
+  
+  
+  
+  
+  
+  
   mOutgoingAlgorithms->Cleanup();
-  for (const auto& writable : mAllWritables) {
+  for (const auto& writable : writables) {
     writable->Cleanup();
   }
   
@@ -767,6 +783,10 @@ void WebTransportDatagramDuplexStream::Cleanup() {
   
   mPendingOutgoing.Clear();
   mPendingOutgoingBytes = 0;
+  
+  
+  mIncomingDatagramsQueue.Clear();
+  return writables;
 }
 
 
@@ -799,13 +819,22 @@ void WebTransportDatagramDuplexStream::CloseOrErrorWritable(
 }
 
 void WebTransportDatagramDuplexStream::CloseOrErrorWritables(
-    JSContext* aCx, bool aClean, JS::Handle<JS::Value> aErrorValue) {
+    JSContext* aCx,
+    const nsTArray<RefPtr<WebTransportDatagramsWritable>>& aWritables,
+    bool aClean, JS::Handle<JS::Value> aErrorValue) {
   CloseOrErrorWritable(aCx, MOZ_KnownLive(mWritable), aClean, aErrorValue);
-  
-  nsTArray<RefPtr<WebTransportDatagramsWritable>> writables =
-      mAllWritables.Clone();
-  for (const auto& writable : writables) {
+  for (const auto& writable : aWritables) {
     CloseOrErrorWritable(aCx, MOZ_KnownLive(writable), aClean, aErrorValue);
+  }
+}
+
+void WebTransportDatagramDuplexStream::CloseOrErrorReadable(
+    JSContext* aCx, bool aClean, JS::Handle<JS::Value> aErrorValue) {
+  RefPtr<ReadableStream> readable = mReadable;
+  if (aClean) {
+    readable->CloseNative(aCx, IgnoreErrors());
+  } else {
+    readable->ErrorNative(aCx, aErrorValue, IgnoreErrors());
   }
 }
 
