@@ -3950,7 +3950,12 @@ pref("devtools.errorconsole.deprecation_warnings", true);
 
 
 
-pref("devtools.debugger.prompt-connection", true, sticky);
+#ifdef MOZILLA_OFFICIAL
+  pref("devtools.debugger.prompt-connection", true, sticky);
+#else
+  
+  pref("devtools.debugger.prompt-connection", false, sticky);
+#endif
 
 #ifdef MOZILLA_OFFICIAL
   
