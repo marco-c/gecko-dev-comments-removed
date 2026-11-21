@@ -94,6 +94,12 @@ class IHistory : public nsISupports {
   virtual void NotifyVisited(nsIURI*, VisitedStatus,
                              const ContentParentSet* = nullptr) = 0;
 
+  
+
+
+
+  virtual void NotifyHistoryCleared() = 0;
+
   enum VisitFlags {
     
 

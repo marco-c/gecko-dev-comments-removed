@@ -193,6 +193,34 @@ void BaseHistory::NotifyVisited(
   }
 }
 
+void BaseHistory::NotifyHistoryCleared() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  for (auto& entry : mTrackedURIs) {
+    ObservingLinks& links = *entry.GetModifiableData();
+    if (links.mStatus != VisitedStatus::Visited) {
+      continue;
+    }
+    links.mStatus = VisitedStatus::Unvisited;
+    for (Link* link : links.mLinks.BackwardRange()) {
+      link->VisitedQueryFinished( false);
+    }
+  }
+
+  if (!XRE_IsParentProcess()) {
+    return;
+  }
+
+  
+  for (auto& result : mPendingResults) {
+    result.mResult.visited() = false;
+  }
+
+  for (auto* cp : ContentParent::AllProcesses(ContentParent::eLive)) {
+    (void)NS_WARN_IF(!cp->SendNotifyGlobalHistoryCleared());
+  }
+}
+
 void BaseHistory::NotifyVisitedInThisProcess(nsIURI* aURI,
                                              VisitedStatus aStatus) {
   if (NS_WARN_IF(!aURI)) {
