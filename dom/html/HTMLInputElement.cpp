@@ -1357,10 +1357,9 @@ void HTMLInputElement::BeforeSetAttr(int32_t aNameSpaceID, nsAtom* aName,
     }
 
     
-    
     if (mType == FormControlType::InputRadio) {
-      if ((aName == nsGkAtoms::name || (aName == nsGkAtoms::type && !mForm)) &&
-          (mForm || mDoneCreating)) {
+      if (aName == nsGkAtoms::name || (aName == nsGkAtoms::type && !mForm)) {
+        mRemovedFromRadioGroupForAttrChange = !!GetCurrentRadioGroupContainer();
         RemoveFromRadioGroup();
       } else if (aName == nsGkAtoms::required) {
         auto* container = GetCurrentRadioGroupContainer();
@@ -1554,9 +1553,12 @@ void HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
 
     
     
+    
+    const bool wasInRadioGroup = mRemovedFromRadioGroupForAttrChange;
+    mRemovedFromRadioGroupForAttrChange = false;
     if (mType == FormControlType::InputRadio) {
       if ((aName == nsGkAtoms::name || (aName == nsGkAtoms::type && !mForm)) &&
-          (mForm || mDoneCreating)) {
+          (mForm || mDoneCreating || GetParentNode() || wasInRadioGroup)) {
         AddToRadioGroup();
         UpdateValueMissingValidityStateForRadio(false);
         needValidityUpdate = true;
@@ -3171,8 +3173,14 @@ RadioGroupContainer* HTMLInputElement::FindTreeRadioGroupContainer() const {
               ->OwnedRadioGroupContainer();
 }
 
-void HTMLInputElement::DisconnectRadioGroupContainer() {
-  mRadioGroupContainer = nullptr;
+void HTMLInputElement::DisconnectRadioGroupContainer(
+    RadioGroupContainer* aContainer) {
+  MOZ_ASSERT(mRadioGroupContainer == aContainer,
+             "Requested unlink by container that does not really contain this "
+             "element.");
+  if (mRadioGroupContainer == aContainer) {
+    mRadioGroupContainer = nullptr;
+  }
 }
 
 HTMLInputElement* HTMLInputElement::GetSelectedRadioButton() const {
@@ -6749,7 +6757,7 @@ bool HTMLInputElement::IsHTMLFocusable(IsFocusableFlags aFlags,
 
 template <typename VisitCallback>
 void HTMLInputElement::VisitGroup(VisitCallback&& aCallback, bool aSkipThis) {
-  if (auto* container = GetCurrentRadioGroupContainer()) {
+  if (RefPtr container = GetCurrentRadioGroupContainer()) {
     nsAutoString name;
     GetAttr(nsGkAtoms::name, name);
     container->WalkRadioGroup(name, aCallback, aSkipThis ? this : nullptr);

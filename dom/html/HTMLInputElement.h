@@ -278,7 +278,7 @@ class HTMLInputElement final : public TextControlElement,
   bool GetCheckedChanged() const { return mCheckedChanged; }
   void AddToRadioGroup();
   void RemoveFromRadioGroup();
-  void DisconnectRadioGroupContainer();
+  void DisconnectRadioGroupContainer(RadioGroupContainer* aContainer);
   void UpdateRadioGroupState();
 
   
@@ -1596,6 +1596,9 @@ class HTMLInputElement final : public TextControlElement,
   
   
   bool mIsUserInteracting : 1;
+  
+  
+  bool mRemovedFromRadioGroupForAttrChange : 1 {false};
 
  private:
   Maybe<int32_t> GetNumberInputCols() const;
