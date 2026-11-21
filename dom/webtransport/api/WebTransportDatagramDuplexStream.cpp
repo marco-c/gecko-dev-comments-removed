@@ -66,11 +66,6 @@ void WebTransportDatagramDuplexStream::Init(bool aUseByteStream,
       mOutgoingAlgorithms;
   
   
-  
-  
-  
-  
-  
   mWritable = WritableStream::CreateNative(cx, *global, *outgoingAlgorithms,
                                            Nothing(), nullptr, aError);
   if (aError.Failed()) {
@@ -81,14 +76,8 @@ void WebTransportDatagramDuplexStream::Init(bool aUseByteStream,
 
 void WebTransportDatagramDuplexStream::SetChild(WebTransportChild* aChild) {
   mOutgoingAlgorithms->SetChild(aChild);
-  mOutgoingAlgorithms->UpdateQueueParams(
-      mOutgoingMaxBufferedDatagrams,
-      mOutgoingMaxAge.IsNull() ? INFINITY : mOutgoingMaxAge.Value());
   for (auto& writable : mCreatedWritables) {
     writable->SetChild(aChild);
-    writable->UpdateQueueParams(
-        mOutgoingMaxBufferedDatagrams,
-        mOutgoingMaxAge.IsNull() ? INFINITY : mOutgoingMaxAge.Value());
   }
   mCreatedWritables.Clear();
 
@@ -150,11 +139,6 @@ void WebTransportDatagramDuplexStream::SetOutgoingMaxBufferedDatagrams(
     uint32_t aValue) {
   
   mOutgoingMaxBufferedDatagrams = std::max(aValue, 1u);
-
-  
-  
-  
-  
 
   
   mOutgoingAlgorithms->UpdateQueueParams(
@@ -577,15 +561,6 @@ already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallbackImpl(
     mWaitConnectQueue.AppendElement(QueuedDatagram(
         datagramId, std::make_unique<DatagramEntry>(std::move(data), now),
         promise));
-
-    
-    
-    
-    
-    if (mWaitConnectQueue.Length() <
-        mDatagrams->mOutgoingMaxBufferedDatagrams) {
-      promise->MaybeResolveWithUndefined();
-    }
   }
 
   

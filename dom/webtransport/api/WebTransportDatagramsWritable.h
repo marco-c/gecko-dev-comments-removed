@@ -54,8 +54,6 @@ class WebTransportDatagramsWritable final : public WritableStream {
   
   void Cleanup();
 
-  void UpdateQueueParams(uint32_t aMaxBufferedDatagrams, double aMaxAge);
-
  private:
   ~WebTransportDatagramsWritable() override;
 
