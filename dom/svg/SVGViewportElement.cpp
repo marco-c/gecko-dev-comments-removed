@@ -61,8 +61,7 @@ SVGViewportElement::PreserveAspectRatio() {
 
 
 
-NS_IMETHODIMP_(bool)
-SVGViewportElement::IsAttributeMapped(const nsAtom* name) const {
+bool SVGViewportElement::IsNoNamespaceAttrMapped(const nsAtom* name) const {
   
   
   
@@ -77,7 +76,7 @@ SVGViewportElement::IsAttributeMapped(const nsAtom* name) const {
     return true;
   }
 
-  return SVGGraphicsElement::IsAttributeMapped(name);
+  return SVGGraphicsElement::IsNoNamespaceAttrMapped(name);
 }
 
 
@@ -162,7 +161,7 @@ gfx::Matrix SVGViewportElement::GetViewBoxTransform() const {
 
   SVGViewBox viewBox = GetViewBoxWithSynthesis(viewportWidth, viewportHeight);
 
-  if (viewBox.IsEmpty()) {
+  if (viewBox.IsEmpty() || !viewBox.IsFinite()) {
     return gfx::Matrix(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);  
   }
 
