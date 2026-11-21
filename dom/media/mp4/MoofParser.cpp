@@ -482,15 +482,25 @@ Moof::Moof(const Box& aBox, const TrackParseMode& aTrackParseMode,
   if (IsValid()) {
     if (mIndex.Length()) {
       
+      
+      
+      
       nsTArray<Sample*> ctsOrder;
+      TimeUnit longestSampleDuration = TimeUnit::Zero(aMdhd.mTimescale);
       for (auto& sample : mIndex) {
         ctsOrder.AppendElement(&sample);
+        longestSampleDuration =
+            std::max(longestSampleDuration, sample.mCompositionRange.Length());
       }
       ctsOrder.Sort(CtsComparator());
 
       for (size_t i = 1; i < ctsOrder.Length(); i++) {
-        ctsOrder[i - 1]->mCompositionRange.end =
-            ctsOrder[i]->mCompositionRange.start;
+        MP4Interval<TimeUnit>& range = ctsOrder[i - 1]->mCompositionRange;
+        const TimeUnit& nextStart = ctsOrder[i]->mCompositionRange.start;
+        const TimeUnit maxEnd = range.start + longestSampleDuration;
+        range.end = longestSampleDuration.IsPositive() && maxEnd.IsValid()
+                        ? std::min(nextStart, maxEnd)
+                        : nextStart;
       }
 
       
@@ -533,9 +543,10 @@ Moof::Moof(const Box& aBox, const TrackParseMode& aTrackParseMode,
       
       
       
-      TimeUnit presentationDuration =
-          ctsOrder.LastElement()->mCompositionRange.end -
-          ctsOrder[0]->mCompositionRange.start;
+      TimeUnit totalSampleDuration = TimeUnit::Zero(aMdhd.mTimescale);
+      for (auto& sample : mIndex) {
+        totalSampleDuration += sample.mCompositionRange.Length();
+      }
       auto decodeOffset =
           aMdhd.ToTimeUnit(CheckedInt64(*aDecodeTime) - aEdts.mMediaStart);
       auto offsetOffset = aMvhd.ToTimeUnit(aEdts.mEmptyOffset);
@@ -545,9 +556,9 @@ Moof::Moof(const Box& aBox, const TrackParseMode& aTrackParseMode,
               : TimeUnit::Zero(aMvhd.mTimescale);
       TimeUnit decodeDuration = endDecodeTime - mIndex[0].mDecodeTime;
       double adjust = 0.;
-      if (!presentationDuration.IsZero()) {
+      if (!totalSampleDuration.IsZero()) {
         double num = decodeDuration.ToSeconds();
-        double denom = presentationDuration.ToSeconds();
+        double denom = totalSampleDuration.ToSeconds();
         if (denom != 0.) {
           adjust = num / denom;
         }
