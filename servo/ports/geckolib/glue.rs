@@ -11741,6 +11741,12 @@ pub unsafe extern "C" fn Servo_GetComputationStepsSupportedCSSFunctions(
     }
 }
 
+#[derive(Clone)]
+enum ComputationStepComponent<'a> {
+    Node(style::values::specified::calc::CalcNode),
+    String(&'a str),
+}
+
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Servo_GetComputationSteps(
     property: &nsACString,
@@ -11762,32 +11768,39 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
     let mut parser_context = dummy_author_style_rule_context();
     let property_id = PropertyId::parse(&property, &parser_context).ok();
     let mut substituted = None;
+    let mut last_computation_step_string;
     let element = GeckoElement(raw_element);
     let data = raw_data.borrow();
     let mut context = ContextForSubstitution::new(element, pseudo_type);
     let context = context.computed_context(&data, style);
 
     let property_id_ref = property_id.as_ref().map(PropertyIdRef::from);
-    let node = parser_context.with_property_id(property_id_ref, |parser_context| {
-        if let Some(s) = compute_arbritrary_substitution_functions(
+
+    let substitution_result = parser_context.with_property_id(property_id_ref, |parser_context| {
+        compute_arbritrary_substitution_functions(
             property_id_ref,
             &string,
             element,
             style,
             &data,
-            &parser_context,
+            parser_context,
             &context,
-        ) {
-            
-            out.push(nsCString::from(string));
-            
-            out.push(nsCString::from(&s));
-            substituted = Some(s.clone());
-        };
+        )
+    });
+    if let Some(s) = substitution_result {
+        
+        out.push(nsCString::from(string));
+        
+        out.push(nsCString::from(&s));
+        substituted = Some(s.clone());
+    };
 
-        let substituted_str = substituted.as_deref().unwrap_or(&string);
-        let mut parser = Parser::new(substituted_str);
+    let substituted_str = substituted.as_deref().unwrap_or(&string);
+    let mut parser = Parser::new(substituted_str);
 
+    let mut components: Vec<ComputationStepComponent> = Vec::new();
+
+    parser_context.with_property_id(property_id_ref, |parser_context| {
         let flags = CalcParseFlags {
             percentage_context: PercentageContext::allowed(),
             in_place_operations: CalcNodeParseInPlaceOperations::No,
@@ -11795,31 +11808,62 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
         };
 
         
-        Some(match parser.next().ok()? {
-            Token::Function(name) => {
-                let math_func = CalcNode::math_function(&parser_context, name).ok()?;
-                CalcNode::parse(&parser_context, &mut parser, math_func, flags).ok()?
-            },
-            Token::Percentage { unit_value, .. } => CalcNode::Leaf(Leaf::Percentage(
-                CalcPercentageLeaf::new(*unit_value, Optional::None),
-            )),
-            Token::Dimension { value, unit, .. } => {
-                let length =
-                    NoCalcLength::parse_dimension_with_context(&parser_context, *value, unit)
-                        .ok()?;
-                CalcNode::Leaf(Leaf::Length(length))
-            },
-            _ => return None,
-        })
-    });
-    let Some(mut node) = node else {
-        return;
-    };
+        
+        while !parser.is_exhausted() {
+            let parser_start_pos = parser.position();
+            let Ok(token) = parser.next_including_whitespace_and_comments() else {
+                break;
+            };
 
-    let mut value = match node.as_leaf() {
-        Some(l) => l.to_css_string(),
-        None => node.to_css_string(),
-    };
+            let node = match token {
+                Token::Comment(_) => continue,
+                Token::Function(name) => match CalcNode::math_function(&parser_context, name) {
+                    Ok(math_func) => {
+                        CalcNode::parse(&parser_context, &mut parser, math_func, flags).ok()
+                    },
+                    Err(_) => {
+                        
+                        
+                        
+                        let _ = parser.parse_nested_block(
+                            |_| -> Result<(), CssParseError<BasicParseError>> { Ok(()) },
+                        );
+                        None
+                    },
+                },
+                Token::Percentage { unit_value, .. } => Some(CalcNode::Leaf(Leaf::Percentage(
+                    CalcPercentageLeaf::new(*unit_value, Optional::None),
+                ))),
+                Token::Dimension { value, unit, .. } => {
+                    NoCalcLength::parse_dimension_with_context(&parser_context, *value, unit)
+                        .ok()
+                        .map(|length| CalcNode::Leaf(Leaf::Length(length)))
+                },
+                _ => None,
+            };
+
+            components.push(match node {
+                Some(node) => ComputationStepComponent::Node(node),
+                None => ComputationStepComponent::String(parser.slice_from(parser_start_pos)),
+            });
+        }
+    });
+
+    if components.is_empty()
+        || (
+            
+            
+            substituted.is_none()
+                && components
+                    .iter()
+                    .all(|c| matches!(c, ComputationStepComponent::String(_)))
+        )
+    {
+        return;
+    }
+
+    
+    let value = computation_steps_components_vec_to_css_string(&components);
 
     
     
@@ -11833,81 +11877,104 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
         }
         out.push(nsCString::from(&value));
     }
+    last_computation_step_string = value;
 
     
-    node = node.map_leaves(|leaf| match *leaf {
-        Leaf::Percentage(p) => {
+    
+    for i in 0..components.len() {
+        let ComputationStepComponent::Node(mut node) = components[i].clone() else {
             
-            
-            if percentage_basis.is_nan() {
-                return leaf.clone();
-            }
+            continue;
+        };
 
-            Leaf::Length(NoCalcLength::from_px(p.get() * percentage_basis))
-        },
-        Leaf::Length(l) => {
-            let result = l.to_computed_value(&context);
-            Leaf::Length(NoCalcLength::from_computed_value(&result))
-        },
-        Leaf::TreeCountingFunction(t) => {
-            let result = t.to_computed_value(&context) as f32;
-            Leaf::Number(NoCalcNumber::from_computed_value(&result))
-        },
-        Leaf::RandomKey(ref key) => {
-            let base_value = *key.to_computed_value(&context) as f32;
-            Leaf::Number(NoCalcNumber::from_computed_value(&base_value))
-        },
-        ref l => l.clone(),
-    });
-
-    let mut new_value = match node.as_leaf() {
-        Some(l) => l.to_css_string(),
-        None => node.to_css_string(),
-    };
-    if new_value != value {
-        value = new_value;
-        out.push(nsCString::from(&value));
-    }
-
-    
-    
-    
-    while node.as_leaf().is_none() {
         
-        let mut res = SimplificationResult::Unchanged;
-        node.visit_depth_first(|n| {
-            
-            
-            match res {
-                SimplificationResult::Simplified => return,
-                _ => {},
-            }
+        node = node.map_leaves(|leaf| match *leaf {
+            Leaf::Percentage(p) => {
+                
+                
+                if percentage_basis.is_nan() {
+                    return leaf.clone();
+                }
 
-            match n.as_leaf() {
-                None => {
-                    res = n.simplify_and_sort_direct_children();
-                },
-                _ => {},
-            }
+                Leaf::Length(NoCalcLength::from_px(p.get() * percentage_basis))
+            },
+            Leaf::Length(l) => {
+                let result = l.to_computed_value(&context);
+                Leaf::Length(NoCalcLength::from_computed_value(&result))
+            },
+            Leaf::TreeCountingFunction(t) => {
+                let result = t.to_computed_value(&context) as f32;
+                Leaf::Number(NoCalcNumber::from_computed_value(&result))
+            },
+            Leaf::RandomKey(ref key) => {
+                let base_value = *key.to_computed_value(&context) as f32;
+                Leaf::Number(NoCalcNumber::from_computed_value(&base_value))
+            },
+            ref l => l.clone(),
         });
 
         
         
-        match res {
-            SimplificationResult::Unchanged => return,
-            SimplificationResult::Simplified => {
+        components[i] = ComputationStepComponent::Node(node.clone());
+        let computation_step_string = computation_steps_components_vec_to_css_string(&components);
+        if computation_step_string != last_computation_step_string {
+            last_computation_step_string = computation_step_string.clone();
+            out.push(nsCString::from(&computation_step_string));
+        }
+
+        
+        
+        
+        while node.as_leaf().is_none() {
+            
+            let mut res = SimplificationResult::Unchanged;
+            node.visit_depth_first(|n| {
                 
-                new_value = match node.as_leaf() {
-                    Some(l) => l.to_css_string(),
-                    None => node.to_css_string(),
-                };
-                if new_value != value {
-                    value = new_value;
-                    out.push(nsCString::from(&value));
+                
+                if matches!(res, SimplificationResult::Simplified) {
+                    return;
                 }
-            },
+
+                if n.as_leaf().is_none() {
+                    res = n.simplify_and_sort_direct_children();
+                }
+            });
+
+            
+            
+            match res {
+                SimplificationResult::Unchanged => {
+                    break;
+                },
+                SimplificationResult::Simplified => {
+                    
+                    
+                    components[i] = ComputationStepComponent::Node(node.clone());
+
+                    
+                    
+                    let computation_step_string =
+                        computation_steps_components_vec_to_css_string(&components);
+                    if computation_step_string != last_computation_step_string {
+                        last_computation_step_string = computation_step_string.clone();
+                        out.push(nsCString::from(&computation_step_string));
+                    }
+                },
+            }
         }
     }
+}
+
+fn computation_steps_components_vec_to_css_string(vec: &[ComputationStepComponent]) -> String {
+    vec.iter()
+        .map(|component| match component {
+            ComputationStepComponent::Node(node) => match node.as_leaf() {
+                Some(l) => l.to_css_string(),
+                None => node.to_css_string(),
+            },
+            ComputationStepComponent::String(s) => s.to_string(),
+        })
+        .collect()
 }
 
 #[unsafe(no_mangle)]
