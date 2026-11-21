@@ -229,11 +229,14 @@ void DynamicsCompressorKernel::process(
   float k = updateStaticCurveParameters(dbThreshold, dbKnee, ratio);
 
   
+  
+  
   float fullRangeGain = saturate(1, k);
   float fullRangeMakeupGain = 1 / fullRangeGain;
 
   
-  fullRangeMakeupGain = fdlibm_powf(fullRangeMakeupGain, 0.6f);
+  
+  fullRangeMakeupGain = fdlibm_expf(0.6f * fdlibm_logf(fullRangeMakeupGain));
 
   float masterLinearGain =
       WebAudioUtils::ConvertDecibelsToLinear(dbPostGain) * fullRangeMakeupGain;
