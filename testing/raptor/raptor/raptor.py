@@ -24,6 +24,7 @@ from cmdline import DESKTOP_APPS, parse_args
 from logger.logger import RaptorLogger
 from manifest import get_raptor_test_list
 from mozlog import commandline
+from mozperfcommon.detect import XtremeRegressionError
 from mozprofile.cli import parse_key_value, parse_preferences
 from signal_handler import SignalHandler
 from utils import view_gecko_profile_from_raptor
@@ -59,7 +60,10 @@ def main(args=sys.argv[1:]):
 
     
     if len(raptor_test_list) == 0:
-        LOG.critical(f"test '{args.test}' could not be found for {args.app}")
+        LOG.critical(
+            f"test '{args.test}' could not be found for {args.app}. "
+            "For a list of tests run: ./mach raptor --print-tests"
+        )
         sys.exit(1)
 
     LOG.info("raptor tests scheduled to run:")
@@ -128,6 +132,7 @@ def main(args=sys.argv[1:]):
             screenshot_on_failure=args.screenshot_on_failure,
             power_test=args.power_test,
             simpleperf=args.simpleperf,
+            test_names=raptor_test_names,
         )
     except Exception:
         traceback.print_exc()
@@ -137,7 +142,7 @@ def main(args=sys.argv[1:]):
         os.sys.exit(1)
 
     raptor.results_handler.use_existing_results(args.browsertime_existing_results)
-    success = raptor.run_tests(raptor_test_list, raptor_test_names)
+    success = raptor.run_tests(raptor_test_list)
 
     if not success:
         
@@ -173,6 +178,11 @@ def main(args=sys.argv[1:]):
         if os.path.exists(result_dir):
             is_profiling_job = True if args.gecko_profile else False
             raptor.results_handler.archive_raptor_artifacts(is_profiling_job)
+
+    
+    if raptor.results_handler.xtreme_regressions:
+        LOG.critical(XtremeRegressionError(raptor.results_handler.xtreme_regressions))
+        os.sys.exit(1)
 
     
     
