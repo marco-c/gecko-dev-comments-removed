@@ -551,18 +551,18 @@ already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallbackImpl(
     
     
     
-    mInFlightCount++;
-
     
     
     
     
     
     
-    if (mInFlightCount < mDatagrams->mOutgoingMaxBufferedDatagrams &&
-        mDatagrams->HasCreditBytesFor(dataLength)) {
+    
+    bool underMaxBuffered =
+        mInFlight.Add(mDatagrams->mOutgoingMaxBufferedDatagrams);
+    if (underMaxBuffered && mDatagrams->mCredit.HasBytesFor(dataLength)) {
       promise->MaybeResolveWithUndefined();
-      mDatagrams->ChargeCredit(dataLength);
+      mDatagrams->mCredit.Charge(dataLength);
     } else {
       
       
@@ -588,7 +588,7 @@ already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallbackImpl(
     if (mWaitConnectQueue.Length() <
         mDatagrams->mOutgoingMaxBufferedDatagrams) {
       promise->MaybeResolveWithUndefined();
-      mDatagrams->ChargeCredit(dataLength);
+      mDatagrams->mCredit.Charge(dataLength);
     } else {
       mPendingDatagramPromises.AppendElement(
           PendingDatagram{promise, dataLength});
@@ -606,7 +606,7 @@ void OutgoingDatagramStreamAlgorithms::SetChild(WebTransportChild* aChild) {
   mChild = aChild;
   
   
-  mInFlightCount += mWaitConnectQueue.Length();
+  mInFlight.AddQueued(mWaitConnectQueue.Length());
   
   for (auto& queued : mWaitConnectQueue) {
     uint64_t sendGroupId = mSendGroup ? mSendGroup->GetGroupId() : 0;
@@ -621,7 +621,8 @@ bool OutgoingDatagramStreamAlgorithms::TryResolveOldestFromCredit(
     uint64_t aAvailableBytes, size_t* aResolvedBytes) {
   if (mPendingDatagramPromises.IsEmpty() ||
       DatagramQueueCharge(mPendingDatagramPromises[0].mBytes,
-                          mDatagrams->mDatagramPrefixBytes) > aAvailableBytes) {
+                          mDatagrams->mCredit.DatagramPrefixBytes()) >
+          aAvailableBytes) {
     return false;
   }
   RefPtr<Promise> promise = std::move(mPendingDatagramPromises[0].mPromise);
@@ -632,7 +633,7 @@ bool OutgoingDatagramStreamAlgorithms::TryResolveOldestFromCredit(
 }
 
 void OutgoingDatagramStreamAlgorithms::RetireInFlight(uint64_t aCount) {
-  mInFlightCount -= std::min<uint64_t>(aCount, mInFlightCount);
+  mInFlight.Retire(aCount);
 }
 
 void WebTransportDatagramDuplexStream::OnDatagramCapacity(
@@ -644,13 +645,7 @@ void WebTransportDatagramDuplexStream::OnDatagramCapacity(
   
   
 
-  
-  
-  if (aDatagramPrefixBytes > mDatagramPrefixBytes) {
-    mCreditBytesUsed +=
-        (aDatagramPrefixBytes - mDatagramPrefixBytes) * mCreditDatagramsUsed;
-    mDatagramPrefixBytes = aDatagramPrefixBytes;
-  }
+  mCredit.SetDatagramPrefixBytes(aDatagramPrefixBytes);
 
   mSentOutgoing += aSentDelta;
   mExpiredOutgoing += aExpiredDelta;
@@ -667,34 +662,29 @@ void WebTransportDatagramDuplexStream::OnDatagramCapacity(
 
   
   
-  mCreditDatagramsLimit = std::max(mCreditDatagramsLimit, aCumulativeDatagrams);
-  mCreditBytesLimit = std::max(mCreditBytesLimit, aCumulativeBytes);
-
-  
-  
-  
+  mCredit.Raise(aCumulativeDatagrams, aCumulativeBytes);
 
   
   
   size_t resolvedCount = 0;
   bool resolvedAny = true;
-  while (resolvedAny && mCreditDatagramsUsed < mCreditDatagramsLimit) {
+  while (resolvedAny && mCredit.HasDatagramRoom()) {
     resolvedAny = false;
     size_t bytes = 0;
-    if (mOutgoingAlgorithms->TryResolveOldestFromCredit(CreditBytesAvailable(),
-                                                        &bytes)) {
-      ChargeCredit(bytes);
+    if (mOutgoingAlgorithms->TryResolveOldestFromCredit(
+            mCredit.BytesAvailable(), &bytes)) {
+      mCredit.Charge(bytes);
       resolvedCount++;
       resolvedAny = true;
     }
     for (auto& writable : mAllWritables) {
-      if (mCreditDatagramsUsed >= mCreditDatagramsLimit) {
+      if (!mCredit.HasDatagramRoom()) {
         break;
       }
       size_t writableBytes = 0;
-      if (writable->TryResolveOldestFromCredit(CreditBytesAvailable(),
+      if (writable->TryResolveOldestFromCredit(mCredit.BytesAvailable(),
                                                &writableBytes)) {
-        ChargeCredit(writableBytes);
+        mCredit.Charge(writableBytes);
         resolvedCount++;
         resolvedAny = true;
       }
