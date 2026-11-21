@@ -62,7 +62,9 @@ class SerialPortParent final : public PSerialPortParent {
   
   void StopPumpsBeforeClose();
 
-  void StopReadPump();
+  
+  
+  void StopReadPump(nsresult aReason = NS_BASE_STREAM_CLOSED);
   void DestroyPlatformReader();
   void StopWritePump();
   

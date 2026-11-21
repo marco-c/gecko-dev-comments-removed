@@ -18,6 +18,28 @@
 
 namespace mozilla::dom {
 
+namespace {
+
+
+
+void OnReadCopyComplete(void* aClosure, nsresult aStatus) {
+  RefPtr<mozilla::ipc::DataPipeSender> sender =
+      dont_AddRef(static_cast<mozilla::ipc::DataPipeSender*>(aClosure));
+  
+  
+  
+  if (aStatus != NS_BASE_STREAM_CLOSED &&
+      aStatus != NS_ERROR_DOM_SERIAL_PARITY_ERROR) {
+    aStatus = NS_ERROR_DOM_NETWORK_ERR;
+  }
+  MOZ_LOG(gWebSerialLog, LogLevel::Debug,
+          ("OnReadCopyComplete closing read pipe with 0x%08x",
+           static_cast<uint32_t>(aStatus)));
+  sender->CloseWithStatus(aStatus);
+}
+
+}  
+
 SerialPortParent::SerialPortParent(const nsString& aPortId, uint64_t aBrowserId,
                                    SerialDeviceChangeProxy* aProxy)
     : mPortId(aPortId), mBrowserId(aBrowserId), mDeviceChangeProxy(aProxy) {
@@ -151,12 +173,14 @@ mozilla::ipc::IPCResult SerialPortParent::RecvClose(CloseResolver&& aResolver) {
   return IPC_OK();
 }
 
-void SerialPortParent::StopReadPump() {
+void SerialPortParent::StopReadPump(nsresult aReason) {
   if (mReadCopierCtx) {
     MOZ_LOG(gWebSerialLog, LogLevel::Debug,
-            ("SerialPortParent[%p]::StopReadPump cancelling copy for port '%s'",
-             this, NS_ConvertUTF16toUTF8(mPortId).get()));
-    NS_CancelAsyncCopy(mReadCopierCtx, NS_BASE_STREAM_CLOSED);
+            ("SerialPortParent[%p]::StopReadPump cancelling copy for port '%s' "
+             "(reason=0x%08x)",
+             this, NS_ConvertUTF16toUTF8(mPortId).get(),
+             static_cast<uint32_t>(aReason)));
+    NS_CancelAsyncCopy(mReadCopierCtx, aReason);
     mReadCopierCtx = nullptr;
   }
   
@@ -210,7 +234,9 @@ void SerialPortParent::StartReadPump(
                "port '%s': 0x%08x",
                this, NS_ConvertUTF16toUTF8(mPortId).get(),
                static_cast<uint32_t>(rv)));
-      mReadPipeSender->CloseWithStatus(NS_FAILED(rv) ? rv : NS_ERROR_FAILURE);
+      
+      
+      mReadPipeSender->CloseWithStatus(NS_ERROR_DOM_NETWORK_ERR);
       mReadPipeSender = nullptr;
       return;
     }
@@ -219,12 +245,18 @@ void SerialPortParent::StartReadPump(
   
   
   
+  
+  
+  RefPtr<mozilla::ipc::DataPipeSender> closureSender = mReadPipeSender;
   nsresult rv =
       NS_AsyncCopy(mPlatformInputStream, mReadPipeSender, service->IOThread(),
-                   NS_ASYNCCOPY_VIA_READSEGMENTS, 4096, nullptr, nullptr,
-                    false,  true,
-                   getter_AddRefs(mReadCopierCtx));
-  if (NS_FAILED(rv)) {
+                   NS_ASYNCCOPY_VIA_READSEGMENTS, 4096, OnReadCopyComplete,
+                   closureSender.get(),  false,
+                    false, getter_AddRefs(mReadCopierCtx));
+  if (NS_SUCCEEDED(rv)) {
+    
+    (void)closureSender.forget().take();
+  } else {
     MOZ_LOG(gWebSerialLog, LogLevel::Error,
             ("SerialPortParent[%p]::StartReadPump NS_AsyncCopy failed for "
              "port '%s': 0x%08x",
@@ -256,8 +288,10 @@ mozilla::ipc::IPCResult SerialPortParent::RecvAttachReadPipe(
     MOZ_LOG(gWebSerialLog, LogLevel::Warning,
             ("SerialPortParent[%p]::RecvAttachReadPipe: port '%s' not open",
              this, NS_ConvertUTF16toUTF8(mPortId).get()));
+    
+    
     if (aReadPipeSender) {
-      aReadPipeSender->CloseWithStatus(NS_ERROR_NOT_AVAILABLE);
+      aReadPipeSender->CloseWithStatus(NS_ERROR_DOM_NETWORK_ERR);
     }
     return IPC_OK();
   }
@@ -463,6 +497,7 @@ void SerialPortParent::NotifyDisconnected() {
            NS_ConvertUTF16toUTF8(mPortId).get()));
 
   if (mIsOpen) {
+    StopReadPump(NS_ERROR_DOM_NETWORK_ERR);
     StopPumpsBeforeClose();
     mIsOpen = false;
     NotifySharingStateChanged();

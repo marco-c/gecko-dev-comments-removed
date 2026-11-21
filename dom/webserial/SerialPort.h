@@ -113,6 +113,12 @@ class SerialPort final : public DOMEventTargetHelper {
 
   void SetChild(SerialPortChild* aChild) { mChild = aChild; }
 
+  
+  
+  
+  
+  void HandleReadableErrored(ReadableStream* aStream, bool aFatal);
+
  private:
   ~SerialPort() override;
 
@@ -123,6 +129,9 @@ class SerialPort final : public DOMEventTargetHelper {
     
     
     Forced,
+    
+    
+    Disconnected,
   };
 
   MOZ_CAN_RUN_SCRIPT ReadableStream* CreateReadableStream();
@@ -139,6 +148,7 @@ class SerialPort final : public DOMEventTargetHelper {
   
   bool mPhysicallyPresent = true;
   bool mHasShutdown = false;
+  bool mReadFatal = false;
   uint32_t mBufferSize = 0;
   uint32_t mPipeCapacity = 0;
 

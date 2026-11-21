@@ -240,8 +240,32 @@ void SerialPortReadAlgorithms::BuildErrorValue(
       return;
     }
     
+  } else if (aError == NS_ERROR_DOM_NETWORK_ERR) {
+    MOZ_LOG(gWebSerialLog, LogLevel::Debug,
+            ("SerialPortReadAlgorithms[%p]::BuildErrorValue surfacing "
+             "NetworkError",
+             this));
+    RefPtr<DOMException> exception =
+        DOMException::Create(aError, "The device has been lost."_ns);
+    if (exception && ToJSValue(aCx, *exception, aErrorValue)) {
+      return;
+    }
+    
   }
   InputToReadableStreamAlgorithms::BuildErrorValue(aCx, aError, aErrorValue);
+}
+
+void SerialPortReadAlgorithms::ErrorPropagation(JSContext* aCx,
+                                                ReadableStream* aStream,
+                                                nsresult aError) {
+  
+  RefPtr<SerialPort> port = mPort;
+  InputToReadableStreamAlgorithms::ErrorPropagation(aCx, aStream, aError);
+  if (port && aStream->State() == ReadableStream::ReaderState::Errored) {
+    port->HandleReadableErrored(
+        aStream,
+         aError == NS_ERROR_DOM_NETWORK_ERR);
+  }
 }
 
 SerialPortReadAlgorithms::~SerialPortReadAlgorithms() = default;

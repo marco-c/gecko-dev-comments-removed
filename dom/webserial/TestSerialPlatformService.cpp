@@ -246,6 +246,11 @@ void TestSerialPlatformService::SimulateDeviceConnection(
 
 void TestSerialPlatformService::SimulateDeviceDisconnection(
     const nsString& aId) {
+  
+  
+  if (MockSerialPort* port = FindPort(aId); port && port->mPipeWriteStream) {
+    port->mPipeWriteStream->Close();
+  }
   mMockPorts.RemoveElementsBy(
       [&aId](const MockSerialPort& port) { return port.mInfo.id() == aId; });
   NotifyPortDisconnected(aId);

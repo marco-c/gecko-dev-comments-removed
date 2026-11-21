@@ -268,8 +268,11 @@ class InputToReadableStreamAlgorithms
                                               uint64_t aAvailable,
                                               ErrorResult& aRv);
 
-  void ErrorPropagation(JSContext* aCx, ReadableStream* aStream,
-                        nsresult aError);
+  
+  
+  
+  virtual void ErrorPropagation(JSContext* aCx, ReadableStream* aStream,
+                                nsresult aError);
 
   
   

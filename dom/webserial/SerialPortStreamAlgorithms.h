@@ -66,6 +66,11 @@ class SerialPortReadAlgorithms final : public InputToReadableStreamAlgorithms {
   void BuildErrorValue(JSContext* aCx, nsresult aError,
                        JS::MutableHandle<JS::Value> aErrorValue) override;
 
+  
+  
+  void ErrorPropagation(JSContext* aCx, ReadableStream* aStream,
+                        nsresult aError) override;
+
   void ReleaseObjects() override;
 
  protected:
