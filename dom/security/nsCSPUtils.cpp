@@ -25,6 +25,7 @@
 #include "nsICryptoHash.h"
 #include "nsIScriptError.h"
 #include "nsIStringBundle.h"
+#include "nsIURIMutator.h"
 #include "nsIURL.h"
 #include "nsNetUtil.h"
 #include "nsReadableUtils.h"
@@ -1176,6 +1177,66 @@ static bool DoesNonceMatchSourceList(nsILoadInfo* aLoadInfo,
 
 
 
+
+
+
+
+
+
+
+
+static bool DoesValueUrlHashMatchSourceList(
+    const nsACString& aValue, const nsTArray<nsCSPBaseSrc*>& aSrcs) {
+  CSPHashDigestsCache cache(aValue);
+  for (const nsCSPBaseSrc* src : aSrcs) {
+    if (src->isUrlHash() &&
+        static_cast<const nsCSPUrlHashSrc*>(src)->matchesDigestOf(cache)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+
+
+
+
+static bool DoesUrlHashMatchSourceList(nsIURI* aURI,
+                                       const nsTArray<nsCSPBaseSrc*>& aSrcs) {
+  
+  
+  if (!net::SchemeIsHttpOrHttps(aURI)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIURI> strippedURI;
+  if (NS_FAILED(NS_MutateURI(aURI).SetRef(""_ns).SetUserPass(""_ns).Finalize(
+          strippedURI))) {
+    return false;
+  }
+
+  nsAutoCString requestURL;
+  if (NS_FAILED(strippedURI->GetSpec(requestURL))) {
+    return false;
+  }
+
+  
+  
+  
+  return DoesValueUrlHashMatchSourceList(requestURL, aSrcs);
+}
+
+
+
+
+
 static nsTArray<SRIMetadata> ParseSRIMetadata(const nsAString& aMetadata) {
   
   
@@ -1303,6 +1364,7 @@ bool nsCSPDirective::permits(CSPDirective aDirective, nsILoadInfo* aLoadInfo,
 
     
     
+    
     else if (aDirective == CSPDirective::SCRIPT_SRC_ELEM_DIRECTIVE ||
              aDirective == CSPDirective::WORKER_SRC_DIRECTIVE) {
       
@@ -1316,10 +1378,13 @@ bool nsCSPDirective::permits(CSPDirective aDirective, nsILoadInfo* aLoadInfo,
       
       
       nsTArray<nsCSPHashSrc*> integrityExpressions;
+      bool hasUrlHash = false;
       bool hasStrictDynamicKeyword = false;
       for (nsCSPBaseSrc* src : mSrcs) {
         if (src->isHash()) {
           integrityExpressions.AppendElement(static_cast<nsCSPHashSrc*>(src));
+        } else if (src->isUrlHash()) {
+          hasUrlHash = true;
         } else if (src->isKeyword(CSP_STRICT_DYNAMIC)) {
           hasStrictDynamicKeyword = true;
         }
@@ -1331,6 +1396,14 @@ bool nsCSPDirective::permits(CSPDirective aDirective, nsILoadInfo* aLoadInfo,
       if (DoesIntegrityMetadataMatchSourceList(aLoadInfo,
                                                integrityExpressions)) {
         CSPUTILSLOG(("  Allowed by matching integrity metadata (script-like)"));
+        return true;
+      }
+
+      
+      
+      
+      if (hasUrlHash && DoesUrlHashMatchSourceList(aUri, mSrcs)) {
+        CSPUTILSLOG(("  Allowed by matching url hash (script-like)"));
         return true;
       }
 
@@ -1355,6 +1428,21 @@ bool nsCSPDirective::permits(CSPDirective aDirective, nsILoadInfo* aLoadInfo,
         CSPUTILSLOG(
             ("  Allowed by 'strict-dynamic' because not-parser-inserted"));
         return true;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (hasUrlHash) {
+        CSPUTILSLOG(("  Blocked, url-hash-source present (script-like)"));
+        return false;
       }
     }
   }
