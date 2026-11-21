@@ -233,7 +233,15 @@ static_assert(sizeof(arena_bin_t) == 48);
 static_assert(sizeof(arena_bin_t) == 32);
 #endif
 
-enum PurgeCondition { PurgeIfThreshold, PurgeUnconditional };
+enum PurgeCondition {
+  
+  PurgeIfThreshold,
+  
+  PurgeUnconditional,
+  
+  
+  PurgeToTarget
+};
 
 struct arena_t : public BaseAllocClass {
 #if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
@@ -361,6 +369,22 @@ struct arena_t : public BaseAllocClass {
   
   
   mozilla::Atomic<uint64_t> mLastPageReuseNS;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  size_t mMinimumNumDirty MOZ_GUARDED_BY(mLock);
+  
+  
+  
+  
+  
+  mozilla::Atomic<uint64_t> mLastPurgeNS;
 
  public:
   
@@ -669,6 +693,14 @@ struct arena_t : public BaseAllocClass {
   
   inline void MayDoOrQueuePurge(purge_action_t aAction, const char* aCaller)
       MOZ_EXCLUDES(mLock);
+
+  
+  
+  
+  void EndPurge() MOZ_REQUIRES(mLock);
+
+  
+  void RestartMaxPurgeDelay() MOZ_REQUIRES(mLock);
 
   
   void NotifyPageReuse() MOZ_EXCLUDES(mLock);
