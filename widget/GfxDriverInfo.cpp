@@ -346,6 +346,33 @@ already_AddRefed<const GfxDeviceFamily> GfxDriverInfo::GetDeviceFamily(
       APPEND_DEVICE(0x7D67);
       APPEND_DEVICE(0x7DD1);
       break;
+    case DeviceFamily::IntelAlchemist:
+      APPEND_DEVICE(0x56A0);  
+      APPEND_DEVICE(0x56A1);  
+      APPEND_DEVICE(0x56A2);  
+      APPEND_DEVICE(0x56BE);  
+      APPEND_DEVICE(0x56BF);  
+      APPEND_DEVICE(0x5690);  
+      APPEND_DEVICE(0x5691);  
+      APPEND_DEVICE(0x5692);  
+      APPEND_DEVICE(0x56A5);  
+      APPEND_DEVICE(0x56A6);  
+      APPEND_DEVICE(0x56B0);  
+      APPEND_DEVICE(0x56B1);  
+      APPEND_DEVICE(0x56BA);  
+      APPEND_DEVICE(0x56BB);  
+      APPEND_DEVICE(0x56BC);  
+      APPEND_DEVICE(0x56BD);  
+      APPEND_DEVICE(0x5693);  
+      APPEND_DEVICE(0x5694);  
+      APPEND_DEVICE(0x5695);  
+      APPEND_DEVICE(0x56A3);  
+      APPEND_DEVICE(0x56A4);  
+      APPEND_DEVICE(0x56B2);  
+      APPEND_DEVICE(0x56B3);  
+      APPEND_DEVICE(0x5696);  
+      APPEND_DEVICE(0x5697);  
+      break;
     case DeviceFamily::IntelGen12:
       
       APPEND_DEVICE(0x4C8C);  
@@ -732,6 +759,7 @@ const nsAString& GfxDriverInfo::GetDeviceVendor(DeviceFamily id) {
     case DeviceFamily::IntelMobileHDGraphics:
     case DeviceFamily::IntelMeteorLake:
     case DeviceFamily::IntelArrowlake:
+    case DeviceFamily::IntelAlchemist:
     case DeviceFamily::IntelGen12:
     case DeviceFamily::IntelWebRenderBlocked:
     case DeviceFamily::Bug1116812:
