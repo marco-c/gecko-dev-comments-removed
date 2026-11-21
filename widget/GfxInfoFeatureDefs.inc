@@ -165,3 +165,5 @@ GFXINFO_FEATURE(WEBGL_ANGLE_METAL, "webgl.angle-metal")
 GFXINFO_FEATURE(WEBRENDER_ANGLE_METAL, "webrender.angle-metal")
 
 GFXINFO_FEATURE(WEBRENDER_ANGLE_GL, "webrender.angle-gl")
+
+GFXINFO_FEATURE(DMABUF_YUV_DIRECT_COMPOSITION, "dmabuf-yuv-direct-composition")
