@@ -62,11 +62,13 @@ static bool CheckFrame(InterpreterFrame* fp) {
     return false;
   }
 
-  if (fp->isFunctionFrame() && TooManyActualArguments(fp->numActualArgs())) {
-    
-    JitSpew(JitSpew_BaselineAbort, "Too many arguments (%u)",
-            fp->numActualArgs());
-    return false;
+  if (fp->isFunctionFrame()) {
+    uint32_t pushedArgs = std::max(fp->numActualArgs(), fp->numFormalArgs());
+    if (TooManyActualArguments(pushedArgs)) {
+      
+      JitSpew(JitSpew_BaselineAbort, "Too many arguments (%u)", pushedArgs);
+      return false;
+    }
   }
 
   return true;
@@ -740,6 +742,15 @@ JSScript* BaselineCompileQueue::pop() {
   queue_[numQueued_] = nullptr;
   assertInvariants();
   return result;
+}
+
+void BaselineCompileQueue::clear() {
+  while (!isEmpty()) {
+    JSScript* script = pop();
+    if (script->hasJitScript()) {
+      script->jitScript()->clearIsBaselineQueued(script);
+    }
+  }
 }
 
 bool BaselineCompileQueue::enqueue(JSScript* script) {
