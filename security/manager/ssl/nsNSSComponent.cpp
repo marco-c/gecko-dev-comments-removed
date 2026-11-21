@@ -478,7 +478,7 @@ LoadLoadableCertsTask::Run() {
              success ? "succeeded" : "failed"));
   }
 
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+#if !defined(MOZ_NO_SMART_CARDS)
   if (PKCS11ModuleDB::UtilityProcessEnabled() && !GetInSafeMode()) {
     bool success = LoadRemoteCertsModule();
     MOZ_LOG(
@@ -569,8 +569,7 @@ nsresult CheckForSmartCardChanges() {
     StaticMutexAutoLock lock(sCheckForSmartCardChangesMutex);
     
     TimeStamp now = TimeStamp::Now();
-    if (now - sLastCheckedForSmartCardChanges <
-        TimeDuration::FromSeconds(3.0)) {
+    if (now - sLastCheckedForSmartCardChanges < TimeDuration::FromSeconds(3)) {
       return NS_OK;
     }
     sLastCheckedForSmartCardChanges = now;
@@ -1952,7 +1951,7 @@ AutoSearchingForCertificates::AutoSearchingForCertificates() {
   
   
   
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+#if !defined(MOZ_NO_SMART_CARDS)
   CacheRemoteCryptokiObjects(SearchingFor::CACertificates);
 #endif  
 
@@ -1977,7 +1976,7 @@ AutoSearchingForClientAuthCertificates::
     AutoSearchingForClientAuthCertificates() {
   
   
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+#if !defined(MOZ_NO_SMART_CARDS)
   CacheRemoteCryptokiObjects(SearchingFor::ClientCertificates);
 #endif  
   auto clientCertificateSearchState = sClientCertificateSearchState.Lock();

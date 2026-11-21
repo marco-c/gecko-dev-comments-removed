@@ -371,7 +371,7 @@ PKCS11Token::GetHasPassword(bool* hasPassword) {
   return NS_OK;
 }
 
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+#if !defined(MOZ_NO_SMART_CARDS)
 nsresult PKCS11Token::GetTokenInfo(TokenInfo& tokenInfo) {
   tokenInfo.moduleID() = PK11_GetModuleID(mSlot.get());
   tokenInfo.slotID() = PK11_GetSlotID(mSlot.get());

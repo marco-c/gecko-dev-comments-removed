@@ -11,7 +11,7 @@
 #endif  
 #include "ChildProfilerController.h"
 
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+#if !defined(MOZ_NO_SMART_CARDS)
 #  include "mozilla/psm/PKCS11ModuleChild.h"
 #endif  
 
@@ -89,7 +89,7 @@ class UtilityProcessChild final : public PUtilityProcessChild {
 
   AsyncBlockers& AsyncShutdownService() { return mShutdownBlockers; }
 
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+#if !defined(MOZ_NO_SMART_CARDS)
   IPCResult RecvStartPKCS11ModuleService(
       Endpoint<PPKCS11ModuleChild>&& aEndpoint, nsCString&& aProfilePath);
 #endif  
@@ -130,7 +130,7 @@ class UtilityProcessChild final : public PUtilityProcessChild {
 #ifdef XP_WIN
   RefPtr<PWindowsUtilsChild> mWindowsUtilsInstance;
 #endif
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+#if !defined(MOZ_NO_SMART_CARDS)
   RefPtr<psm::PKCS11ModuleChild> mPKCS11ModuleInstance;
 #endif  
 

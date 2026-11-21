@@ -13,7 +13,7 @@
 #include "nsString.h"
 #include "pk11func.h"
 
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+#if !defined(MOZ_NO_SMART_CARDS)
 #  include "mozilla/psm/PPKCS11Module.h"
 #endif  
 
@@ -33,7 +33,7 @@ class PKCS11Token : public nsIPKCS11Token {
   PKCS11Token() = default;
   nsresult Init();
 
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+#if !defined(MOZ_NO_SMART_CARDS)
   nsresult GetTokenInfo(mozilla::psm::TokenInfo& tokenInfo);
 #endif  
 
@@ -58,7 +58,7 @@ class PKCS11Token : public nsIPKCS11Token {
                                nsACString& xpcomOutParam);
 };
 
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+#if !defined(MOZ_NO_SMART_CARDS)
 class RemotePKCS11Token : public nsIPKCS11Token {
  public:
   NS_DECL_ISUPPORTS

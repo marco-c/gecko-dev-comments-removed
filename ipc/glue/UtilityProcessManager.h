@@ -15,7 +15,7 @@
 
 #include "mozilla/PRemoteMediaManagerChild.h"
 
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+#if !defined(MOZ_NO_SMART_CARDS)
 #  include "mozilla/psm/PKCS11ModuleParent.h"
 #endif  
 
@@ -65,7 +65,7 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
   using WinFileDialogPromise = LaunchPromise<widget::filedialog::ProcessProxy>;
 #endif
 
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+#if !defined(MOZ_NO_SMART_CARDS)
   using PKCS11ModulePromise = LaunchPromise<RefPtr<psm::PKCS11ModuleParent>>;
 #endif  
 
@@ -106,7 +106,7 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
   RefPtr<WinFileDialogPromise> CreateWinFileDialogActor();
 #endif
 
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+#if !defined(MOZ_NO_SMART_CARDS)
   RefPtr<PKCS11ModulePromise> StartPKCS11Module();
 #endif  
 

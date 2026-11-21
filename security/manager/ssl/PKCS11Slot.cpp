@@ -193,7 +193,7 @@ PKCS11Slot::GetStatus(uint32_t* _retval) {
   return NS_OK;
 }
 
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+#if !defined(MOZ_NO_SMART_CARDS)
 nsresult PKCS11Slot::GetSlotInfo(SlotInfo& slotInfo) {
   nsresult rv = GetName(slotInfo.name());
   if (NS_FAILED(rv)) {

@@ -10,7 +10,7 @@
 #include "nsIPKCS11ModuleDB.h"
 #include "nsTLiteralString.h"
 
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+#if !defined(MOZ_NO_SMART_CARDS)
 #  include "mozilla/ipc/UtilityProcessManager.h"
 #endif  
 
@@ -43,7 +43,7 @@ class PKCS11ModuleDB : public nsIPKCS11ModuleDB {
                               const nsCString& libraryPath,
                               uint32_t mechanismFlags, uint32_t cipherFlags);
 
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+#if !defined(MOZ_NO_SMART_CARDS)
   static nsresult DoListModules(nsTArray<mozilla::psm::ModuleInfo>& modules);
 #endif  
 
@@ -55,7 +55,7 @@ class PKCS11ModuleDB : public nsIPKCS11ModuleDB {
       MozPromise<nsTArray<RefPtr<nsIPKCS11Module>>, nsresult, true>;
   RefPtr<ListModulesPromise> ListMainProcessModules();
 
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+#if !defined(MOZ_NO_SMART_CARDS)
   using PKCS11ModuleProcessPromise =
       MozPromise<RefPtr<PKCS11ModuleParent>, nsresult, false>;
   RefPtr<PKCS11ModuleProcessPromise> mPKCS11ModuleProcessPromise;

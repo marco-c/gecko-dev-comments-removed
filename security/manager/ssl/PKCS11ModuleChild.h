@@ -5,8 +5,8 @@
 #ifndef mozilla_psm_PKCS11ModuleChild_h
 #define mozilla_psm_PKCS11ModuleChild_h
 
-#if !defined(NIGHTLY_BUILD) || defined(MOZ_NO_SMART_CARDS)
-#  error This file should only be used under NIGHTLY_BUILD and when MOZ_NO_SMART_CARDS is not defined.
+#if defined(MOZ_NO_SMART_CARDS)
+#  error This file should only be used when MOZ_NO_SMART_CARDS is not defined.
 #endif  
 
 #include "mozilla/psm/PPKCS11ModuleChild.h"

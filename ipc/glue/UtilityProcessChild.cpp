@@ -234,7 +234,7 @@ mozilla::ipc::IPCResult UtilityProcessChild::RecvRequestMemoryReport(
   return IPC_OK();
 }
 
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+#if !defined(MOZ_NO_SMART_CARDS)
 IPCResult UtilityProcessChild::RecvStartPKCS11ModuleService(
     Endpoint<PPKCS11ModuleChild>&& aEndpoint, nsCString&& aProfilePath) {
   auto child = MakeRefPtr<psm::PKCS11ModuleChild>();
@@ -456,7 +456,7 @@ void UtilityProcessChild::ActorDestroy(ActorDestroyReason aWhy) {
   mWindowsUtilsInstance = nullptr;
 #  endif
 
-#  if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+#  if !defined(MOZ_NO_SMART_CARDS)
   mPKCS11ModuleInstance = nullptr;
 #  endif  
 
