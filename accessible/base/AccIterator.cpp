@@ -237,19 +237,15 @@ LocalAccessible* HTMLLabelIterator::Next() {
     }
   }
 
-  
   if (mLabelFilter == eSkipAncestorLabel) {
     return nullptr;
   }
 
+  
+  
   if (!mAcc->IsWidget()) {
     nsIContent* content = mAcc->GetContent();
-    if (!content->IsElement()) {
-      return nullptr;
-    }
-    dom::Element* element = content->AsElement();
-    
-    if (!element->IsLabelable()) {
+    if (!content->IsElement() || !content->AsElement()->IsLabelable()) {
       return nullptr;
     }
   }
