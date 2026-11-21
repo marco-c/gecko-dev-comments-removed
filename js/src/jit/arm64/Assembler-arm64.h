@@ -35,6 +35,10 @@ static constexpr ARMRegister ScratchReg64 = {ScratchReg, 64};
 static constexpr Register ScratchReg2{Registers::ip1};
 static constexpr ARMRegister ScratchReg2_64 = {ScratchReg2, 64};
 
+
+
+static constexpr Register BailoutSnapshotOffsetReg = ScratchReg2;
+
 static constexpr FloatRegister ReturnDoubleReg = {FloatRegisters::d0,
                                                   FloatRegisters::Double};
 static constexpr FloatRegister ScratchDoubleReg_ = {FloatRegisters::d31,

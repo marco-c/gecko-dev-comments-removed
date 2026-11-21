@@ -252,12 +252,7 @@ class CodeGeneratorShared : public LElementVisitor {
   
   
   MBasicBlock* skipTrivialBlocks(MBasicBlock* block) {
-    while (block->lir()->isTrivial()) {
-      LGoto* ins = block->lir()->rbegin()->toGoto();
-      MOZ_ASSERT(ins->numSuccessors() == 1);
-      block = ins->getSuccessor(0);
-    }
-    return block;
+    return block->lir()->skipTrivialBlocks()->mir();
   }
 
   
@@ -409,6 +404,8 @@ class CodeGeneratorShared : public LElementVisitor {
     return deoptLabel_.used() || deoptJumpPending_;
   }
 
+  
+  
   
   void emitBailoutOOL(LSnapshot* snapshot);
 

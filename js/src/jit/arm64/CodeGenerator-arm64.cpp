@@ -28,7 +28,6 @@ using namespace js;
 using namespace js::jit;
 
 using JS::GenericNaN;
-using mozilla::FloorLog2;
 using mozilla::NegativeInfinity;
 
 
@@ -49,7 +48,16 @@ bool CodeGeneratorARM64::generateOutOfLineCode() {
     masm.bind(&deoptLabel_);
 
     
-    masm.push(Imm32(frameSize()));
+    
+    {
+      vixl::UseScratchRegisterScope temps(&masm);
+      const ARMRegister snapshotOffset64(BailoutSnapshotOffsetReg, 64);
+      MOZ_ASSERT(temps.IsAvailable(snapshotOffset64));
+      temps.Exclude(snapshotOffset64);
+      const Register scratch = temps.AcquireX().asUnsized();
+      masm.move32(Imm32(frameSize()), scratch);
+      masm.push(BailoutSnapshotOffsetReg, scratch);
+    }
 
     TrampolinePtr handler = gen->jitRuntime()->getGenericBailoutHandler();
     masm.jump(handler);
@@ -230,8 +238,8 @@ void CodeGenerator::visitMulI(LMulI* ins) {
       default:
         
         if (!mul->canOverflow() && constant > 0) {
-          int32_t shift = FloorLog2(uint32_t(constant));
-          if ((1 << shift) == constant) {
+          if (std::has_single_bit(uint32_t(constant))) {
+            int32_t shift = std::countr_zero(uint32_t(constant));
             masm.Lsl(destreg32, lhsreg32, shift);
             return;
           }
@@ -2199,8 +2207,8 @@ void CodeGenerator::visitMulI64(LMulI64* lir) {
       default:
         
         if (constant > 0) {
-          int32_t shift = mozilla::FloorLog2(uint64_t(constant));
-          if (int64_t(1) << shift == constant) {
+          if (std::has_single_bit(uint64_t(constant))) {
+            int32_t shift = std::countr_zero(uint64_t(constant));
             masm.Lsl(ARMRegister(output.reg, 64),
                      ARMRegister(ToRegister64(lhs).reg, 64), shift);
             break;
@@ -2327,7 +2335,7 @@ void CodeGenerator::visitMulIntPtr(LMulIntPtr* ins) {
 
     
     if (constant > 0 && std::has_single_bit(uintptr_t(constant))) {
-      uint32_t shift = mozilla::FloorLog2(uintptr_t(constant));
+      uint32_t shift = std::countr_zero(uintptr_t(constant));
       masm.Lsl(dest, lhs, shift);
       return;
     }
