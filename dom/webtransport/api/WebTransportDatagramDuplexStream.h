@@ -254,7 +254,6 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
 
   mozilla::Queue<UniquePtr<DatagramEntry>, 32> mIncomingDatagramsQueue;
   uint64_t mDroppedIncoming = 0;
-  uint64_t mExpiredIncoming = 0;
 
   
   
@@ -271,7 +270,6 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
 
  public:
   uint64_t GetDroppedIncoming() const { return mDroppedIncoming; }
-  uint64_t GetExpiredIncoming() const { return mExpiredIncoming; }
 };
 
 }  
