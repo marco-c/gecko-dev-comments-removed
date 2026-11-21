@@ -892,11 +892,6 @@ WebTransportParent::OnSessionClosed(const bool aCleanly,
           }
         }));
   } else {
-    
-    
-    if (mSocketThread->IsOnCurrentThread()) {
-      FlushIncomingDatagrams();
-    }
     {
       MutexAutoLock lock(mMutex);
       if (mResolver && !mClosed) {
@@ -1294,15 +1289,6 @@ void WebTransportParent::MaybeSendDatagramCapacity() {
   return IPC_OK();
 }
 
-
-
-
-
-static constexpr size_t kMaxPendingIncomingBytes = 64 * 1024;
-
-
-static constexpr size_t kPendingIncomingDatagramOverhead = 16;
-
 NS_IMETHODIMP WebTransportParent::OnDatagramReceived(
     const nsTArray<uint8_t>& aData) {
   
@@ -1310,23 +1296,9 @@ NS_IMETHODIMP WebTransportParent::OnDatagramReceived(
 
   LOG(("WebTransportParent received datagram length = %zu", aData.Length()));
 
-  mPendingIncomingBytes += aData.Length() + kPendingIncomingDatagramOverhead;
-  mPendingIncoming.AppendElement(
-      IncomingDatagram(aData.Clone(), TimeStamp::Now()));
+  TimeStamp ts = TimeStamp::Now();
+  (void)SendIncomingDatagram(aData, ts);
 
-  
-  
-  if (mPendingIncomingBytes >= kMaxPendingIncomingBytes) {
-    FlushIncomingDatagrams();
-  }
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP WebTransportParent::OnDatagramsFlush() {
-  MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
-
-  FlushIncomingDatagrams();
   return NS_OK;
 }
 
@@ -1341,22 +1313,6 @@ NS_IMETHODIMP WebTransportParent::OnOutgoingDatagramSpaceAvailable() {
   }
   MaybeSendDatagramCapacity();
   return NS_OK;
-}
-
-void WebTransportParent::FlushIncomingDatagrams() {
-  MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
-
-  mPendingIncomingBytes = 0;
-  if (mPendingIncoming.IsEmpty()) {
-    return;
-  }
-
-  LOG(("WebTransportParent sending %zu batched datagrams",
-       mPendingIncoming.Length()));
-  if (CanSend()) {
-    (void)SendIncomingDatagrams(mPendingIncoming);
-  }
-  mPendingIncoming.Clear();
 }
 
 NS_IMETHODIMP WebTransportParent::OnMaxDatagramSize(uint64_t aSize) {

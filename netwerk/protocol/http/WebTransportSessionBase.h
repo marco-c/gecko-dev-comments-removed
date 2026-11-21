@@ -83,11 +83,6 @@ class WebTransportSessionBase {
   virtual void StartReading() {}
 
   
-  
-  
-  void FlushIncomingDatagrams();
-
-  
   void NotifyOutgoingDatagramSpaceAvailable();
 
   

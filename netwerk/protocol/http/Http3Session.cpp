@@ -634,15 +634,6 @@ nsresult Http3Session::ProcessEvents() {
   Http3Event event{};
   event.tag = Http3Event::Tag::NoEvent;
 
-  
-  
-  nsTArray<RefPtr<Http3WebTransportSession>> datagramSessions;
-  auto flushDatagrams = MakeScopeExit([&datagramSessions] {
-    for (const auto& session : datagramSessions) {
-      session->FlushIncomingDatagrams();
-    }
-  });
-
   nsresult rv = mHttp3Connection->GetEvent(&event, data);
   if (NS_FAILED(rv)) {
     LOG(("Http3Session::ProcessEvents [this=%p] rv=%" PRIx32, this,
@@ -1104,9 +1095,6 @@ nsresult Http3Session::ProcessEvents() {
             }
 
             wt->OnDatagramReceived(std::move(data));
-            if (!datagramSessions.Contains(wt)) {
-              datagramSessions.AppendElement(wt);
-            }
           } break;
           case WebTransportEventExternal::Tag::Draining: {
             uint64_t sessionId = event.web_transport._0.draining.session_id;

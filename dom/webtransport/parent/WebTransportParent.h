@@ -146,10 +146,6 @@ class WebTransportParent : public PWebTransportParent,
   
   void AddParentExpiredOutgoing(WebTransportStatsData& aStats) const;
 
-  
-  
-  void FlushIncomingDatagrams();
-
   using ResolveType =
       std::tuple<const nsresult&, const uint8_t&, const uint64_t&>;
 
@@ -184,10 +180,6 @@ class WebTransportParent : public PWebTransportParent,
   
   
   bool mInOutgoingDatagramsBatch{false};
-  
-  
-  nsTArray<IncomingDatagram> mPendingIncoming;
-  size_t mPendingIncomingBytes{0};
   
   
   
