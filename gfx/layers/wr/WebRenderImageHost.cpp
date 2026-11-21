@@ -214,8 +214,7 @@ void WebRenderImageHost::UseRemoteTexture(bool aCalledInCallback) {
       
       
       if (mWaitForRemoteTextureOwner && !aCalledInCallback) {
-        
-        RemoteTextureMap::Get()->WaitForRemoteTextureOwner(wrapper);
+        wrapper->EnableWaitForRemoteTextureOwner(true);
       }
       mWaitingReadyCallback = !RemoteTextureMap::Get()->CheckRemoteTextureReady(
           wrapper->GetRemoteTextureInfo(), this, readyCallback);
