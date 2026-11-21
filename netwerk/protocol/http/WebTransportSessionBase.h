@@ -83,9 +83,6 @@ class WebTransportSessionBase {
           aCallback) = 0;
   virtual void StartReading() {}
 
-  
-  void NotifyOutgoingDatagramSpaceAvailable();
-
   virtual Http3WebTransportSession* GetHttp3WebTransportSession() {
     return nullptr;
   }
