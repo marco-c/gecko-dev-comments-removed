@@ -384,6 +384,10 @@ class MoofParser : public DecoderDoctorLifeLogger<MoofParser> {
 
  private:
   void ScanForMetadata(mozilla::MediaByteRange& aMoov);
+  
+  
+  
+  void EndSamplesAtNextComposition(Moof& aNewMoof);
   nsTArray<Moof> mMoofs;
   nsTArray<MediaByteRange> mMediaRanges;
   nsTArray<TrackEndCts> mTracksEndCts;
