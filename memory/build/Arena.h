@@ -639,7 +639,10 @@ struct arena_t : public BaseAllocClass {
   arena_chunk_t* PurgeGetSpareChunk(mozilla::PurgeStats& aStats);
   arena_chunk_t* PurgeGetDirtyChunk(mozilla::PurgeStats& aStats);
 
-  ArenaPurgeResult PurgeDirtyPages(arena_chunk_t* aChunk, PurgeCondition aCond,
+  
+  
+  ArenaPurgeResult PurgeDirtyPages(arena_chunk_t* aChunk,
+                                   size_t aTargetDirtyPages,
                                    mozilla::PurgeStats& aStats,
                                    purge_keep_going_t aKeepGoing,
                                    void* aClosure);
@@ -666,12 +669,6 @@ struct arena_t : public BaseAllocClass {
   
   inline void MayDoOrQueuePurge(purge_action_t aAction, const char* aCaller)
       MOZ_EXCLUDES(mLock);
-
-  
-  
-  bool ShouldContinuePurge(PurgeCondition aCond) MOZ_REQUIRES(mLock) {
-    return (mNumDirty > ((aCond == PurgeUnconditional) ? 0 : mMaxDirty >> 1));
-  }
 
   
   void NotifyPageReuse() MOZ_EXCLUDES(mLock);
