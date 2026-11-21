@@ -1440,8 +1440,7 @@ void CanvasRenderingContext2D::OnShutdown() {
 
 void CanvasRenderingContext2D::OnRemoteCanvasLost() {
   
-  
-  if (!mBufferProvider || !mBufferProvider->IsAccelerated() || mIsContextLost) {
+  if (!mBufferProvider || !mBufferProvider->IsRemote() || mIsContextLost) {
     return;
   }
 
@@ -1700,7 +1699,7 @@ bool CanvasRenderingContext2D::BorrowTarget(const IntRect& aPersistedRect,
   
   
   if (!mBufferProvider || mBufferProvider->RequiresRefresh() ||
-      (mBufferProvider->IsAccelerated() && UseSoftwareRendering())) {
+      (mBufferProvider->IsRemote() && UseSoftwareRendering())) {
     return false;
   }
   mTarget = mBufferProvider->BorrowDrawTarget(aPersistedRect);
@@ -1797,7 +1796,8 @@ bool CanvasRenderingContext2D::HasErrorState(ErrorResult& aError,
 bool CanvasRenderingContext2D::EnsureTarget(ErrorResult& aError,
                                             const gfx::Rect* aCoveredRect,
                                             bool aWillClear,
-                                            bool aSkipTransform) {
+                                            bool aSkipTransform,
+                                            bool aPreferAcceleration) {
   if (HasErrorState(aError, false)) {
     return false;
   }
@@ -1848,7 +1848,7 @@ bool CanvasRenderingContext2D::EnsureTarget(ErrorResult& aError,
   RefPtr<DrawTarget> newTarget;
   RefPtr<PersistentBufferProvider> newProvider;
 
-  if (!TryAcceleratedTarget(newTarget, newProvider) &&
+  if (!TryAcceleratedTarget(newTarget, newProvider, aPreferAcceleration) &&
       !TrySharedTarget(newTarget, newProvider) &&
       !TryBasicTarget(newTarget, newProvider, aError)) {
     gfxCriticalError(
@@ -1994,14 +1994,15 @@ static WindowRenderer* WindowRendererFromCanvasElement(
 
 bool CanvasRenderingContext2D::TryAcceleratedTarget(
     RefPtr<gfx::DrawTarget>& aOutDT,
-    RefPtr<layers::PersistentBufferProvider>& aOutProvider) {
+    RefPtr<layers::PersistentBufferProvider>& aOutProvider,
+    bool aPreferAcceleration) {
   if (!XRE_IsContentProcess()) {
     
     
     
     return false;
   }
-  if (mBufferProvider && mBufferProvider->IsAccelerated() &&
+  if (mBufferProvider && mBufferProvider->IsRemote() &&
       mBufferProvider->RequiresRefresh()) {
     
     
@@ -2021,8 +2022,9 @@ bool CanvasRenderingContext2D::TryAcceleratedTarget(
       return false;
     }
 
-    aOutProvider = PersistentBufferProviderAccelerated::Create(
-        GetSize(), GetSurfaceFormat(), renderer->AsKnowsCompositor());
+    aOutProvider = PersistentBufferProviderRemote::Create(
+        GetSize(), GetSurfaceFormat(), renderer->AsKnowsCompositor(),
+        aPreferAcceleration);
   } else if (mOffscreenCanvas &&
              StaticPrefs::gfx_canvas_remote_allow_offscreen()) {
     RefPtr<ImageBridgeChild> imageBridge = ImageBridgeChild::GetSingleton();
@@ -2030,8 +2032,8 @@ bool CanvasRenderingContext2D::TryAcceleratedTarget(
       return false;
     }
 
-    aOutProvider = PersistentBufferProviderAccelerated::Create(
-        GetSize(), GetSurfaceFormat(), imageBridge);
+    aOutProvider = PersistentBufferProviderRemote::Create(
+        GetSize(), GetSurfaceFormat(), imageBridge, aPreferAcceleration);
   }
 
   if (!aOutProvider) {
@@ -5997,6 +5999,14 @@ bool ValidSurfaceDescriptorForRemoteCanvas2d(
   switch (sdrd.videoType()) {
     case layers::RemoteDecoderVideoType::Buffer:
       break;
+#ifdef MOZ_WIDGET_ANDROID
+    case layers::RemoteDecoderVideoType::AndroidImageReaderImage:
+      if (!StaticPrefs::
+              gfx_canvas_remote_use_draw_image_fast_path_aimage_reader()) {
+        return false;
+      }
+      break;
+#endif
 #ifdef XP_MACOSX
     case layers::RemoteDecoderVideoType::MacIOSurface: {
       break;
@@ -6074,6 +6084,43 @@ MaybeGetSurfaceDescriptorForRemoteCanvas(
 
 
 
+bool CanvasRenderingContext2D::HasAcceleratedBufferProvider() const {
+  return mBufferProvider && mBufferProvider->IsAccelerated();
+}
+
+bool CanvasRenderingContext2D::MaybeAccelerateForDrawImage(
+    const CanvasImageSource& aImage) {
+  if (mTarget || (mBufferProvider && !mBufferNeedsClear) ||
+      !mAllowAcceleration || UseSoftwareRendering()) {
+    return false;
+  }
+
+  nsICanvasRenderingContextInternal* context = nullptr;
+  if (aImage.IsHTMLCanvasElement()) {
+    HTMLCanvasElement& canvas = aImage.GetAsHTMLCanvasElement();
+    if (canvas.GetCurrentContextType() == CanvasContextType::Canvas2D) {
+      context = canvas.GetCurrentContext();
+    }
+  } else if (aImage.IsOffscreenCanvas()) {
+    OffscreenCanvas& canvas = aImage.GetAsOffscreenCanvas();
+    if (canvas.GetContextType() == CanvasContextType::OffscreenCanvas2D) {
+      context = canvas.GetContext();
+    }
+  }
+  if (!context || context == this ||
+      !static_cast<CanvasRenderingContext2D*>(context)
+           ->HasAcceleratedBufferProvider()) {
+    return false;
+  }
+
+  if (mBufferProvider && !mBufferProvider->IsAccelerated()) {
+    
+    mBufferProvider = nullptr;
+    mBufferNeedsClear = false;
+  }
+  return true;
+}
+
 void CanvasRenderingContext2D::DrawImage(const CanvasImageSource& aImage,
                                          double aSx, double aSy, double aSw,
                                          double aSh, double aDx, double aDy,
@@ -6099,7 +6146,8 @@ void CanvasRenderingContext2D::DrawImage(const CanvasImageSource& aImage,
   OffscreenCanvas* offscreenCanvas = nullptr;
   VideoFrame* videoFrame = nullptr;
 
-  if (!EnsureTarget(aError)) {
+  bool preferAcceleration = MaybeAccelerateForDrawImage(aImage);
+  if (!EnsureTarget(aError, nullptr, false, false, preferAcceleration)) {
     return;
   }
 
@@ -6179,8 +6227,7 @@ void CanvasRenderingContext2D::DrawImage(const CanvasImageSource& aImage,
                         nsLayoutUtils::SFE_NO_RASTERIZING_VECTORS |
                         nsLayoutUtils::SFE_ALLOW_UNCROPPED_UNSCALED;
 
-    bool fastPath = mBufferProvider->IsAccelerated() &&
-                    mTarget->IsRecording() &&
+    bool fastPath = mBufferProvider->IsRemote() && mTarget->IsRecording() &&
                     !(NeedToApplyFilter() || NeedToDrawShadow());
 
     

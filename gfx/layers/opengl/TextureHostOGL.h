@@ -38,12 +38,20 @@
 namespace mozilla {
 namespace gfx {
 class DataSourceSurface;
+class SourceSurface;
 }  
 
 namespace layers {
 
 class Compositor;
 class CompositorOGL;
+#ifdef MOZ_WIDGET_ANDROID
+
+
+already_AddRefed<gfx::SourceSurface> GetAndroidImageReaderSurfaceForCanvas(
+    TextureHost* aTextureHost);
+#endif
+
 class AndroidHardwareBuffer;
 class AndroidImageConsumer;
 class SurfaceDescriptorAndroidHardwareBuffer;

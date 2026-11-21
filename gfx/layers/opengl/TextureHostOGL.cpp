@@ -9,8 +9,10 @@
 #include "GLReadTexImageHelper.h"
 #include "GLUploadHelpers.h"
 #include "GeckoProfiler.h"
-#include "GfxTexturesReporter.h"   
-#include "gfx2DGlue.h"             
+#include "GfxTexturesReporter.h"  
+#include "gfx2DGlue.h"            
+#include "mozilla/ScopeExit.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/gfx/2D.h"        
 #include "mozilla/gfx/BaseSize.h"  
 #include "mozilla/gfx/Logging.h"   
@@ -28,6 +30,7 @@
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/layers/AndroidHardwareBuffer.h"
 #  include "mozilla/layers/AndroidImageConsumer.h"
+#  include "mozilla/layers/AndroidImageReader.h"
 #  include "mozilla/webrender/RenderAndroidHardwareBufferTextureHost.h"
 #  include "mozilla/webrender/RenderAndroidImageReaderImageTextureHost.h"
 #  include "mozilla/webrender/RenderAndroidSurfaceTextureHost.h"
@@ -591,21 +594,53 @@ bool AndroidHardwareBufferTextureSource::EnsureEGLImage() {
 
     
     
-    const EGLint attribs[] = {LOCAL_EGL_SYNC_NATIVE_FENCE_FD_ANDROID,
-                              fenceFd.release(), LOCAL_EGL_NONE};
+    
+    
+    auto restoreAcquireFence = MakeScopeExit(
+        [&] { mAndroidHardwareBuffer->SetAcquireFence(std::move(fenceFd)); });
+    UniqueFileHandle importFd = DuplicateFileHandle(fenceFd);
+    if (!importFd) {
+      gfxCriticalNoteOnce
+          << "AHB compositor: failed to duplicate acquire fence FD";
+      DeleteTextureHandle();
+      DestroyEGLImage();
+      return false;
+    }
 
+    
+    const EGLint attribs[] = {LOCAL_EGL_SYNC_NATIVE_FENCE_FD_ANDROID,
+                              importFd.release(), LOCAL_EGL_NONE};
     EGLSync sync =
         egl->fCreateSyncKHR(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, attribs);
-    if (sync) {
-      if (egl->IsExtensionSupported(gl::EGLExtension::KHR_wait_sync)) {
-        egl->fWaitSync(sync, 0);
-      } else {
-        egl->fClientWaitSync(sync, 0, LOCAL_EGL_FOREVER);
-      }
-      egl->fDestroySync(sync);
-    } else {
-      gfxCriticalNote << "Failed to create EGLSync from acquire fence fd";
+    if (!sync) {
+      const EGLint eglError = egl->mLib->fGetError();
+      gfxCriticalNoteOnce
+          << "AHB compositor: failed to import acquire fence, EGL error: "
+          << eglError;
+      DeleteTextureHandle();
+      DestroyEGLImage();
+      return false;
     }
+    bool waitSucceeded;
+    if (egl->IsExtensionSupported(gl::EGLExtension::KHR_wait_sync)) {
+      
+      waitSucceeded = egl->fWaitSync(sync, 0) == LOCAL_EGL_TRUE;
+    } else {
+      
+      
+      waitSucceeded = egl->fClientWaitSync(sync, 0, LOCAL_EGL_FOREVER) ==
+                      LOCAL_EGL_CONDITION_SATISFIED;
+    }
+    egl->fDestroySync(sync);
+    if (!waitSucceeded) {
+      gfxCriticalNoteOnce << "AHB compositor: acquire fence wait failed";
+      DeleteTextureHandle();
+      DestroyEGLImage();
+      return false;
+    }
+
+    
+    restoreAcquireFence.release();
   }
 
   if (mTextureHandle) {
@@ -885,6 +920,42 @@ void AndroidImageReaderImageTextureSource::DeallocateDeviceData() {
 }
 
 
+
+already_AddRefed<gfx::SourceSurface> GetAndroidImageReaderSurfaceForCanvas(
+    TextureHost* aTextureHost) {
+  const auto desc = aTextureHost->GetSurfaceDescriptor();
+  if (desc.type() != SurfaceDescriptor::TAndroidImageReaderImageDescriptor) {
+    return nullptr;
+  }
+  const auto& sd = desc.get_AndroidImageReaderImageDescriptor();
+  if (!gfx::Factory::AllowedSurfaceSize(sd.size())) {
+    return nullptr;
+  }
+  auto map = GpuProcessAndroidImageReaderMap::Get();
+  RefPtr<AndroidImageReader> reader =
+      map ? map->GetImageReader(sd.imageReaderId()) : nullptr;
+  RefPtr<AndroidImageWrapper> image =
+      reader ? reader->AcquireImageForCanvas(sd.frameId()) : nullptr;
+  if (!image || !gfx::Factory::AllowedSurfaceSize(image->mSize)) {
+    return nullptr;
+  }
+  
+  gfx::SurfaceFormat format;
+  switch (image->mFormat) {
+    case gfx::SurfaceFormat::R8G8B8A8:
+      format = gfx::SurfaceFormat::B8G8R8A8;
+      break;
+    case gfx::SurfaceFormat::R8G8B8X8:
+      format = gfx::SurfaceFormat::B8G8R8X8;
+      break;
+    default:
+      return nullptr;
+  }
+  
+  
+  
+  return image->GetAsSurface(sd.size(), format);
+}
 
 AndroidImageReaderImageTextureHost::AndroidImageReaderImageTextureHost(
     TextureFlags aFlags, const AndroidImageReaderImageDescriptor& aDescriptor)

@@ -132,15 +132,26 @@ class AndroidImageWrapper {
                                AHardwareBuffer* aHardwareBuffer,
                                const gfx::IntSize aSize,
                                const gfx::SurfaceFormat aFormat,
-                               mozilla::UniqueFileHandle&& aWriteFenceFd);
+                               mozilla::UniqueFileHandle&& aWriteFenceFd,
+                               const gfx::IntRect& aCropRect);
 
-  mozilla::UniqueFileHandle CloneWriteFenceFd();
+  
   bool WaitForWriteFence(gl::GLContext* aGL);
+  
+  
+  bool BindToTexture(gl::GLContext* aGL, GLuint aTexture);
 
-  void SetReadFenceFd(UniqueFileHandle&& aFenceFd);
+  bool ReadTexImage(gl::GLContext* aGL, gfx::DataSourceSurface* aSurface);
+  already_AddRefed<gfx::DataSourceSurface> GetAsSurface(
+      const gfx::IntSize& aSize, gfx::SurfaceFormat aFormat);
+
+  
+  
+  bool SetReadFenceFd(UniqueFileHandle&& aFenceFd);
 
   const AHardwareBuffer* mHardwareBuffer;
   const gfx::IntSize mSize;
+  const gfx::IntRect mCropRect;
   const gfx::SurfaceFormat mFormat;
 
  protected:
@@ -183,20 +194,14 @@ class AndroidImageReader final
   
   void Shutdown();
 
-  bool UpdateTexImage(AndroidMediaCodecFrameId aFrameId, gl::GLContext* aGL,
-                      GLuint aTexture, AndroidImageWrapper** aImage);
+  
+  RefPtr<AndroidImageWrapper> AcquireImage(AndroidMediaCodecFrameId aFrameId);
 
-  bool UpdateTexImageWithReadback(AndroidMediaCodecFrameId aFrameId,
-                                  gl::GLContext* aGL,
-                                  gfx::DataSourceSurface* aSurface,
-                                  const gfx::IntSize aSize,
-                                  const gfx::SurfaceFormat aFormat);
+  
+  RefPtr<AndroidImageWrapper> AcquireImageForCanvas(
+      AndroidMediaCodecFrameId aFrameId);
 
   void MaybeRenderFirstFrame(AndroidMediaCodecFrameId aFrameId);
-
-  bool DoUpdateTexImage(const MonitorAutoLock& aProofOfLock,
-                        AndroidMediaCodecFrameId aFrameId)
-      MOZ_REQUIRES(mMonitor);
 
   ANativeWindow* GetANativeWindow();
 
@@ -285,6 +290,20 @@ class AndroidImageReader final
   bool mShuttingDown MOZ_GUARDED_BY(mMonitor) = false;
 
   mozilla::Atomic<int32_t> mAcquiredImageCount{0};
+
+ private:
+  enum class CachePolicy {
+    
+    
+    PreserveOnFull,
+    
+    
+    EvictOnFull,
+  };
+
+  bool DoUpdateTexImage(const MonitorAutoLock& aProofOfLock,
+                        AndroidMediaCodecFrameId aFrameId,
+                        CachePolicy aCachePolicy) MOZ_REQUIRES(mMonitor);
 };
 
 
