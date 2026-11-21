@@ -5731,6 +5731,14 @@ WebRenderCommandsResult nsDisplayViewTransitionCapture::CreateWebRenderCommands(
     if (NS_WARN_IF(!vt)) {
       return Nothing();
     }
+    if (!isRoot && capturedFrame != mFrame &&
+        NS_WARN_IF(!GetMergedFrames().Contains(capturedFrame))) {
+      
+      
+      
+      
+      return Nothing();
+    }
     const auto* key =
         vt->GetImageKeyForCapturedFrame(capturedFrame, aManager, aResources);
     return key ? Some(wr::SnapshotImageKey{*key}) : Nothing();
