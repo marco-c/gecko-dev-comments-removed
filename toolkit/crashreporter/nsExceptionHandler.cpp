@@ -16,8 +16,6 @@
 #include "mozilla/Services.h"
 #include "nsIObserverService.h"
 #include "mozilla/RuntimeExceptionModule.h"
-#include "mozilla/StaticPrefs_browser.h"
-#include "mozilla/ToString.h"
 #include "mozilla/TimeStamp.h"
 
 #include "nsPrintfCString.h"
@@ -1545,21 +1543,6 @@ static void WriteCrashEventFile(time_t crashTime, const char* crashTimeString,
   }
 }
 
-void SetUpMemtestEnv() {
-  if (StaticPrefs::browser_crashReporter_memtest()) {
-    const char* env = "MOZ_CRASHREPORTER_RUN_MEMTEST=1";
-    PR_SetEnv(env);
-
-    auto memtestKindsLock = StaticPrefs::browser_crashReporter_memtestKinds();
-    if (!memtestKindsLock->IsEmpty()) {
-      char* env = strdup(
-          ("MOZ_CRASHREPORTER_MEMTEST_KINDS=" + ToString(*memtestKindsLock))
-              .c_str());
-      PR_SetEnv(env);
-    }
-  }
-}
-
 
 
 
@@ -1637,8 +1620,6 @@ bool MinidumpCallback(
 #endif
     WriteAnnotationsForMainProcessCrash(apiData, addrInfo, crashTime);
   }
-
-  SetUpMemtestEnv();
 
   bool returnValue = succeeded;
   bool isBackgroundTaskMode = false;
@@ -3468,6 +3449,19 @@ bool SetRemoteExceptionHandler(int& aArgc, char** aArgv) {
   return gExceptionHandler->IsOutOfProcess();
 }  
 
+static void AppendDumperError(AnnotationTable& aAnnotations,
+                              const nsACString& aError) {
+  if (aError.IsEmpty()) {
+    return;
+  }
+
+  nsCString& dumperError = aAnnotations[Annotation::DumperError];
+  if (!dumperError.IsEmpty()) {
+    dumperError.AppendLiteral("; ");
+  }
+  dumperError.Append(aError);
+}
+
 bool TakeMinidumpForChild(GeckoChildID aChildId, nsIFile** dump,
                           AnnotationTable& aAnnotations) {
   if (!GetEnabled()) {
@@ -3517,9 +3511,7 @@ bool TakeMinidumpForChild(GeckoChildID aChildId, nsIFile** dump,
     return false;
   }
 
-  if (error.Length() > 0) {
-    aAnnotations[Annotation::DumperError] = std::move(error);
-  }
+  AppendDumperError(aAnnotations, error);
 
   return true;
 }
@@ -3683,9 +3675,7 @@ bool CreateMinidumpsAndPair(GeckoChildID aId, ThreadId aTargetBlamedThread,
     return false;
   }
 
-  if (error.Length() > 0) {
-    aTargetAnnotations[Annotation::DumperError] = std::move(error);
-  }
+  AppendDumperError(aTargetAnnotations, error);
 
   targetMinidump.forget(aMainDumpOut);
 
