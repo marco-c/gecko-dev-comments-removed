@@ -1306,41 +1306,6 @@ size_t arena_t::ExtraCommitPages(size_t aReqPages, size_t aRemainingPages) {
 }
 #endif
 
-ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats,
-                                purge_keep_going_t aKeepGoing, void* aClosure)
-    MOZ_EXCLUDES(mLock) {
-  mLock.Lock();
-
-  if (mMustDeleteAfterPurge) {
-    mIsPurgePending = false;
-    mLock.Unlock();
-    return Dying;
-  }
-
-  if (!ShouldContinuePurge(aCond)) {
-    mIsPurgePending = false;
-    mLock.Unlock();
-    return ReachedThresholdOrBusy;
-  }
-
-  arena_chunk_t* chunk = PurgeGetSpareChunk(aStats);
-  if (chunk) {
-    
-    mLock.Unlock();
-    arena_chunk_dealloc(mChunkAllocator, (void*)chunk, kChunkSize);
-    aStats.system_calls++;
-    return NotDone;
-  }
-
-  chunk = PurgeGetDirtyChunk(aCond, aStats);
-  mLock.Unlock();
-  if (chunk) {
-    return PurgeDirtyPages(chunk, aCond, aStats, aKeepGoing, aClosure);
-  }
-
-  return ReachedThresholdOrBusy;
-}
-
 arena_chunk_t* arena_t::PurgeGetSpareChunk(PurgeStats& aStats)
     MOZ_REQUIRES(mLock) {
   if (mSpares.isEmpty()) {
@@ -1552,14 +1517,64 @@ ArenaPurgeResult arena_t::PurgeLoop(PurgeCondition aCond, const char* aCaller,
 #endif
 
   uint64_t reuseGraceNS = (uint64_t)aReuseGraceMS * 1000 * 1000;
-  uint64_t now;
   ArenaPurgeResult pr;
-  do {
-    pr = Purge(aCond, purge_stats, aKeepGoing, aClosure);
-    now = aReuseGraceMS ? GetTimestampNS() : 0;
-  } while (pr == NotDone &&
-           (!aReuseGraceMS || (now - mLastPageReuseNS >= reuseGraceNS)) &&
-           (!aKeepGoing || aKeepGoing(aClosure)));
+  while (true) {
+    
+    
+    arena_chunk_t* spare_chunk = nullptr;
+    arena_chunk_t* dirty_chunk = nullptr;
+    {
+      MaybeMutexAutoLock lock(mLock);
+
+      if (mMustDeleteAfterPurge) {
+        mIsPurgePending = false;
+        pr = Dying;
+        break;
+      }
+
+      if (!ShouldContinuePurge(aCond)) {
+        mIsPurgePending = false;
+        pr = ReachedThresholdOrBusy;
+        break;
+      }
+
+      spare_chunk = PurgeGetSpareChunk(purge_stats);
+      if (!spare_chunk) {
+        dirty_chunk = PurgeGetDirtyChunk(aCond, purge_stats);
+        if (!dirty_chunk) {
+          pr = ReachedThresholdOrBusy;
+          break;
+        }
+      }
+    }  
+
+    
+    MOZ_ASSERT(spare_chunk || dirty_chunk);
+    if (spare_chunk) {
+      arena_chunk_dealloc(mChunkAllocator, (void*)spare_chunk, kChunkSize);
+      purge_stats.system_calls++;
+      pr = NotDone;
+    } else {
+      
+      
+      pr = PurgeDirtyPages(dirty_chunk, aCond, purge_stats, aKeepGoing,
+                           aClosure);
+    }
+    if (pr != NotDone) {
+      break;
+    }
+
+    
+    
+    if (aReuseGraceMS && GetTimestampNS() - mLastPageReuseNS < reuseGraceNS) {
+      break;
+    }
+
+    
+    if (aKeepGoing && !aKeepGoing(aClosure)) {
+      break;
+    }
+  }
 
 #ifdef MOZJEMALLOC_PROFILING_CALLBACKS
   if (callbacks) {

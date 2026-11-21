@@ -555,19 +555,6 @@ struct arena_t : public BaseAllocClass {
   
   
   
-  ArenaPurgeResult Purge(PurgeCondition aCond, mozilla::PurgeStats& aStats,
-                         purge_keep_going_t aKeepGoing = nullptr,
-                         void* aClosure = nullptr) MOZ_EXCLUDES(mLock);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   
