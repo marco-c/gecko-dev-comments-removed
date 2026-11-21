@@ -250,7 +250,15 @@ promise_test(async t => {
 
   
   
+  
+  
   wt.close();
 
-  await Promise.all(promises);
+  const results = await Promise.allSettled(promises);
+  const firstRejected = results.findIndex(r => r.status == 'rejected');
+  for (const result of results.slice(firstRejected == -1 ? N : firstRejected)) {
+    assert_equals(result.status, 'rejected',
+                  'no write() resolves after the first rejected one');
+    assert_throws_dom('AbortError', () => { throw result.reason; });
+  }
 }, 'Closing a session settles every deferred outgoing datagram write() promise');

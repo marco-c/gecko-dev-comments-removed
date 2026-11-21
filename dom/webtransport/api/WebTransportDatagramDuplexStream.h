@@ -194,11 +194,10 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
 
   
   
-  
-  MOZ_CAN_RUN_SCRIPT void CloseOrErrorWritables(
+  MOZ_CAN_RUN_SCRIPT void ErrorWritables(
       JSContext* aCx,
       const nsTArray<RefPtr<WebTransportDatagramsWritable>>& aWritables,
-      bool aClean, JS::Handle<JS::Value> aErrorValue);
+      JS::Handle<JS::Value> aErrorValue);
 
   
   
@@ -277,10 +276,6 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
 
  private:
   ~WebTransportDatagramDuplexStream() = default;
-
-  MOZ_CAN_RUN_SCRIPT static void CloseOrErrorWritable(
-      JSContext* aCx, WritableStream* aWritable, bool aClean,
-      JS::Handle<JS::Value> aErrorValue);
 
   nsCOMPtr<nsIGlobalObject> mGlobal;
   RefPtr<WebTransport> mWebTransport;
