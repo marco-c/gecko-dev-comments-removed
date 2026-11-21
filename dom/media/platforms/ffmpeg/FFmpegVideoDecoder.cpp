@@ -1056,10 +1056,10 @@ FFmpegVideoDecoder<LIBAV_VER>::InitHWDecoderIfAllowed() {
 
 FFmpegVideoDecoder<LIBAV_VER>::~FFmpegVideoDecoder() {
 #ifdef MOZ_WIDGET_ANDROID
-  if (mAndroidImageReaderClient) {
+  if (mAndroidImageReader) {
     
     
-    mAndroidImageReaderClient->Shutdown();
+    mAndroidImageReader->Shutdown();
   }
   
   
@@ -2743,9 +2743,9 @@ void FFmpegVideoDecoder<LIBAV_VER>::ProcessShutdown() {
 #ifdef MOZ_WIDGET_ANDROID
   mShouldResumeDrain = false;
   ReleaseFramesMediaCodec();
-  if (mAndroidImageReaderClient) {
-    mAndroidImageReaderClient->Shutdown();
-    mAndroidImageReaderClient = nullptr;
+  if (mAndroidImageReader) {
+    mAndroidImageReader->Shutdown();
+    mAndroidImageReader = nullptr;
   }
   if (mMediaCodecDeviceContext) {
     mLib->av_buffer_unref(&mMediaCodecDeviceContext);
@@ -3324,28 +3324,39 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitMediaCodecDecoder() {
   
   hwctx->free = MediaCodecNativeWindowReleaseCallback;
 
-  if ((XRE_IsGPUProcess() || XRE_IsRDDProcess()) &&
-      gfx::gfxVars::ForceAImageReaderAndroid()) {
-    MOZ_ASSERT(!mAndroidImageReaderClient);
-    mAndroidImageReaderClient = layers::AndroidImageReaderClient::Create();
-    if (!mAndroidImageReaderClient) {
-      return MediaResult(
-          NS_ERROR_DOM_MEDIA_FATAL_ERR,
-          RESULT_DETAIL("unable to acquire compositor ImageReader surface"));
-    }
-    mImageReaderSurface = mAndroidImageReaderClient->GetSurface();
-    JNIEnv* env = jni::GetEnvForThread();
-    ANativeWindow* window =
-        ANativeWindow_fromSurface(env, mImageReaderSurface.Get());
+  if (XRE_IsGPUProcess() && gfx::gfxVars::ForceAImageReaderAndroid()) {
+    MOZ_ASSERT(!mAndroidImageReader);
+    mAndroidImageReader = layers::AndroidImageReader::Create();
+  }
+
+  if (mAndroidImageReader) {
+    auto* window = mAndroidImageReader->GetANativeWindow();
+    MOZ_ASSERT(window);
     if (!window) {
       return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                          RESULT_DETAIL("unable to acquire ANativeWindow"));
     }
+
+    JNIEnv* const env = jni::GetEnvForThread();
+    jobject surface = ANativeWindow_toSurface(env, window);
+    if (!surface) {
+      return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                         RESULT_DETAIL("unable to acquire Java surface"));
+    }
+
+    mImageReaderSurface = java::sdk::Surface::LocalRef::Adopt(env, surface);
+
+    if (!mImageReaderSurface) {
+      return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                         RESULT_DETAIL("unable to acquire Java surface"));
+    }
+
     mediacodecctx->surface = mImageReaderSurface.Get();
     
     
+    ANativeWindow_acquire(window);
     mediacodecctx->native_window = window;
-    mediacodecctx->create_window = 0;
+    mediacodecctx->create_window = 0;  
   } else {
     mSurfaceTextureSurface =
         java::GeckoSurface::LocalRef(java::SurfaceAllocator::AcquireSurface(
@@ -3440,19 +3451,14 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImageMediaCodec(
   };
 
   RefPtr<layers::Image> img;
-  if (mAndroidImageReaderClient) {
-    if (!mAndroidImageReaderClient->IsValid()) {
-      mLib->av_frame_free(&frame);
-      return MediaResult(
-          NS_ERROR_DOM_MEDIA_REMOTE_CRASHED_RDD_OR_GPU_ERR,
-          RESULT_DETAIL("compositor ImageReader surface was lost"));
-    }
+  if (mAndroidImageReader) {
     auto listener = std::make_unique<CompositeListener>(this);
     mFrameMap.Insert(listener.get(), frame);
     auto readerImage = MakeRefPtr<layers::AndroidImageReaderImage>(
-        mAndroidImageReaderClient, gfx::IntSize(mFrame->width, mFrame->height),
-        mInfo.HasAlpha());
+        mAndroidImageReader->mImageReaderId,
+        gfx::IntSize(mFrame->width, mFrame->height), mInfo.HasAlpha());
     readerImage->RegisterSetCurrentCallback(std::move(listener));
+    mAndroidImageReader->RegisterReaderImage(readerImage);
     img = readerImage.forget();
   } else {
     img = MakeRefPtr<layers::SurfaceTextureImage>(
@@ -3510,8 +3516,6 @@ bool FFmpegVideoDecoder<LIBAV_VER>::ReleaseFrameMediaCodec(void* aKey,
 }
 
 void FFmpegVideoDecoder<LIBAV_VER>::ReleaseSurfaceMediaCodec() {
-  mImageReaderSurface = nullptr;
-  mAndroidImageReaderClient = nullptr;
   if (mSurfaceTextureSurface) {
     java::SurfaceAllocator::DisposeSurface(mSurfaceTextureSurface);
     mSurfaceTextureSurface = nullptr;
@@ -3527,9 +3531,6 @@ void FFmpegVideoDecoder<LIBAV_VER>::ReleaseFramesMediaCodec() {
     FFMPEG_LOG("Flush/shutdown release MediaCodec frame {}", fmt::ptr(aFrame));
     mLib->av_frame_free(&aFrame);
   });
-  if (mAndroidImageReaderClient) {
-    mAndroidImageReaderClient->DiscardFrames();
-  }
 }
 #endif  
 

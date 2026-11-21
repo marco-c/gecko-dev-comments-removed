@@ -19,97 +19,6 @@ import org.mozilla.gecko.process.GeckoServiceChildProcess;
 
   private static ISurfaceAllocator sAllocator;
   private static final IBinder sClient = new Binder();
-  private static final IImageReaderFrameCallback sImageReaderCallback =
-      new IImageReaderFrameCallback.Stub() {
-        
-        @Override
-        public void releaseFrame(
-            final long handle, final long readerId, final long frameId, final boolean render) {
-          if (!releaseImageReaderFrame(readerId, frameId, render) && render) {
-            notifyImageReaderFrameReleaseFailed(handle, readerId, frameId);
-          }
-        }
-      };
-
-  private static void notifyImageReaderFrameReleaseFailed(
-      final long handle, final long readerId, final long frameId) {
-    final ISurfaceAllocator allocator;
-    synchronized (SurfaceAllocator.class) {
-      final GeckoSurface surface = sSurfaces.get(handle);
-      if (surface == null || surface.getImageReaderId() != readerId || sAllocator == null) {
-        return;
-      }
-      allocator = sAllocator;
-    }
-    try {
-      allocator.notifyImageReaderFrameReleaseFailed(handle, frameId);
-    } catch (final RemoteException | SecurityException e) {
-      Log.w(LOGTAG, "Failed to report ImageReader frame release failure", e);
-    }
-  }
-
-  
-
-
-
-  @WrapForJNI
-  private static native boolean releaseImageReaderFrame(
-      long readerId, long frameId, boolean render);
-
-  
-
-
-
-  @WrapForJNI
-  private static native void discardImageReaderFrames(long readerId);
-
-  
-
-
-
-
-  @WrapForJNI
-  public static void maybeRenderImageReaderFirstFrame(final long handle, final long frameId) {
-    final ISurfaceAllocator allocator;
-    synchronized (SurfaceAllocator.class) {
-      final GeckoSurface surface = sSurfaces.get(handle);
-      if (surface == null || surface.getImageReaderId() == 0 || sAllocator == null) {
-        return;
-      }
-      allocator = sAllocator;
-    }
-    
-    
-    try {
-      allocator.maybeRenderImageReaderFirstFrame(handle, frameId);
-    } catch (final RemoteException | SecurityException e) {
-      Log.w(LOGTAG, "Failed to render first ImageReader frame", e);
-    }
-  }
-
-  
-
-
-
-
-
-  @WrapForJNI
-  public static synchronized GeckoSurface acquireImageReaderSurface() {
-    try {
-      ensureConnection();
-      if (sAllocator == null) {
-        return null;
-      }
-      final GeckoSurface surface = sAllocator.acquireImageReaderSurface(sImageReaderCallback);
-      if (surface != null) {
-        sSurfaces.put(surface.getHandle(), surface);
-      }
-      return surface;
-    } catch (final RemoteException | SecurityException e) {
-      Log.w(LOGTAG, "Failed to acquire ImageReader surface", e);
-      return null;
-    }
-  }
 
   
   
@@ -144,11 +53,7 @@ import org.mozilla.gecko.process.GeckoServiceChildProcess;
                     
                     
                     for (int i = 0; i < sSurfaces.size(); i++) {
-                      final GeckoSurface surface = sSurfaces.valueAt(i);
-                      surface.release();
-                      if (surface.getImageReaderId() != 0) {
-                        discardImageReaderFrames(surface.getImageReaderId());
-                      }
+                      sSurfaces.valueAt(i).release();
                     }
                     sSurfaces.clear();
                     sAllocator = null;
@@ -204,10 +109,14 @@ import org.mozilla.gecko.process.GeckoServiceChildProcess;
       return;
     }
 
+    
+    
     try {
-      sAllocator.releaseSurface(surface.getHandle());
-    } catch (final RemoteException | SecurityException e) {
-      Log.w(LOGTAG, "Failed to release remote surface", e);
+      if (sAllocator != null) {
+        sAllocator.releaseSurface(surface.getHandle());
+      }
+    } catch (final RemoteException e) {
+      Log.w(LOGTAG, "Failed to release surface texture", e);
     }
   }
 }

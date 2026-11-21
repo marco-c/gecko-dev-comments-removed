@@ -413,14 +413,9 @@ struct CompositeProcessFencesHolderId {
 };
 
 
-
-
 struct GpuProcessAndroidImageReaderId {
-  static constexpr uint64_t kRemoteIdBit = uint64_t(1) << 63;
-
   uint64_t mId = 0;
 
-  
   static GpuProcessAndroidImageReaderId GetNext();
 
   bool IsValid() const { return mId != 0; }
