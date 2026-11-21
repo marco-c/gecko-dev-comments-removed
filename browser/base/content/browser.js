@@ -4842,8 +4842,9 @@ var gDialogBox = {
       urlbar.view?.close();
     }
 
+    using disposables = new DisposableStack();
     try {
-      await this._open(uri, args, triggeringEvent);
+      await this._open(uri, args, triggeringEvent, disposables);
     } catch (ex) {
       console.error(ex);
     } finally {
@@ -4862,7 +4863,6 @@ var gDialogBox = {
       document.documentElement.removeAttribute("window-modal-open");
       dialog.removeEventListener("dialogopen", this);
       dialog.removeEventListener("close", this);
-      this._updateMenuAndCommandState(true );
       this._dialog = null;
       UpdatePopupNotificationsVisibility();
     }
@@ -4892,7 +4892,15 @@ var gDialogBox = {
     }
   },
 
-  _open(uri, args, triggeringEvent) {
+  
+
+
+
+
+
+
+
+  _open(uri, args, triggeringEvent, disposables) {
     
     
     let offset = window.windowUtils.getBoundsWithoutFlushing(
@@ -4910,7 +4918,7 @@ var gDialogBox = {
     this._didOpenHTMLDialog = true;
 
     
-    this._updateMenuAndCommandState(false );
+    this.disableMenusAndCommands(disposables);
 
     
     let template = document.getElementById("window-modal-dialog-template")
@@ -4962,6 +4970,26 @@ var gDialogBox = {
     "key_delete",
     "key_selectAll",
   ]),
+
+  
+  _menuAndCommandDisablers: 0,
+
+  
+
+
+
+
+
+  disableMenusAndCommands(disposables) {
+    disposables.defer(() => {
+      if (--this._menuAndCommandDisablers == 0) {
+        this._updateMenuAndCommandState(true );
+      }
+    });
+    if (this._menuAndCommandDisablers++ == 0) {
+      this._updateMenuAndCommandState(false );
+    }
+  },
 
   _updateMenuAndCommandState(shouldBeEnabled) {
     let editorCommands = document.getElementById("editMenuCommands");
