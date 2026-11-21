@@ -2696,19 +2696,41 @@ nsresult nsOverflowContinuationTracker::Insert(nsIFrame* aOverflowCont,
     
     
     
-    nsIFrame* pif = aOverflowCont->GetPrevInFlow();
-    nsIFrame* nif = aOverflowCont->GetNextInFlow();
-    if ((pif && pif->GetParent() == mParent && pif != mPrevOverflowCont) ||
-        (nif && nif->GetParent() == mParent && mPrevOverflowCont)) {
-      for (nsIFrame* f : *mOverflowContList) {
-        if (f == pif) {
-          mPrevOverflowCont = pif;
-          break;
+
+    
+    auto IsEarlierContinuation = [aOverflowCont](nsIFrame* aFrame) {
+      for (nsIFrame* f = aOverflowCont->GetPrevInFlow(); f;
+           f = f->GetPrevInFlow()) {
+        if (f == aFrame) {
+          return true;
         }
-        if (f == nif) {
-          mPrevOverflowCont = f->GetPrevSibling();
-          break;
+      }
+      return false;
+    };
+
+    
+    auto IsLaterContinuation = [aOverflowCont](nsIFrame* aFrame) {
+      for (nsIFrame* f = aOverflowCont->GetNextInFlow(); f;
+           f = f->GetNextInFlow()) {
+        if (f == aFrame) {
+          return true;
         }
+      }
+      return false;
+    };
+
+    
+    
+    
+    for (nsIFrame* f : *mOverflowContList) {
+      if (IsEarlierContinuation(f)) {
+        mPrevOverflowCont = f;
+        
+        
+      } else if (IsLaterContinuation(f)) {
+        mPrevOverflowCont = f->GetPrevSibling();
+        
+        break;
       }
     }
 
