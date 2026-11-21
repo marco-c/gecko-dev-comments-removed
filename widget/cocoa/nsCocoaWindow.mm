@@ -3940,10 +3940,18 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
 
   if (dragSession) {
     if (aMessage == eDragOver) {
-      
-      
-      dragSession->FireDragEventAtSource(
-          eDrag, nsCocoaUtils::ModifiersForEvent([NSApp currentEvent]));
+      nsCOMPtr<nsIWidget> sourceWidget = dragSession->GetSourceWidget();
+      if (sourceWidget == mGeckoChild) {
+        NSPoint draggingLoc = [aSender draggingLocation];
+        LayoutDeviceIntPoint point =
+            [self convertWindowCoordinates:draggingLoc];
+
+        
+        
+        dragSession->FireDragEventAtSource(
+            eDrag, nsCocoaUtils::ModifiersForEvent([NSApp currentEvent]),
+            point);
+      }
       dragSession->SetCanDrop(false);
     } else if (aMessage == eDrop) {
       
