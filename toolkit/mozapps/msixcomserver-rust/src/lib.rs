@@ -88,21 +88,22 @@ fn debug_log(message: &str) {
 
 
 
-fn task_args(task_name: &str) -> Vec<String> {
-    let mut args = vec!["--backgroundtask".to_string()];
-    args.extend(task_name.split(':').map(str::to_string));
-    args
+
+
+fn parameter_group_id(task_name: &str) -> String {
+    task_name.replace(':', "-")
 }
 
 
 
-fn launch_full_trust(task_name: &str) -> WindowsResult<()> {
-    let command_line = HSTRING::from(task_args(task_name).join(" "));
-    let operation =
-        FullTrustProcessLauncher::LaunchFullTrustProcessForCurrentAppWithArgumentsAsync(
-            &command_line,
-        )?;
 
+
+fn launch_full_trust(task_name: &str) -> WindowsResult<()> {
+    let group_id = HSTRING::from(parameter_group_id(task_name));
+    let operation =
+        FullTrustProcessLauncher::LaunchFullTrustProcessForCurrentAppWithParametersAsync(
+            &group_id,
+        )?;
     block_on(operation.into_future())?;
     Ok(())
 }
