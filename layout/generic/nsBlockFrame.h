@@ -1221,6 +1221,11 @@ class nsBlockFrame : public nsContainerFrame {
   [[nodiscard]] nsFrameList* StealFloats();
 
   
+  
+  
+  nsIFrame* GetLastPushedFloat() const;
+
+  
   bool HasPushedFloats() const;
 
   
@@ -1243,6 +1248,11 @@ class nsBlockFrame : public nsContainerFrame {
 #ifdef DEBUG
   void VerifyLines(bool aFinalCheckOK);
   void VerifyOverflowSituation();
+
+  
+  
+  void VerifyPushedFloatsAtStart() const;
+
   int32_t GetDepth() const;
 #endif
 
