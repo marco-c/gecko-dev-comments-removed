@@ -83,6 +83,21 @@ function getAnimationBrowsingContextPlayBackRateMultiplier(animation) {
 
 
 
+function getTimingMultiplier(animation) {
+  return (
+    (animation.playbackRate || 1) *
+    getAnimationBrowsingContextPlayBackRateMultiplier(animation)
+  );
+}
+
+
+
+
+
+
+
+
+
 
 class AnimationActor extends Actor {
   
@@ -950,13 +965,9 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
         animation.startTime = null;
       }
 
+      const multiplier = getTimingMultiplier(animation);
       const currentTime =
-        animation.playbackRate > 0
-          ? time - actor.createdTime
-          : actor.createdTime - time;
-      const multiplier =
-        animation.playbackRate *
-        getAnimationBrowsingContextPlayBackRateMultiplier(animation);
+        multiplier > 0 ? time - actor.createdTime : actor.createdTime - time;
       animation.currentTime = currentTime * Math.abs(multiplier);
       handledActors.push(actor);
     }
@@ -986,9 +997,7 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
 
     
     const currentTime = animation.currentTime || 0;
-    const multiplier =
-      animation.playbackRate *
-      getAnimationBrowsingContextPlayBackRateMultiplier(animation);
+    const multiplier = getTimingMultiplier(animation);
     animation.startTime =
       animation.timeline.currentTime - currentTime / multiplier;
   }
@@ -999,9 +1008,7 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
 
 
   getCreatedTime(animation) {
-    const multiplier =
-      animation.playbackRate *
-      getAnimationBrowsingContextPlayBackRateMultiplier(animation);
+    const multiplier = getTimingMultiplier(animation);
 
     return (
       animation.startTime ||

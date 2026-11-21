@@ -132,10 +132,13 @@ class AnimationFront extends FrontClassWithSpec(animationSpec) {
       playBackRateMultiplier = 1,
     } = data;
 
-    const multiplier = playbackRate * playBackRateMultiplier;
+    
+    
+    const layoutPlaybackRate = playbackRate || 1;
+    const multiplier = layoutPlaybackRate * playBackRateMultiplier;
 
     const toRate = v => v / Math.abs(multiplier);
-    const isPositivePlaybackRate = playbackRate > 0;
+    const isPositivePlaybackRate = layoutPlaybackRate > 0;
     let absoluteDelay = 0;
     let absoluteEndDelay = 0;
     let isDelayFilled = false;
@@ -196,6 +199,7 @@ class AnimationFront extends FrontClassWithSpec(animationSpec) {
       endTime: absoluteEndTime,
       isDelayFilled,
       isEndDelayFilled,
+      playbackRate: layoutPlaybackRate,
       startTime: absoluteStartTime,
       startTimeAtCreated: absoluteStartTimeAtCreated,
     };
