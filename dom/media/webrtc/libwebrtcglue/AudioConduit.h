@@ -208,6 +208,9 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   void SetIsShutdown();
 
   
+  void UpdateNetworkState(bool aReady);
+
+  
   
   bool mAllowSsrcChange = true;
 
@@ -337,6 +340,10 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   
   
   bool mIsShutdown = false;
+
+  
+  
+  bool mNetworkReady = false;
 };
 
 }  

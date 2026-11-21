@@ -1489,6 +1489,7 @@ RefPtr<GenericPromise> WebrtcVideoConduit::Shutdown() {
         
         mTransitionalSendStreamStats = Nothing();
 
+        UpdateNetworkState(false);
         SetIsShutdown();
 
         return GenericPromise::CreateAndResolve(true, __func__);
@@ -1765,9 +1766,6 @@ void WebrtcVideoConduit::StartTransmitting() {
   CSFLogDebug(LOGTAG, "%s Starting send stream", __FUNCTION__);
 
   mSendStream->Start();
-  
-  mCall->Call()->SignalChannelNetworkState(webrtc::MediaType::VIDEO,
-                                           webrtc::kNetworkUp);
   mEngineTransmitting = true;
 }
 
@@ -1804,9 +1802,6 @@ void WebrtcVideoConduit::StartReceiving() {
   
   mRecvStream->Start();
 
-  
-  mCall->Call()->SignalChannelNetworkState(webrtc::MediaType::VIDEO,
-                                           webrtc::kNetworkUp);
   mEngineReceiving = true;
 }
 
@@ -2061,6 +2056,19 @@ void WebrtcVideoConduit::SetTransportActive(bool aActive) {
 
   
   mTransportActive = aActive;
+
+  MOZ_ALWAYS_SUCCEEDS(mCallThread->Dispatch(NS_NewRunnableFunction(
+      __func__,
+      [this, self = RefPtr(this), aActive] { UpdateNetworkState(aActive); })));
+}
+
+void WebrtcVideoConduit::UpdateNetworkState(bool aReady) {
+  MOZ_ASSERT(mCallThread->IsOnCurrentThread());
+  if (mIsShutdown || mNetworkReady == aReady) {
+    return;
+  }
+  mNetworkReady = aReady;
+  mCall->UpdateReadyTransports(webrtc::MediaType::VIDEO, aReady ? 1 : -1);
 }
 
 const std::vector<webrtc::RtpSource>&

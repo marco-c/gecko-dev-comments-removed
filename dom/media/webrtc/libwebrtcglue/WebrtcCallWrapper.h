@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_MEDIA_WEBRTC_LIBWEBRTCGLUE_WEBRTCCALLWRAPPER_H_
 #define DOM_MEDIA_WEBRTC_LIBWEBRTCGLUE_WEBRTCCALLWRAPPER_H_
 
@@ -61,6 +59,11 @@ class WebrtcCallWrapper {
   
   
   
+  void UpdateReadyTransports(webrtc::MediaType aType, int aDelta);
+
+  
+  
+  
   
   
   
@@ -107,6 +110,8 @@ class WebrtcCallWrapper {
  protected:
   
   UniquePtr<webrtc::Call> mCall;
+  size_t mNumReadyAudioTransports = 0;
+  size_t mNumReadyVideoTransports = 0;
 };
 
 }  

@@ -276,6 +276,9 @@ class WebrtcVideoConduit : public VideoSessionConduit,
   
   void SetIsShutdown();
 
+  
+  void UpdateNetworkState(bool aReady);
+
   void DeliverPacket(webrtc::CopyOnWriteBuffer packet,
                      PacketType type) override;
 
@@ -547,6 +550,10 @@ class WebrtcVideoConduit : public VideoSessionConduit,
   
   
   bool mIsShutdown = false;
+
+  
+  
+  bool mNetworkReady = false;
 };
 }  
 
