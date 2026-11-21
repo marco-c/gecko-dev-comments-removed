@@ -78,8 +78,10 @@ class WebTransportParent : public PWebTransportParent,
       int64_t aSendOrder, Maybe<uint64_t> aSendGroupId,
       CreateBidirectionalStreamResolver&& aResolver);
 
-  ::mozilla::ipc::IPCResult RecvOutgoingDatagrams(
-      nsTArray<OutgoingDatagram>&& aDatagrams);
+  ::mozilla::ipc::IPCResult RecvOutgoingDatagram(
+      const uint64_t& aDatagramId, nsTArray<uint8_t>&& aData,
+      const TimeStamp& aTimestamp, const uint64_t& aSendGroupId,
+      const int64_t& aSendOrder, OutgoingDatagramResolver&& aResolver);
 
   ::mozilla::ipc::IPCResult RecvUpdateDatagramQueueParams(
       const uint32_t& aOutgoingMaxBufferedDatagrams,
@@ -153,6 +155,7 @@ class WebTransportParent : public PWebTransportParent,
   
   
   std::function<void()> mExecuteAfterResolverCallback MOZ_GUARDED_BY(mMutex);
+  OutgoingDatagramResolver mOutgoingDatagramResolver;
   GetMaxDatagramSizeResolver mMaxDatagramSizeResolver;
   uint64_t mMaxDatagramSizeValue{0};
   

@@ -80,10 +80,6 @@ void WebTransportDatagramDuplexStream::SetChild(WebTransportChild* aChild) {
     writable->SetChild(aChild);
   }
   mCreatedWritables.Clear();
-
-  
-  
-  FlushOutgoingDatagrams();
 }
 
 void WebTransportDatagramDuplexStream::SetIncomingMaxAge(
@@ -436,47 +432,6 @@ NS_IMPL_ADDREF_INHERITED(OutgoingDatagramStreamAlgorithms,
 NS_IMPL_RELEASE_INHERITED(OutgoingDatagramStreamAlgorithms,
                           UnderlyingSinkAlgorithmsWrapper)
 
-
-
-
-static constexpr size_t kMaxOutgoingMessageBytes = 64 * 1024;
-static constexpr size_t kMaxOutgoingMessageDatagrams = 1024;
-
-void WebTransportDatagramDuplexStream::QueueOutgoingDatagram(
-    OutgoingDatagram&& aDatagram) {
-  mPendingOutgoing.AppendElement(std::move(aDatagram));
-  FlushOutgoingDatagrams();
-}
-
-void WebTransportDatagramDuplexStream::FlushOutgoingDatagrams() {
-  if (mPendingOutgoing.IsEmpty()) {
-    return;
-  }
-
-  WebTransportChild* child = mOutgoingAlgorithms->GetChild();
-  MOZ_ASSERT(child);
-
-  LOG(("Flushing %zu outgoing datagrams", mPendingOutgoing.Length()));
-  
-  
-  
-  
-  Span<const OutgoingDatagram> pending(mPendingOutgoing);
-  size_t start = 0;
-  size_t bytes = 0;
-  for (size_t i = 0; i < pending.Length(); ++i) {
-    bytes += pending[i].data().Length();
-    if (bytes >= kMaxOutgoingMessageBytes ||
-        i + 1 - start == kMaxOutgoingMessageDatagrams ||
-        i + 1 == pending.Length()) {
-      (void)child->SendOutgoingDatagrams(pending.FromTo(start, i + 1));
-      start = i + 1;
-      bytes = 0;
-    }
-  }
-  mPendingOutgoing.Clear();
-}
-
 already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallbackImpl(
     JSContext* aCx, JS::Handle<JS::Value> aChunk,
     WritableStreamDefaultController& aController, ErrorResult& aError) {
@@ -548,12 +503,29 @@ already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallbackImpl(
     
     
     
+    LOG(("Sending Datagram id=%" PRIu64 ", size = %zu", datagramId,
+         data.Length()));
     uint64_t sendGroupId = mSendGroup ? mSendGroup->GetGroupId() : 0;
-    LOG(("Queuing Datagram id=%" PRIu64 ", size = %zu, sendGroup = %" PRIu64
+    LOG(("Sending Datagram id=%" PRIu64 ", size = %zu, sendGroup = %" PRIu64
          ", sendOrder = %" PRId64,
          datagramId, data.Length(), sendGroupId, mSendOrder));
-    mDatagrams->QueueOutgoingDatagram(OutgoingDatagram(
-        datagramId, std::move(data), now, sendGroupId, mSendOrder));
+    mChild->SendOutgoingDatagram(
+        datagramId, std::move(data), now, sendGroupId, mSendOrder,
+        [](nsresult&&) {
+          
+          LOG(("Datagram IPC succeeded"));
+        },
+        [self = RefPtr{this},
+         datagramId](mozilla::ipc::ResponseRejectReason&&) {
+          LOG(("Datagram IPC failed for id=%" PRIu64, datagramId));
+          
+          
+          self->mDatagrams->mWritableDatagramMap.Remove(datagramId);
+          if (Maybe<RefPtr<Promise>> promise =
+                  self->mPendingDatagramPromises.Extract(datagramId)) {
+            (*promise)->MaybeResolveWithUndefined();
+          }
+        });
   } else {
     LOG(("Queuing datagram id=%" PRIu64 " for connect", datagramId));
     
@@ -584,9 +556,20 @@ void OutgoingDatagramStreamAlgorithms::SetChild(WebTransportChild* aChild) {
 
     uint64_t sendGroupId = mSendGroup ? mSendGroup->GetGroupId() : 0;
     uint64_t datagramId = queued.mDatagramId;
-    mDatagrams->mPendingOutgoing.AppendElement(
-        OutgoingDatagram(datagramId, std::move(queued.mEntry->mBuffer),
-                         queued.mEntry->mTimeStamp, sendGroupId, mSendOrder));
+    mChild->SendOutgoingDatagram(
+        datagramId, queued.mEntry->mBuffer, queued.mEntry->mTimeStamp,
+        sendGroupId, mSendOrder,
+        [](nsresult&&) { LOG_VERBOSE(("Early Datagram IPC succeeded")); },
+        [self = RefPtr{this},
+         datagramId](mozilla::ipc::ResponseRejectReason&&) {
+          LOG(("Early Datagram IPC failed for id=%" PRIu64, datagramId));
+          
+          self->mDatagrams->mWritableDatagramMap.Remove(datagramId);
+          if (Maybe<RefPtr<Promise>> promise =
+                  self->mPendingDatagramPromises.Extract(datagramId)) {
+            (*promise)->MaybeResolveWithUndefined();
+          }
+        });
   }
   mWaitConnectQueue.Clear();
 }

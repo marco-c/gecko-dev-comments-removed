@@ -17,14 +17,6 @@ void WebTransportChild::Shutdown(bool aClose) {
   Close();
 }
 
-
-
-
-void WebTransportChild::ActorDestroy(ActorDestroyReason aWhy) {
-  LOG(("ActorDestroy WebTransportChild %d", aWhy));
-  CloseAll();
-}
-
 void WebTransportChild::CloseAll() {
   if (mTransport) {
     RefPtr<WebTransport> self(mTransport);

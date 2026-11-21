@@ -1149,73 +1149,60 @@ WebTransportParent::OnIncomingBidirectionalStreamAvailable(
 }
 
 
-::mozilla::ipc::IPCResult WebTransportParent::RecvOutgoingDatagrams(
-    nsTArray<OutgoingDatagram>&& aDatagrams) {
-  LOG(("WebTransportParent received %zu batched outgoing datagrams",
-       aDatagrams.Length()));
+::mozilla::ipc::IPCResult WebTransportParent::RecvOutgoingDatagram(
+    const uint64_t& aDatagramId, nsTArray<uint8_t>&& aData,
+    const TimeStamp& aTimestamp, const uint64_t& aSendGroupId,
+    const int64_t& aSendOrder, OutgoingDatagramResolver&& aResolver) {
+  LOG(("WebTransportParent sending datagram id=%" PRIu64 ", length=%zu",
+       aDatagramId, aData.Length()));
   MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
   MOZ_ASSERT(mWebTransport);
 
   
   
+  aResolver(NS_OK);
+
+  double ageMs = (TimeStamp::Now() - aTimestamp).ToMilliseconds();
+  LOG(("Forwarding datagram id=%" PRIu64
+       " to neqo queue (timestamp=%f ms), sendGroup=%" PRIu64
+       ", sendOrder=%" PRId64,
+       aDatagramId, ageMs, aSendGroupId, aSendOrder));
+
   
-  static constexpr size_t kMaxBatchDatagrams = 256 * 1024;
-  static constexpr size_t kMaxBatchBytes = 1024 * 1024;
-  size_t batchBytes = 0;
-  for (const auto& datagram : aDatagrams) {
-    batchBytes += datagram.data().Length();
-  }
-  if (aDatagrams.Length() > kMaxBatchDatagrams || batchBytes > kMaxBatchBytes) {
-    return IPC_FAIL(this, "Outgoing datagram batch is too large");
-  }
-
-  TimeStamp now = TimeStamp::Now();
-  for (auto& datagram : aDatagrams) {
-    double ageMs = (now - datagram.timestamp()).ToMilliseconds();
-    LOG(("Forwarding datagram id=%" PRIu64
-         " to neqo queue (timestamp=%f ms), sendGroup=%" PRIu64
-         ", sendOrder=%" PRId64,
-         datagram.datagramId(), ageMs, datagram.sendGroupId(),
-         datagram.sendOrder()));
-
-    
-    
-    if (ageMs > mDatagramMaxAge) {
-      LOG(("Dropping datagram id=%" PRIu64
-           ": age %f ms exceeds outgoingMaxAge %f ms before reaching neqo",
-           datagram.datagramId(), ageMs, mDatagramMaxAge));
-      if (CanSend()) {
-        (void)SendDatagramReady(datagram.datagramId());
-      }
-      continue;
+  
+  if (ageMs > mDatagramMaxAge) {
+    LOG(("Dropping datagram id=%" PRIu64 ": age %f ms exceeds outgoingMaxAge "
+         "%f ms before reaching neqo",
+         aDatagramId, ageMs, mDatagramMaxAge));
+    if (CanSend()) {
+      (void)SendDatagramReady(aDatagramId);
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    TimeStamp timestamp =
-        std::isfinite(mDatagramMaxAge) ? datagram.timestamp() : now;
-
-    
-    
-    
-    if (mLastOutgoingDatagramTimestamp.IsNull() ||
-        timestamp > mLastOutgoingDatagramTimestamp) {
-      mLastOutgoingDatagramTimestamp = timestamp;
-    }
-
-    
-    
-    
-    (void)mWebTransport->SendDatagramAt(
-        datagram.data(), datagram.datagramId(), datagram.sendGroupId(),
-        datagram.sendOrder(), mLastOutgoingDatagramTimestamp);
+    return IPC_OK();
   }
+
+  
+  
+  
+  
+  
+  
+  
+  TimeStamp timestamp =
+      std::isfinite(mDatagramMaxAge) ? aTimestamp : TimeStamp::Now();
+
+  
+  
+  
+  if (mLastOutgoingDatagramTimestamp.IsNull() ||
+      timestamp > mLastOutgoingDatagramTimestamp) {
+    mLastOutgoingDatagramTimestamp = timestamp;
+  }
+
+  
+  
+  (void)mWebTransport->SendDatagramAt(aData, aDatagramId, aSendGroupId,
+                                      aSendOrder,
+                                      mLastOutgoingDatagramTimestamp);
 
   return IPC_OK();
 }
