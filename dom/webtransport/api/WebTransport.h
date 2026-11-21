@@ -180,6 +180,12 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
   
   void SendGetStatsRequest(Promise* aPromise);
 
+  
+  
+  void SendExportKeyingMaterial(const nsTArray<uint8_t>& aLabel,
+                                const nsTArray<uint8_t>& aContext,
+                                uint32_t aOutputLength, Promise* aPromise);
+
   nsCOMPtr<nsIGlobalObject> mGlobal;
   
   
