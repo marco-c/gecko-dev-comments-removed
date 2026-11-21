@@ -6,6 +6,9 @@ const { Weave } = ChromeUtils.importESModule(
 const { SyncedTabs } = ChromeUtils.importESModule(
   "resource://services-sync/SyncedTabs.sys.mjs"
 );
+const { WeaveService } = ChromeUtils.importESModule(
+  "moz-src:///services/sync/Weave.sys.mjs"
+);
 
 Log.repository.getLogger("Sync.RemoteTabs").addAppender(new Log.DumpAppender());
 
@@ -110,10 +113,7 @@ add_task(async function setup() {
   tabsEngine = Weave.Service.engineManager.get("tabs");
 
   
-  let weaveXPCService = Cc["@mozilla.org/weave/service;1"].getService(
-    Ci.nsISupports
-  ).wrappedJSObject;
-  weaveXPCService.ready = true;
+  WeaveService.ready = true;
 });
 
 
@@ -157,6 +157,10 @@ add_task(async function test_clientWithTabs() {
   equal(clients[0].tabs[0].lastUsed, 1655745700);
   
   equal(clients[1].tabs.length, 0);
+
+  tabsEngine.enabled = false;
+  equal((await SyncedTabs.getTabClients()).length, 0);
+  tabsEngine.enabled = true;
 });
 
 add_task(async function test_staleClientWithTabs() {

@@ -3,6 +3,9 @@
 const { Weave } = ChromeUtils.importESModule(
   "resource://services-sync/main.sys.mjs"
 );
+const { WeaveService } = ChromeUtils.importESModule(
+  "moz-src:///services/sync/Weave.sys.mjs"
+);
 
 
 
@@ -12,6 +15,7 @@ function MockTabsEngine() {
 
 MockTabsEngine.prototype = {
   name: "tabs",
+  enabled: true,
 
   startTracking() {},
   getAllClients() {
@@ -50,10 +54,7 @@ add_setup(async function () {
   Weave.Service.engineManager.register(MockTabsEngine);
 
   
-  let weaveXPCService = Cc["@mozilla.org/weave/service;1"].getService(
-    Ci.nsISupports
-  ).wrappedJSObject;
-  weaveXPCService.ready = true;
+  WeaveService.ready = true;
 
   registerCleanupFunction(async () => {
     Services.prefs.clearUserPref("services.sync.username");
