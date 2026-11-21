@@ -24,10 +24,6 @@ namespace mozilla {
   wrapper->mCallThread->Dispatch(
       NS_NewRunnableFunction(__func__, [wrapper, aSharedState] {
         webrtc::CallConfig config(wrapper->mEnvWrapper->Environment(), nullptr);
-        
-        
-        
-        config.bitrate_config.start_bitrate_bps = 400000;
         config.audio_state =
             webrtc::AudioState::Create(aSharedState->mAudioStateConfig);
         wrapper->SetCall(
