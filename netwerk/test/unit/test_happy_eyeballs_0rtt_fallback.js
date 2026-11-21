@@ -66,7 +66,6 @@ add_setup(
 
     Services.prefs.setBoolPref("network.http.happy_eyeballs_enabled", true);
     Services.prefs.setIntPref("network.http.speculative-parallel-limit", 0);
-    Services.prefs.setBoolPref("network.ssl_tokens_cache_enabled", true);
     Services.prefs.setBoolPref("network.http.http3.enable", false);
     
     
@@ -76,7 +75,6 @@ add_setup(
     registerCleanupFunction(async () => {
       Services.prefs.clearUserPref("network.http.happy_eyeballs_enabled");
       Services.prefs.clearUserPref("network.http.speculative-parallel-limit");
-      Services.prefs.clearUserPref("network.ssl_tokens_cache_enabled");
       Services.prefs.clearUserPref("network.http.http3.enable");
       Services.prefs.clearUserPref("network.http.http2.timeout");
       Services.prefs.clearUserPref("network.dns.disableIPv6");

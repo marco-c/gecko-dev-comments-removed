@@ -316,15 +316,5 @@ function run_test() {
     run_next_test();
   });
   add_resumption_tests();
-  
-  add_test(function () {
-    do_timeout(3000, function () {
-      Services.prefs.setBoolPref("network.ssl_tokens_cache_enabled", true);
-      certdb.clearOCSPCache();
-      run_next_test();
-    });
-  });
-  
-  add_resumption_tests();
   run_next_test();
 }
