@@ -69,7 +69,6 @@ class EglDisplay;
 
 
 
-
 enum class EGLLibExtension {
   ANDROID_get_native_client_buffer,
   ANGLE_device_creation,
@@ -87,7 +86,6 @@ enum class EGLLibExtension {
   MESA_platform_surfaceless,
   Max
 };
-
 
 
 
@@ -129,6 +127,14 @@ enum class EGLExtension {
   ANGLE_wait_until_work_scheduled,
   Max
 };
+
+
+
+
+
+
+
+enum class EGLDeviceExtension { ANGLE_device_d3d, ANGLE_device_metal, Max };
 
 struct EGLCreateDisplayFlags {
   
@@ -789,6 +795,8 @@ class EglDisplay final {
 
  private:
   std::bitset<UnderlyingValue(EGLExtension::Max)> mAvailableExtensions;
+  std::bitset<UnderlyingValue(EGLDeviceExtension::Max)>
+      mAvailableDeviceExtensions;
 
   bool mShouldLeakEGLDisplay = false;
 
@@ -811,6 +819,10 @@ class EglDisplay final {
 
   void MarkExtensionUnsupported(EGLExtension aKnownExtension) {
     mAvailableExtensions[UnderlyingValue(aKnownExtension)] = false;
+  }
+
+  bool IsExtensionSupported(EGLDeviceExtension aKnownExtension) const {
+    return mAvailableDeviceExtensions[UnderlyingValue(aKnownExtension)];
   }
 
   void DumpEGLConfig(EGLConfig) const;

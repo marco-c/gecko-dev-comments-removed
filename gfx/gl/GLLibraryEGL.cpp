@@ -105,6 +105,12 @@ static const char* sEGLExtensionNames[] = {
     "EGL_ANGLE_wait_until_work_scheduled",
 };
 
+
+static const char* sEGLDeviceExtensionNames[] = {
+    "EGL_ANGLE_device_d3d",
+    "EGL_ANGLE_device_metal",
+};
+
 PRLibrary* LoadApitraceLibrary() {
   const char* path = nullptr;
 
@@ -1029,6 +1035,22 @@ EglDisplay::EglDisplay(const PrivateUseOnly&, GLLibraryEGL& lib,
   }
   MarkExtensions(rawExtString, shouldDumpExts, "display", sEGLExtensionNames,
                  &mAvailableExtensions);
+
+  if (mLib->IsExtensionSupported(EGLLibExtension::EXT_device_query)) {
+    EGLAttrib device = 0;
+    if (fQueryDisplayAttribEXT(LOCAL_EGL_DEVICE_EXT, &device)) {
+      auto rawDeviceExtString = mLib->fQueryDeviceStringEXT(
+          reinterpret_cast<EGLDeviceEXT>(device), LOCAL_EGL_EXTENSIONS);
+      if (!rawDeviceExtString) {
+        NS_WARNING("Failed to query EGL device extensions!");
+        rawDeviceExtString = "";
+      }
+      MarkExtensions(rawDeviceExtString, shouldDumpExts, "device",
+                     sEGLDeviceExtensionNames, &mAvailableDeviceExtensions);
+    } else {
+      NS_WARNING("Failed to query EGL device!");
+    }
+  }
 
   
 
