@@ -49,10 +49,6 @@ WebTransportDatagramsWritable::Create(
   
   
   
-  
-  
-  
-  
   auto datagramsWritable = MakeRefPtr<WebTransportDatagramsWritable>(
       aGlobal, aTransport, aSendGroup, aSendOrder);
 
@@ -80,8 +76,6 @@ WebTransportDatagramsWritable::Create(
     return nullptr;
   }
 
-  
-  
   
   return datagramsWritable.forget();
 }
@@ -139,10 +133,10 @@ void WebTransportDatagramsWritable::RetireInFlight(uint64_t aCount) {
   }
 }
 
-bool WebTransportDatagramsWritable::TryResolveBackpressureFromCredit(
+bool WebTransportDatagramsWritable::TryResolveOldestFromCredit(
     uint64_t aAvailableBytes, size_t* aResolvedBytes) {
-  return mAlgorithms && mAlgorithms->TryResolveBackpressureFromCredit(
-                            aAvailableBytes, aResolvedBytes);
+  return mAlgorithms && mAlgorithms->TryResolveOldestFromCredit(aAvailableBytes,
+                                                                aResolvedBytes);
 }
 
 }  
