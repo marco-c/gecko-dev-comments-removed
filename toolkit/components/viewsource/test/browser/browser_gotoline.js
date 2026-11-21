@@ -75,4 +75,10 @@ var checkViewSource = async function (aTab) {
       Assert.ok(foundNonEmptyRect, "Should have some non-empty rects");
     });
   }
+
+  
+  await SpecialPowers.spawn(browser, [LINES * 10], async function (i) {
+    let actor = content.windowGlobalChild.getActor("ViewSourcePage");
+    Assert.equal(actor.findLocation(i), null, "Line past the end not found");
+  });
 };
