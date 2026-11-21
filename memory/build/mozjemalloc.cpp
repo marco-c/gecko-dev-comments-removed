@@ -1401,19 +1401,10 @@ ArenaPurgeResult arena_t::PurgeDirtyPages(arena_chunk_t* aChunk,
                                           purge_keep_going_t aKeepGoing,
                                           void* aClosure) MOZ_EXCLUDES(mLock) {
   
-  bool continue_purge_arena = true;
-
-  
-  bool continue_purge_chunk = true;
-
-  
   
   bool purged_once = false;
 
-  
-  bool keep_going = true;
-
-  while (continue_purge_chunk && continue_purge_arena && keep_going) {
+  while (true) {
     
     
     PurgeInfo purge_info(*this, aChunk, aStats);
@@ -1429,25 +1420,24 @@ ArenaPurgeResult arena_t::PurgeDirtyPages(arena_chunk_t* aChunk,
         return Dying;
       }
 
-      continue_purge_chunk = purge_info.FindDirtyPages(purged_once);
-      continue_purge_arena = purge_info.mArena.mNumDirty > aTargetDirtyPages;
+      const bool continue_purge_chunk = purge_info.FindDirtyPages(purged_once);
+      const bool continue_purge_arena =
+          purge_info.mArena.mNumDirty > aTargetDirtyPages;
 
-      
-      
-      
-      if (!continue_purge_chunk && !continue_purge_arena) {
+      if (!continue_purge_chunk) {
+        
+        
+        
+        if (continue_purge_arena) {
+          return NotDone;
+        }
         purge_info.mArena.mIsPurgePending = false;
+        return ReachedThresholdOrBusy;
       }
-    }
-    if (!continue_purge_chunk) {
       
       
-      return continue_purge_arena ? NotDone : ReachedThresholdOrBusy;
+      
     }
-    
-    
-    
-    
 
 #ifdef MALLOC_DECOMMIT
     pages_decommit(purge_info.DirtyPtr(), purge_info.DirtyLenBytes());
@@ -1461,42 +1451,40 @@ ArenaPurgeResult arena_t::PurgeDirtyPages(arena_chunk_t* aChunk,
 
     
     
-    keep_going = aKeepGoing ? aKeepGoing(aClosure) : true;
+    const bool keep_going = aKeepGoing ? aKeepGoing(aClosure) : true;
 
-    bool arena_is_dying;
     {
       
       
       MaybeMutexAutoLock lock(purge_info.mArena.mLock);
       MOZ_ASSERT(aChunk->mIsPurging);
 
+      const bool continue_purge_chunk = purge_info.UpdatePagesAndCounts();
       
       
-      
-      arena_is_dying = purge_info.mArena.mMustDeleteAfterPurge;
-
-      continue_purge_chunk = purge_info.UpdatePagesAndCounts();
-      continue_purge_arena = purge_info.mArena.mNumDirty > aTargetDirtyPages;
+      const bool continue_purge_arena =
+          !purge_info.mArena.mMustDeleteAfterPurge &&
+          purge_info.mArena.mNumDirty > aTargetDirtyPages;
 
       if (!continue_purge_chunk || !continue_purge_arena || !keep_going) {
         
         
         purge_info.FinishPurgingInChunk(true, continue_purge_chunk);
-        
-        
-        if (!continue_purge_arena) {
-          purge_info.mArena.mIsPurgePending = false;
+        if (purge_info.mArena.mMustDeleteAfterPurge) {
+          return Dying;
         }
+        
+        
+        if (continue_purge_arena) {
+          return NotDone;
+        }
+        purge_info.mArena.mIsPurgePending = false;
+        return ReachedThresholdOrBusy;
       }
-    }  
-
-    if (arena_is_dying) {
-      return Dying;
     }
+
     purged_once = true;
   }
-
-  return continue_purge_arena ? NotDone : ReachedThresholdOrBusy;
 }
 
 ArenaPurgeResult arena_t::PurgeLoop(PurgeCondition aCond, const char* aCaller,
