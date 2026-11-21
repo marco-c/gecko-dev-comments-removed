@@ -23,12 +23,19 @@ import org.mozilla.gecko.mozglue.JNIObject;
  class GeckoInputStream extends InputStream {
   private static final String LOGTAG = "GeckoInputStream";
 
+  
+  
+   static final long MAX_BUFFERED_BYTES = 8 * 1024 * 1024;
+   static final long RESUME_BUFFERED_BYTES = 2 * 1024 * 1024;
+
   private LinkedList<ByteBuffer> mBuffers = new LinkedList<>();
   private boolean mEOF;
   private boolean mClosed;
   private boolean mHaveError;
   private long mReadTimeout;
   private boolean mResumed;
+  private boolean mSuspended;
+  private long mBufferedBytes;
   private Support mSupport;
 
   
@@ -112,9 +119,7 @@ import org.mozilla.gecko.mozglue.JNIObject;
       
       
       if (!mResumed) {
-        if (mSupport != null) {
-          mSupport.resume();
-        }
+        resumeRequest();
         mResumed = true;
       }
 
@@ -142,7 +147,35 @@ import org.mozilla.gecko.mozglue.JNIObject;
       mBuffers.removeFirst();
     }
 
+    mBufferedBytes -= readCount;
+    if (mSuspended && mBufferedBytes <= RESUME_BUFFERED_BYTES) {
+      
+      mSuspended = false;
+      resumeRequest();
+    }
+
     return readCount;
+  }
+
+   void resumeRequest() {
+    if (mSupport != null) {
+      mSupport.resume();
+    }
+  }
+
+  
+
+
+
+
+
+  @WrapForJNI(calledFrom = "gecko")
+   synchronized boolean shouldSuspend() {
+    if (!mResumed || mSuspended || mClosed || mBufferedBytes < MAX_BUFFERED_BYTES) {
+      return false;
+    }
+    mSuspended = true;
+    return true;
   }
 
   
@@ -207,6 +240,7 @@ import org.mozilla.gecko.mozglue.JNIObject;
     }
 
     mBuffers.add(ByteBuffer.wrap(buf));
+    mBufferedBytes += buf.length;
     notifyAll();
   }
 
