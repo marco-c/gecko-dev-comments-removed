@@ -12,7 +12,7 @@ package org.webrtc;
 
 
 import androidx.annotation.Nullable;
-import org.webrtc.VideoEncoder;
+import org.jni_zero.NativeMethods;
 
 
 
@@ -49,7 +49,8 @@ class VideoEncoderWrapper {
     @Override
     public void onEncodedFrame(EncodedImage frame, VideoEncoder.CodecSpecificInfo info) {
       lifecycleLock.runIfAlive(
-          (long nativeEncoder) -> nativeOnEncodedFrame(nativeEncoder, frame));
+          (long nativeEncoder) ->
+              VideoEncoderWrapperJni.get().onEncodedFrame(nativeEncoder, frame));
     }
 
     
@@ -65,6 +66,8 @@ class VideoEncoderWrapper {
     return new NativeEncoderCallback(nativeEncoder);
   }
 
-  private static native void nativeOnEncodedFrame(
-      long nativeVideoEncoderWrapper, EncodedImage frame);
+  @NativeMethods
+  interface Natives {
+    void onEncodedFrame(long nativeVideoEncoderWrapper, EncodedImage frame);
+  }
 }
