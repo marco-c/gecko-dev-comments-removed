@@ -34,16 +34,23 @@ var WasmParser_js_1 = require("./WasmParser.js");
 var NAME_SECTION_NAME = "name";
 var INVALID_NAME_SYMBOLS_REGEX = /[^0-9A-Za-z!#$%&'*+.:<=>?@^_`|~\/\-]/;
 var INVALID_NAME_SYMBOLS_REGEX_GLOBAL = new RegExp(INVALID_NAME_SYMBOLS_REGEX.source, "g");
-function formatFloat32(n) {
+function formatFloat32(n, bits) {
     if (n === 0)
         return 1 / n < 0 ? "-0.0" : "0.0";
     if (isFinite(n))
         return n.toString();
     if (!isNaN(n))
         return n < 0 ? "-inf" : "inf";
-    var view = new DataView(new ArrayBuffer(8));
-    view.setFloat32(0, n, true);
-    var data = view.getInt32(0, true);
+    var data;
+    if (bits !== undefined) {
+        
+        data = bits | 0;
+    }
+    else {
+        var view = new DataView(new ArrayBuffer(8));
+        view.setFloat32(0, n, true);
+        data = view.getInt32(0, true);
+    }
     var payload = data & 0x7fffff;
     var canonicalBits = 4194304; 
     if (data > 0 && payload === canonicalBits)
@@ -218,10 +225,12 @@ function memoryAddressToString(address, code) {
     if (!address.offset)
         
         return "align=".concat(1 << address.flags);
-    return "offset=".concat(address.offset | 0, " align=").concat(1 << address.flags);
+    return "offset=".concat(address.offset, " align=").concat(1 << address.flags);
 }
-function limitsToString(limits) {
-    return (limits.initial + (limits.maximum !== undefined ? " " + limits.maximum : ""));
+function limitsToString(limits, is64) {
+    return ((is64 ? "i64 " : "") +
+        limits.initial +
+        (limits.maximum !== undefined ? " " + limits.maximum : ""));
 }
 var paddingCache = ["0", "00", "000"];
 function formatHex(n, width) {
@@ -650,6 +659,17 @@ var WasmDisassembler =  (function () {
         }
         return backrefLabel.label || "" + depth;
     };
+    WasmDisassembler.prototype.printPageSize = function (memoryType) {
+        if (memoryType.pageSizeLog2 !== undefined) {
+            this.appendBuffer(" (pagesize ".concat(Math.pow(2, memoryType.pageSizeLog2), ")"));
+        }
+    };
+    WasmDisassembler.prototype.printMemoryIndex = function (memoryIndex) {
+        if (memoryIndex) {
+            var memoryName = this._nameResolver.getMemoryName(memoryIndex, true);
+            this.appendBuffer(" ".concat(memoryName));
+        }
+    };
     WasmDisassembler.prototype.printOperator = function (operator) {
         var code = operator.code;
         this.appendBuffer(WasmParser_js_1.OperatorCodeNames[code]);
@@ -761,11 +781,16 @@ var WasmDisassembler =  (function () {
                 break;
             case 17 :
             case 19 :
+                
+                if (operator.tableIndex !== 0) {
+                    var tableName = this._nameResolver.getTableName(operator.tableIndex, true);
+                    this.appendBuffer(" ".concat(tableName));
+                }
                 this.printFuncType(operator.typeIndex);
                 break;
             case 28 : {
                 var selectType = this.typeToString(operator.selectType);
-                this.appendBuffer(" ".concat(selectType));
+                this.appendBuffer(" (result ".concat(selectType, ")"));
                 break;
             }
             case 32 :
@@ -882,6 +907,7 @@ var WasmDisassembler =  (function () {
             case 1036299 :
             case 1036380 :
             case 1036381 :
+                this.printMemoryIndex(operator.memoryAddress.memoryIndex);
                 var memoryAddress = memoryAddressToString(operator.memoryAddress, operator.code);
                 if (memoryAddress !== null) {
                     this.appendBuffer(" ");
@@ -890,6 +916,15 @@ var WasmDisassembler =  (function () {
                 break;
             case 63 :
             case 64 :
+            case 64523 :
+                this.printMemoryIndex(operator.memoryIndex);
+                break;
+            case 64522 :
+                if (operator.destinationIndex || operator.memoryIndex) {
+                    var dstName = this._nameResolver.getMemoryName(operator.destinationIndex, true);
+                    var srcName = this._nameResolver.getMemoryName(operator.memoryIndex, true);
+                    this.appendBuffer(" ".concat(dstName, " ").concat(srcName));
+                }
                 break;
             case 65 :
                 this.appendBuffer(" ".concat(operator.literal.toString()));
@@ -898,7 +933,7 @@ var WasmDisassembler =  (function () {
                 this.appendBuffer(" ".concat(operator.literal.toString()));
                 break;
             case 67 :
-                this.appendBuffer(" ".concat(formatFloat32(operator.literal)));
+                this.appendBuffer(" ".concat(formatFloat32(operator.literal, operator.literalBits)));
                 break;
             case 68 :
                 this.appendBuffer(" ".concat(formatFloat64(operator.literal)));
@@ -933,6 +968,7 @@ var WasmDisassembler =  (function () {
             case 1036377 :
             case 1036378 :
             case 1036379 :
+                this.printMemoryIndex(operator.memoryAddress.memoryIndex);
                 var memoryAddress = memoryAddressToString(operator.memoryAddress, operator.code);
                 if (memoryAddress !== null) {
                     this.appendBuffer(" ");
@@ -941,6 +977,9 @@ var WasmDisassembler =  (function () {
                 this.appendBuffer(" ".concat(operator.lineIndex));
                 break;
             case 64520 :
+                this.printMemoryIndex(operator.memoryIndex);
+                this.appendBuffer(" ".concat(operator.segmentIndex));
+                break;
             case 64521 :
                 this.appendBuffer(" ".concat(operator.segmentIndex));
                 break;
@@ -950,7 +989,9 @@ var WasmDisassembler =  (function () {
                 break;
             case 38 :
             case 37 :
-            case 64529 : {
+            case 64529 :
+            case 64528 :
+            case 64527 : {
                 var tableName = this._nameResolver.getTableName(operator.tableIndex, true);
                 this.appendBuffer(" ".concat(tableName));
                 break;
@@ -1172,10 +1213,11 @@ var WasmDisassembler =  (function () {
                             this.appendBuffer(" (export ".concat(JSON.stringify(exportName), ")"));
                         }
                     }
-                    this.appendBuffer(" ".concat(limitsToString(memoryInfo.limits)));
+                    this.appendBuffer(" ".concat(limitsToString(memoryInfo.limits, memoryInfo.is64)));
                     if (memoryInfo.shared) {
                         this.appendBuffer(" shared");
                     }
+                    this.printPageSize(memoryInfo);
                     this.appendBuffer(")");
                     this.newLine();
                     break;
@@ -1205,7 +1247,7 @@ var WasmDisassembler =  (function () {
                             this.appendBuffer(" (export ".concat(JSON.stringify(exportName), ")"));
                         }
                     }
-                    this.appendBuffer(" ".concat(limitsToString(tableInfo.limits), " ").concat(this.typeToString(tableInfo.elementType), ")"));
+                    this.appendBuffer(" ".concat(limitsToString(tableInfo.limits, tableInfo.is64), " ").concat(this.typeToString(tableInfo.elementType), ")"));
                     this.newLine();
                     break;
                 case 17 :
@@ -1292,10 +1334,11 @@ var WasmDisassembler =  (function () {
                             }
                             this.appendBuffer(" (import ");
                             this.printImportSource(importInfo);
-                            this.appendBuffer(") ".concat(limitsToString(memoryImportInfo.limits)));
+                            this.appendBuffer(") ".concat(limitsToString(memoryImportInfo.limits, memoryImportInfo.is64)));
                             if (memoryImportInfo.shared) {
                                 this.appendBuffer(" shared");
                             }
+                            this.printPageSize(memoryImportInfo);
                             this.appendBuffer(")");
                             break;
                         case 1 :
@@ -1311,7 +1354,7 @@ var WasmDisassembler =  (function () {
                             }
                             this.appendBuffer(" (import ");
                             this.printImportSource(importInfo);
-                            this.appendBuffer(") ".concat(limitsToString(tableImportInfo.limits), " ").concat(this.typeToString(tableImportInfo.elementType), ")"));
+                            this.appendBuffer(") ".concat(limitsToString(tableImportInfo.limits, tableImportInfo.is64), " ").concat(this.typeToString(tableImportInfo.elementType), ")"));
                             break;
                         case 4 :
                             var eventImportInfo = importInfo.type;
@@ -1437,7 +1480,12 @@ var WasmDisassembler =  (function () {
                     this.newLine();
                     break;
                 case 36 :
+                    var dataSegment = reader.result;
                     this.appendBuffer("  (data");
+                    if (dataSegment.memoryIndex) {
+                        var dataMemoryName = this._nameResolver.getMemoryName(dataSegment.memoryIndex, true);
+                        this.appendBuffer(" (memory ".concat(dataMemoryName, ")"));
+                    }
                     break;
                 case 37 :
                     var body = reader.result;
