@@ -364,6 +364,9 @@ Preferences.addAll([
   { id: "privacy.clearOnShutdown.siteSettings", type: "bool" },
   { id: "privacy.clearOnShutdown_v2.siteSettings", type: "bool" },
 
+  // Lock windows when the OS session gets locked
+  { id: "browser.privatebrowsing.lockOnScreenLock.enabled", type: "bool" },
+
   // Do not track and Global Privacy Control
   { id: "privacy.donottrackheader.enabled", type: "bool" },
   { id: "privacy.globalprivacycontrol.enabled", type: "bool" },
@@ -630,6 +633,13 @@ SettingGroupManager.registerGroups({
         id: "relayIntegration",
         l10nId: "preferences-privacy-relay-available",
         supportPage: "firefox-relay-integration",
+      },
+      {
+        id: "windowLockEnabled",
+        l10nId:
+          lazy.AppConstants.platform == "win"
+            ? "preferences-window-lock-windows"
+            : "preferences-window-lock-macos",
       },
       {
         id: "dntRemoval",
@@ -1983,6 +1993,46 @@ Preferences.addSetting({
   get: () =>
     DefaultBrowserHelper.canCheck && DefaultBrowserHelper.isBrowserDefault,
 });
+/**
+ * Returns setting config members that record promo_seen the first time the
+ * promo is at least half on screen. An IntersectionObserver is used because the
+ * setting's visible() runs as soon as about:preferences loads, even when the
+ * privacy pane isn't shown or the promo is scrolled out of view.
+ *
+ * @param {"mozillavpn" | "defaultbrowser"} promo
+ */
+function recordPromoSeenWhenOnScreen(promo) {
+  let observer = null;
+  return {
+    getControlConfig(config) {
+      if (!observer) {
+        observer = new IntersectionObserver(
+          entries => {
+            if (entries.some(entry => entry.intersectionRatio >= 0.5)) {
+              observer.disconnect();
+              Glean.ipprotection.promoSeen.record({
+                promo,
+                entrypoint: "settings",
+              });
+            }
+          },
+          { threshold: 0.5 }
+        );
+        // getControlConfig runs from the setting-control's render, so the
+        // promo element exists once the current update has finished.
+        queueMicrotask(() => {
+          let promoEl = document.getElementById(config.id);
+          if (promoEl) {
+            observer.observe(promoEl);
+          }
+        });
+      }
+      return config;
+    },
+    setup: () => () => observer?.disconnect(),
+  };
+}
+
 Preferences.addSetting({
   id: "ipProtectionMozVPNPromo",
   deps: [
@@ -1992,6 +2042,7 @@ Preferences.addSetting({
     "ipProtectionUpgradeNotAvailable",
     "ipProtectionIsDefaultBrowser",
   ],
+  ...recordPromoSeenWhenOnScreen("mozillavpn"),
   visible: ({
     ipProtectionVisible,
     ipProtectionNotOptedIn,
@@ -2013,6 +2064,7 @@ Preferences.addSetting({
     "ipProtectionSubscribedToVpn",
     "ipProtectionIsDefaultBrowser",
   ],
+  ...recordPromoSeenWhenOnScreen("defaultbrowser"),
   visible: ({
     ipProtectionVisible,
     ipProtectionNotOptedIn,
@@ -2030,6 +2082,10 @@ Preferences.addSetting({
 Preferences.addSetting({
   id: "mozVPNPromoButton",
   onUserClick() {
+    Glean.ipprotection.promoClicked.record({
+      promo: "mozillavpn",
+      entrypoint: "settings",
+    });
     window.browsingContext.topChromeWindow.openTrustedLinkIn(
       "https://www.mozilla.org/products/vpn/?utm_medium=fx-desktop&utm_campaign=fx-vpn&utm_source=settings",
       "tab"
@@ -2040,6 +2096,10 @@ Preferences.addSetting({
   id: "setToDefaultPromoButton",
   deps: ["ipProtectionIsDefaultBrowser"],
   onUserClick(_, { ipProtectionIsDefaultBrowser }) {
+    Glean.ipprotection.promoClicked.record({
+      promo: "defaultbrowser",
+      entrypoint: "settings",
+    });
     DefaultBrowserHelper.setDefaultBrowser().then(
       ipProtectionIsDefaultBrowser.onChange
     );
@@ -2446,6 +2506,11 @@ Preferences.addSetting({
       Glean.relayIntegration.disabledPrefChange.record();
     }
   },
+});
+Preferences.addSetting({
+  id: "windowLockEnabled",
+  pref: "browser.privatebrowsing.lockOnScreenLock.enabled",
+  visible: () => ["macosx", "win"].includes(lazy.AppConstants.platform),
 });
 Preferences.addSetting({
   id: "dntHeaderEnabled",
