@@ -789,15 +789,42 @@ WebTransportDatagramDuplexStream::Cleanup() {
   return writables;
 }
 
-void WebTransportDatagramDuplexStream::ErrorWritables(
+
+void WebTransportDatagramDuplexStream::CloseOrErrorWritable(
+    JSContext* aCx, WritableStream* aWritable, bool aClean,
+    JS::Handle<JS::Value> aErrorValue) {
+  if (!aWritable) {
+    return;
+  }
+  
+  
+  if (aClean) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (aWritable->CloseQueuedOrInFlight()) {
+      return;
+    }
+    RefPtr<Promise> ignored = aWritable->CloseNative(aCx, IgnoreErrors());
+  } else {
+    aWritable->ErrorNative(aCx, aErrorValue, IgnoreErrors());
+  }
+}
+
+void WebTransportDatagramDuplexStream::CloseOrErrorWritables(
     JSContext* aCx,
     const nsTArray<RefPtr<WebTransportDatagramsWritable>>& aWritables,
-    JS::Handle<JS::Value> aErrorValue) {
-  if (RefPtr<WritableStream> writable = mWritable) {
-    writable->ErrorNative(aCx, aErrorValue, IgnoreErrors());
-  }
+    bool aClean, JS::Handle<JS::Value> aErrorValue) {
+  CloseOrErrorWritable(aCx, MOZ_KnownLive(mWritable), aClean, aErrorValue);
   for (const auto& writable : aWritables) {
-    MOZ_KnownLive(writable)->ErrorNative(aCx, aErrorValue, IgnoreErrors());
+    CloseOrErrorWritable(aCx, MOZ_KnownLive(writable), aClean, aErrorValue);
   }
 }
 

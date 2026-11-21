@@ -1245,8 +1245,8 @@ void WebTransport::Close(const WebTransportCloseInfo& aOptions,
   
   
   RefPtr<WebTransport> self = this;
-  RefPtr<DOMException> error =
-      DOMException::Create(NS_ERROR_DOM_ABORT_ERR, "close()"_ns);
+  RefPtr<WebTransportError> error =
+      new WebTransportError("close()"_ns, WebTransportErrorSource::Session);
   WebTransportCloseInfo closeInfo;
   closeInfo.mCloseCode = aOptions.mCloseCode;
   closeInfo.mReason = aOptions.mReason;
@@ -1543,7 +1543,7 @@ already_AddRefed<WebTransportSendGroup> WebTransport::CreateSendGroup(
 
 
 
-void WebTransport::Cleanup(DOMException* aError,
+void WebTransport::Cleanup(WebTransportError* aError,
                            const WebTransportCloseInfo* aCloseInfo,
                            ErrorResult& aRv) {
   
@@ -1614,11 +1614,6 @@ void WebTransport::Cleanup(DOMException* aError,
     stream->ErrorNative(cx, errorValue, IgnoreErrors());
   }
   
-  
-  if (datagrams) {
-    datagrams->ErrorWritables(cx, outgoingDatagramWritables, errorValue);
-  }
-  
   if (aCloseInfo) {
     
     LOG(("Resolving closed with closeinfo"));
@@ -1633,8 +1628,11 @@ void WebTransport::Cleanup(DOMException* aError,
     incomingBidirectionalStreams->CloseNative(cx, IgnoreErrors());
     
     incomingUnidirectionalStreams->CloseNative(cx, IgnoreErrors());
-    
     if (datagrams) {
+      
+      datagrams->CloseOrErrorWritables(cx, outgoingDatagramWritables, true,
+                                       errorValue);
+      
       datagrams->CloseOrErrorReadable(cx, true, errorValue);
     }
   } else {
@@ -1652,8 +1650,12 @@ void WebTransport::Cleanup(DOMException* aError,
     incomingBidirectionalStreams->ErrorNative(cx, errorValue, IgnoreErrors());
     
     incomingUnidirectionalStreams->ErrorNative(cx, errorValue, IgnoreErrors());
-    
     if (datagrams) {
+      
+      
+      datagrams->CloseOrErrorWritables(cx, outgoingDatagramWritables, false,
+                                       errorValue);
+      
       datagrams->CloseOrErrorReadable(cx, false, errorValue);
     }
   }

@@ -825,4 +825,26 @@ already_AddRefed<Promise> WritableStream::AbortNative(
   return WritableStreamAbort(aCx, this, aReason, aRv);
 }
 
+
+
+already_AddRefed<Promise> WritableStream::CloseNative(JSContext* aCx,
+                                                      ErrorResult& aRv) {
+  RefPtr<WritableStream> thisRefPtr = this;
+  RefPtr<Promise> promise = WritableStreamClose(aCx, thisRefPtr, aRv);
+  if (aRv.IsUncatchableException()) {
+    return nullptr;
+  }
+  if (aRv.Failed()) {
+    promise = Promise::CreateRejectedWithErrorResult(GetParentObject(), aRv);
+  }
+  
+  
+  
+  
+  if (promise) {
+    (void)promise->SetAnyPromiseIsHandled();
+  }
+  return promise.forget();
+}
+
 }  
