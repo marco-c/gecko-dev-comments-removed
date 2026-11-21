@@ -212,6 +212,32 @@ void WebTransportDatagramDuplexStream::NewDatagramReceived(
     UniquePtr<DatagramEntry> entry = mIncomingDatagramsQueue.Pop();
     mDroppedIncoming++;
   }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static constexpr double kDefaultIncomingMaxAgeMs = 60000.0;
+  const double maxAgeMs = mIncomingMaxAge.IsNull() ? kDefaultIncomingMaxAgeMs
+                                                   : mIncomingMaxAge.Value();
+  TimeStamp now = TimeStamp::Now();
+  while (!mIncomingDatagramsQueue.IsEmpty() &&
+         (now - mIncomingDatagramsQueue.FirstElement()->mTimeStamp)
+                 .ToMilliseconds() > maxAgeMs) {
+    LOG(("Dropping expired incoming datagram: age exceeds max age (%f ms)",
+         maxAgeMs));
+    UniquePtr<DatagramEntry> entry = mIncomingDatagramsQueue.Pop();
+    mExpiredIncoming++;
+  }
+
   mIncomingDatagramsQueue.Push(
       std::make_unique<DatagramEntry>(std::move(aData), aTimeStamp));
   mIncomingAlgorithms->NotifyDatagramAvailable();
