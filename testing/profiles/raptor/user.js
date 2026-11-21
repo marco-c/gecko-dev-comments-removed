@@ -20,6 +20,10 @@ user_pref("network.captive-portal-service.enabled", false);
 user_pref("network.connectivity-service.enabled", false);
 
 
+
+user_pref("network.proxy.type", 0);
+
+
 user_pref("browser.backup.enabled", false);
 
 
