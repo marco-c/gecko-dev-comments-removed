@@ -53,6 +53,17 @@ public class IPProtectionController {
   
   public static final int SERVICE_STATE_READY = 4;
 
+  
+  @Retention(RetentionPolicy.SOURCE)
+  @StringDef(value = {CURRENT_AUTH_PROVIDER_FXA, CURRENT_AUTH_PROVIDER_GPI})
+  public @interface CurrentAuthProvider {}
+
+  
+  public static final String CURRENT_AUTH_PROVIDER_FXA = "fxa";
+
+  
+  public static final String CURRENT_AUTH_PROVIDER_GPI = "gpi";
+
   private static @ServiceState int parseServiceState(final @Nullable String state) {
     switch (state) {
       case "uninitialized":
@@ -305,6 +316,22 @@ public class IPProtectionController {
 
     @UiThread
     default void onCountryListChanged(final @NonNull List<Country> countries) {}
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default void onCurrentAuthProviderChanged(
+        final @Nullable @CurrentAuthProvider String authProvider) {}
   }
 
    IPProtectionController() {
@@ -316,6 +343,7 @@ public class IPProtectionController {
             "GeckoView:IPProtection:IPPProxyManager:StateChanged",
             "GeckoView:IPProtection:IPPProxyManager:UsageChanged",
             "GeckoView:IPProtection:ServerList:ListChanged",
+            "GeckoView:IPProtection:CurrentAuthProviderChanged",
             "GeckoView:IPProtection:GetToken",
             "GeckoView:IPProtection:TokenRejected",
             "GeckoView:IPProtection:GPI:WarmUp",
@@ -813,6 +841,10 @@ public class IPProtectionController {
           break;
         case "GeckoView:IPProtection:ServerList:ListChanged":
           withDelegate(event, d -> d.onCountryListChanged(countriesFromBundle(message)));
+          break;
+        case "GeckoView:IPProtection:CurrentAuthProviderChanged":
+          withDelegate(
+              event, d -> d.onCurrentAuthProviderChanged(message.getString("authProvider")));
           break;
         case "GeckoView:IPProtection:GetToken":
           {
