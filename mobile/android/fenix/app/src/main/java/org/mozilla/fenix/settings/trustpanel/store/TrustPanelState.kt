@@ -5,15 +5,19 @@
 package org.mozilla.fenix.settings.trustpanel.store
 
 import androidx.annotation.StringRes
+import java.security.cert.X509Certificate
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.concept.engine.permission.SitePermissions
 import mozilla.components.concept.engine.permission.SitePermissions.AutoplayStatus
 import mozilla.components.lib.state.State
+import mozilla.components.support.utils.CertificateDetails
+import mozilla.components.support.utils.hasDisplayableDetails
+import mozilla.components.support.utils.toCertificateDetails
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.menu.store.IPProtectionMenuState
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.trackingprotection.TrackerBuckets
 import org.mozilla.fenix.trackingprotection.TrackingProtectionCategory
-import java.security.cert.X509Certificate
 
 typealias WebsitePermissionsState = Map<PhoneFeature, WebsitePermission>
 
@@ -24,13 +28,14 @@ typealias WebsitePermissionsState = Map<PhoneFeature, WebsitePermission>
  * @property isTrackingProtectionEnabled Flag indicating whether enhanced tracking protection is enabled for a site.
  * @property numberOfTrackersBlocked The numbers of trackers blocked by enhanced tracking protection.
  * @property bucketedTrackers Mapping of trackers sorted into different tracking protection categories.
- * @property detailedTrackerCategory The [TrackingProtectionCategory] which will be shown in the tracker
- * category details panel.
+ * @property detailedTrackerCategory The [TrackingProtectionCategory] which will be shown in the tracker category
+ *   details panel.
  * @property sessionState The [SessionState] of the current tab.
- * @property sitePermissions The [SitePermissions] that contains the statuses of website permissions
- * for the current site.
+ * @property sitePermissions The [SitePermissions] that contains the statuses of website permissions for the current
+ *   site.
  * @property websiteInfoState [State] containing information about the website connection.
  * @property websitePermissionsState Mapping of [PhoneFeature]s to [WebsitePermission]s.
+ * @property ipProtectionMenuState The current [IPProtectionMenuState] for the IP protection menu item.
  */
 data class TrustPanelState(
     val baseDomain: String? = null,
@@ -42,6 +47,7 @@ data class TrustPanelState(
     val sitePermissions: SitePermissions? = null,
     val websiteInfoState: WebsiteInfoState = WebsiteInfoState(),
     val websitePermissionsState: WebsitePermissionsState = mapOf(),
+    val ipProtectionMenuState: IPProtectionMenuState = IPProtectionMenuState(),
 ) : State
 
 /**
@@ -59,17 +65,38 @@ data class WebsiteInfoState(
     val websiteTitle: String = "",
     val certificate: X509Certificate? = null,
     val qwac: X509Certificate? = null,
-)
+) {
+    /**
+     * The subject and issuer fields of [qwac], or of [certificate] if there is no QWAC, or null if there is neither.
+     * The QWAC, which the EU trust mark refers to, can differ from the TLS certificate, such as with a 2-QWAC.
+     */
+    val certificateDetails: CertificateDetails? by lazy { (qwac ?: certificate)?.toCertificateDetails() }
+
+    /**
+     * Whether the current web page is known to present a QWAC. This is false whenever the QWAC status is not yet
+     * determined, is still being requested, could not be determined, or on pages that are not secure, so that a
+     * certificate with an error is never shown as qualified.
+     */
+    val isQwac: Boolean
+        get() = isSecured && qwac != null
+
+    /**
+     * Whether the certificate details can be opened: only for secure pages with a certificate that has something to
+     * show. Pages without a certificate, such as HTTP, internal pages and local files, and pages whose certificate has
+     * an error, even after the user chose to proceed, show the connection security row instead.
+     */
+    val canOpenCertificateDetails: Boolean
+        get() = isSecured && certificate != null && certificateDetails.hasDisplayableDetails()
+}
 
 /**
  * Wrapper over a website permission encompassing all its needed state to be rendered on the screen.
  *
- * Contains a limited number of implementations because there is a known, finite number of permissions
- * we need to display to the user.
+ * Contains a limited number of implementations because there is a known, finite number of permissions we need to
+ * display to the user.
  *
  * @property isVisible Whether this permission should be shown to the user.
- * @property deviceFeature The Android device feature available for the current website.
- * for the app by the user or not.
+ * @property deviceFeature The Android device feature available for the current website. for the app by the user or not.
  */
 sealed class WebsitePermission(
     open val isVisible: Boolean,
@@ -77,10 +104,11 @@ sealed class WebsitePermission(
 ) {
     /**
      * Represents the autoplay permission.
+     *
      * @property autoplayValue The currently selected [AutoplayValue] status for autoplay.
      * @property isVisible Whether this permission should be shown to the user.
-     * @property deviceFeature The Android device feature available for the current website.
-     * for the app by the user or not.
+     * @property deviceFeature The Android device feature available for the current website. for the app by the user or
+     *   not.
      */
     data class Autoplay(
         val autoplayValue: AutoplayValue,
@@ -90,9 +118,10 @@ sealed class WebsitePermission(
 
     /**
      * Represents a toggleable permission.
+     *
      * @property isEnabled Visual indication about whether this permission is *enabled* / *disabled*.
-     * @property isBlockedByAndroid Whether the corresponding *dangerous* Android permission is granted
-     * for the app by the user or not.
+     * @property isBlockedByAndroid Whether the corresponding *dangerous* Android permission is granted for the app by
+     *   the user or not.
      * @property isVisible Whether this permission should be shown to the user.
      * @property deviceFeature The Android device feature available for the current website.
      */
@@ -104,9 +133,7 @@ sealed class WebsitePermission(
     ) : WebsitePermission(isVisible, deviceFeature)
 }
 
-/**
- * Represents the different possible autoplay values for a site.
- */
+/** Represents the different possible autoplay values for a site. */
 enum class AutoplayValue(
     @param:StringRes val title: Int,
     val autoplayAudibleStatus: AutoplayStatus,
