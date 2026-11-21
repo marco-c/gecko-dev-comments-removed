@@ -66,10 +66,7 @@ class OutgoingDatagramStreamAlgorithms final
 
   explicit OutgoingDatagramStreamAlgorithms(
       WebTransportDatagramDuplexStream* aDatagrams,
-      WebTransportSendGroup* aSendGroup = nullptr, int64_t aSendOrder = 0)
-      : mDatagrams(aDatagrams),
-        mSendGroup(aSendGroup),
-        mSendOrder(aSendOrder) {}
+      WebTransportSendGroup* aSendGroup = nullptr, int64_t aSendOrder = 0);
 
   void SetChild(WebTransportChild* aChild);
   WebTransportChild* GetChild() const { return mChild; }
@@ -93,9 +90,25 @@ class OutgoingDatagramStreamAlgorithms final
   
   
   
-  bool TryResolveOldestFromCredit(uint64_t aAvailableBytes,
-                                  size_t* aResolvedBytes);
+  
+  
+  
+  
+  
+  
+  
+  
+  bool TryResolveBackpressureFromCredit(uint64_t aAvailableBytes,
+                                        size_t* aResolvedBytes);
 
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -106,42 +119,16 @@ class OutgoingDatagramStreamAlgorithms final
 
   
   
-  
   void Cleanup();
 
  private:
   ~OutgoingDatagramStreamAlgorithms() override = default;
 
-  struct QueuedDatagram {
-    UniquePtr<DatagramEntry> mEntry;
-    RefPtr<Promise> mPromise;
-
-    QueuedDatagram(UniquePtr<DatagramEntry>&& aEntry, RefPtr<Promise> aPromise)
-        : mEntry(std::move(aEntry)), mPromise(std::move(aPromise)) {}
-  };
-
-  struct PendingDatagram {
-    RefPtr<Promise> mPromise;
-    size_t mBytes;
-  };
-
-  
-  
-  
-  friend void ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback&,
-                                          QueuedDatagram&, const char*,
-                                          uint32_t);
-  friend void ImplCycleCollectionUnlink(QueuedDatagram&);
-  friend void ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback&,
-                                          PendingDatagram&, const char*,
-                                          uint32_t);
-  friend void ImplCycleCollectionUnlink(PendingDatagram&);
-
   RefPtr<WebTransportDatagramDuplexStream> mDatagrams;
   RefPtr<WebTransportChild> mChild;
   RefPtr<WebTransportDatagramsWritable> mOwnerWritable;
   
-  nsTArray<QueuedDatagram> mWaitConnectQueue;
+  nsTArray<UniquePtr<DatagramEntry>> mWaitConnectQueue;
 
   
   RefPtr<WebTransportSendGroup> mSendGroup;
@@ -149,14 +136,20 @@ class OutgoingDatagramStreamAlgorithms final
 
   
   
-  nsTArray<PendingDatagram> mPendingDatagramPromises;
+  
+  
+  
+  RefPtr<Promise> mBackpressurePromise;
+  
+  
+  size_t mBackpressureBytes = 0;
 
+  
   
   
   
   OutgoingDatagramInFlight mInFlight;
 
-  
   
   
   
@@ -229,6 +222,13 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
 
   
   
+  
+  
+  
+  
+  
+  
+  
   void OnDatagramCapacity(uint64_t aCumulativeDatagrams,
                           uint64_t aCumulativeBytes, uint64_t aSentDelta,
                           uint64_t aExpiredDelta, uint64_t aDroppedDelta,
@@ -296,6 +296,7 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
   
   Nullable<double> mIncomingMaxAge;
   Nullable<double> mOutgoingMaxAge;
+  
   
   
   

@@ -50,14 +50,11 @@ class WebTransportDatagramsWritable final : public WritableStream {
 
   
   
+  
   void Cleanup();
-
-  
-  
-  
   void RetireInFlight(uint64_t aCount);
-  bool TryResolveOldestFromCredit(uint64_t aAvailableBytes,
-                                  size_t* aResolvedBytes);
+  bool TryResolveBackpressureFromCredit(uint64_t aAvailableBytes,
+                                        size_t* aResolvedBytes);
 
  private:
   ~WebTransportDatagramsWritable() override;
