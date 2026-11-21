@@ -625,17 +625,6 @@ bool nsCSPBaseSrc::permits(nsIURI* aUri, bool aWasRedirected, bool aReportOnly,
 
 
 
-
-bool nsCSPBaseSrc::allows(enum CSPKeyword aKeyword,
-                          const nsAString& aContentOrNonce) const {
-  CSPUTILSLOG(("nsCSPBaseSrc::allows, aKeyWord: %s, a aContentOrNonce: %s",
-               aKeyword == CSP_HASH ? "hash" : CSP_EnumToUTF8Keyword(aKeyword),
-               NS_ConvertUTF16toUTF8(aContentOrNonce).get()));
-  return false;
-}
-
-
-
 nsCSPSchemeSrc::nsCSPSchemeSrc(const nsAString& aScheme) : mScheme(aScheme) {
   ToLowerCase(mScheme);
 }
@@ -938,14 +927,6 @@ nsCSPKeywordSrc::nsCSPKeywordSrc(enum CSPKeyword aKeyword)
 }
 
 nsCSPKeywordSrc::~nsCSPKeywordSrc() = default;
-
-bool nsCSPKeywordSrc::allows(enum CSPKeyword aKeyword,
-                             const nsAString& aContentOrNonce) const {
-  CSPUTILSLOG(("nsCSPKeywordSrc::allows, aKeyWord: %s, aContentOrNonce: %s",
-               CSP_EnumToUTF8Keyword(aKeyword),
-               NS_ConvertUTF16toUTF8(aContentOrNonce).get()));
-  return mKeyword == aKeyword;
-}
 
 bool nsCSPKeywordSrc::visit(nsCSPSrcVisitor* aVisitor) const {
   return aVisitor->visitKeywordSrc(*this);
@@ -1387,14 +1368,12 @@ bool nsCSPDirective::permits(CSPDirective aDirective, nsILoadInfo* aLoadInfo,
   return false;
 }
 
-bool nsCSPDirective::allows(enum CSPKeyword aKeyword,
-                            const nsAString& aContentOrNonce) const {
-  CSPUTILSLOG(("nsCSPDirective::allows, aKeyWord: %s, aContentOrNonce: %s",
-               CSP_EnumToUTF8Keyword(aKeyword),
-               NS_ConvertUTF16toUTF8(aContentOrNonce).get()));
+bool nsCSPDirective::allows(enum CSPKeyword aKeyword) const {
+  CSPUTILSLOG(("nsCSPDirective::allows, aKeyWord: %s",
+               CSP_EnumToUTF8Keyword(aKeyword)));
 
-  for (uint32_t i = 0; i < mSrcs.Length(); i++) {
-    if (mSrcs[i]->allows(aKeyword, aContentOrNonce)) {
+  for (const nsCSPBaseSrc* src : mSrcs) {
+    if (src->isKeyword(aKeyword)) {
       return true;
     }
   }
@@ -1493,7 +1472,7 @@ bool nsCSPDirective::ShouldCreateViolationForNewTrustedTypesPolicy(
   MOZ_ASSERT(mDirective == nsIContentSecurityPolicy::TRUSTED_TYPES_DIRECTIVE);
 
   if (mDirective == nsIContentSecurityPolicy::TRUSTED_TYPES_DIRECTIVE) {
-    if (allows(CSP_NONE, EmptyString())) {
+    if (allows(CSP_NONE)) {
       
       
       
@@ -1502,7 +1481,7 @@ bool nsCSPDirective::ShouldCreateViolationForNewTrustedTypesPolicy(
     }
 
     if (aCreatedPolicyNames.Contains(aPolicyName) &&
-        !allows(CSP_ALLOW_DUPLICATES, EmptyString())) {
+        !allows(CSP_ALLOW_DUPLICATES)) {
       
       
       
@@ -1918,14 +1897,13 @@ bool nsCSPPolicy::permits(CSPDirective aDir, nsILoadInfo* aLoadInfo,
   return true;
 }
 
-bool nsCSPPolicy::allows(CSPDirective aDirective, enum CSPKeyword aKeyword,
-                         const nsAString& aContentOrNonce) const {
-  CSPUTILSLOG(("nsCSPPolicy::allows, aKeyWord: %s, a aContentOrNonce: %s",
-               CSP_EnumToUTF8Keyword(aKeyword),
-               NS_ConvertUTF16toUTF8(aContentOrNonce).get()));
+bool nsCSPPolicy::allows(CSPDirective aDirective,
+                         enum CSPKeyword aKeyword) const {
+  CSPUTILSLOG(
+      ("nsCSPPolicy::allows, aKeyWord: %s", CSP_EnumToUTF8Keyword(aKeyword)));
 
   if (nsCSPDirective* directive = matchingOrDefaultDirective(aDirective)) {
-    return directive->allows(aKeyword, aContentOrNonce);
+    return directive->allows(aKeyword);
   }
 
   
@@ -1963,14 +1941,14 @@ bool nsCSPPolicy::allowsByHash(CSPDirective aDirective,
 bool nsCSPPolicy::isStrict() const {
   nsCSPDirective* scriptDir = matchingOrDefaultDirective(
       nsIContentSecurityPolicy::SCRIPT_SRC_ELEM_DIRECTIVE);
-  if (!scriptDir || !scriptDir->allows(CSP_STRICT_DYNAMIC, u""_ns)) {
+  if (!scriptDir || !scriptDir->allows(CSP_STRICT_DYNAMIC)) {
     return false;
   }
   for (nsCSPDirective* directive : mDirectives) {
     if (directive->equals(nsIContentSecurityPolicy::BASE_URI_DIRECTIVE)) {
       
       
-      return directive->allows(CSP_NONE, u""_ns);
+      return directive->allows(CSP_NONE);
     }
   }
   return false;
