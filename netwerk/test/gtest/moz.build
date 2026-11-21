@@ -17,6 +17,7 @@ UNIFIED_SOURCES += [
     "TestEtcHostsParsing.cpp",
     "TestHeaders.cpp",
     "TestHostRecordQueue.cpp",
+    "TestHttp2Compression.cpp",
     "TestHttp2WebTransport.cpp",
     "TestHttp3ConnectUDPStream.cpp",
     "TestHttp3WebTransportSession.cpp",
@@ -59,6 +60,7 @@ UNIFIED_SOURCES += [
 # assumption). Keeping these files out of the unified build avoids perturbing
 # that grouping.
 SOURCES += [
+    "Http3TestStubs.cpp",
     "TestCacheCrypto.cpp",
     "TestCacheEntryWriterHang.cpp",
     "TestHappyEyeballsConnectionAttempt.cpp",
@@ -128,5 +130,6 @@ FINAL_LIBRARY = "xul-gtest"
 LOCAL_INCLUDES += ["!/xpcom", "/xpcom/components"]
 
 SOURCE_HEADERS += [
+    "Http3TestStubs.h",
     "TestCommon.h",
 ]
