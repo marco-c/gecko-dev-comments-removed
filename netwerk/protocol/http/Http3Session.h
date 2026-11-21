@@ -164,6 +164,11 @@ class Http3SessionBase {
   virtual void SetDatagramMaxBufferedDatagrams(
       uint64_t aSessionId, uint32_t aMaxBufferedDatagrams) = 0;
   virtual void SetDatagramMaxAge(uint64_t aSessionId, double aMaxAge) = 0;
+  
+  
+  virtual bool GetDatagramSessionStats(uint64_t aSessionId, uint64_t* aSent,
+                                       uint64_t* aExpired,
+                                       uint64_t* aDropped) = 0;
   virtual bool GetWebTransportSessionStats(
       uint64_t aSessionId, mozilla::dom::WebTransportStatsData& aStats) = 0;
   virtual nsresult RegisterWebTransportSendGroup(uint64_t aSessionId,
@@ -337,6 +342,8 @@ class Http3Session final : public Http3SessionBase,
   void SetDatagramMaxBufferedDatagrams(uint64_t aSessionId,
                                        uint32_t aMaxBufferedDatagrams) override;
   void SetDatagramMaxAge(uint64_t aSessionId, double aMaxAge) override;
+  bool GetDatagramSessionStats(uint64_t aSessionId, uint64_t* aSent,
+                               uint64_t* aExpired, uint64_t* aDropped) override;
   nsresult GetWebTransportSessionProtocol(uint64_t aSessionId,
                                           nsACString& aProtocol) override;
   void SetWebTransportAnticipatedConcurrentIncomingUnidirectionalStreams(
