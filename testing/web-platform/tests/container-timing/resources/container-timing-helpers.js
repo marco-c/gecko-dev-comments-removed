@@ -134,6 +134,26 @@ async function getContainerEntriesWithin(t, duration = 1000) {
 
 
 
+
+function observeContainerEntries(t) {
+  let entries = [];
+  const observer = new PerformanceObserver(entryList => {
+    entries.push(...entryList.getEntries().filter(e => !isWaitEntry(e)));
+  });
+  observer.observe({type: 'container'});
+  t.add_cleanup(() => observer.disconnect());
+  return {
+    async take() {
+      await waitForPendingPaints();
+      const taken = entries;
+      entries = [];
+      return taken;
+    },
+  };
+}
+
+
+
 function waitWithoutObserving(t, duration = 3000) {
   return new Promise(resolve => t.step_timeout(resolve, duration));
 }
