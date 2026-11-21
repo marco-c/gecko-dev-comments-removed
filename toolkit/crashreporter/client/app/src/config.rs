@@ -128,8 +128,6 @@ pub struct Config {
     
     pub run_memtest: bool,
     
-    pub memtest_kinds: Option<String>,
-    
     pub data_dir: Option<PathBuf>,
     
     pub events_dir: Option<PathBuf>,
@@ -178,7 +176,6 @@ impl Config {
     
     pub fn read_app_prefs(&mut self) {
         self.prefs.update_from_app_dir(installation_path());
-        self.update_memtest_settings();
     }
 
     
@@ -187,6 +184,7 @@ impl Config {
         self.auto_submit = env_bool(ekey!("AUTO_SUBMIT"));
         self.dump_all_threads = env_bool(ekey!("DUMP_ALL_THREADS"));
         self.delete_dump = !env_bool(ekey!("NO_DELETE_DUMP"));
+        self.run_memtest = env_bool(ekey!("RUN_MEMTEST"));
         self.data_dir = env_path(ekey!("DATA_DIRECTORY"));
         self.events_dir = env_path(ekey!("EVENTS_DIRECTORY"));
         self.app_file = std::env::var_os(ekey!("RESTART_XUL_APP_FILE"));
@@ -319,7 +317,6 @@ impl Config {
 
         self.prefs.update_from_profile_dir(&profile_dir);
         self.profile_dir = Some(profile_dir);
-        self.update_memtest_settings();
 
         
         if let Some(strings) = self.strings.as_mut() {
@@ -471,13 +468,6 @@ impl Config {
         if let (Some(log_target), Some(data_dir)) = (&self.log_target, &self.data_dir) {
             log_target.set_file(&data_dir.join("submit.log"));
         }
-    }
-
-    
-    fn update_memtest_settings(&mut self) {
-        
-        self.run_memtest = self.prefs.memtest_enabled().unwrap_or(true);
-        self.memtest_kinds = self.prefs.memtest_kinds().map(|s| String::from(s));
     }
 
     #[cfg(all(target_os = "linux", any(not(mock), test)))]
