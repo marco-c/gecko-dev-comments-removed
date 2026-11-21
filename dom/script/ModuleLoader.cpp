@@ -26,7 +26,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/LoadInfo.h"
-#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/dom/AutoEntryScript.h"
@@ -97,15 +96,6 @@ bool ModuleLoader::CanStartLoad(ModuleLoadRequest* aRequest, nsresult* aRvOut) {
   return true;
 }
 
-void ModuleLoader::DisallowImportMapsForModuleFetch(
-    ModuleLoadRequest* aRequest) {
-  if (!aRequest->GetScriptLoadContext()->IsPreload() &&
-      !StaticPrefs::dom_multiple_import_maps_enabled()) {
-    LOG(("ScriptLoadRequest (%p): Disallow further import maps.", aRequest));
-    DisallowImportMaps();
-  }
-}
-
 
 
 static bool IsResourceDocumentLoadingTrustedURI(ModuleLoadRequest* aRequest) {
@@ -120,7 +110,6 @@ static bool IsResourceDocumentLoadingTrustedURI(ModuleLoadRequest* aRequest) {
 
 nsresult ModuleLoader::StartFetch(ModuleLoadRequest* aRequest) {
   if (aRequest->IsRetrievedFromMemoryCache()) {
-    DisallowImportMapsForModuleFetch(aRequest);
     GetScriptLoader()->EmulateNetworkEvents(aRequest);
     SetModuleFetchStarted(aRequest);
     aRequest->OnFetchComplete(NS_OK);
@@ -148,8 +137,6 @@ nsresult ModuleLoader::StartFetch(ModuleLoadRequest* aRequest) {
   
   nsresult rv = GetScriptLoader()->StartLoadInternal(aRequest, securityFlags);
   NS_ENSURE_SUCCESS(rv, rv);
-
-  DisallowImportMapsForModuleFetch(aRequest);
 
   LOG(("ScriptLoadRequest (%p): Start fetching module", aRequest));
 
@@ -274,12 +261,7 @@ nsresult ModuleLoader::CompileEmptyJavaScriptModule(
 nsresult ModuleLoader::CompileWasmModuleBytes(
     JSContext* aCx, JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
     WasmBytesBuffer& aBytes, JS::MutableHandle<JSObject*> aModuleOut) {
-  JSObject* wasmModule;
-  if (aRequest->IsSourcePhaseRequest(aCx)) {
-    wasmModule = JS::CompileWasmModuleAsSource(aCx, aOptions, aBytes);
-  } else {
-    wasmModule = JS::CompileWasmModule(aCx, aOptions, aBytes);
-  }
+  JSObject* wasmModule = JS::CompileWasmModule(aCx, aOptions, aBytes);
   if (!wasmModule) {
     return NS_ERROR_FAILURE;
   }
@@ -331,9 +313,7 @@ nsresult ModuleLoader::CompileJavaScriptOrWasmModule(
     MOZ_ASSERT(aRequest->IsWasmBytes());
     
     
-    
     if (aRequest->GetScriptLoadContext()->mWasCompiledOMT) {
-      MOZ_ASSERT(aRequest->IsSourcePhaseRequest(aCx));
       if (!aRequest->GetScriptLoadContext()->StealOffThreadWasmResult(
               aCx, aModuleOut)) {
         return NS_ERROR_FAILURE;
