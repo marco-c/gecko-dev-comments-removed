@@ -1313,6 +1313,12 @@ class MOZ_RAII LineClampLineIterator {
                "descendant.");
     return GetBEndMargins() - mMarginsUntilLastFrame;
   }
+  nscoord GetOffsetBetweenGivenFrames() const {
+    MOZ_ASSERT(mEnteredLastFrameToExit,
+               "Tried getting offset between aFrame and aLastFrameToExit "
+               "before reaching aLastFrameToExit.");
+    return mOffsetBetweenFrames;
+  }
 
   Boundary GetPreviousBoundary() const {
     Boundary boundary = mPreviousBoundary;
@@ -1502,7 +1508,7 @@ class MOZ_RAII LineClampLineIterator {
           
           
           mCurrentFrameOffset.mCurrentBlockBStart +=
-              child->BStart(mCurrentFrameOffset.mFrame->GetSize());
+              child->BStart(blockLine->mContainerSize);
           mCurrentFrameOffset.mAccumulatedBEndBP +=
               child->GetLogicalUsedBorderAndPadding(mWm).BEnd(mWm);
 
@@ -1519,6 +1525,7 @@ class MOZ_RAII LineClampLineIterator {
                 mCurrentFrameOffset.mCollapsedMargins +
                 mCurrentFrameOffset.mCurrentCollapsingMargin.Get();
             mBPUntilLastFrame = mCurrentFrameOffset.mAccumulatedBEndBP;
+            mOffsetBetweenFrames = mCurrentFrameOffset.mCurrentBlockBStart;
           }
 
           mCurrentFrameOffset.mCurrentLine = child->LinesBegin();
@@ -1569,6 +1576,9 @@ class MOZ_RAII LineClampLineIterator {
 
   
   nscoord mBPUntilLastFrame;
+
+  
+  nscoord mOffsetBetweenFrames = 0;
 
   
   
@@ -2659,12 +2669,6 @@ Maybe<nsBlockFrame::LineClampTarget> nsBlockFrame::FindLineClampAutoTarget(
   nscoord rootMaxBSize = aLineClampRoot->GetLineClampRootMaxHeight().value();
   nscoord thisMinBSize = aReflowInput.ComputedMinBSize();
 
-  
-  
-  nscoord bOffsetToRoot = wm.GetBlockDir() == WritingMode::BlockDir::TB
-                              ? GetOffsetTo(aLineClampRoot).Y()
-                              : GetOffsetTo(aLineClampRoot).X();
-
   nsBlockFrame* prevFrame = nullptr;
   LineClampLineIterator iter(aLineClampRoot, this, Some(rootMaxBSize));
 
@@ -2678,7 +2682,8 @@ Maybe<nsBlockFrame::LineClampTarget> nsBlockFrame::FindLineClampAutoTarget(
       
       return Some(LineClampTarget{nullptr, nullptr, 0});
     }
-    const nscoord clampedBSize = boundary.mBEnd - bOffsetToRoot;
+    const nscoord clampedBSize =
+        boundary.mBEnd - iter.GetOffsetBetweenGivenFrames();
     return Some(LineClampTarget{boundary.mFrame, boundary.mLine, clampedBSize});
   };
 
@@ -2768,17 +2773,11 @@ Maybe<nsBlockFrame::LineClampTarget> nsBlockFrame::FindLineClampNumberedTarget(
         
         
         const WritingMode wm = targetFrame->GetWritingMode();
-        
-        
-        const nscoord offsetToRoot =
-            wm.GetBlockDir() == WritingMode::BlockDir::TB
-                ? GetOffsetTo(aLineClampRoot).Y()
-                : GetOffsetTo(aLineClampRoot).X();
-        targetBEnd = targetFrame->BSize(targetFrame->GetWritingMode()) +
-                     iter.GetCurrentFrameBStart() - offsetToRoot +
-                     iter.GetDescendantBEndMargins() +
-                     iter.GetDescendantBEndBP() -
-                     targetFrame->GetLogicalUsedBorderAndPadding(wm).BEnd(wm);
+        targetBEnd =
+            targetFrame->BSize(targetFrame->GetWritingMode()) +
+            iter.GetCurrentFrameBStart() - iter.GetOffsetBetweenGivenFrames() +
+            iter.GetDescendantBEndMargins() + iter.GetDescendantBEndBP() -
+            targetFrame->GetLogicalUsedBorderAndPadding(wm).BEnd(wm);
       }
     }
   }
