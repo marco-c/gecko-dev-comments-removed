@@ -44,6 +44,42 @@ async function pushPrefs1() {
   });
 }
 
+async function maximizeWindow(win) {
+  
+  
+  if (win.windowState == win.STATE_MAXIMIZED) {
+    return;
+  }
+  let promiseSizeModeChange = BrowserTestUtils.waitForEvent(
+    win,
+    "sizemodechange"
+  );
+  win.maximize();
+  await promiseSizeModeChange;
+}
+
+async function minimizeWindow(win) {
+  if (Services.appinfo.isWayland) {
+    
+    
+    
+    win.minimize();
+  } else {
+    let promiseSizeModeChange = BrowserTestUtils.waitForEvent(
+      win,
+      "sizemodechange"
+    );
+    win.minimize();
+    await promiseSizeModeChange;
+  }
+  await TestUtils.waitForCondition(
+    () =>
+      !win.browsingContext.isActive &&
+      !win.gBrowser.selectedBrowser.docShellIsActive,
+    "minimized window should become inactive"
+  );
+}
+
 
 
 
@@ -55,24 +91,10 @@ async function openWindows(maximize, taskToPerformBeforeSizeChange) {
     await win.delayedStartupPromise;
     await taskToPerformBeforeSizeChange(win);
 
-    if (
-      (!maximize && i < wins.length - 1) ||
-      (maximize && i == wins.length - 1)
-    ) {
-      
-      
-      if (!maximize || (maximize && win.windowState != win.STATE_MAXIMIZED)) {
-        let promiseSizeModeChange = BrowserTestUtils.waitForEvent(
-          win,
-          "sizemodechange"
-        );
-        if (maximize) {
-          win.maximize();
-        } else {
-          win.minimize();
-        }
-        await promiseSizeModeChange;
-      }
+    if (maximize && i == wins.length - 1) {
+      await maximizeWindow(win);
+    } else if (!maximize && i < wins.length - 1) {
+      await minimizeWindow(win);
     }
 
     wins[i] = win;
