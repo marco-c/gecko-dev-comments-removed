@@ -6872,12 +6872,7 @@ bool nsBlockFrame::DrainOverflowLines() {
           }
         }
         ReparentFrames(oofs.mList, prevBlock, this);
-
-        
-        
-        
-        EnsureFloats()->InsertFrames(nullptr, GetLastPushedFloat(),
-                                     std::move(oofs.mList));
+        EnsureFloats()->InsertFrames(nullptr, nullptr, std::move(oofs.mList));
         if (!pushedFloats.IsEmpty()) {
           nsFrameList* pf = EnsurePushedFloats();
           pf->InsertFrames(nullptr, nullptr, std::move(pushedFloats));
@@ -6980,7 +6975,13 @@ void nsBlockFrame::DrainSelfPushedFloats() {
     
     
     
-    nsIFrame* insertionPrevSibling = GetLastPushedFloat();
+    
+    nsIFrame* insertionPrevSibling = nullptr; 
+    for (nsIFrame* f = floats ? floats->FirstChild() : nullptr;
+         f && f->HasAnyStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW);
+         f = f->GetNextSibling()) {
+      insertionPrevSibling = f;
+    }
 
     nsIFrame* f = ourPushedFloats->LastChild();
     while (f) {
@@ -7184,17 +7185,6 @@ nsFrameList* nsBlockFrame::StealFloats() {
   RemoveStateBits(NS_BLOCK_HAS_FLOATS);
   MOZ_ASSERT(list, "List should always be valid when the property is set!");
   return list;
-}
-
-nsIFrame* nsBlockFrame::GetLastPushedFloat() const {
-  nsIFrame* last = nullptr;
-  for (nsIFrame* f : GetChildList(FrameChildListID::Float)) {
-    if (!f->HasAnyStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW)) {
-      break;
-    }
-    last = f;
-  }
-  return last;
 }
 
 bool nsBlockFrame::HasPushedFloats() const {
@@ -8501,10 +8491,6 @@ UsedClear nsBlockFrame::FindTrailingClear() {
 
 void nsBlockFrame::ReflowPushedFloats(BlockReflowState& aState,
                                       OverflowAreas& aOverflowAreas) {
-#ifdef DEBUG
-  VerifyPushedFloatsAtStart();
-#endif
-
   
   
   nsFrameList* floats = GetFloats();
@@ -9981,18 +9967,6 @@ void nsBlockFrame::VerifyLines(bool aFinalCheckOK) {
     }
   }
   NS_ASSERTION(!cursor, "stale LineCursorProperty");
-}
-
-void nsBlockFrame::VerifyPushedFloatsAtStart() const {
-  bool seenNonPushedFloat = false;
-  for (const nsIFrame* f : GetChildList(FrameChildListID::Float)) {
-    if (f->HasAnyStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW)) {
-      NS_ASSERTION(!seenNonPushedFloat,
-                   "Pushed floats must be at the start of the floats list");
-    } else {
-      seenNonPushedFloat = true;
-    }
-  }
 }
 
 void nsBlockFrame::VerifyOverflowSituation() {
