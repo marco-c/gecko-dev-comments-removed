@@ -2,25 +2,23 @@
 
 
 
+
 'use strict';
 
 promise_test(async t => {
   
-  const availability = await SemanticEmbedder.availability();
+  const availability = await SemanticEmbedder.availability(embedderOptions());
   assert_implements_optional(availability === 'downloadable', 'Model should be downloadable');
 
   
   
-  await promise_rejects_dom(
-    t,
-    'NotAllowedError',
-    SemanticEmbedder.create()
-  );
+  await promise_rejects_dom(t, 'NotAllowedError',
+                            SemanticEmbedder.create(embedderOptions()));
 }, 'Create requires sticky user activation when availability is "downloadable"');
 
 promise_test(async t => {
   
-  const availability = await SemanticEmbedder.availability();
+  const availability = await SemanticEmbedder.availability(embedderOptions());
   assert_implements_optional(availability === 'downloadable', 'Model should be downloadable');
 
   
@@ -28,7 +26,7 @@ promise_test(async t => {
 
   
   
-  const embedder = await SemanticEmbedder.create();
+  const embedder = await SemanticEmbedder.create(embedderOptions());
   assert_true(!!embedder, 'Embedder should be successfully created');
 
 }, 'Create succeeds with user activation when availability is "downloadable"');

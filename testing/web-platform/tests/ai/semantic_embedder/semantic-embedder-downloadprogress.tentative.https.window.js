@@ -6,9 +6,11 @@
 
 async function createSemanticEmbedder(options) {
   await test_driver.bless();
-  return SemanticEmbedder.create(options);
+  return SemanticEmbedder.create(embedderOptions(options));
 }
 
 promise_test(async t => {
+  await testMonitor(createSemanticEmbedder);
+  
   await testMonitor(createSemanticEmbedder);
 }, 'SemanticEmbedder.create() notifies its monitor on downloadprogress');
