@@ -189,6 +189,7 @@ self.IdlArray = function()
 
 
     this.skipped = new Map();
+    this.test_filter = null;
 };
 
 IdlArray.prototype.add_idls = function(raw_idls, options)
@@ -504,6 +505,14 @@ IdlArray.prototype.prevent_multiple_testing = function(name)
     this.members[name].prevent_multiple_testing = true;
 };
 
+IdlArray.prototype.set_test_filter = function(filter)
+{
+    if (typeof filter !== "function") {
+        throw new TypeError("The test filter must be a function.");
+    }
+    this.test_filter = filter;
+};
+
 IdlArray.prototype.is_json_type = function(type)
 {
     
@@ -741,6 +750,17 @@ IdlArray.prototype.test = function()
         var globals = exposure_set(member);
         member.exposed = exposed_in(globals);
         member.exposureSet = globals;
+
+        if (this.test_filter && member instanceof IdlInterface) {
+            if (!this.test_filter(memberName)) {
+                member.filtered = true;
+            }
+            for (const idlMember of member.members) {
+                if (!this.test_filter(memberName, idlMember.name)) {
+                    idlMember.filtered = true;
+                }
+            }
+        }
     }.bind(this));
 
     
@@ -1427,7 +1447,7 @@ IdlInterface.prototype.test = function()
     
     if (!this.exposed)
     {
-        if (!this.untested)
+        if (!this.untested && !this.filtered)
         {
             subsetTestByKey(this.name, test, function() {
                 assert_false(this.name in self, this.name + " interface should not exist");
@@ -1436,12 +1456,14 @@ IdlInterface.prototype.test = function()
         return;
     }
 
-    if (!this.untested)
+    if (!this.untested && !this.filtered)
     {
         
         
         this.test_self();
     }
+    
+    
     
     
     
@@ -2683,7 +2705,7 @@ IdlInterface.prototype.test_members = function()
     for (var i = 0; i < this.members.length; i++)
     {
         var member = this.members[i];
-        if (member.untested) {
+        if (member.untested || member.filtered) {
             continue;
         }
 
@@ -2805,7 +2827,7 @@ IdlInterface.prototype.test_primary_interface_of = function(desc, obj, exception
 {
     
     
-    if (this.untested)
+    if (this.untested || this.filtered)
     {
         return;
     }
@@ -2874,7 +2896,7 @@ IdlInterface.prototype.test_interface_of = function(desc, obj, exception, expect
     for (var i = 0; i < this.members.length; i++)
     {
         var member = this.members[i];
-        if (member.untested) {
+        if (member.untested || member.filtered) {
             continue;
         }
         if (!exposed_in(exposure_set(member, this.exposureSet)))
