@@ -46,12 +46,16 @@ add_task(async function testIntervalChanges() {
 
   
   
-  Services.prefs.setIntPref("browser.sessionstore.interval", PREF_SS_INTERVAL);
-
   
   
   
-  Services.prefs.setIntPref("browser.sessionstore.idleDelay", 86400);
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.sessionstore.interval", PREF_SS_INTERVAL],
+      ["browser.sessionstore.idleDelay", 86400],
+    ],
+  });
 
   
   let fakeIdleService = MockRegistrar.register(
@@ -60,14 +64,22 @@ add_task(async function testIntervalChanges() {
   );
   idleService._reset();
 
-  registerCleanupFunction(function () {
-    Services.prefs.clearUserPref("browser.sessionstore.interval");
+  registerCleanupFunction(async function () {
+    
+    
+    
+    
+    
+    
+    await SpecialPowers.popPrefEnv();
     MockRegistrar.unregister(fakeIdleService);
   });
 
   
   
-  Services.prefs.setIntPref("browser.sessionstore.idleDelay", 5000);
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.sessionstore.idleDelay", 5000]],
+  });
 
   
   
