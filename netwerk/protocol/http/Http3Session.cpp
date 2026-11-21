@@ -2508,6 +2508,7 @@ void Http3Session::CloseStreamInternal(Http3StreamBase* aStream,
     }
 
     mStreamIdHash.Remove(aStream->StreamId());
+    mWebTransportStreamToSessionMap.Remove(aStream->StreamId());
 
     
     if (mStreamIdHash.IsEmpty()) {
