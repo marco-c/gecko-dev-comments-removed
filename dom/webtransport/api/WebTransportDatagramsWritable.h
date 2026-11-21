@@ -42,6 +42,8 @@ class WebTransportDatagramsWritable final : public WritableStream {
   int64_t SendOrder() const { return mSendOrder; }
   void SetSendOrder(int64_t aSendOrder);
 
+  void OnDatagramReady(uint64_t aDatagramId);
+
   
   
   bool IsConnected() const;
@@ -53,13 +55,6 @@ class WebTransportDatagramsWritable final : public WritableStream {
   void Cleanup();
 
   void UpdateQueueParams(uint32_t aMaxBufferedDatagrams, double aMaxAge);
-
-  
-  
-  
-  void RetireInFlight(uint64_t aCount);
-  bool TryResolveOldestFromCredit(uint64_t aAvailableBytes,
-                                  size_t* aResolvedBytes);
 
  private:
   ~WebTransportDatagramsWritable() override;

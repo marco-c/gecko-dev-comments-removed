@@ -194,26 +194,15 @@ class NeqoHttp3Conn final {
                                                      aStreamType, aStreamId);
   }
 
-  
-  
   nsresult WebTransportSendDatagram(uint64_t aSessionId,
                                     nsTArray<uint8_t>& aData,
+                                    uint64_t aTrackingId,
+                                    bool* aBelowHighWaterMark,
                                     uint64_t aSendGroupId, int64_t aSendOrder,
                                     uint64_t aAgeUs) {
     return neqo_http3conn_webtransport_send_datagram(
-        this, aSessionId, &aData, aSendGroupId, aSendOrder, aAgeUs);
-  }
-
-  
-  
-  
-  
-  nsresult WebTransportDatagramQueueCapacity(uint64_t aSessionId,
-                                             uintptr_t* aRemainingBytes,
-                                             uintptr_t* aQueuedDatagrams,
-                                             uintptr_t* aMaxQueuedBytes) {
-    return neqo_http3conn_webtransport_datagram_queue_capacity(
-        this, aSessionId, aRemainingBytes, aQueuedDatagrams, aMaxQueuedBytes);
+        this, aSessionId, &aData, aTrackingId, aBelowHighWaterMark,
+        aSendGroupId, aSendOrder, aAgeUs);
   }
 
   

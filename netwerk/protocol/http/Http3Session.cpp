@@ -3332,19 +3332,51 @@ nsresult Http3Session::CreateWebTransportStream(
 }
 
 void Http3Session::SendDatagram(Http3WebTransportSession* aSession,
-                                nsTArray<uint8_t>& aData, uint64_t aSendGroupId,
-                                int64_t aSendOrder, TimeStamp aTimestamp) {
+                                nsTArray<uint8_t>& aData, uint64_t aTrackingId,
+                                uint64_t aSendGroupId, int64_t aSendOrder,
+                                TimeStamp aTimestamp) {
   
   uint64_t ageUs = static_cast<uint64_t>(
       std::max(0.0, (TimeStamp::Now() - aTimestamp).ToMicroseconds()));
-  
-  
-  
+  bool belowHighWaterMark = false;
   nsresult rv = mHttp3Connection->WebTransportSendDatagram(
-      aSession->StreamId(), aData, aSendGroupId, aSendOrder, ageUs);
-  LOG(("Http3Session::SendDatagram %p res=%" PRIx32 ", sendGroup=%" PRIu64
-       ", sendOrder=%" PRId64,
-       this, static_cast<uint32_t>(rv), aSendGroupId, aSendOrder));
+      aSession->StreamId(), aData, aTrackingId, &belowHighWaterMark,
+      aSendGroupId, aSendOrder, ageUs);
+  LOG(("Http3Session::SendDatagram %p res=%" PRIx32
+       " belowHWM=%d, sendGroup=%" PRIu64 ", sendOrder=%" PRId64,
+       this, static_cast<uint32_t>(rv), belowHighWaterMark, aSendGroupId,
+       aSendOrder));
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aTrackingId && NS_SUCCEEDED(rv)) {
+    aSession->OnOutgoingDatagramOutCome(
+        aTrackingId, WebTransportSessionEventListener::DatagramOutcome::SENT);
+  }
+
+  if (aTrackingId && NS_FAILED(rv)) {
+    WebTransportSessionEventListener::DatagramOutcome outcome;
+    if (rv == NS_ERROR_NOT_AVAILABLE) {
+      outcome = WebTransportSessionEventListener::DatagramOutcome::
+          DROPPED_TOO_MUCH_DATA;
+    } else if (rv == NS_BASE_STREAM_WOULD_BLOCK) {
+      outcome =
+          WebTransportSessionEventListener::DatagramOutcome::DROPPED_QUEUE_FULL;
+    } else {
+      outcome = WebTransportSessionEventListener::DatagramOutcome::UNKNOWN;
+    }
+    aSession->OnOutgoingDatagramOutCome(aTrackingId, outcome);
+  }
 }
 
 uint64_t Http3Session::MaxDatagramSize(uint64_t aSessionId) {
@@ -3368,15 +3400,6 @@ void Http3Session::SetDatagramMaxBufferedDatagrams(
        aSessionId, aMaxBufferedDatagrams));
   (void)mHttp3Connection->WebTransportSetDatagramMaxBufferedDatagrams(
       aSessionId, aMaxBufferedDatagrams);
-}
-
-bool Http3Session::GetDatagramQueueCapacity(uint64_t aSessionId,
-                                            size_t* aRemainingBytes,
-                                            size_t* aQueuedDatagrams,
-                                            size_t* aMaxQueuedBytes) {
-  nsresult rv = mHttp3Connection->WebTransportDatagramQueueCapacity(
-      aSessionId, aRemainingBytes, aQueuedDatagrams, aMaxQueuedBytes);
-  return NS_SUCCEEDED(rv);
 }
 
 bool Http3Session::GetDatagramSessionStats(uint64_t aSessionId, uint64_t* aSent,

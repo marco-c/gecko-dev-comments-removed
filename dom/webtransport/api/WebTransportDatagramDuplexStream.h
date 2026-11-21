@@ -5,7 +5,6 @@
 #ifndef DOM_WEBTRANSPORT_API_WEBTRANSPORTDATAGRAMDUPLEXSTREAM_H_
 #define DOM_WEBTRANSPORT_API_WEBTRANSPORTDATAGRAMDUPLEXSTREAM_H_
 
-#include "mozilla/dom/DatagramQueueCharge.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/TypedArray.h"
@@ -91,15 +90,7 @@ class OutgoingDatagramStreamAlgorithms final
       ErrorResult& aError) override;
 
   
-  
-  
-  bool TryResolveOldestFromCredit(uint64_t aAvailableBytes,
-                                  size_t* aResolvedBytes);
-
-  
-  
-  
-  void RetireInFlight(uint64_t aCount);
+  void OnDatagramReady(uint64_t aDatagramId);
 
   
   void UpdateQueueParams(uint32_t aMaxBufferedDatagrams, double aMaxAge);
@@ -113,16 +104,15 @@ class OutgoingDatagramStreamAlgorithms final
   ~OutgoingDatagramStreamAlgorithms() override = default;
 
   struct QueuedDatagram {
+    uint64_t mDatagramId;
     UniquePtr<DatagramEntry> mEntry;
     RefPtr<Promise> mPromise;
 
-    QueuedDatagram(UniquePtr<DatagramEntry>&& aEntry, RefPtr<Promise> aPromise)
-        : mEntry(std::move(aEntry)), mPromise(std::move(aPromise)) {}
-  };
-
-  struct PendingDatagram {
-    RefPtr<Promise> mPromise;
-    size_t mBytes;
+    QueuedDatagram(uint64_t aId, UniquePtr<DatagramEntry>&& aEntry,
+                   RefPtr<Promise> aPromise)
+        : mDatagramId(aId),
+          mEntry(std::move(aEntry)),
+          mPromise(std::move(aPromise)) {}
   };
 
   
@@ -132,10 +122,6 @@ class OutgoingDatagramStreamAlgorithms final
                                           QueuedDatagram&, const char*,
                                           uint32_t);
   friend void ImplCycleCollectionUnlink(QueuedDatagram&);
-  friend void ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback&,
-                                          PendingDatagram&, const char*,
-                                          uint32_t);
-  friend void ImplCycleCollectionUnlink(PendingDatagram&);
 
   RefPtr<WebTransportDatagramDuplexStream> mDatagrams;
   RefPtr<WebTransportChild> mChild;
@@ -148,13 +134,7 @@ class OutgoingDatagramStreamAlgorithms final
   int64_t mSendOrder;
 
   
-  
-  nsTArray<PendingDatagram> mPendingDatagramPromises;
-
-  
-  
-  
-  size_t mInFlightCount = 0;
+  nsTHashMap<nsUint64HashKey, RefPtr<Promise>> mPendingDatagramPromises;
 };
 
 class WebTransportDatagramDuplexStream final : public nsISupports,
@@ -196,6 +176,9 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
                            const mozilla::TimeStamp& aTimeStamp);
 
   
+  void OnDatagramReady(uint64_t aDatagramId);
+
+  
   
   
   void QueueOutgoingDatagram(OutgoingDatagram&& aDatagram);
@@ -204,13 +187,6 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
   
   
   void FlushOutgoingDatagrams();
-
-  
-  
-  void OnDatagramCapacity(uint64_t aCumulativeDatagrams,
-                          uint64_t aCumulativeBytes, uint64_t aSentDelta,
-                          uint64_t aExpiredDelta, uint64_t aDroppedDelta,
-                          uint64_t aDatagramPrefixBytes);
 
   
   nsIGlobalObject* GetParentObject() const;
@@ -272,26 +248,15 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
   
   
   
+  
+  
+  
   nsTArray<RefPtr<WebTransportDatagramsWritable>> mAllWritables;
 
   
   
   Nullable<double> mIncomingMaxAge;
   Nullable<double> mOutgoingMaxAge;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   uint32_t mIncomingMaxBufferedDatagrams = 5;
   uint32_t mOutgoingMaxBufferedDatagrams = 5;
@@ -304,53 +269,23 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
   
   
   
-  uint64_t mExpiredOutgoing = 0;
+  uint64_t mNextDatagramId = 1;
+  
+  nsTHashMap<nsUint64HashKey, RefPtr<WebTransportDatagramsWritable>>
+      mWritableDatagramMap;
   
   
   
-  uint64_t mSentOutgoing = 0;
-  uint64_t mDroppedOutgoing = 0;
+  
+  bool mCleanedUp = false;
 
   
   
   nsTArray<OutgoingDatagram> mPendingOutgoing;
 
-  
-  
-  
-  
-  
-  uint64_t mCreditDatagramsLimit = 0;
-  uint64_t mCreditDatagramsUsed = 0;
-  uint64_t mCreditBytesLimit = 0;
-  uint64_t mCreditBytesUsed = 0;
-  
-  uint64_t mDatagramPrefixBytes = 0;
-
-  
-  
-  
-  void ChargeCredit(uint64_t aPayloadBytes) {
-    mCreditDatagramsUsed++;
-    mCreditBytesUsed +=
-        DatagramQueueCharge(aPayloadBytes, mDatagramPrefixBytes);
-  }
-  uint64_t CreditBytesAvailable() const {
-    return mCreditBytesLimit > mCreditBytesUsed
-               ? mCreditBytesLimit - mCreditBytesUsed
-               : 0;
-  }
-  bool HasCreditBytesFor(uint64_t aPayloadBytes) const {
-    return DatagramQueueCharge(aPayloadBytes, mDatagramPrefixBytes) <=
-           CreditBytesAvailable();
-  }
-
  public:
   uint64_t GetDroppedIncoming() const { return mDroppedIncoming; }
   uint64_t GetExpiredIncoming() const { return mExpiredIncoming; }
-  uint64_t GetExpiredOutgoing() const { return mExpiredOutgoing; }
-  uint64_t GetSentOutgoing() const { return mSentOutgoing; }
-  uint64_t GetDroppedOutgoing() const { return mDroppedOutgoing; }
 };
 
 }  
