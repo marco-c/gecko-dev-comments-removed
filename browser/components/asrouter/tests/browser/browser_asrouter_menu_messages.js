@@ -23,6 +23,10 @@ const { AppMenuNotifications } = ChromeUtils.importESModule(
   "resource://gre/modules/AppMenuNotifications.sys.mjs"
 );
 
+const { RemoteL10n } = ChromeUtils.importESModule(
+  "resource:///modules/asrouter/RemoteL10n.sys.mjs"
+);
+
 
 
 
@@ -548,6 +552,60 @@ add_task(async function test_show_fxa_cta_message() {
       ASRouter.addImpression.resetHistory();
       AboutWelcomeTelemetry.prototype.submitGleanPingForPing.resetHistory();
     });
+  });
+
+  sandbox.restore();
+});
+
+
+
+
+
+add_task(async function test_show_default_cta_message() {
+  let sandbox = sinon.createSandbox();
+  sandbox.spy(ASRouter, "addImpression");
+  sandbox.spy(AboutWelcomeTelemetry.prototype, "submitGleanPingForPing");
+
+  
+  
+  let viewShowing = BrowserTestUtils.waitForEvent(
+    PanelUI.mainView,
+    "ViewShowing"
+  );
+  let formatStub = sandbox
+    .stub(RemoteL10n, "formatLocalizableText")
+    .callsFake(async (...args) => {
+      await viewShowing;
+      return formatStub.wrappedMethod.apply(RemoteL10n, args);
+    });
+
+  let defaultMsg = buildDefaultCtaMessage();
+
+  Assert.ok(defaultMsg, "Found a test default_cta message to use.");
+
+  await withTestMessage(sandbox, defaultMsg, async () => {
+    await reopenMenuSource(MenuMessage.SOURCES.APP_MENU, defaultMsg);
+    
+    await reopenMenuSource(MenuMessage.SOURCES.PXI_MENU, null);
+
+    Assert.ok(
+      ASRouter.addImpression.calledWith(defaultMsg),
+      "The test message had an impression recorded for it."
+    );
+    Assert.ok(
+      AboutWelcomeTelemetry.prototype.submitGleanPingForPing.calledWithMatch(
+        sinon.match({
+          message_id: defaultMsg.id,
+          event: "IMPRESSION",
+          pingType: "menu",
+          source: MenuMessage.SOURCES.APP_MENU,
+        })
+      ),
+      "The test message had an impression recorded for it."
+    );
+
+    ASRouter.addImpression.resetHistory();
+    AboutWelcomeTelemetry.prototype.submitGleanPingForPing.resetHistory();
   });
 
   sandbox.restore();
