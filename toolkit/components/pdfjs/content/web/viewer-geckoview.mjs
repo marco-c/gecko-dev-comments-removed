@@ -20,8 +20,8 @@
  */
 
 /**
- * pdfjsVersion = 7.0.164
- * pdfjsBuild = 60aefc5b5
+ * pdfjsVersion = 7.0.189
+ * pdfjsBuild = 81b2255fe
  */
 
 ;// ./web/ui_utils.js
@@ -679,6 +679,9 @@ const defaultOptions = new Map([["allowedGlobalEvents", {
 }], ["minDurationToUpdateCanvas", {
   value: 500,
   kind: OptionKind.VIEWER
+}], ["newTextLayerMode", {
+  value: 1,
+  kind: OptionKind.VIEWER + OptionKind.PREFERENCE
 }], ["forcePageColors", {
   value: false,
   kind: OptionKind.VIEWER + OptionKind.PREFERENCE
@@ -756,9 +759,6 @@ const defaultOptions = new Map([["allowedGlobalEvents", {
   kind: OptionKind.API
 }], ["iccUrl", {
   value: "resource://pdf.js/web/iccs/",
-  kind: OptionKind.API
-}], ["isOffscreenCanvasSupported", {
-  value: true,
   kind: OptionKind.API
 }], ["pdfBug", {
   value: false,
@@ -912,7 +912,7 @@ const {
 } = globalThis.pdfjsLib;
 
 ;// ./web/internal_evt.js
-const INTERNAL_EVT = "aba9d0c1-a369-4fad-99e5-502c95cd1c89";
+const INTERNAL_EVT = "178c1c76-e7b0-4fe6-ba40-4e51eb7f6b60";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -7895,6 +7895,7 @@ class TextHighlighter {
 class TextLayerBuilder {
   #abortSignal = null;
   #enablePermissions = false;
+  #textContentParams;
   #onAppend = null;
   #removeOwnSelectionListener = null;
   #renderingDone = false;
@@ -7906,6 +7907,7 @@ class TextLayerBuilder {
     highlighter = null,
     accessibilityManager = null,
     enablePermissions = false,
+    newTextLayerMode = 0,
     onAppend = null,
     abortSignal = null
   }) {
@@ -7913,11 +7915,21 @@ class TextLayerBuilder {
     this.highlighter = highlighter;
     this.accessibilityManager = accessibilityManager;
     this.#enablePermissions = enablePermissions === true;
+    const debugTextLayerFonts = newTextLayerMode === 2;
+    this.#textContentParams = {
+      includeMarkedContent: true,
+      disableNormalization: true,
+      includeTextLayerFonts: newTextLayerMode === 1 || debugTextLayerFonts,
+      debugTextLayerFonts
+    };
     this.#onAppend = onAppend;
     this.#abortSignal = abortSignal;
     this.div = document.createElement("div");
     this.div.tabIndex = 0;
     this.div.className = "textLayer";
+    if (debugTextLayerFonts) {
+      this.div.classList.add("debugFonts");
+    }
   }
   async render({
     viewport,
@@ -7933,10 +7945,7 @@ class TextLayerBuilder {
     }
     this.cancel();
     this.#textLayer = new TextLayer({
-      textContentSource: this.pdfPage.streamTextContent(textContentParams || {
-        includeMarkedContent: true,
-        disableNormalization: true
-      }),
+      textContentSource: this.pdfPage.streamTextContent(textContentParams || this.#textContentParams),
       images,
       container: this.div,
       viewport
@@ -8109,6 +8118,7 @@ class PDFPageView extends BasePDFPageView {
   #commentManager = null;
   #enableAutoLinking = true;
   #hasRestrictedScaling = false;
+  #newTextLayerMode = 0;
   #isEditing = false;
   #layerProperties = null;
   #needsRestrictedScaling = false;
@@ -8148,6 +8158,7 @@ class PDFPageView extends BasePDFPageView {
     this.maxCanvasDim = options.maxCanvasDim || AppOptions.get("maxCanvasDim");
     this.capCanvasAreaFactor = options.capCanvasAreaFactor ?? AppOptions.get("capCanvasAreaFactor");
     this.#enableAutoLinking = options.enableAutoLinking !== false;
+    this.#newTextLayerMode = options.newTextLayerMode ?? 0;
     this.#commentManager = options.commentManager || null;
     this.l10n = options.l10n;
     this._annotationCanvasMap = null;
@@ -8765,6 +8776,7 @@ class PDFPageView extends BasePDFPageView {
         highlighter: this._textHighlighter,
         accessibilityManager: this._accessibilityManager,
         enablePermissions: this.#textLayerMode === TextLayerMode.ENABLE_PERMISSIONS,
+        newTextLayerMode: this.#newTextLayerMode,
         onAppend: textLayerDiv => {
           this.l10n.pause();
           this.#addLayer(textLayerDiv, "textLayer");
@@ -8821,17 +8833,13 @@ class PDFPageView extends BasePDFPageView {
     });
     canvas.setAttribute("role", "presentation");
     this.#hasRestrictedScaling = this.#needsRestrictedScaling;
-    const sfx = this.#sfx;
-    const sfy = this.#sfy;
-    const canvasWidth = canvas.width = floorToDivide(calcRound(width * outputScale.sx), sfx[0]);
-    const canvasHeight = canvas.height = floorToDivide(calcRound(height * outputScale.sy), sfy[0]);
-    const pageWidth = floorToDivide(calcRound(width), sfx[1]);
-    const pageHeight = floorToDivide(calcRound(height), sfy[1]);
-    outputScale.sx = canvasWidth / pageWidth;
-    outputScale.sy = canvasHeight / pageHeight;
+    canvas.width = floorToDivide(calcRound(width * outputScale.sx), this.#sfx[0]);
+    canvas.height = floorToDivide(calcRound(height * outputScale.sy), this.#sfy[0]);
+    const sx = canvas.width / width;
+    const sy = canvas.height / height;
+    const transform = sx !== 1 || sy !== 1 ? [sx, 0, 0, sy, 0, 0] : null;
     const recordBBoxes = this.enableOptimizedPartialRendering && this.#hasRestrictedScaling && !this.recordedBBoxes;
     const recordImages = this.imagesRightClickMinSize !== -1 && !this.imageCoordinates;
-    const transform = outputScale.scaled ? [outputScale.sx, 0, 0, outputScale.sy, 0, 0] : null;
     const resultPromise = this._drawCanvas(this._getRenderingContext(canvas, transform, recordBBoxes, recordImages), () => {
       if (prevCanvas) {
         prevCanvas.remove();
@@ -9001,6 +9009,7 @@ class PDFViewer {
   #enableUpdatedAddImage = false;
   #enableNewAltTextWhenAddingImage = false;
   #enableAutoLinking = true;
+  #newTextLayerMode = 0;
   #abortSignal = null;
   #eventAC = null;
   #minDurationToUpdateCanvas = 0;
@@ -9025,7 +9034,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "7.0.164";
+    const viewerVersion = "7.0.189";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
@@ -9067,6 +9076,7 @@ class PDFViewer {
     this.#mlManager = options.mlManager || null;
     this.#supportsPinchToZoom = options.supportsPinchToZoom !== false;
     this.#enableAutoLinking = options.enableAutoLinking !== false;
+    this.#newTextLayerMode = options.newTextLayerMode ?? 0;
     this.#minDurationToUpdateCanvas = options.minDurationToUpdateCanvas ?? 500;
     this.renderingQueue = options.renderingQueue;
     const {
@@ -9491,7 +9501,7 @@ class PDFViewer {
         if (pdfDocument.isPureXfa) {
           console.warn("Warning: XFA-editing is not implemented.");
         } else if (isValidAnnotationEditorMode(mode)) {
-          this.#annotationEditorUIManager = new AnnotationEditorUIManager(this.container, viewer, this.#viewerAlert, this.#altTextManager, this.#commentManager, this.#signatureManager, eventBus, pdfDocument, pageColors, this.#annotationEditorHighlightColors, this.#enableHighlightFloatingButton, this.#enableUpdatedAddImage, this.#enableNewAltTextWhenAddingImage, this.#mlManager, this.#editorUndoBar, this.#supportsPinchToZoom, true);
+          this.#annotationEditorUIManager = new AnnotationEditorUIManager(this.container, viewer, this.#viewerAlert, this.#altTextManager, this.#commentManager, this.#signatureManager, eventBus, pdfDocument, pageColors, this.#annotationEditorHighlightColors, this.#enableHighlightFloatingButton, this.#enableUpdatedAddImage, this.#enableNewAltTextWhenAddingImage, this.#mlManager, this.#editorUndoBar, this.#supportsPinchToZoom, true, true);
           eventBus.dispatch("annotationeditoruimanager", {
             source: this,
             uiManager: this.#annotationEditorUIManager
@@ -9527,6 +9537,7 @@ class PDFViewer {
           optionalContentConfigPromise,
           renderingQueue: this.renderingQueue,
           textLayerMode,
+          newTextLayerMode: this.#newTextLayerMode,
           annotationMode,
           imageResourcesPath: this.imageResourcesPath,
           maxCanvasPixels: this.maxCanvasPixels,
@@ -10257,6 +10268,9 @@ class PDFViewer {
   }
   _cancelRendering() {
     for (const pageView of this._pages) {
+      pageView.cancelRendering();
+    }
+    for (const pageView of this.#savedPageViews ?? []) {
       pageView.cancelRendering();
     }
   }
@@ -11051,6 +11065,7 @@ const PDFViewerApplication = {
   _preloadedIcons: null,
   async initialize(appConfig) {
     this.appConfig = appConfig;
+    this._preloadIcons();
     try {
       await this.preferences.initializedPromise;
     } catch (ex) {
@@ -11089,6 +11104,7 @@ const PDFViewerApplication = {
     this._initializedCapability.settled = true;
     this._initializedCapability.resolve();
   },
+  _preloadIcons() {},
   async _parseHashParams() {
     const hash = document.location.hash.substring(1);
     if (!hash) {
@@ -11164,6 +11180,7 @@ const PDFViewerApplication = {
       disableHistory: x => x === "true",
       disableRange: x => x === "true",
       disableStream: x => x === "true",
+      newTextLayerMode: x => x | 0,
       verbosity: x => x | 0
     };
     for (const name in opts) {
@@ -11265,6 +11282,7 @@ const PDFViewerApplication = {
       scriptingManager: AppOptions.get("enableScripting") && pdfScriptingManager,
       l10n,
       textLayerMode: AppOptions.get("textLayerMode"),
+      newTextLayerMode: AppOptions.get("newTextLayerMode"),
       annotationMode: AppOptions.get("annotationMode"),
       annotationEditorMode,
       annotationEditorHighlightColors: AppOptions.get("highlightEditorColors"),

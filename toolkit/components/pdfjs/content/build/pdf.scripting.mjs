@@ -20,8 +20,8 @@
  */
 
 /**
- * pdfjsVersion = 7.0.164
- * pdfjsBuild = 60aefc5b5
+ * pdfjsVersion = 7.0.189
+ * pdfjsBuild = 81b2255fe
  */
 /******/ (() => { // webpackBootstrap
 /******/ 	"use strict";
