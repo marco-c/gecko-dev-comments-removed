@@ -79,18 +79,19 @@ void WebTransportDatagramDuplexStream::Init(bool aUseByteStream,
 }
 
 void WebTransportDatagramDuplexStream::SetChild(WebTransportChild* aChild) {
-  mOutgoingAlgorithms->SetChild(aChild);
-  mOutgoingAlgorithms->UpdateQueueParams(
+  
+  
+  aChild->SendUpdateDatagramQueueParams(
       mOutgoingMaxBufferedDatagrams,
       mOutgoingMaxAge.IsNull() ? NAN : mOutgoingMaxAge.Value());
+  mOutgoingAlgorithms->SetChild(aChild);
   for (auto& writable : mCreatedWritables) {
     writable->SetChild(aChild);
-    writable->UpdateQueueParams(
-        mOutgoingMaxBufferedDatagrams,
-        mOutgoingMaxAge.IsNull() ? NAN : mOutgoingMaxAge.Value());
   }
   mCreatedWritables.Clear();
 
+  
+  
   
   
   FlushOutgoingDatagrams();
@@ -134,6 +135,8 @@ void WebTransportDatagramDuplexStream::SetOutgoingMaxAge(
   mOutgoingMaxAge = value;
 
   
+  FlushOutgoingDatagrams();
+  
   mOutgoingAlgorithms->UpdateQueueParams(
       mOutgoingMaxBufferedDatagrams,
       mOutgoingMaxAge.IsNull() ? NAN : mOutgoingMaxAge.Value());
@@ -156,6 +159,7 @@ void WebTransportDatagramDuplexStream::SetOutgoingMaxBufferedDatagrams(
   
 
   
+  FlushOutgoingDatagrams();
   mOutgoingAlgorithms->UpdateQueueParams(
       mOutgoingMaxBufferedDatagrams,
       mOutgoingMaxAge.IsNull() ? NAN : mOutgoingMaxAge.Value());
@@ -472,8 +476,26 @@ static constexpr size_t kMaxOutgoingMessageDatagrams = 1024;
 
 void WebTransportDatagramDuplexStream::QueueOutgoingDatagram(
     OutgoingDatagram&& aDatagram) {
+  mPendingOutgoingBytes += aDatagram.data().Length();
   mPendingOutgoing.AppendElement(std::move(aDatagram));
-  FlushOutgoingDatagrams();
+
+  if (mPendingOutgoingBytes >= kMaxOutgoingMessageBytes) {
+    FlushOutgoingDatagrams();
+    return;
+  }
+  if (mOutgoingFlushPending) {
+    return;
+  }
+  mOutgoingFlushPending = true;
+  nsresult rv = NS_DispatchToCurrentThread(NS_NewRunnableFunction(
+      "WebTransportDatagramDuplexStream::QueueOutgoingDatagram",
+      [self = RefPtr{this}]() {
+        self->mOutgoingFlushPending = false;
+        self->FlushOutgoingDatagrams();
+      }));
+  if (NS_FAILED(rv)) {
+    mOutgoingFlushPending = false;
+  }
 }
 
 void WebTransportDatagramDuplexStream::FlushOutgoingDatagrams() {
@@ -484,7 +506,7 @@ void WebTransportDatagramDuplexStream::FlushOutgoingDatagrams() {
   WebTransportChild* child = mOutgoingAlgorithms->GetChild();
   MOZ_ASSERT(child);
 
-  LOG(("Flushing %zu outgoing datagrams", mPendingOutgoing.Length()));
+  LOG(("Flushing %zu batched outgoing datagrams", mPendingOutgoing.Length()));
   
   
   
@@ -504,6 +526,7 @@ void WebTransportDatagramDuplexStream::FlushOutgoingDatagrams() {
     }
   }
   mPendingOutgoing.Clear();
+  mPendingOutgoingBytes = 0;
 }
 
 already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallbackImpl(
@@ -624,7 +647,7 @@ void OutgoingDatagramStreamAlgorithms::SetChild(WebTransportChild* aChild) {
   
   for (auto& queued : mWaitConnectQueue) {
     uint64_t sendGroupId = mSendGroup ? mSendGroup->GetGroupId() : 0;
-    mDatagrams->mPendingOutgoing.AppendElement(
+    mDatagrams->QueueOutgoingDatagram(
         OutgoingDatagram(std::move(queued.mEntry->mBuffer),
                          queued.mEntry->mTimeStamp, sendGroupId, mSendOrder));
   }
@@ -737,6 +760,13 @@ void WebTransportDatagramDuplexStream::Cleanup() {
   for (const auto& writable : mAllWritables) {
     writable->Cleanup();
   }
+  
+  
+  
+  
+  
+  mPendingOutgoing.Clear();
+  mPendingOutgoingBytes = 0;
 }
 
 
