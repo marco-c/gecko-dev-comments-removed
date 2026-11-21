@@ -179,6 +179,16 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
   void OnDatagramReady(uint64_t aDatagramId);
 
   
+  
+  
+  void QueueOutgoingDatagram(OutgoingDatagram&& aDatagram);
+
+  
+  
+  
+  void FlushOutgoingDatagrams();
+
+  
   nsIGlobalObject* GetParentObject() const;
 
   JSObject* WrapObject(JSContext* aCx,
@@ -268,6 +278,10 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
   
   
   bool mCleanedUp = false;
+
+  
+  
+  nsTArray<OutgoingDatagram> mPendingOutgoing;
 
  public:
   uint64_t GetDroppedIncoming() const { return mDroppedIncoming; }
