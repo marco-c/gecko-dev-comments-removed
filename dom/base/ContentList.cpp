@@ -1195,16 +1195,18 @@ nsINode* LabelsNodeList::GetNextNode(nsINode* aCurrent) {
   
   
   
-  nsINode* cur = aCurrent;
-  while (!next) {
-    ShadowRoot* shadow = cur->GetContainingShadow();
-    if (!shadow || shadow->GetReferenceTargetElement() == cur) {
+  for (ShadowRoot* shadow = aCurrent->GetContainingShadow(); shadow;
+       shadow = shadow->Host()->GetContainingShadow()) {
+    Element* curElement = shadow->Host();
+    if (curElement->ResolveReferenceTarget() != labeledElement) {
       break;
     }
-    cur = shadow->Host();
-    next = cur->GetNextNode();
+    next = curElement->GetNextNode();
+    if (next) {
+      return next;
+    }
   }
-  return next;
+  return nullptr;
 }
 
 void LabelsNodeList::PopulateSelf(uint32_t aNeededLength) {
