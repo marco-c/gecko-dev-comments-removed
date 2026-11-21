@@ -3154,14 +3154,11 @@ bool BaselineCacheIRCompiler::emitCallClassHook(ObjOperandId calleeId,
 }
 
 
-bool BaselineCacheIRCompiler::emitMetaCreateThis(uint32_t numFixedSlots,
-                                                 uint32_t numDynamicSlots,
-                                                 gc::AllocKind allocKind,
+bool BaselineCacheIRCompiler::emitMetaCreateThis(gc::AllocKind allocKind,
                                                  uint32_t thisShapeOffset,
                                                  uint32_t siteOffset) {
   MOZ_ASSERT(createThisData_.isNothing());
-  createThisData_.emplace(numFixedSlots, numDynamicSlots, allocKind,
-                          thisShapeOffset, siteOffset);
+  createThisData_.emplace(allocKind, thisShapeOffset, siteOffset);
   return true;
 }
 
@@ -3228,11 +3225,13 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
     Register temp = calleeReg;
 
     
+    
     masm.push(calleeReg);
-    masm.createPlainGCObject(
-        result, shape, temp, shape, createThisData_->numFixedSlots,
-        createThisData_->numDynamicSlots, createThisData_->allocKind,
-        gc::Heap::Default, &fail, AllocSiteInput(site));
+    masm.createPlainGCObject(result, shape, temp, shape,
+                              0,
+                              0,
+                             createThisData_->allocKind, gc::Heap::Default,
+                             &fail, AllocSiteInput(site));
     masm.pop(calleeReg);
     masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(result)));
 

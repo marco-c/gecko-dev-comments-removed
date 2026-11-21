@@ -1269,11 +1269,17 @@ bool WarpCacheIRTranspiler::emitGuardNoDenseElements(ObjOperandId objId) {
   return true;
 }
 
-bool WarpCacheIRTranspiler::emitGuardFunctionHasJitEntry(ObjOperandId funId) {
+bool WarpCacheIRTranspiler::emitGuardFunctionHasValidJitEntry(
+    ObjOperandId funId) {
   MDefinition* fun = getOperand(funId);
   uint16_t expectedFlags = FunctionFlags::HasJitEntryFlags();
   uint16_t unexpectedFlags = 0;
 
+  
+  
+  
+  
+  
   auto* ins =
       MGuardFunctionFlags::New(alloc(), fun, expectedFlags, unexpectedFlags);
   add(ins);
@@ -7195,13 +7201,12 @@ bool WarpCacheIRTranspiler::emitCallNativeSetter(ObjOperandId receiverId,
                         nargsAndFlagsOffset);
 }
 
-bool WarpCacheIRTranspiler::emitMetaCreateThis(uint32_t numFixedSlots,
-                                               uint32_t numDynamicSlots,
-                                               gc::AllocKind allocKind,
+bool WarpCacheIRTranspiler::emitMetaCreateThis(gc::AllocKind allocKind,
                                                uint32_t thisShapeOffset,
                                                uint32_t siteOffset) {
   SharedShape* shape = &shapeStubField(thisShapeOffset)->asShared();
   MOZ_ASSERT(shape->getObjectClass() == &PlainObject::class_);
+  MOZ_ASSERT(shape->slotSpan() == 0);
 
   MConstant* shapeConst = MConstant::NewShape(alloc(), shape);
   add(shapeConst);
@@ -7212,8 +7217,11 @@ bool WarpCacheIRTranspiler::emitMetaCreateThis(uint32_t numFixedSlots,
              gc::FinalizeKind::None);
   MOZ_ASSERT(!IsFinalizedKind(allocKind));
 
-  auto* createThis = MNewPlainObject::New(alloc(), shapeConst, numFixedSlots,
-                                          numDynamicSlots, allocKind, heap);
+  
+  auto* createThis =
+      MNewPlainObject::New(alloc(), shapeConst,
+                            0,
+                            0, allocKind, heap);
   add(createThis);
 
   callInfo_->thisArg()->setImplicitlyUsedUnchecked();
