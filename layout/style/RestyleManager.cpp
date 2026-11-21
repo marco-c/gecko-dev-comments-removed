@@ -1220,9 +1220,8 @@ static nsIFrame* ContainingBlockForFrame(nsIFrame* aFrame) {
   }
   
   
-  
-  if (aFrame->IsScrollContainerFrame()) {
-    return insertionFrame;
+  if (ScrollContainerFrame* sf = do_QueryFrame(aFrame)) {
+    return sf->GetScrolledFrame();
   }
   
   
