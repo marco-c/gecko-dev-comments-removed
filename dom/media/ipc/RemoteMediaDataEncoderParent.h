@@ -55,10 +55,20 @@ class RemoteMediaDataEncoderParent final
 
   std::map<uint32_t, RefPtr<ShmemRecycleTicket>> mTickets;
   uint32_t mTicketCounter = 0;
-  bool mConstructAttempted : 1 = false;
-  bool mInitAttempted : 1 = false;
-  bool mInitialized : 1 = false;
-  bool mShutdown : 1 = false;
+
+  
+  
+  
+  
+  enum class State : uint8_t {
+    Unconstructed,
+    Constructing,
+    Constructed,
+    Initializing,
+    Initialized,
+    ShutDown,
+  };
+  State mState = State::Unconstructed;
 };
 
 }  
