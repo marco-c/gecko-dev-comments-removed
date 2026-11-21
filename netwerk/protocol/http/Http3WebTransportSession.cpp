@@ -575,22 +575,10 @@ void Http3WebTransportSession::SendDatagram(nsTArray<uint8_t>&& aData,
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   if (NS_FAILED(mSession->SendDatagram(this, aData, aSendGroupId, aSendOrder,
                                        aTimestamp))) {
     mFailedOutgoingDatagrams++;
-    return;
   }
-  mSession->StreamHasDataToWrite(this);
 }
 
 void Http3WebTransportSession::OnDatagramReceived(nsTArray<uint8_t>&& aData) {

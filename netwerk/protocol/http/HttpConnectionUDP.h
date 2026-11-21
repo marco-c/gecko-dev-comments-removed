@@ -93,6 +93,10 @@ class HttpConnectionUDP final : public HttpConnectionBase,
   void NotifyDataRead();
   void NotifyDataWrite();
 
+  
+  
+  [[nodiscard]] nsresult ForceSendNow();
+
   Http3Stats GetStats();
 
   void ResetTransaction(nsHttpTransaction* aHttpTransaction);
