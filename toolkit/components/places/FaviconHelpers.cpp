@@ -413,6 +413,7 @@ nsresult FetchIconInfo(const UniquePtr<ConnectionAdapter>& aConn,
   
   
   
+  
 
   nsCString query = nsPrintfCString(
       "/* do not warn (bug no: not worth having a compound index) */ "
@@ -430,7 +431,7 @@ nsresult FetchIconInfo(const UniquePtr<ConnectionAdapter>& aConn,
       "FROM moz_icons i "
       "WHERE fixed_icon_url_hash = "
       "  hash(fixup_url(:hostAndPort) || '/favicon.ico') "
-      "ORDER BY %s width DESC, root ASC",
+      "ORDER BY %s width DESC, root ASC, id DESC",
       nsIFaviconService::ICONDATA_FLAGS_RICH,
       nsIFaviconService::ICONDATA_FLAGS_RICH,
       
@@ -695,6 +696,43 @@ class Favicon final : public nsIFavicon {
 };
 NS_IMPL_ISUPPORTS(Favicon, nsIFavicon)
 
+
+
+
+
+
+
+
+
+nsresult RemoveOrphanIcons(const RefPtr<Database>& aDB,
+                           const nsTArray<int64_t>& aIconIds) {
+  if (aIconIds.IsEmpty()) {
+    return NS_OK;
+  }
+  nsCOMPtr<mozIStorageStatement> stmt = aDB->GetStatement(
+      "DELETE FROM moz_icons WHERE id IN ( "
+      "  SELECT id FROM moz_orphan_icons WHERE id IN carray(:icon_ids) "
+      ")");
+  NS_ENSURE_STATE(stmt);
+  mozStorageStatementScoper scoper(stmt);
+  nsresult rv = stmt->BindArrayOfIntegersByName("icon_ids"_ns, aIconIds);
+  NS_ENSURE_SUCCESS(rv, rv);
+  return stmt->Execute();
+}
+
+
+
+
+nsresult CollectIconIds(mozIStorageStatement* aStmt,
+                        nsTArray<int64_t>& aIconIds) {
+  bool hasResult = false;
+  nsresult rv;
+  while (NS_SUCCEEDED(rv = aStmt->ExecuteStep(&hasResult)) && hasResult) {
+    aIconIds.AppendElement(aStmt->AsInt64(0));
+  }
+  return rv;
+}
+
 }  
 
 
@@ -759,19 +797,19 @@ AsyncAssociateIconToPage::Run() {
   
   
   
-  
-  
+  nsTArray<int64_t> expiredIconIds;
   if (mPage.id > 0) {
     nsCOMPtr<mozIStorageStatement> stmt;
     stmt = DB->GetStatement(
         "DELETE FROM moz_icons_to_pages "
         "WHERE page_id = :page_id "
-        "AND expire_ms < strftime('%s','now','localtime','utc') * 1000 ");
+        "AND expire_ms < strftime('%s','now','localtime','utc') * 1000 "
+        "RETURNING icon_id");
     NS_ENSURE_STATE(stmt);
     mozStorageStatementScoper scoper(stmt);
     rv = stmt->BindInt64ByName("page_id"_ns, mPage.id);
     NS_ENSURE_SUCCESS(rv, rv);
-    rv = stmt->Execute();
+    rv = CollectIconIds(stmt, expiredIconIds);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -781,8 +819,6 @@ AsyncAssociateIconToPage::Run() {
   
   
   if (!mIcon.rootIcon || !mIcon.host.Equals(mPage.host)) {
-    
-    
     
     
     
@@ -831,6 +867,11 @@ AsyncAssociateIconToPage::Run() {
       NS_ENSURE_SUCCESS(rv, rv);
     }
   }
+
+  
+  
+  rv = RemoveOrphanIcons(DB, expiredIconIds);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   mIcon.status |= ICON_STATUS_ASSOCIATED;
 
@@ -1118,31 +1159,44 @@ AsyncExpireFaviconsForPage::Run() {
     return (rv = NS_ERROR_UNEXPECTED);
   }
 
+  mozStorageTransaction transaction(
+      DB->MainConn(), false, mozIStorageConnection::TRANSACTION_IMMEDIATE);
+  (void)NS_WARN_IF(NS_FAILED(transaction.Start()));
+
   
   
   
   
-  nsCOMPtr<mozIStorageStatement> stmt = DB->GetStatement(
-      "DELETE FROM moz_icons_to_pages WHERE page_id IN ( "
-      "  SELECT id FROM moz_pages_w_icons "
-      "  WHERE (page_url_hash = hash(:page_url) AND page_url = :page_url) "
-      "  OR (:hash_idx AND page_url_hash = hash(substr(:page_url, 0, "
-      ":hash_idx)) "
-      "      AND page_url = substr(:page_url, 0, :hash_idx)) "
-      ")");
-  if (MOZ_UNLIKELY(!stmt)) {
-    return (rv = NS_ERROR_UNEXPECTED);
+  nsTArray<int64_t> iconIds;
+  {
+    nsCOMPtr<mozIStorageStatement> stmt = DB->GetStatement(
+        "DELETE FROM moz_icons_to_pages WHERE page_id IN ( "
+        "  SELECT id FROM moz_pages_w_icons "
+        "  WHERE (page_url_hash = hash(:page_url) AND page_url = :page_url) "
+        "  OR (:hash_idx AND page_url_hash = hash(substr(:page_url, 0, "
+        ":hash_idx)) "
+        "      AND page_url = substr(:page_url, 0, :hash_idx)) "
+        ") RETURNING icon_id");
+    if (MOZ_UNLIKELY(!stmt)) {
+      return (rv = NS_ERROR_UNEXPECTED);
+    }
+    mozStorageStatementScoper scoper(stmt);
+    nsAutoCString spec;
+    rv = mPageURI->GetSpec(spec);
+    NS_ENSURE_SUCCESS(rv, rv);
+    int32_t hashIdx = spec.RFind("#") + 1;
+    rv = URIBinder::Bind(stmt, "page_url"_ns, spec);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = stmt->BindInt32ByName("hash_idx"_ns, hashIdx);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = CollectIconIds(stmt, iconIds);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
-  mozStorageStatementScoper scoper(stmt);
-  nsAutoCString spec;
-  rv = mPageURI->GetSpec(spec);
+
+  rv = RemoveOrphanIcons(DB, iconIds);
   NS_ENSURE_SUCCESS(rv, rv);
-  int32_t hashIdx = spec.RFind("#") + 1;
-  rv = URIBinder::Bind(stmt, "page_url"_ns, spec);
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = stmt->BindInt32ByName("hash_idx"_ns, hashIdx);
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = stmt->Execute();
+
+  rv = transaction.Commit();
   NS_ENSURE_SUCCESS(rv, rv);
 
   return NS_OK;
