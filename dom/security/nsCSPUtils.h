@@ -539,9 +539,15 @@ class nsCSPDirective {
   explicit nsCSPDirective(CSPDirective aDirective);
   virtual ~nsCSPDirective();
 
+  
+  
+  
+  
+  
+  
   virtual bool permits(CSPDirective aDirective, nsILoadInfo* aLoadInfo,
-                       nsIURI* aUri, bool aWasRedirected, bool aReportOnly,
-                       bool aUpgradeInsecure) const;
+                       nsIURI* aUri, nsIURI* aOriginalURIIfRedirect,
+                       bool aReportOnly, bool aUpgradeInsecure) const;
   virtual bool allows(enum CSPKeyword aKeyword) const;
   
   bool allowsByNonce(const nsAString& aNonce) const;
@@ -667,7 +673,7 @@ class nsBlockAllMixedContentDirective : public nsCSPDirective {
   ~nsBlockAllMixedContentDirective();
 
   bool permits(CSPDirective aDirective, nsILoadInfo* aLoadInfo, nsIURI* aUri,
-               bool aWasRedirected, bool aReportOnly,
+               nsIURI* aOriginalURIIfRedirect, bool aReportOnly,
                bool aUpgradeInsecure) const override {
     return false;
   }
@@ -722,7 +728,7 @@ class nsUpgradeInsecureDirective : public nsCSPDirective {
   ~nsUpgradeInsecureDirective();
 
   bool permits(CSPDirective aDirective, nsILoadInfo* aLoadInfo, nsIURI* aUri,
-               bool aWasRedirected, bool aReportOnly,
+               nsIURI* aOriginalURIIfRedirect, bool aReportOnly,
                bool aUpgradeInsecure) const override {
     return false;
   }
@@ -748,7 +754,7 @@ class nsCSPPolicy {
   virtual ~nsCSPPolicy();
 
   bool permits(CSPDirective aDirective, nsILoadInfo* aLoadInfo, nsIURI* aUri,
-               bool aWasRedirected, bool aSpecific,
+               nsIURI* aOriginalURIIfRedirect, bool aSpecific,
                nsAString& outViolatedDirective,
                nsAString& outViolatedDirectiveString) const;
   bool allows(CSPDirective aDirective, enum CSPKeyword aKeyword) const;
