@@ -17,6 +17,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Types.h"
@@ -41,18 +42,21 @@ class AndroidImageReader;
 
 
 
-class AndroidImageReaderClient final {
+
+
+
+class AndroidImageReaderClient {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AndroidImageReaderClient);
   static already_AddRefed<AndroidImageReaderClient> Create();
-  bool IsValid() const;
+  virtual bool IsValid() const;
   java::sdk::Surface::LocalRef GetSurface() const;
   void MaybeRenderFirstFrame(AndroidMediaCodecFrameId aFrameId);
   void DiscardFrames();
 
   
   
-  void Shutdown();
+  virtual void Shutdown() = 0;
 
   void RegisterFrame(
       AndroidMediaCodecFrameId aFrameId,
@@ -61,16 +65,15 @@ class AndroidImageReaderClient final {
 
   const GpuProcessAndroidImageReaderId mImageReaderId;
 
- private:
-  static already_AddRefed<AndroidImageReaderClient> CreateLocal();
-
-  AndroidImageReaderClient(AndroidImageReader* aReader,
+ protected:
+  AndroidImageReaderClient(GpuProcessAndroidImageReaderId aId,
                            java::sdk::Surface::LocalRef aSurface);
-  ~AndroidImageReaderClient();
+  virtual ~AndroidImageReaderClient() = default;
+  
+  void UnregisterReader();
 
-  
-  const RefPtr<AndroidImageReader> mLocalReader;
-  
+ private:
+  virtual void RenderFirstFrame(AndroidMediaCodecFrameId aFrameId) = 0;
   const java::sdk::Surface::GlobalRef mOutputSurface;
 };
 
@@ -164,9 +167,16 @@ class AndroidImageReader final
 
   virtual ~AndroidImageReader();
 
-  static already_AddRefed<AndroidImageReader> Create();
+  static already_AddRefed<AndroidImageReader> Create(
+      GpuProcessAndroidImageReaderId aId = {});
 
-  explicit AndroidImageReader();
+  explicit AndroidImageReader(GpuProcessAndroidImageReaderId aId = {});
+  
+  
+  
+  void InitRemote(int64_t aHandle);
+  void NotifyRemoteFrameReleaseFailed(AndroidMediaCodecFrameId aFrameId);
+  void DisconnectRemote();
 
   
   
@@ -209,14 +219,56 @@ class AndroidImageReader final
  protected:
   friend class AndroidImageWrapper;
 
-  bool AcquirePendingImage() MOZ_REQUIRES(mMonitor);
+  enum class AcquireImageResult { Success, NoBufferAvailable, Failure };
+  AcquireImageResult AcquirePendingImage() MOZ_REQUIRES(mMonitor);
+
+  bool IsStopped() const MOZ_REQUIRES(mMonitor) {
+    return mShuttingDown || IsRemoteDisconnected();
+  }
 
   bool Init();
   void ReleaseResources();
 
   static void OnFrameAvailable(void* aContext, AImageReader* aReader);
 
+  
+  
+  void WaitForFrameNotification(TimeStamp aDeadline) MOZ_REQUIRES(mMonitor);
+  bool IsPendingFrame(AndroidMediaCodecFrameId aFrameId) const
+      MOZ_REQUIRES(mMonitor) {
+    return mPendingFrameId.isSome() && mPendingFrameId.value() == aFrameId;
+  }
+  void ClearPendingFrame() MOZ_REQUIRES(mMonitor);
+  bool IsRemoteDisconnected() const MOZ_REQUIRES(mMonitor) {
+    return mRemoteState.isSome() && mRemoteState->mDisconnected;
+  }
+  void StartRemoteFrameRequest() MOZ_REQUIRES(mMonitor);
+  
+  bool HandleRemoteFrameNoBuffer() MOZ_REQUIRES(mMonitor);
+  
+  
+  RefPtr<AndroidImageWrapper> DisconnectRemoteLocked() MOZ_REQUIRES(mMonitor);
+  void ExpireRemoteFrame() MOZ_REQUIRES(mMonitor);
+  void ScheduleRemoteFrameTimeout() MOZ_REQUIRES(mMonitor);
+  void OnRemoteFrameTimeout(AndroidMediaCodecFrameId aFrameId,
+                            TimeStamp aDeadline);
+
+  struct RemoteState {
+    explicit RemoteState(int64_t aHandle) : mHandle(aHandle) {}
+
+    const int64_t mHandle;
+    TimeStamp mFrameDeadline;
+    
+    
+    
+    bool mFrameTimeoutScheduled = false;
+    bool mDisconnected = false;
+  };
+
   Monitor mMonitor;
+  
+  
+  Maybe<RemoteState> mRemoteState MOZ_GUARDED_BY(mMonitor);
 
   bool mRegistered = false;
   bool mInited MOZ_GUARDED_BY(mMonitor) = false;
@@ -224,6 +276,7 @@ class AndroidImageReader final
   ANativeWindow* mNativeWindow MOZ_GUARDED_BY(mMonitor) = nullptr;
   AndroidMediaCodecFrameId mCurrentFrameId MOZ_GUARDED_BY(mMonitor);
   RefPtr<AndroidImageWrapper> mCurrentImage MOZ_GUARDED_BY(mMonitor);
+  
   
   
   Maybe<AndroidMediaCodecFrameId> mPendingFrameId MOZ_GUARDED_BY(mMonitor);
@@ -238,14 +291,17 @@ class AndroidImageReader final
 
 
 
-class GpuProcessAndroidImageReaderMap {
+class GpuProcessAndroidImageReaderMap final {
  public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GpuProcessAndroidImageReaderMap)
+
   static void Init();
   static void Shutdown();
 
   GpuProcessAndroidImageReaderMap();
 
-  static GpuProcessAndroidImageReaderMap* Get() { return sInstance; }
+  
+  static RefPtr<GpuProcessAndroidImageReaderMap> Get();
 
   void Register(AndroidImageReader* aImageReader);
   void Unregister(GpuProcessAndroidImageReaderId aImageReaderId);
@@ -262,6 +318,8 @@ class GpuProcessAndroidImageReaderMap {
   void UnregisterImageConsumer(GpuProcessAndroidImageReaderId aImageReaderId);
 
  private:
+  ~GpuProcessAndroidImageReaderMap() = default;
+
   struct ImageReaderHolder {
     explicit ImageReaderHolder(AndroidImageReader* aImageReader);
     ~ImageReaderHolder();
@@ -275,8 +333,6 @@ class GpuProcessAndroidImageReaderMap {
                      UniquePtr<ImageReaderHolder>,
                      GpuProcessAndroidImageReaderId::HashFn>
       mImageReaders MOZ_GUARDED_BY(mMonitor);
-
-  static StaticAutoPtr<GpuProcessAndroidImageReaderMap> sInstance;
 };
 
 }  
