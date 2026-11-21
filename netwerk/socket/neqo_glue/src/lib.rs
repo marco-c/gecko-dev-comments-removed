@@ -2909,14 +2909,16 @@ pub extern "C" fn neqo_http3conn_webtransport_set_datagram_max_age(
 ) -> nsresult {
     
     
-    
-    
-    
-    let max_age = (!max_age.is_nan()).then(|| {
-        Duration::try_from_secs_f64(max_age.max(0.0) / 1000.0).unwrap_or(Duration::MAX)
-    });
+    if max_age.is_nan() || max_age <= 0.0 {
+        return NS_ERROR_INVALID_ARG;
+    }
+    let max_age = Duration::try_from_secs_f64(max_age / 1000.0).unwrap_or(Duration::MAX);
     conn.conn
-        .webtransport_set_datagram_max_age(StreamId::from(session_id), max_age, Instant::now())
+        .webtransport_set_datagram_max_age(
+            StreamId::from(session_id),
+            Some(max_age),
+            Instant::now(),
+        )
         .map_or(NS_ERROR_UNEXPECTED, |()| NS_OK)
 }
 
