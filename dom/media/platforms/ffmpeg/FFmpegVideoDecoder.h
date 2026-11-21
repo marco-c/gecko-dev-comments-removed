@@ -61,7 +61,7 @@ struct AVFrame;
 
 namespace mozilla {
 namespace layers {
-class AndroidImageReader;
+class AndroidImageReaderClient;
 class BufferRecycleBin;
 }  
 
@@ -273,7 +273,8 @@ class FFmpegVideoDecoder<LIBAV_VER>
   java::sdk::Surface::GlobalRef mImageReaderSurface;
   AndroidSurfaceTextureHandle mSurfaceHandle{};
   SimpleMap<void*, AVFrame*, ThreadSafePolicy> mFrameMap;
-  RefPtr<layers::AndroidImageReader> mAndroidImageReader;
+  
+  RefPtr<layers::AndroidImageReaderClient> mAndroidImageReaderClient;
 #endif
 
 #if defined(MOZ_USE_HWDECODE) && defined(MOZ_WIDGET_GTK)
