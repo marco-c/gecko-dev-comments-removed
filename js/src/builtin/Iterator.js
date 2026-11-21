@@ -679,17 +679,28 @@ function* IteratorDropGenerator(iterator, nextMethod, remaining) {
   
 
   
+  while (remaining > 0) {
+    
+    remaining--;
+
+    
+    var next = callContentFunction(nextMethod, iterator);
+    if (!IsObject(next)) {
+      ThrowTypeError(JSMSG_ITER_METHOD_RETURNED_PRIMITIVE, "next");
+    }
+
+    
+    if (next.done) {
+      return;
+    }
+  }
+
+  
   for (var value of allowContentIterWithNext(iterator, nextMethod)) {
     
-    if (remaining-- <= 0) {
-      
-      
+    yield value;
 
-      
-      yield value;
-
-      
-    }
+    
   }
 }
 
