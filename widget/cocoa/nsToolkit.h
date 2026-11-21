@@ -35,12 +35,17 @@ class nsToolkit {
  protected:
   nsresult RegisterForSleepWakeNotifications();
   void RemoveSleepWakeNotifications();
+  void RegisterScreenLockNotifications();
+  void UnregisterScreenLockNotifications();
 
  protected:
   static nsToolkit* gToolkit;
 
   CFRunLoopSourceRef mSleepWakeNotificationRLS;
   io_object_t mPowerNotifier;
+
+  
+  id mScreenLockObserver;
 
   id mAllProcessMouseMonitor;
 };
