@@ -223,6 +223,11 @@ class MediaStatusManager : public IMediaInfoUpdater {
 
   
   
+  
+  bool IsActiveSessionActionSupported(MediaSessionAction aAction) const;
+
+  
+  
   void NotifyPageTitleChanged();
 
  protected:
@@ -240,6 +245,8 @@ class MediaStatusManager : public IMediaInfoUpdater {
   
   
   
+  
+  
   Maybe<uint64_t> mActiveMediaSessionContextId;
 
   void ClearActiveMediaSessionContextIdIfNeeded();
@@ -253,8 +260,17 @@ class MediaStatusManager : public IMediaInfoUpdater {
   void FillMissingTitleAndArtworkIfNeeded(MediaMetadataBase& aMetadata) const;
 
   void SetActiveMediaSessionContextId(uint64_t aBrowsingContextId);
-  void HandleActiveAudibleControllableContextChanged(
-      Maybe<uint64_t>& aBrowsingContextId);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void UpdateActiveMediaSessionContext();
 
   void NotifySupportedKeysChangedIfNeeded(uint64_t aBrowsingContextId);
 
@@ -272,13 +288,17 @@ class MediaStatusManager : public IMediaInfoUpdater {
   
   
   
+  void UpdateGuessedPlaybackState();
+
+  
+  
+  
   void UpdateActualPlaybackState();
 
   
   
   MediaSessionPlaybackState GetCurrentDeclaredPlaybackState() const;
 
-  
   
   
   

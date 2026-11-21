@@ -56,11 +56,17 @@ void MediaStatusManager::NotifyMediaAudibleChanged(
     AudioSessionType aSessionType) {
   const bool ownerChanged = mPlaybackStatusDelegate.UpdateMediaAudibleState(
       aBrowsingContextId, aState, aType, aSessionType);
-  if (ownerChanged) {
-    Maybe<uint64_t> newOwner =
-        mPlaybackStatusDelegate.GetActiveAudibleControllableContextId();
-    HandleActiveAudibleControllableContextChanged(newOwner);
+  
+  
+  
+  
+  
+  
+  if (ownerChanged ||
+      !mPlaybackStatusDelegate.GetActiveAudibleControllableContextId()) {
+    UpdateActiveMediaSessionContext();
   }
+  UpdateGuessedPlaybackState();
 }
 
 void MediaStatusManager::NotifySessionCreated(uint64_t aBrowsingContextId) {
@@ -73,23 +79,20 @@ void MediaStatusManager::NotifySessionCreated(uint64_t aBrowsingContextId) {
         return true;
       });
 
-  if (created &&
-      mPlaybackStatusDelegate.GetActiveAudibleControllableContextId() ==
-          Some(aBrowsingContextId)) {
-    
-    
-    SetActiveMediaSessionContextId(aBrowsingContextId);
+  if (created) {
+    UpdateActiveMediaSessionContext();
   }
 }
 
 void MediaStatusManager::NotifySessionDestroyed(uint64_t aBrowsingContextId) {
   if (mMediaSessionInfoMap.Remove(aBrowsingContextId)) {
     LOG("Session {} has been destroyed", aBrowsingContextId);
-
-    if (mActiveMediaSessionContextId &&
-        *mActiveMediaSessionContextId == aBrowsingContextId) {
-      ClearActiveMediaSessionContextIdIfNeeded();
-    }
+    
+    
+    
+    
+    
+    UpdateActiveMediaSessionContext();
   }
 }
 
@@ -124,24 +127,66 @@ void MediaStatusManager::UpdateMetadata(
   }
 }
 
-void MediaStatusManager::HandleActiveAudibleControllableContextChanged(
-    Maybe<uint64_t>& aBrowsingContextId) {
+void MediaStatusManager::UpdateActiveMediaSessionContext() {
   
-  if (!aBrowsingContextId) {
-    LOG("No active audible controllable context");
+  
+  
+  
+  
+  
+  Maybe<uint64_t> controllableOwner =
+      mPlaybackStatusDelegate.GetActiveAudibleControllableContextId();
+  if (controllableOwner) {
+    if (mMediaSessionInfoMap.Contains(*controllableOwner)) {
+      SetActiveMediaSessionContextId(*controllableOwner);
+    } else {
+      ClearActiveMediaSessionContextIdIfNeeded();
+    }
+    return;
+  }
+
+  
+  
+  if (!StaticPrefs::media_mediacontrol_webaudio_activation_enabled()) {
     return ClearActiveMediaSessionContextIdIfNeeded();
   }
 
   
   
-  if (!mMediaSessionInfoMap.Contains(*aBrowsingContextId)) {
-    LOG("The active audible controllable context has no media session");
-    return ClearActiveMediaSessionContextIdIfNeeded();
+  
+  
+  if (mActiveMediaSessionContextId &&
+      mMediaSessionInfoMap.Contains(*mActiveMediaSessionContextId) &&
+      mPlaybackStatusDelegate.IsBcAudible(*mActiveMediaSessionContextId)) {
+    return;
   }
 
   
   
-  SetActiveMediaSessionContextId(*aBrowsingContextId);
+  
+  
+  
+  
+  for (const auto& entry : mMediaSessionInfoMap) {
+    if (mPlaybackStatusDelegate.IsBcAudible(entry.GetKey())) {
+      SetActiveMediaSessionContextId(entry.GetKey());
+      return;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (mActiveMediaSessionContextId &&
+      mMediaSessionInfoMap.Contains(*mActiveMediaSessionContextId)) {
+    return;
+  }
+
+  ClearActiveMediaSessionContextIdIfNeeded();
 }
 
 void MediaStatusManager::SetActiveMediaSessionContextId(
@@ -164,6 +209,10 @@ void MediaStatusManager::SetActiveMediaSessionContextId(
       obs->NotifyObservers(nullptr, "active-media-session-changed", nullptr);
     }
   }
+  
+  
+  
+  UpdateActualPlaybackState();
 }
 
 void MediaStatusManager::ClearActiveMediaSessionContextIdIfNeeded() {
@@ -181,6 +230,7 @@ void MediaStatusManager::ClearActiveMediaSessionContextIdIfNeeded() {
       obs->NotifyObservers(nullptr, "active-media-session-changed", nullptr);
     }
   }
+  UpdateActualPlaybackState();
 }
 
 void MediaStatusManager::StoreMediaSessionContextIdOnWindowContext() {
@@ -309,28 +359,62 @@ MediaSessionPlaybackState MediaStatusManager::GetCurrentDeclaredPlaybackState()
       .mDeclaredPlaybackState;
 }
 
+bool MediaStatusManager::IsActiveSessionActionSupported(
+    MediaSessionAction aAction) const {
+  if (!mActiveMediaSessionContextId) {
+    return false;
+  }
+  return mMediaSessionInfoMap.Get(*mActiveMediaSessionContextId)
+      .IsActionSupported(aAction);
+}
+
 void MediaStatusManager::NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
                                                     MediaPlaybackState aState) {
   LOG("UpdateMediaPlaybackState {} for context {}", EnumValueToString(aState),
       aBrowsingContextId);
-  const bool oldPlaying = mPlaybackStatusDelegate.IsPlaying();
+  const Maybe<uint64_t> oldOwner =
+      mPlaybackStatusDelegate.GetActiveAudibleControllableContextId();
   mPlaybackStatusDelegate.UpdateMediaPlaybackState(aBrowsingContextId, aState);
+  
+  
+  
+  
+  
+  if (mPlaybackStatusDelegate.GetActiveAudibleControllableContextId() !=
+      oldOwner) {
+    UpdateActiveMediaSessionContext();
+  }
+  UpdateGuessedPlaybackState();
+}
 
+void MediaStatusManager::UpdateGuessedPlaybackState() {
   
   
   
-  if (mPlaybackStatusDelegate.IsPlaying() == oldPlaying) {
-    return;
-  }
-  if (mPlaybackStatusDelegate.IsPlaying()) {
-    SetGuessedPlayState(MediaSessionPlaybackState::Playing);
-  } else {
-    SetGuessedPlayState(MediaSessionPlaybackState::Paused);
-  }
+  
+  
+  
+  
+  
+  
+  
+  const bool playing =
+      mPlaybackStatusDelegate.IsPlaying() ||
+      (StaticPrefs::media_mediacontrol_webaudio_activation_enabled() &&
+       !mPlaybackStatusDelegate.IsAnyMediaBeingControlled() &&
+       mPlaybackStatusDelegate.IsAudible());
+  SetGuessedPlayState(playing ? MediaSessionPlaybackState::Playing
+                              : MediaSessionPlaybackState::Paused);
 }
 
 void MediaStatusManager::SetGuessedPlayState(MediaSessionPlaybackState aState) {
   if (aState == mGuessedPlaybackState) {
+    return;
+  }
+  
+  
+  if (aState == MediaSessionPlaybackState::Paused &&
+      mGuessedPlaybackState != MediaSessionPlaybackState::Playing) {
     return;
   }
   LOG("SetGuessedPlayState : '{}'", ToMediaSessionPlaybackStateStr(aState));
@@ -532,14 +616,12 @@ void MediaStatusManager::NotifyBrowsingContextDiscarded(
   
   
   LOG("NotifyBrowsingContextDiscarded context %" PRIu64, aBrowsingContextId);
-  Maybe<uint64_t> oldActiveContextId =
-      mPlaybackStatusDelegate.GetActiveAudibleControllableContextId();
   mPlaybackStatusDelegate.ClearBrowsingContext(aBrowsingContextId);
-  Maybe<uint64_t> newActiveContextId =
-      mPlaybackStatusDelegate.GetActiveAudibleControllableContextId();
-  if (oldActiveContextId != newActiveContextId) {
-    HandleActiveAudibleControllableContextChanged(newActiveContextId);
-  }
+  
+  
+  
+  mMediaSessionInfoMap.Remove(aBrowsingContextId);
+  UpdateActiveMediaSessionContext();
 }
 
 bool MediaStatusManager::IsMediaPlaying() const {

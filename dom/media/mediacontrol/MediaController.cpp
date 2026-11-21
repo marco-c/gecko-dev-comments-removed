@@ -357,6 +357,28 @@ void MediaController::NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
   UpdateActivatedStateIfNeeded();
 }
 
+void MediaController::EnableAction(uint64_t aBrowsingContextId,
+                                   MediaSessionAction aAction) {
+  if (mShutdown) {
+    return;
+  }
+  MediaStatusManager::EnableAction(aBrowsingContextId, aAction);
+  
+  
+  
+  
+  
+  UpdateActivatedStateIfNeeded();
+}
+
+void MediaController::NotifySessionDestroyed(uint64_t aBrowsingContextId) {
+  if (mShutdown) {
+    return;
+  }
+  MediaStatusManager::NotifySessionDestroyed(aBrowsingContextId);
+  UpdateActivatedStateIfNeeded();
+}
+
 void MediaController::UpdateDeactivationTimerIfNeeded() {
   if (!StaticPrefs::media_mediacontrol_stopcontrol_timer()) {
     return;
@@ -465,6 +487,10 @@ void MediaController::NotifyBrowsingContextDiscarded(
   if (IsAudible() != oldAudible) {
     DispatchAsyncEvent(u"audiblechange"_ns);
   }
+  
+  
+  
+  UpdateActivatedStateIfNeeded();
 }
 
 bool MediaController::ShouldActivateController() const {
@@ -479,8 +505,40 @@ bool MediaController::ShouldActivateController() const {
   
   
   
-  return IsAnyMediaBeingControlled() &&
-         (IsPlaying() || IsBeingUsedInPIPModeOrFullscreen()) && !mIsActive;
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mIsActive) {
+    return false;
+  }
+  
+  
+  
+  
+  if (IsAnyMediaBeingControlled() &&
+      (IsPlaying() || IsBeingUsedInPIPModeOrFullscreen())) {
+    return true;
+  }
+  if (!StaticPrefs::media_mediacontrol_webaudio_activation_enabled()) {
+    return false;
+  }
+  const bool playSupported =
+      IsActiveSessionActionSupported(MediaSessionAction::Play);
+  const bool pauseSupported =
+      IsActiveSessionActionSupported(MediaSessionAction::Pause);
+  const bool shouldActivate =
+      PlaybackState() == MediaSessionPlaybackState::Playing && IsAudible() &&
+      playSupported && pauseSupported;
+  LOG("ShouldActivateController, playbackState={}, audible={}, play={}, "
+      "pause={}, result={}",
+      ToMediaSessionPlaybackStateStr(PlaybackState()), IsAudible(),
+      playSupported, pauseSupported, shouldActivate);
+  return shouldActivate;
 }
 
 bool MediaController::ShouldDeactivateController() const {
@@ -584,6 +642,11 @@ void MediaController::HandleActualPlaybackStateChanged() {
   if (RefPtr<MediaControlService> service = MediaControlService::GetService()) {
     service->NotifyControllerPlaybackStateChanged(this);
   }
+  
+  
+  
+  UpdateDeactivationTimerIfNeeded();
+  UpdateActivatedStateIfNeeded();
   DispatchAsyncEvent(u"playbackstatechange"_ns);
 }
 
