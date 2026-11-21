@@ -1,0 +1,19 @@
+
+
+
+for (const name of [
+  "Report",
+  "ReportBody",
+  "ConnectionAllowlistViolationReport",
+  "CrashReportBody",
+  "CSPViolationReportBody",
+  "DeprecationReportBody",
+  "IntegrityViolationReportBody",
+  "InterventionReportBody",
+  "PermissionsPolicyViolationReportBody",
+  "ScriptingPolicyReportBody",
+]) {
+  test(() => {
+    assert_false(name in self);
+  }, `${name} is not exposed`);
+}
