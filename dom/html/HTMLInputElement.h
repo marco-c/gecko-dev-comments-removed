@@ -915,7 +915,7 @@ class HTMLInputElement final : public TextControlElement,
   
   
   
-  ShadowRoot* CreateShadowTreeFromLayoutIfNeeded();
+  ShadowRoot* CreateShadowTreeBeforeLayoutIfNeeded();
 
  protected:
   MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual ~HTMLInputElement();
