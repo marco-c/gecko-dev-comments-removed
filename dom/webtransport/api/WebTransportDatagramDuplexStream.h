@@ -155,6 +155,16 @@ class OutgoingDatagramStreamAlgorithms final
   
   
   OutgoingDatagramInFlight mInFlight;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  bool mCleanedUp = false;
 };
 
 class WebTransportDatagramDuplexStream final : public nsISupports,
