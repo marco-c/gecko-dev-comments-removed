@@ -150,23 +150,39 @@ already_AddRefed<ImageData> ImageData::ReadStructuredClone(
     JSContext* aCx, nsIGlobalObject* aGlobal,
     JSStructuredCloneReader* aReader) {
   
+
+  PredefinedColorSpace colorSpace = PredefinedColorSpace::Srgb;
   uint32_t width, height;
-  JS::Rooted<JS::Value> dataArray(aCx);
   uint32_t cs, reserved;
-  if (!JS_ReadUint32Pair(aReader, &width, &height) ||
-      !JS_ReadUint32Pair(aReader, &cs, &reserved) ||
-      !JS_ReadTypedArray(aReader, &dataArray)) {
+  JS::Rooted<JS::Value> dataArray(aCx);
+
+  if (!JS_ReadUint32Pair(aReader, &width, &height)) {
     return nullptr;
   }
 
   
   
-  if (cs > static_cast<uint32_t>(
-               MaxContiguousEnumValue<PredefinedColorSpace>::value)) {
+  
+  uint32_t peekTag, peekData;
+  if (!JS_PeekUint32Pair(aReader, &peekTag, &peekData)) {
     return nullptr;
   }
 
-  auto colorSpace = static_cast<PredefinedColorSpace>(cs);
+  const bool newFormat =
+      peekTag <=
+          uint32_t(MaxContiguousEnumValue<PredefinedColorSpace>::value) &&
+      peekData == 0;
+
+  if (newFormat) {
+    if (!JS_ReadUint32Pair(aReader, &cs, &reserved) || reserved != 0) {
+      return nullptr;
+    }
+    colorSpace = static_cast<PredefinedColorSpace>(cs);
+  }
+
+  if (!JS_ReadTypedArray(aReader, &dataArray)) {
+    return nullptr;
+  }
 
   JS::Rooted<JSObject*> dataObj(aCx, &dataArray.toObject());
   RootedSpiderMonkeyInterface<Uint8ClampedArray> data(aCx);
