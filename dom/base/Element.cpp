@@ -2305,7 +2305,11 @@ void Element::GetAttrAssociatedElementsForBindings(
 
   auto& [_, cachedAttrElements] =
       ExtendedDOMSlots()->mAttrElementsMap.LookupOrInsert(aAttr);
-  if (elements && elements == cachedAttrElements) {
+  
+  
+  
+  
+  if (aUseCachedValue && elements && elements == cachedAttrElements) {
     
     
     
