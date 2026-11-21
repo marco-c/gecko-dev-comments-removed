@@ -73,11 +73,13 @@ ChromeUtils.defineLazyGetter(this, "SearchTestUtils", () => {
 
 
 
+
+
 async function addTopSites(url) {
   for (let i = 0; i < 5; i++) {
     await PlacesTestUtils.addVisits(url);
   }
-  await updateTopSites(sites => {
+  return updateTopSites(sites => {
     return sites && sites[0] && sites[0].url == url;
   });
 }
@@ -129,6 +131,9 @@ async function withHttpServer(
 
 
 
+
+
+
 async function updateTopSites(condition, searchShortcuts = false) {
   
   await SpecialPowers.pushPrefEnv({
@@ -170,6 +175,9 @@ async function updateTopSites(condition, searchShortcuts = false) {
     );
     await feed?._latestRefreshPromise;
   }
+
+  
+  return () => SpecialPowers.popPrefEnv();
 }
 
 async function installPersistTestEngines(globalDefault = "Example") {

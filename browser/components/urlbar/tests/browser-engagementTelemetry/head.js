@@ -13,6 +13,7 @@ ChromeUtils.defineESModuleGetters(this, {
     "resource://testing-common/CustomizableUITestUtils.sys.mjs",
   QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
+  WeaveService: "moz-src:///services/sync/Weave.sys.mjs",
 });
 
 const lazy = {};
@@ -197,8 +198,9 @@ async function doTest(testFn) {
   await PlacesTestUtils.clearInputHistory();
   await UrlbarTestUtils.formHistory.clear(window);
   await QuickSuggest.clearDismissedSuggestions();
-  await updateTopSites(() => true);
+  let cleanupTopSites = await updateTopSites(() => true);
   await BrowserTestUtils.withNewTab(gBrowser, testFn);
+  await cleanupTopSites();
 }
 
 async function initGroupTest() {
@@ -329,11 +331,8 @@ async function loadRemoteTab(url) {
       return Promise.resolve();
     },
   };
-  const weaveXPCService = Cc["@mozilla.org/weave/service;1"].getService(
-    Ci.nsISupports
-  ).wrappedJSObject;
-  const oldWeaveServiceReady = weaveXPCService.ready;
-  weaveXPCService.ready = true;
+  const oldWeaveServiceReady = WeaveService.ready;
+  WeaveService.ready = true;
   sandbox
     .stub(syncedTabs._internal, "getTabClients")
     .callsFake(() => Promise.resolve(Cu.cloneInto([REMOTE_TAB], {})));
@@ -341,7 +340,7 @@ async function loadRemoteTab(url) {
   return {
     async unload() {
       sandbox.restore();
-      weaveXPCService.ready = oldWeaveServiceReady;
+      WeaveService.ready = oldWeaveServiceReady;
       syncedTabs._internal = originalSyncedTabsInternal;
       
       Services.obs.notifyObservers(null, "weave:engine:sync:finish", "tabs");
