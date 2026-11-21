@@ -7404,7 +7404,7 @@ void nsCocoaWindow::SetMenuBar(RefPtr<nsMenuBarX>&& aMenuBar) {
   if (mMenuBar && ((!gSomeMenuBarPainted &&
                     RefPtr<nsMenuBarX>(
                         nsMenuUtilsX::GetHiddenWindowMenuBar()) == mMenuBar) ||
-                   mWindow.isMainWindow)) {
+                   (mWindow.isMainWindow && !IsMediaPiPWindow()))) {
     
     
     mMenuBar->PaintAsyncIfNeeded();
@@ -7839,11 +7839,13 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
   NS_ASSERTION(geckoWidget, "Window delegate not returning a gecko widget!");
 
   RefPtr<nsMenuBarX> geckoMenuBar = geckoWidget->GetMenuBar();
-  if (!geckoMenuBar && geckoWidget->IsMediaPiPWindow()) {
+  if (geckoWidget->IsMediaPiPWindow()) {
     
     
-    
-    geckoMenuBar = nsMenuUtilsX::GetHiddenWindowMenuBar();
+    if (RefPtr<nsMenuBarX> hiddenWindowMenuBar =
+            nsMenuUtilsX::GetHiddenWindowMenuBar()) {
+      geckoMenuBar = std::move(hiddenWindowMenuBar);
+    }
   }
   if (geckoMenuBar) {
     
