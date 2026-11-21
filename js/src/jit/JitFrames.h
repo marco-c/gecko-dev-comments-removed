@@ -356,6 +356,8 @@ struct ResumeFromException {
   
   
   
+  
+  
   uintptr_t* shadowStackPointer = nullptr;
 #endif
   ExceptionResumeKind kind;

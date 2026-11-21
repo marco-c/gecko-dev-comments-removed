@@ -115,8 +115,12 @@ class JitFrameIter {
  public:
   JitFrameIter() = default;
 
+  
+  
+  
   explicit JitFrameIter(jit::JitActivation* activation,
-                        bool mustUnwindActivation = false);
+                        bool mustUnwindActivation = false,
+                        uintptr_t* shadowStackPointer = nullptr);
 
   explicit JitFrameIter(const JitFrameIter& another);
   JitFrameIter& operator=(const JitFrameIter& another);
@@ -160,6 +164,10 @@ class JitFrameIter {
   
   
   bool isSelfHostedIgnoringInlining() const;
+
+  
+  
+  uintptr_t* shadowStackPointer() const;
 };
 
 

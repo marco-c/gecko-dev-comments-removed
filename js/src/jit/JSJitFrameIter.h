@@ -115,15 +115,33 @@ class JSJitFrameIter {
   mutable const SafepointIndex* cachedSafepointIndex_ = nullptr;
   const JitActivation* activation_;
 
+#ifdef JS_HW_SHADOW_STACK
+  
+  
+  
+  
+  
+  uintptr_t* shadowStackPointer_ = nullptr;
+#endif
+
   void dumpBaseline() const;
 
  public:
   
-  explicit JSJitFrameIter(const JitActivation* activation);
+  
+  
+  
+  
+  
+  
+  explicit JSJitFrameIter(const JitActivation* activation,
+                          uintptr_t* shadowStackPointer = nullptr);
 
   
   
-  JSJitFrameIter(const JitActivation* activation, uint8_t* fp, bool unwinding);
+  
+  JSJitFrameIter(const JitActivation* activation, uint8_t* fp, bool unwinding,
+                 uintptr_t* shadowStackPointer = nullptr);
 
   void setResumePCInCurrentFrame(uint8_t* newAddr) {
     resumePCinCurrentFrame_ = newAddr;
@@ -148,6 +166,14 @@ class JSJitFrameIter {
   
   bool checkInvalidation(IonScript** ionScript) const;
   bool checkInvalidation() const;
+
+  uintptr_t* shadowStackPointer() const {
+#ifdef JS_HW_SHADOW_STACK
+    return shadowStackPointer_;
+#else
+    return nullptr;
+#endif
+  }
 
   bool isExitFrame() const { return type_ == FrameType::Exit; }
   bool isScripted() const {

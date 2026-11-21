@@ -100,6 +100,12 @@ class WasmFrameIter {
   
   Instance* contBaseInstance_ = nullptr;
 #endif
+#ifdef JS_HW_SHADOW_STACK
+  
+  
+  
+  uintptr_t* shadowStackPointer_ = nullptr;
+#endif
 
   
   
@@ -127,9 +133,22 @@ class WasmFrameIter {
   void popContBaseFrame();
 #endif
 
+#ifdef JS_HW_SHADOW_STACK
+  
+  
+  void unwindShadowStackEntry(const void* returnAddress);
+#endif
+
  public:
   
-  explicit WasmFrameIter(jit::JitActivation* activation, Frame* fp = nullptr);
+  
+  
+  
+  
+  
+  
+  explicit WasmFrameIter(jit::JitActivation* activation, Frame* fp = nullptr,
+                         uintptr_t* shadowStackPointer = nullptr);
 
   
   WasmFrameIter(Instance* instance, Frame* fp, void* returnAddress);
@@ -223,6 +242,14 @@ class WasmFrameIter {
   
   Instance* contBaseInstance() const { return contBaseInstance_; }
 #endif
+
+  uintptr_t* shadowStackPointer() const {
+#ifdef JS_HW_SHADOW_STACK
+    return shadowStackPointer_;
+#else
+    return nullptr;
+#endif
+  }
 
   
   

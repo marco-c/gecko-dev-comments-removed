@@ -84,20 +84,6 @@ static uint32_t NumArgAndLocalSlots(const InlineFrameIterator& frame) {
   return CountArgSlots(script, frame.maybeCalleeTemplate()) + script->nfixed();
 }
 
-#ifdef JS_HW_SHADOW_STACK
-
-
-
-static void MaybeUnwindShadowStackEntry(CommonFrameLayout* frame,
-                                        ResumeFromException* rfe) {
-  if (rfe->shadowStackPointer &&
-      *rfe->shadowStackPointer ==
-          reinterpret_cast<uintptr_t>(frame->returnAddress())) {
-    rfe->shadowStackPointer++;
-  }
-}
-#endif
-
 static TrampolineNative TrampolineNativeForFrame(
     JSRuntime* rt, TrampolineNativeFrameLayout* layout) {
   JSFunction* nativeFun = CalleeTokenToFunction(layout->calleeToken());
@@ -786,20 +772,16 @@ void HandleException(ResumeFromException* rfe) {
     keepAlive = activation->wasmExitInstance()->object();
   }
 
-  JitFrameIter iter(activation,  true);
+  uintptr_t* shadowStackPointer = nullptr;
+#ifdef JS_HW_SHADOW_STACK
+  shadowStackPointer = rfe->shadowStackPointer;
+#endif
+  JitFrameIter iter(activation,  true,
+                    shadowStackPointer);
 
 #ifdef JS_HW_SHADOW_STACK
-  if (rfe->shadowStackPointer && iter.isJSJit() &&
-      iter.asJSJit().isUnwoundJitExit()) {
-    uintptr_t returnAddress =
-        reinterpret_cast<uintptr_t>(iter.asJSJit().current()->returnAddress());
-    if (*rfe->shadowStackPointer != returnAddress) {
-      
-      
-      MOZ_RELEASE_ASSERT(rfe->shadowStackPointer[1] == returnAddress);
-      rfe->shadowStackPointer++;
-    }
-  }
+  auto syncShadowStackPointer = mozilla::MakeScopeExit(
+      [&] { rfe->shadowStackPointer = iter.shadowStackPointer(); });
 #endif
 
   CommonFrameLayout* prevJitFrame = nullptr;
@@ -898,13 +880,6 @@ void HandleException(ResumeFromException* rfe) {
 
     prevJitFrame = frame.current();
     ++iter;
-#ifdef JS_HW_SHADOW_STACK
-    if (!iter.done()) {
-      
-      
-      MaybeUnwindShadowStackEntry(prevJitFrame, rfe);
-    }
-#endif
   }
 
   

@@ -23,7 +23,8 @@
 using namespace js;
 using namespace js::jit;
 
-JSJitFrameIter::JSJitFrameIter(const JitActivation* activation)
+JSJitFrameIter::JSJitFrameIter(const JitActivation* activation,
+                               uintptr_t* shadowStackPointer)
     : current_(activation->jsExitFP()),
       type_(FrameType::Exit),
       activation_(activation) {
@@ -34,10 +35,24 @@ JSJitFrameIter::JSJitFrameIter(const JitActivation* activation)
     type_ = FrameType::Bailout;
   }
   MOZ_ASSERT(!TlsContext.get()->inUnsafeCallWithABI);
+
+#ifdef JS_HW_SHADOW_STACK
+  if (shadowStackPointer && isUnwoundJitExit()) {
+    uintptr_t returnAddress =
+        reinterpret_cast<uintptr_t>(current()->returnAddress());
+    if (*shadowStackPointer != returnAddress) {
+      
+      
+      MOZ_RELEASE_ASSERT(shadowStackPointer[1] == returnAddress);
+      shadowStackPointer++;
+    }
+  }
+  shadowStackPointer_ = shadowStackPointer;
+#endif
 }
 
 JSJitFrameIter::JSJitFrameIter(const JitActivation* activation, uint8_t* fp,
-                               bool unwinding)
+                               bool unwinding, uintptr_t* shadowStackPointer)
     : current_(fp), type_(FrameType::Exit), activation_(activation) {
   
   
@@ -45,6 +60,14 @@ JSJitFrameIter::JSJitFrameIter(const JitActivation* activation, uint8_t* fp,
     MOZ_ASSERT(fp == activation->jsExitFP());
   }
   MOZ_ASSERT(!TlsContext.get()->inUnsafeCallWithABI);
+
+#ifdef JS_HW_SHADOW_STACK
+  
+  MOZ_ASSERT_IF(shadowStackPointer, unwinding);
+  
+  MOZ_ASSERT_IF(shadowStackPointer, !isUnwoundJitExit());
+  shadowStackPointer_ = shadowStackPointer;
+#endif
 }
 
 bool JSJitFrameIter::checkInvalidation() const {
@@ -213,6 +236,18 @@ static uint32_t ComputeBaselineFrameSize(const JSJitFrameIter& frame) {
 
 void JSJitFrameIter::operator++() {
   MOZ_ASSERT(!isEntry());
+
+#ifdef JS_HW_SHADOW_STACK
+  
+  
+  
+  
+  if (shadowStackPointer_ && current()->prevType() != FrameType::CppToJSJit &&
+      *shadowStackPointer_ ==
+          reinterpret_cast<uintptr_t>(current()->returnAddress())) {
+    shadowStackPointer_++;
+  }
+#endif
 
   
   
@@ -490,16 +525,24 @@ JSJitProfilingFrameIterator::JSJitProfilingFrameIterator(JSContext* cx,
 
   
   
+
   type_ = FrameType::BaselineJS;
-  if (frameScript()->hasBaselineScript()) {
-    resumePCinCurrentFrame_ = frameScript()->baselineScript()->method()->raw();
-  } else if (!IsPortableBaselineInterpreterEnabled()) {
+  if (JitScript* jitScript = frameScript()->maybeJitScript()) {
+    if (BaselineScript* baselineScript =
+            jitScript->maybeBaselineScriptForProfiler()) {
+      resumePCinCurrentFrame_ = baselineScript->method()->raw();
+      return;
+    }
+  }
+
+  if (!IsPortableBaselineInterpreterEnabled()) {
     MOZ_ASSERT(IsBaselineInterpreterEnabled());
     resumePCinCurrentFrame_ =
         cx->runtime()->jitRuntime()->baselineInterpreter().codeRaw();
-  } else {
-    resumePCinCurrentFrame_ = nullptr;
+    return;
   }
+
+  resumePCinCurrentFrame_ = nullptr;
 }
 
 template <typename ReturnType = CommonFrameLayout*>

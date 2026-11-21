@@ -769,20 +769,6 @@ static void WasmHandleRequestTierUp(Instance* instance) {
   }
 }
 
-#ifdef JS_HW_SHADOW_STACK
-
-
-static void UnwindShadowStackEntry(ResumeFromException* rfe,
-                                   uintptr_t returnAddress) {
-  if (!rfe->shadowStackPointer) {
-    return;
-  }
-
-  MOZ_RELEASE_ASSERT(*rfe->shadowStackPointer == returnAddress);
-  rfe->shadowStackPointer++;
-}
-#endif
-
 
 
 
@@ -823,21 +809,6 @@ void wasm::HandleExceptionWasm(JSContext* cx, JitFrameIter& iter,
   
   iter.asWasm().setIsLeavingFrames();
 
-#ifdef JS_HW_SHADOW_STACK
-  if (activation->isWasmTrapping()) {
-    const TrapData& trapData = activation->wasmTrapData();
-    if (trapData.unwoundFrame) {
-      
-      UnwindShadowStackEntry(rfe,
-                             reinterpret_cast<uintptr_t>(trapData.unwoundPC));
-    }
-  } else {
-    
-    UnwindShadowStackEntry(rfe, reinterpret_cast<uintptr_t>(
-                                    iter.asWasm().resumePCinCurrentFrame()));
-  }
-#endif
-
   
   Rooted<WasmExceptionObject*> wasmExn(cx,
                                        GetOrWrapWasmException(activation, cx));
@@ -852,22 +823,7 @@ void wasm::HandleExceptionWasm(JSContext* cx, JitFrameIter& iter,
   wasm::ContStack* wasmPreviousStack = iter.asWasm().unwoundContStack();
 #endif
 
-  auto advanceFrame = [&] {
-#ifdef JS_HW_SHADOW_STACK
-    auto returnAddress =
-        reinterpret_cast<uintptr_t>(iter.asWasm().frame()->returnAddress());
-#endif
-    ++iter;
-#ifdef JS_HW_SHADOW_STACK
-    
-    
-    if (!iter.done()) {
-      UnwindShadowStackEntry(rfe, returnAddress);
-    }
-#endif
-  };
-
-  for (; !iter.done() && iter.isWasm(); advanceFrame()) {
+  for (; !iter.done() && iter.isWasm(); ++iter) {
     
     
     WasmFrameIter& wasmFrame = iter.asWasm();
