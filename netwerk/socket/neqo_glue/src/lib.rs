@@ -14,6 +14,7 @@ use std::{
     ffi::c_void,
     io,
     net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr},
+    num::NonZeroUsize,
     path::PathBuf,
     ptr,
     rc::Rc,
@@ -2835,8 +2836,18 @@ pub extern "C" fn neqo_http3conn_webtransport_set_datagram_max_buffered_datagram
     max_buffered_datagrams: u32,
 ) -> nsresult {
     
-    let _ = (conn, session_id, max_buffered_datagrams);
-    NS_OK
+    
+    
+    
+    
+    let max_buffered_datagrams =
+        NonZeroUsize::new(max_buffered_datagrams as usize).unwrap_or(NonZeroUsize::MIN);
+    conn.conn
+        .webtransport_set_max_buffered_datagrams(
+            StreamId::from(session_id),
+            Some(max_buffered_datagrams),
+        )
+        .map_or(NS_ERROR_UNEXPECTED, |()| NS_OK)
 }
 
 #[no_mangle]
@@ -2846,8 +2857,19 @@ pub extern "C" fn neqo_http3conn_webtransport_set_datagram_max_age(
     max_age: f64,
 ) -> nsresult {
     
-    let _ = (conn, session_id, max_age);
-    NS_OK
+    
+    
+    
+    
+    
+    
+    
+    let max_age = max_age.is_finite().then(|| {
+        Duration::try_from_secs_f64(max_age.max(0.0) / 1000.0).unwrap_or(Duration::MAX)
+    });
+    conn.conn
+        .webtransport_set_datagram_max_age(StreamId::from(session_id), max_age, Instant::now())
+        .map_or(NS_ERROR_UNEXPECTED, |()| NS_OK)
 }
 
 
