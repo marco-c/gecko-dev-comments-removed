@@ -89,8 +89,12 @@ pub fn block_on_queue_timeout(timeout: Duration) -> Result<(), RecvTimeoutError>
 
 
 
-pub fn flush_init() -> Result<usize, DispatchError> {
-    guard().flush_init()
+
+
+
+
+pub fn flush_init(final_task: impl FnOnce(usize) + Send + 'static) -> Result<usize, DispatchError> {
+    guard().flush_init(final_task)
 }
 
 fn join_dispatcher_thread() -> Result<(), DispatchError> {
@@ -173,7 +177,7 @@ mod test {
             });
         }
 
-        flush_init().unwrap();
+        flush_init(|_| {}).unwrap();
 
         {
             let result = Arc::clone(&result);
@@ -203,7 +207,7 @@ mod test {
             });
         }
 
-        flush_init().unwrap();
+        flush_init(|_| {}).unwrap();
 
         {
             let result = Arc::clone(&result);

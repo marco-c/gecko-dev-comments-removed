@@ -525,6 +525,8 @@ impl Glean {
                 .set_sync(&glean, experimentation_id.to_string());
         }
 
+        glean.set_early_metrics();
+
         
         
         if cfg.upload_enabled {
@@ -722,21 +724,6 @@ impl Glean {
             let new_clientid = self.core_metrics.client_id.generate_and_set_sync(self);
             self.store_client_id_with_reporting(new_clientid, "New client in database only.");
         }
-
-        if self
-            .core_metrics
-            .first_run_date
-            .get_value(self, "glean_client_info")
-            .is_none()
-        {
-            self.core_metrics.first_run_date.set_sync(self, None);
-            
-            
-            
-            self.is_first_run = true;
-        }
-
-        self.set_application_lifetime_core_metrics();
     }
 
     
@@ -1340,6 +1327,26 @@ impl Glean {
         }
 
         Ok(())
+    }
+
+    
+    
+    
+    fn set_early_metrics(&mut self) {
+        
+        if self
+            .core_metrics
+            .first_run_date
+            .get_value(self, "glean_client_info")
+            .is_none()
+        {
+            self.core_metrics.first_run_date.set_sync(self, None);
+            
+            
+            
+            self.is_first_run = true;
+        }
+        self.set_application_lifetime_core_metrics();
     }
 
     
@@ -1965,24 +1972,34 @@ impl Glean {
     
     
     pub fn update_attribution(&self, attribution: AttributionMetrics) {
+        const MAX_ATTRIBUTION_LENGTH: usize = 512;
+
         if let Some(source) = attribution.source {
-            self.core_metrics.attribution_source.set_sync(self, source);
+            self.core_metrics
+                .attribution_source
+                .set_sync_with_max_length(self, source, MAX_ATTRIBUTION_LENGTH);
         }
         if let Some(medium) = attribution.medium {
-            self.core_metrics.attribution_medium.set_sync(self, medium);
+            self.core_metrics
+                .attribution_medium
+                .set_sync_with_max_length(self, medium, MAX_ATTRIBUTION_LENGTH);
         }
         if let Some(campaign) = attribution.campaign {
             self.core_metrics
                 .attribution_campaign
-                .set_sync(self, campaign);
+                .set_sync_with_max_length(self, campaign, MAX_ATTRIBUTION_LENGTH);
         }
         if let Some(term) = attribution.term {
-            self.core_metrics.attribution_term.set_sync(self, term);
+            self.core_metrics.attribution_term.set_sync_with_max_length(
+                self,
+                term,
+                MAX_ATTRIBUTION_LENGTH,
+            );
         }
         if let Some(content) = attribution.content {
             self.core_metrics
                 .attribution_content
-                .set_sync(self, content);
+                .set_sync_with_max_length(self, content, MAX_ATTRIBUTION_LENGTH);
         }
     }
 

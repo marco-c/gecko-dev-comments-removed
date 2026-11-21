@@ -1,17 +1,17 @@
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! The SQLite database schema.
+
+
+
+
 
 use std::num::NonZeroU32;
 
-use rusqlite::{config::DbConfig, named_params, OptionalExtension, Transaction};
+use rusqlite::{config::DbConfig, OptionalExtension, Transaction};
 
 use super::connection::ConnectionOpener;
 
-/// The schema for a physical SQLite database that contains many
-/// named logical databases.
+
+
 #[derive(Debug)]
 pub struct Schema;
 
@@ -57,10 +57,10 @@ impl ConnectionOpener for Schema {
             ",
         )?;
 
-        // Set hardening flags.
+        
         conn.set_db_config(DbConfig::SQLITE_DBCONFIG_DEFENSIVE, true)?;
 
-        // Turn off misfeatures: double-quoted strings and untrusted schemas.
+        
         conn.set_db_config(DbConfig::SQLITE_DBCONFIG_DQS_DML, false)?;
         conn.set_db_config(DbConfig::SQLITE_DBCONFIG_DQS_DDL, false)?;
         conn.set_db_config(DbConfig::SQLITE_DBCONFIG_TRUSTED_SCHEMA, true)?;
@@ -92,8 +92,8 @@ impl ConnectionOpener for Schema {
         match to_version.get() {
             2 => {
                 log::info!("Upgrading user_version to 2");
-                // Clients upgrading to schema 2 don't have the table.
-                // But they did run through the migration.
+                
+                
                 tx.execute_batch(
                     "CREATE TABLE migration(id INTEGER PRIMARY KEY, state TEXT NOT NULL);",
                 )?;
@@ -113,7 +113,7 @@ impl ConnectionOpener for Schema {
             }
             3 => {
                 log::info!("Upgrading user_version to 3");
-                // Clients upgrading to schema 3 don't have the table or index
+                
                 tx.execute_batch(
                     "
                     CREATE TABLE submitted_pings(
@@ -134,7 +134,7 @@ impl ConnectionOpener for Schema {
     }
 
     fn validate(tx: &mut Transaction<'_>) -> Result<(), Self::Error> {
-        // A query selecting every field, it doesn't need to return anything.
+        
         tx.execute_batch("SELECT id, ping, lifetime, labels, value FROM telemetry WHERE 1 = 0")?;
         Ok(())
     }
@@ -146,19 +146,4 @@ pub enum SchemaError {
     UnsupportedSchemaVersion(u32),
     #[error("sqlite: {0}")]
     Sqlite(#[from] rusqlite::Error),
-}
-
-pub fn create_in_memory_table(
-    tx: &mut Transaction<'_>,
-    database: &str,
-) -> Result<(), rusqlite::Error> {
-    tx.execute(
-        "ATTACH DATABASE ':memory:' AS :database",
-        named_params! {":database": database},
-    )?;
-    // This must remain in sync with the schema for the main table listed above.
-    // Otherwise bad things will happen.
-    // TODO(bug 2070883): Ensure this is the same with a test or similar.
-    tx.execute(&table_schema(Some(database)), [])?;
-    Ok(())
 }

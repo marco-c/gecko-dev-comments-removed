@@ -609,26 +609,39 @@ fn initialize_inner(
         
         
         
-        match dispatcher::flush_init() {
-            Ok(task_count) if task_count > 0 => {
-                core::with_glean(|glean| {
-                    glean_metrics::error::preinit_tasks_overflow.add_sync(glean, task_count as i32);
-                });
-            }
-            Ok(_) => {}
-            Err(err) => log::error!("Unable to flush the preinit queue: {}", err),
-        }
+        
+        
+        
+        
+        
+        let submit_health_ping = !is_test_mode() && internal_pings_enabled;
+        let flushed = dispatcher::flush_init(move |overflow_count| {
+            let sent = core::with_glean(|glean| {
+                
+                if overflow_count > 0 {
+                    glean_metrics::error::preinit_tasks_overflow
+                        .add_sync(glean, overflow_count as i32);
+                }
 
-        if !is_test_mode() && internal_pings_enabled {
+                
+                
+                submit_health_ping
+                    && record_dir_info_and_submit_health_ping(glean, dir_info, "pre_init")
+            });
+
             
             
-            record_dir_info_and_submit_health_ping(dir_info, "pre_init");
-
-            let state = global_state().lock().unwrap();
-            if let Err(e) = state.callbacks.trigger_upload() {
-                log::error!("Triggering upload failed. Error: {}", e);
+            if sent {
+                let state = global_state().lock().unwrap();
+                if let Err(e) = state.callbacks.trigger_upload() {
+                    log::error!("Triggering upload failed. Error: {}", e);
+                }
             }
+        });
+        if let Err(err) = flushed {
+            log::error!("Unable to flush the preinit queue: {}", err);
         }
+
         let state = global_state().lock().unwrap();
         state.callbacks.initialize_finished();
     })
@@ -1743,14 +1756,16 @@ fn collect_directory_info(path: &Path) -> Option<serde_json::Value> {
     }
 }
 
-fn record_dir_info_and_submit_health_ping(dir_info: Option<serde_json::Value>, reason: &str) {
-    core::with_glean(|glean| {
-        glean
-            .health_metrics
-            .data_directory_info
-            .set_sync(glean, dir_info.unwrap_or(serde_json::json!({})));
-        glean.internal_pings.health.submit_sync(glean, Some(reason));
-    });
+fn record_dir_info_and_submit_health_ping(
+    glean: &Glean,
+    dir_info: Option<serde_json::Value>,
+    reason: &str,
+) -> bool {
+    glean
+        .health_metrics
+        .data_directory_info
+        .set_sync(glean, dir_info.unwrap_or(serde_json::json!({})));
+    glean.internal_pings.health.submit_sync(glean, Some(reason))
 }
 
 

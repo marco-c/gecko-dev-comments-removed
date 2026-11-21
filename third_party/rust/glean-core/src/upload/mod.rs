@@ -767,6 +767,11 @@ impl PingUploadManager {
     
     
     
+    
+    
+    
+    
+    
     pub fn process_ping_upload_response(
         &self,
         glean: &Glean,
@@ -791,6 +796,23 @@ impl PingUploadManager {
             self.upload_metrics.missing_send_ids.add_sync(glean, 1);
         }
 
+        let recoverable = || {
+            log::warn!(
+                    "Recoverable upload failure while attempting to send ping {}, will retry. Error was {:?}",
+                    document_id,
+                    status
+                );
+            if let Some((success_id, failure_id)) = send_ids {
+                self.upload_metrics.send_success.cancel_sync(success_id);
+                self.upload_metrics
+                    .send_failure
+                    .set_stop_and_accumulate(glean, failure_id, stop_time);
+            }
+            self.enqueue_ping_from_file(glean, document_id);
+            self.recoverable_failure_count
+                .fetch_add(1, Ordering::SeqCst);
+        };
+
         match status {
             HttpStatus { code } if (200..=299).contains(&code) => {
                 log::info!("Ping {} successfully sent {}.", document_id, code);
@@ -806,6 +828,15 @@ impl PingUploadManager {
                         .mark_ping_as_uploaded(document_id, Utc::now());
                 }
                 self.directory_manager.delete_file(document_id);
+            }
+
+            RecoverableFailure { .. } => {
+                recoverable();
+            }
+
+            
+            HttpStatus { code: 408 } | HttpStatus { code: 429 } => {
+                recoverable();
             }
 
             UnrecoverableFailure { .. } | HttpStatus { code: 400..=499 } | Incapable { .. } => {
@@ -826,21 +857,9 @@ impl PingUploadManager {
                 self.directory_manager.delete_file(document_id);
             }
 
-            RecoverableFailure { .. } | HttpStatus { .. } => {
-                log::warn!(
-                    "Recoverable upload failure while attempting to send ping {}, will retry. Error was {:?}",
-                    document_id,
-                    status
-                );
-                if let Some((success_id, failure_id)) = send_ids {
-                    self.upload_metrics.send_success.cancel_sync(success_id);
-                    self.upload_metrics
-                        .send_failure
-                        .set_stop_and_accumulate(glean, failure_id, stop_time);
-                }
-                self.enqueue_ping_from_file(glean, document_id);
-                self.recoverable_failure_count
-                    .fetch_add(1, Ordering::SeqCst);
+            
+            HttpStatus { .. } => {
+                recoverable();
             }
 
             Done { .. } => {
