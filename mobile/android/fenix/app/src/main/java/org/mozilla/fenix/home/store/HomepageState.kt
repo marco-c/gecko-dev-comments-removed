@@ -9,7 +9,7 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.setup.checklist.SetupChecklistState
-import org.mozilla.fenix.components.components
+import org.mozilla.fenix.components.appstate.sports.SportsWidgetState
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.ext.shouldShowRecentSyncedTabs
 import org.mozilla.fenix.ext.shouldShowRecentTabs
@@ -77,6 +77,7 @@ internal sealed class HomepageState {
      * @property setupChecklistState Optional state of the setup checklist feature.
      * @property isSearchInProgress Whether search is currently active on the homepage.
      * @property bottomPadding Amount of padding to display at the bottom of the homepage.
+     * @property sportsWidgetState State of the sports widget on the homepage.
      */
     internal data class Normal(
         val shouldShowPrivacyNoticeBanner: Boolean,
@@ -98,6 +99,7 @@ internal sealed class HomepageState {
         val setupChecklistState: SetupChecklistState?,
         override val isSearchInProgress: Boolean,
         val bottomPadding: Int,
+        val sportsWidgetState: SportsWidgetState = SportsWidgetState(),
     ) : HomepageState()
 
     val browsingMode: BrowsingMode
@@ -193,7 +195,6 @@ internal sealed class HomepageState {
                     collectionsState =
                         CollectionsState.build(
                             appState = appState,
-                            browserState = components.core.store.state,
                             showCollections = settings.collections,
                             shouldShowCollectionsMigrationCard = collectionsMigrationCardState.visible,
                         ),
@@ -213,6 +214,7 @@ internal sealed class HomepageState {
                         } else {
                             BOTTOM_PADDING_BOTTOM_TOOLBAR
                         },
+                    sportsWidgetState = sportsWidgetState,
                 )
             }
     }
