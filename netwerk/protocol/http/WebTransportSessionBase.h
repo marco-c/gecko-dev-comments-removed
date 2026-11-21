@@ -93,12 +93,6 @@ class WebTransportSessionBase {
   
   
   
-  
-  virtual void RequestOutgoingDatagramProgress() {}
-
-  
-  
-  
   virtual bool GetDatagramQueueCapacity(size_t* aRemainingBytes,
                                         size_t* aQueuedDatagrams,
                                         size_t* aMaxQueuedBytes) {

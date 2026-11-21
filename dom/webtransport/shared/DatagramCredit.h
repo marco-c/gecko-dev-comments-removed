@@ -121,15 +121,6 @@ class OutgoingDatagramCreditGranter {
     return Some(u);
   }
 
-  
-  
-  bool CreditExhausted() const {
-    return mLastGrantedDatagrams <= mDatagramsRetired ||
-           mLastGrantedBytes <
-               mBytesRetired +
-                   DatagramQueueCharge(mMaxDatagramSize, mDatagramPrefixBytes);
-  }
-
   void Commit(const DatagramCapacityUpdate& aUpdate) {
     mLastGrantedDatagrams = aUpdate.mCumulativeDatagrams;
     mLastGrantedBytes = aUpdate.mCumulativeBytes;

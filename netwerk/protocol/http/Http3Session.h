@@ -165,9 +165,6 @@ class Http3SessionBase {
   virtual void SetDatagramMaxAge(uint64_t aSessionId, double aMaxAge) = 0;
   
   
-  virtual void RequestOutgoingDatagramProgress() = 0;
-  
-  
   
   virtual bool GetDatagramQueueCapacity(uint64_t aSessionId,
                                         size_t* aRemainingBytes,
@@ -350,9 +347,6 @@ class Http3Session final : public Http3SessionBase,
   void SetDatagramMaxBufferedDatagrams(uint64_t aSessionId,
                                        uint32_t aMaxBufferedDatagrams) override;
   void SetDatagramMaxAge(uint64_t aSessionId, double aMaxAge) override;
-  void RequestOutgoingDatagramProgress() override {
-    mOutgoingDatagramProgressRequested = true;
-  }
   bool GetDatagramQueueCapacity(uint64_t aSessionId, size_t* aRemainingBytes,
                                 size_t* aQueuedDatagrams,
                                 size_t* aMaxQueuedBytes) override;
@@ -395,7 +389,6 @@ class Http3Session final : public Http3SessionBase,
                           bool justKidding);
 
   nsresult ProcessOutput(nsIUDPSocket* socket);
-  void NotifyOutgoingDatagramProgress();
   nsresult ProcessInput(nsIUDPSocket* socket);
   nsresult ProcessEvents();
 
@@ -574,9 +567,6 @@ class Http3Session final : public Http3SessionBase,
   nsTArray<RefPtr<Http3StreamBase>> mTunnelStreams;
 
   bool mHasWebTransportSession = false;
-  
-  
-  bool mOutgoingDatagramProgressRequested = false;
   
   bool mDontExclude = false;
   

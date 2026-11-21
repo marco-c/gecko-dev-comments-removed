@@ -1275,13 +1275,6 @@ void WebTransportParent::MaybeSendDatagramCapacity() {
                                update->mExpiredDelta, update->mDroppedDelta,
                                mDatagramCreditGranter.DatagramPrefixBytes());
   }
-
-  
-  
-  
-  if (queuedDatagrams > 0 && mDatagramCreditGranter.CreditExhausted()) {
-    proxy->RequestOutgoingDatagramProgress();
-  }
 }
 
 ::mozilla::ipc::IPCResult WebTransportParent::RecvUpdateDatagramQueueParams(
