@@ -1219,12 +1219,6 @@ void WebTransport::Close(const WebTransportCloseInfo& aOptions,
   closeInfo.mCloseCode = aOptions.mCloseCode;
   closeInfo.mReason = aOptions.mReason;
 
-  
-  
-  if (mDatagrams) {
-    mDatagrams->FlushOutgoingDatagrams();
-  }
-
   mChild->SendClose(
       aOptions.mCloseCode, reason,
       [self, error, closeInfo](Maybe<WebTransportStatsData>&& aStats) {

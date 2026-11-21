@@ -208,18 +208,8 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
   void QueueOutgoingDatagram(OutgoingDatagram&& aDatagram);
 
-  
-  
   
   
   
@@ -334,10 +324,6 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
   
   
   nsTArray<OutgoingDatagram> mPendingOutgoing;
-  size_t mPendingOutgoingBytes = 0;
-  
-  
-  bool mOutgoingFlushPending = false;
 
   
   
