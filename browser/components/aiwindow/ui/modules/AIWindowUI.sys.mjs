@@ -8,12 +8,17 @@ import {
   AIWINDOW_URL,
   AIWindow,
 } from "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs";
+import { getSmartPageName } from "chrome://browser/content/aiwindow/modules/TrustedInternalURLs.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  AutoTabGrouping:
-    "moz-src:///browser/components/aiwindow/ui/modules/AutoTabGrouping.sys.mjs",
+  AITabStore:
+    "moz-src:///browser/components/aiwindow/ui/modules/AITabStore.sys.mjs",
+  AIWindowToolbarButtons:
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowToolbarButtons.sys.mjs",
+  getAITabPageType:
+    "moz-src:///browser/components/aiwindow/ui/modules/AITabPageTypes.sys.mjs",
   MonitorPanel:
     "moz-src:///browser/components/aiwindow/ui/modules/MonitorPanel.sys.mjs",
   URILoadingHelper: "resource:///modules/URILoadingHelper.sys.mjs",
@@ -22,9 +27,25 @@ ChromeUtils.defineESModuleGetters(lazy, {
 const gFadingWindows = new WeakSet();
 const gSidebarAnimations = new WeakMap();
 const gSidebarWidthHandlers = new WeakMap();
+const gSmartPageTypeRequests = new WeakMap();
+
+/**
+ * @param {string} url
+ * @returns {Promise<?AITabPageTypeDescriptor>} The type of the stored Smart
+ *   Page at url, or null when url is not a stored Smart Page.
+ */
+async function getSmartPageType(url) {
+  const slug = getSmartPageName(URL.parse(url));
+  if (!slug) {
+    return null;
+  }
+  const page = await lazy.AITabStore.getBySlug(slug);
+  return page ? lazy.getAITabPageType(page.pageType) : null;
+}
 
 /**
  * @typedef {import("../components/ai-window/ai-window.mjs").SmartbarInputState} SmartbarInputState
+ * @typedef {import("./AITabPageTypes.sys.mjs").AITabPageTypeDescriptor} AITabPageTypeDescriptor
  */
 
 export const AIWindowUI = {
@@ -368,7 +389,7 @@ export const AIWindowUI = {
 
     if (!this.isSidebarOpen(win)) {
       this._setSidebarCollapsed(win, box, splitter, false, { animate: false });
-      this._updateAskButtonChecked(win, true);
+      lazy.AIWindowToolbarButtons.setAskButtonExpanded(win, true);
     }
 
     Glean.smartWindow.sidebarOpen.record({
@@ -471,7 +492,7 @@ export const AIWindowUI = {
     this._setSidebarCollapsed(win, box, splitter, true, {
       animate: source === "toggle",
     });
-    this._updateAskButtonChecked(win, false);
+    lazy.AIWindowToolbarButtons.setAskButtonExpanded(win, false);
 
     // Dispatch event to notify tab state manager that sidebar was toggled
     win.dispatchEvent(
@@ -489,26 +510,6 @@ export const AIWindowUI = {
       chat_id: chatId,
       message_seq: messageSeq,
     });
-  },
-
-  /**
-   * Toggle the "Organize Tabs" panel anchored to its toolbar button.
-   *
-   * @param {Window} win
-   * @param {object} [options] - Passed through to AutoTabGrouping, which uses
-   *   options.source to record what asked for the panel.
-   */
-  toggleGroupTabsPanel(win, options) {
-    lazy.AutoTabGrouping.toggleGroupTabsPanel(win, options);
-  },
-
-  /**
-   * Toggle the monitor creation panel anchored to its toolbar button.
-   *
-   * @param {Window} win
-   */
-  toggleMonitorPanel(win) {
-    lazy.MonitorPanel.toggleMonitorPanel(win);
   },
 
   /**
@@ -540,7 +541,7 @@ export const AIWindowUI = {
 
     this.ensureBrowserIsAppended(chromeDoc, box);
     this._setSidebarCollapsed(win, box, splitter, false);
-    this._updateAskButtonChecked(win, true);
+    lazy.AIWindowToolbarButtons.setAskButtonExpanded(win, true);
 
     // Dispatch event to notify tab state manager that sidebar was toggled
     win.dispatchEvent(
@@ -571,20 +572,6 @@ export const AIWindowUI = {
     if (aiWindowEl) {
       aiWindowEl.syncSmartbarMemoriesStateFromConversation();
     }
-  },
-
-  /**
-   * Update the Ask Button style based on the sidebar state.
-   *
-   * @param {Window} win
-   * @param {boolean} sidebarIsOpen
-   */
-  _updateAskButtonChecked(win, sidebarIsOpen) {
-    const askBtn = win.document.querySelector("#smartwindow-ask-button-inner");
-    if (!askBtn) {
-      return;
-    }
-    askBtn.setAttribute("aria-expanded", String(sidebarIsOpen));
   },
 
   /**
@@ -648,6 +635,32 @@ export const AIWindowUI = {
     }
 
     aiWindowEl.updateInput(state);
+    this._updateSmartPageType(win, aiWindowEl);
+  },
+
+  /**
+   * Looks up the type of the Smart Page in the selected tab and hands it to
+   * the sidebar ai-window. It is cleared first, so nothing that depends on the
+   * type shows until the lookup answers, and a lookup that a later tab switch
+   * or navigation has overtaken is dropped.
+   *
+   * @param {Window} win
+   * @param {Element} aiWindowEl - The sidebar ai-window.
+   */
+  async _updateSmartPageType(win, aiWindowEl) {
+    const url = win.gBrowser.selectedBrowser.currentURI.spec;
+    const requestId = (gSmartPageTypeRequests.get(aiWindowEl) ?? 0) + 1;
+    gSmartPageTypeRequests.set(aiWindowEl, requestId);
+    aiWindowEl.smartPageType = null;
+
+    try {
+      const pageType = await getSmartPageType(url);
+      if (gSmartPageTypeRequests.get(aiWindowEl) === requestId) {
+        aiWindowEl.smartPageType = pageType;
+      }
+    } catch (error) {
+      console.error("Could not look up the Smart Page type", error);
+    }
   },
 
   /**
