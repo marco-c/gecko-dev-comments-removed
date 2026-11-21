@@ -20,6 +20,7 @@
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Types.h"
+#include "mozilla/java/GeckoSurfaceWrappers.h"
 #include "mozilla/layers/LayersSurfaces.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "nsISupportsImpl.h"
@@ -39,11 +40,49 @@ class AndroidImageReader;
 
 
 
+
+class AndroidImageReaderClient final {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AndroidImageReaderClient);
+  static already_AddRefed<AndroidImageReaderClient> Create();
+  bool IsValid() const;
+  java::sdk::Surface::LocalRef GetSurface() const;
+  void MaybeRenderFirstFrame(AndroidMediaCodecFrameId aFrameId);
+  void DiscardFrames();
+
+  
+  
+  void Shutdown();
+
+  void RegisterFrame(
+      AndroidMediaCodecFrameId aFrameId,
+      UniquePtr<SurfaceTextureImage::SetCurrentCallback> aCallback);
+  void ForgetFrame(AndroidMediaCodecFrameId aFrameId);
+
+  const GpuProcessAndroidImageReaderId mImageReaderId;
+
+ private:
+  static already_AddRefed<AndroidImageReaderClient> CreateLocal();
+
+  AndroidImageReaderClient(AndroidImageReader* aReader,
+                           java::sdk::Surface::LocalRef aSurface);
+  ~AndroidImageReaderClient();
+
+  
+  const RefPtr<AndroidImageReader> mLocalReader;
+  
+  const java::sdk::Surface::GlobalRef mOutputSurface;
+};
+
+
+
+
+
+
 class AndroidImageReaderImage final : public Image {
  public:
-  AndroidImageReaderImage(const GpuProcessAndroidImageReaderId aImageReaderId,
-                          const gfx::IntSize& aSize, const bool aHasAlpha);
-
+  AndroidImageReaderImage(AndroidImageReaderClient* aClient,
+                          const gfx::IntSize& aSize, bool aHasAlpha);
   gfx::IntSize GetSize() const override { return mSize; }
 
   gl::OriginPos GetOriginPos() const { return gl::OriginPos::TopLeft; }
@@ -62,12 +101,9 @@ class AndroidImageReaderImage final : public Image {
 
   void OnSetCurrent() override;
 
-  bool MaybeReleaseFrameToCodec(const MonitorAutoLock& aProofOfLock,
-                                bool aRender);
-
   void RegisterSetCurrentCallback(
       UniquePtr<SurfaceTextureImage::SetCurrentCallback> aCallback) {
-    mSetCurrentCallback = std::move(aCallback);
+    mClient->RegisterFrame(mFrameId, std::move(aCallback));
   }
 
   const GpuProcessAndroidImageReaderId mImageReaderId;
@@ -78,7 +114,7 @@ class AndroidImageReaderImage final : public Image {
  private:
   virtual ~AndroidImageReaderImage();
 
-  UniquePtr<SurfaceTextureImage::SetCurrentCallback> mSetCurrentCallback;
+  const RefPtr<AndroidImageReaderClient> mClient;
 };
 
 
@@ -96,6 +132,7 @@ class AndroidImageWrapper {
                                mozilla::UniqueFileHandle&& aWriteFenceFd);
 
   mozilla::UniqueFileHandle CloneWriteFenceFd();
+  bool WaitForWriteFence(gl::GLContext* aGL);
 
   void SetReadFenceFd(UniqueFileHandle&& aFenceFd);
 
@@ -155,8 +192,6 @@ class AndroidImageReader final
 
   RefPtr<AndroidImageWrapper> GetCurrentImage();
 
-  void RegisterReaderImage(AndroidImageReaderImage* aReaderImage);
-
   bool MaybeReleaseFrameToCodec(const AndroidMediaCodecFrameId aFrameId,
                                 const bool aRender);
 
@@ -197,13 +232,6 @@ class AndroidImageReader final
   bool mShuttingDown MOZ_GUARDED_BY(mMonitor) = false;
 
   mozilla::Atomic<int32_t> mAcquiredImageCount{0};
-
-  
-  
-  
-  std::unordered_map<AndroidMediaCodecFrameId, AndroidImageReaderImage*,
-                     AndroidMediaCodecFrameId::HashFn>
-      mPendingFrames MOZ_GUARDED_BY(mMonitor);
 };
 
 
