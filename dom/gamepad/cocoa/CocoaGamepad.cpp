@@ -346,8 +346,8 @@ void DarwinGamepadService::DeviceAdded(IOHIDDeviceRef device) {
   remapper->SetButtonCount(mGamepads[slot].numButtons());
 
   GamepadHandle handle = service->AddGamepad(
-      buffer, remapper->GetMappingType(), mozilla::dom::GamepadHand::_empty,
-      remapper->GetButtonCount(), remapper->GetAxisCount(),
+      buffer, remapper->GetMappingType(), remapper->GetButtonCount(),
+      remapper->GetAxisCount(),
       0,  
       remapper->GetLightIndicatorCount(), remapper->GetTouchEventCount());
 

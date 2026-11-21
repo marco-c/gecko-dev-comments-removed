@@ -149,7 +149,7 @@ class Gamepad {
   }
 
  private:
-  Gamepad() {}
+  Gamepad() = default;
 };
 
 
@@ -484,8 +484,8 @@ bool WindowsGamepadService::ScanForXInputDevices() {
     gamepad.userIndex = i;
     gamepad.state = state;
     gamepad.gamepadHandle = service->AddGamepad(
-        "xinput", GamepadMappingType::Standard, GamepadHand::_empty,
-        kStandardGamepadButtons, kStandardGamepadAxes, 0, 0,
+        "xinput", GamepadMappingType::Standard, kStandardGamepadButtons,
+        kStandardGamepadAxes, 0, 0,
         0);  
     mGamepads.AppendElement(std::move(gamepad));
   }
@@ -785,7 +785,7 @@ bool WindowsGamepadService::GetRawGamepad(HANDLE handle) {
   gamepad.remapper = remapper.forget();
   
   gamepad.gamepadHandle = service->AddGamepad(
-      gamepad_id, gamepad.remapper->GetMappingType(), GamepadHand::_empty,
+      gamepad_id, gamepad.remapper->GetMappingType(),
       gamepad.remapper->GetButtonCount(), gamepad.remapper->GetAxisCount(), 0,
       gamepad.remapper->GetLightIndicatorCount(),
       gamepad.remapper->GetTouchEventCount());
@@ -1174,7 +1174,7 @@ class StartWindowsGamepadServiceRunnable final : public Runnable {
   }
 
  private:
-  ~StartWindowsGamepadServiceRunnable() {}
+  ~StartWindowsGamepadServiceRunnable() = default;
 };
 
 class StopWindowsGamepadServiceRunnable final : public Runnable {
@@ -1198,7 +1198,7 @@ class StopWindowsGamepadServiceRunnable final : public Runnable {
   }
 
  private:
-  ~StopWindowsGamepadServiceRunnable() {}
+  ~StopWindowsGamepadServiceRunnable() = default;
 };
 
 }  
