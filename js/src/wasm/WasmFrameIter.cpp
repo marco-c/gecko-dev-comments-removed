@@ -1238,6 +1238,28 @@ void wasm::GenerateExitPrologueMainStackSwitch(
   masm.moveToStackPtr(scratch3);
   masm.assertStackAlignment(WasmStackAlignment);
 
+#  ifdef JS_HW_SHADOW_STACK
+  masm.moveShadowStackPtrTo(scratch3);
+
+  Label noHardwareShadowStack;
+  masm.branchTestPtr(Assembler::Zero, scratch3, scratch3,
+                     &noHardwareShadowStack);
+
+  masm.storePtr(
+      scratch3,
+      Address(scratch2, wasm::ContStack::offsetOfExitShadowStackPointer()));
+
+  
+  
+  masm.loadPtr(Address(masm.getStackPointer(),
+                       offsetof(wasm::Handlers, returnTarget) +
+                           offsetof(wasm::SwitchTarget, shadowStackPointer)),
+               scratch3);
+  masm.switchToShadowStackPtr(scratch3);
+
+  masm.bind(&noHardwareShadowStack);
+#  endif
+
   
   
   masm.loadPtr(Address(scratch1, JSContext::offsetOfWasm() +
@@ -1313,6 +1335,16 @@ void wasm::GenerateExitEpilogueMainStackReturn(MacroAssembler& masm,
   Label originallyOnSystemStack;
   masm.branchTestPtr(Assembler::Zero, scratch2, scratch2,
                      &originallyOnSystemStack);
+
+#  ifdef JS_HW_SHADOW_STACK
+  masm.loadPtr(
+      Address(scratch2, wasm::ContStack::offsetOfExitShadowStackPointer()),
+      scratch1);
+  masm.storePtr(
+      ImmWord(0),
+      Address(scratch2, wasm::ContStack::offsetOfExitShadowStackPointer()));
+  masm.switchToShadowStackPtr(scratch1);
+#  endif
 
   
   masm.loadPtr(Address(InstanceReg, wasm::Instance::offsetOfCx()), scratch1);

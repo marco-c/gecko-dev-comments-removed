@@ -213,6 +213,13 @@ class ContStack {
   
   
   uintptr_t* initialShadowStackPointer_ = nullptr;
+
+  
+  
+  
+  
+  
+  uintptr_t* exitShadowStackPointer_ = nullptr;
 #  endif
 
   
@@ -330,9 +337,23 @@ class ContStack {
     return offsetof(ContStack, resumeTarget_);
   }
 
+#  ifdef JS_HW_SHADOW_STACK
+  static constexpr int32_t offsetOfExitShadowStackPointer() {
+    return offsetof(ContStack, exitShadowStackPointer_);
+  }
+#  endif
+
   
   
   uintptr_t allocationBase() const { return allocationBase_; }
+
+  uintptr_t* exitShadowStackPointer() const {
+#  ifdef JS_HW_SHADOW_STACK
+    return exitShadowStackPointer_;
+#  else
+    return nullptr;
+#  endif
+  }
 
   
   bool canResume() const {
