@@ -21,7 +21,7 @@ async def test_pointer_down_closes_browsing_context(
     bidi_session, configuration, get_element, new_tab, inline, subscribe_events,
     wait_for_event
 ):
-    url = inline("""<input onpointerdown="window.close()">close</input>""")
+    url = inline("""<input onpointerdown="window.close()">close""")
 
     
     
