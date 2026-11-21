@@ -141,6 +141,8 @@ pub struct NeqoHttp3Conn {
     would_block_counter: WouldBlockCounter,
     
     
+    
+    
     webtransport_send_groups: HashMap<u64, SendGroupId>,
     
     
@@ -375,6 +377,16 @@ type BorrowedSocket = std::os::fd::BorrowedFd<'static>;
 type BorrowedSocket = std::os::windows::io::BorrowedSocket<'static>;
 
 impl NeqoHttp3Conn {
+    
+    
+    fn neqo_send_group_id(&self, child_id: u64) -> Option<SendGroupId> {
+        if child_id == 0 {
+            Some(SendGroupId::new(0))
+        } else {
+            self.webtransport_send_groups.get(&child_id).copied()
+        }
+    }
+
     
     
     
@@ -1652,7 +1664,7 @@ pub extern "C" fn neqo_http3conn_fetch(
     match conn.conn.fetch(
         Instant::now(),
         method_tmp,
-        (scheme_tmp, host_tmp, path_tmp),
+        &(scheme_tmp, host_tmp, path_tmp),
         &hdrs,
         priority,
     ) {
@@ -2260,7 +2272,7 @@ pub extern "C" fn neqo_http3conn_event(
             Http3ClientEvent::DataWritable { stream_id } => Http3Event::DataWritable {
                 stream_id: stream_id.as_u64(),
             },
-            Http3ClientEvent::OutgoingDatagramSpaceAvailable => Http3Event::NoEvent,
+            Http3ClientEvent::OutgoingDatagramSpaceAvailable { .. } => Http3Event::NoEvent,
             Http3ClientEvent::StopSending { stream_id, error } => Http3Event::StopSending {
                 stream_id: stream_id.as_u64(),
                 error,
@@ -2587,7 +2599,7 @@ pub extern "C" fn neqo_http3conn_webtransport_create_session(
 
     match conn.conn.webtransport_create_session(
         Instant::now(),
-        ("https", host_tmp, path_tmp),
+        &("https", host_tmp, path_tmp),
         &hdrs,
     ) {
         Ok(id) => {
@@ -2622,7 +2634,7 @@ pub extern "C" fn neqo_http3conn_connect_udp_create_session(
 
     match conn
         .conn
-        .connect_udp_create_session(Instant::now(), ("https", host_tmp, path_tmp), &hdrs)
+        .connect_udp_create_session(Instant::now(), &("https", host_tmp, path_tmp), &hdrs)
     {
         Ok(id) => {
             *stream_id = id.as_u64();
@@ -2728,6 +2740,15 @@ pub extern "C" fn neqo_http3conn_webtransport_send_datagram(
     };
     
     
+    
+    
+    
+    
+    let translated_group_id = conn
+        .neqo_send_group_id(send_group_id)
+        .unwrap_or(SendGroupId::new(0));
+    
+    
     let now = Instant::now();
     let written = now
         .checked_sub(Duration::from_micros(age_us))
@@ -2737,7 +2758,7 @@ pub extern "C" fn neqo_http3conn_webtransport_send_datagram(
         data,
         id,
         written,
-        SendGroupId::new(send_group_id),
+        translated_group_id,
         send_order,
     ) {
         Ok(DatagramQueueOutcome::Rejected) => NS_BASE_STREAM_WOULD_BLOCK,
@@ -2855,7 +2876,7 @@ pub unsafe extern "C" fn neqo_http3conn_webtransport_set_sendgroup(
             Err(_) => NS_ERROR_UNEXPECTED,
         };
     }
-    let Some(&sg_id) = conn.webtransport_send_groups.get(&sendgroup_id) else {
+    let Some(sg_id) = conn.neqo_send_group_id(sendgroup_id) else {
         return NS_ERROR_UNEXPECTED;
     };
     match conn
