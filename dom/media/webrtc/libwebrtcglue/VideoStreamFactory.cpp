@@ -13,9 +13,11 @@
 
 #include "GMPUtils.h"
 #include "VideoConduit.h"
+#include "api/video/resolution.h"
 #include "common/browser_logging/CSFLog.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/gfx/Point.h"
+#include "video/config/simulcast.h"
 #include "video/config/video_encoder_config.h"
 
 template <class t>
@@ -45,28 +47,32 @@ namespace mozilla {
 
 #define MB_OF(w, h) \
   ((unsigned int)(((((w) + 15) >> 4)) * ((unsigned int)(((h) + 15) >> 4))))
-
-
-
-
-
-
-
-static constexpr VideoStreamFactory::ResolutionAndBitrateLimits
-    kResolutionAndBitrateLimits[] = {
-        
-  {MB_OF(1920, 1200), KBPS(1500), KBPS(2000), KBPS(10000)}, 
-  {MB_OF(1280, 720), KBPS(1200), KBPS(1500), KBPS(5000)}, 
-  {MB_OF(800, 480), KBPS(200), KBPS(800), KBPS(2500)}, 
-  {MB_OF(480, 270), KBPS(150), KBPS(500), KBPS(2000)}, 
-  {std::max(MB_OF(400, 240), MB_OF(352, 288)), KBPS(125), KBPS(300), KBPS(1300)}, 
-  {MB_OF(176, 144), KBPS(100), KBPS(150), KBPS(500)}, 
-  {0 , KBPS(40), KBPS(80), KBPS(250)} 
-        
-};
-
-auto VideoStreamFactory::GetLimitsFor(gfx::IntSize aSize, int aCapBps )
+auto VideoStreamFactory::GetUnicastLimitsFor(gfx::IntSize aSize,
+                                             int aCapBps )
     -> ResolutionAndBitrateLimits {
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  static constexpr ResolutionAndBitrateLimits kResolutionAndBitrateLimits[] = {
+      
+  {MB_OF(1920, 1200), kViEMinCodecBitrate_bps, KBPS(2000), KBPS(10000)}, 
+  {MB_OF(1280, 720), kViEMinCodecBitrate_bps, KBPS(1500), KBPS(5000)}, 
+  {MB_OF(800, 480), kViEMinCodecBitrate_bps, KBPS(800), KBPS(2500)}, 
+  {MB_OF(480, 270), kViEMinCodecBitrate_bps, KBPS(500), KBPS(2000)}, 
+  {std::max(MB_OF(400, 240), MB_OF(352, 288)), kViEMinCodecBitrate_bps, KBPS(300), KBPS(1300)}, 
+  {MB_OF(176, 144), kViEMinCodecBitrate_bps, KBPS(150), KBPS(500)}, 
+  {0 , kViEMinCodecBitrate_bps, KBPS(80), KBPS(250)} 
+      
+  };
+
   
   
   int fs = MB_OF(aSize.width, aSize.height);
@@ -84,6 +90,55 @@ auto VideoStreamFactory::GetLimitsFor(gfx::IntSize aSize, int aCapBps )
   MOZ_CRASH("Loop should have handled fallback");
 }
 
+auto VideoStreamFactory::GetBitrateLimitsFor(
+    const webrtc::FieldTrialsView& aFieldTrials,
+    const webrtc::VideoEncoderConfig& aConfig, bool aTemporalLayersSupported,
+    const std::vector<webrtc::VideoStream>& aStreams)
+    -> AutoTArray<ResolutionAndBitrateLimits, webrtc::kMaxSimulcastStreams> {
+  AutoTArray<ResolutionAndBitrateLimits, webrtc::kMaxSimulcastStreams> limits;
+
+  if (aStreams.size() <= 1) {
+    if (!aStreams.empty()) {
+      limits.AppendElement(GetUnicastLimitsFor(
+          gfx::IntSize(SaturatingCast<int>(aStreams[0].width),
+                       SaturatingCast<int>(aStreams[0].height))));
+    }
+    return limits;
+  }
+
+  std::vector<webrtc::Resolution> resolutions;
+  resolutions.reserve(aStreams.size());
+  for (const auto& stream : aStreams) {
+    resolutions.push_back(webrtc::Resolution{
+        SaturatingCast<int>(stream.width), SaturatingCast<int>(stream.height)});
+  }
+  const std::vector<webrtc::VideoStream> layers = webrtc::GetSimulcastConfig(
+      resolutions,  false,
+      aTemporalLayersSupported, aFieldTrials, aConfig.codec_type);
+  MOZ_ASSERT(layers.size() == aStreams.size());
+  for (const auto& layer : layers) {
+    limits.AppendElement(ResolutionAndBitrateLimits{
+        SaturatingCast<int>(MB_OF(layer.width, layer.height)),
+        layer.min_bitrate_bps, layer.target_bitrate_bps,
+        layer.max_bitrate_bps});
+  }
+
+  
+  
+  
+  Maybe<ResolutionAndBitrateLimits&> lowestActive;
+  for (size_t i = 0; i < limits.Length(); ++i) {
+    if (aStreams[i].active &&
+        (lowestActive.isNothing() ||
+         limits[i].max_bitrate_bps < lowestActive->max_bitrate_bps)) {
+      lowestActive = SomeRef(limits[i]);
+    }
+  }
+  if (lowestActive) {
+    lowestActive->min_bitrate_bps = kViEMinCodecBitrate_bps;
+  }
+  return limits;
+}
 
 
 
@@ -95,18 +150,18 @@ auto VideoStreamFactory::GetLimitsFor(gfx::IntSize aSize, int aCapBps )
 
 
 
-static void SelectBitrates(gfx::IntSize size, int min, int start, int cap,
-                           int pref_cap, int negotiated_cap,
-                           webrtc::VideoStream& aVideoStream) {
+
+static void SelectBitrates(
+    const VideoStreamFactory::ResolutionAndBitrateLimits& defaults, int min,
+    int start, int cap, int pref_cap, int negotiated_cap,
+    webrtc::VideoStream& aVideoStream) {
   int& out_min = aVideoStream.min_bitrate_bps;
   int& out_start = aVideoStream.target_bitrate_bps;
   int& out_max = aVideoStream.max_bitrate_bps;
 
-  VideoStreamFactory::ResolutionAndBitrateLimits resAndLimits =
-      VideoStreamFactory::GetLimitsFor(size);
-  out_min = MinIgnoreZero(resAndLimits.min_bitrate_bps, cap);
-  out_start = MinIgnoreZero(resAndLimits.start_bitrate_bps, cap);
-  out_max = MinIgnoreZero(resAndLimits.max_bitrate_bps, cap);
+  out_min = MinIgnoreZero(defaults.min_bitrate_bps, cap);
+  out_start = MinIgnoreZero(defaults.start_bitrate_bps, cap);
+  out_max = MinIgnoreZero(defaults.max_bitrate_bps, cap);
 
   
   
@@ -197,6 +252,17 @@ std::vector<webrtc::VideoStream> VideoStreamFactory::CreateEncoderStreams(
 
   MOZ_RELEASE_ASSERT(streamCount >= 1, "Should request at least one stream");
   MOZ_RELEASE_ASSERT(streamCount <= aConfig.simulcast_layers.size());
+  MOZ_RELEASE_ASSERT(streamCount <= mCodecConfig.mEncodings.size());
+
+  bool temporalLayersSupported = true;
+  if (streamCount > 1 && mCodecConfig.mName == "H264") {
+#ifdef ANDROID
+    temporalLayersSupported = false;
+#else
+    temporalLayersSupported =
+        HaveGMPFor("encode-video"_ns, {"moz-h264-temporal-svc"_ns});
+#endif
+  }
 
   std::vector<webrtc::VideoStream> streams;
   streams.reserve(streamCount);
@@ -205,6 +271,13 @@ std::vector<webrtc::VideoStream> VideoStreamFactory::CreateEncoderStreams(
     webrtc::VideoStream video_stream = aConfig.simulcast_layers[idx];
     const auto& encoding = mCodecConfig.mEncodings[idx];
     MOZ_ASSERT(video_stream.active == encoding.active);
+
+    if (streamCount > 1) {
+      
+      video_stream.num_temporal_layers = temporalLayersSupported ? 2 : 1;
+      
+      
+    }
 
     SelectResolutionAndMaxFramerate({aWidth, aHeight}, encoding, video_stream);
 
@@ -220,8 +293,17 @@ std::vector<webrtc::VideoStream> VideoStreamFactory::CreateEncoderStreams(
                  __FUNCTION__, encoding.rid.c_str());
     }
 
-    SelectBitrates({video_stream.width, video_stream.height}, mMinBitrate,
-                   mStartBitrate,
+    streams.push_back(video_stream);
+  }
+
+  const auto bitrateLimits = GetBitrateLimitsFor(
+      field_trials, aConfig, temporalLayersSupported, streams);
+
+  for (size_t idx = 0; idx < streamCount; ++idx) {
+    webrtc::VideoStream& video_stream = streams[idx];
+    const auto& encoding = mCodecConfig.mEncodings[idx];
+
+    SelectBitrates(bitrateLimits[idx], mMinBitrate, mStartBitrate,
                    SaturatingCast<int>(encoding.constraints.maxBr),
                    mPrefMaxBitrate, mNegotiatedMaxBitrate, video_stream);
 
@@ -236,23 +318,6 @@ std::vector<webrtc::VideoStream> VideoStreamFactory::CreateEncoderStreams(
 
     video_stream.bitrate_priority = aConfig.bitrate_priority;
     video_stream.max_qp = kQpMax;
-
-    if (streamCount > 1) {
-      video_stream.num_temporal_layers = 2;
-      if (mCodecConfig.mName == "H264") {
-#ifdef ANDROID
-        video_stream.num_temporal_layers = 1;
-#else
-        if (!HaveGMPFor("encode-video"_ns, {"moz-h264-temporal-svc"_ns})) {
-          video_stream.num_temporal_layers = 1;
-        }
-#endif
-      }
-      
-      
-    }
-
-    streams.push_back(video_stream);
   }
 
   MOZ_RELEASE_ASSERT(streams.size(), "Should configure at least one stream");
