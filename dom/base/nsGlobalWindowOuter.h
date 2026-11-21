@@ -68,6 +68,7 @@ class nsHistory;
 class nsGlobalWindowObserver;
 class nsGlobalWindowInner;
 class nsDOMWindowUtils;
+class LazyFocusActionId;
 struct nsRect;
 class nsWindowRoot;
 class nsWindowSizes;
@@ -512,7 +513,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void FocusOuter(
       mozilla::dom::CallerType aCallerType, bool aFromOtherProcess,
-      uint64_t aActionId);
+      LazyFocusActionId& aActionId);
   nsresult Focus(mozilla::dom::CallerType aCallerType) override;
   
   

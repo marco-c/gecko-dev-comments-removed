@@ -457,7 +457,8 @@ nsresult nsFocusManager::SetFocusedWindowWithCallerType(
                                 ? existingActionId.value()
                                 : sInstance->GenerateFocusActionId();
   if (rootWindow) {
-    RaiseWindow(rootWindow, aCallerType, actionId);
+    LazyFocusActionId lazyActionId(actionId);
+    RaiseWindow(rootWindow, aCallerType, lazyActionId);
   }
 
   LOGFOCUS(("<<SetFocusedWindow end actionid: %" PRIu64 ">>", actionId));
@@ -2051,10 +2052,11 @@ Maybe<uint64_t> nsFocusManager::SetFocusInner(Element* aNewContent,
         if (XRE_IsParentProcess() || newRootBrowsingContext->IsInProcess()) {
           nsCOMPtr<nsPIDOMWindowOuter> outerWindow =
               newRootBrowsingContext->GetDOMWindow();
+          LazyFocusActionId lazyActionId(actionId);
           RaiseWindow(outerWindow,
                       aFlags & FLAG_NONSYSTEMCALLER ? CallerType::NonSystem
                                                     : CallerType::System,
-                      actionId);
+                      lazyActionId);
         } else {
           mozilla::dom::ContentChild* contentChild =
               mozilla::dom::ContentChild::GetSingleton();
@@ -3238,7 +3240,8 @@ void nsFocusManager::ScrollIntoView(PresShell* aPresShell, nsIContent* aContent,
 }
 
 void nsFocusManager::RaiseWindow(nsPIDOMWindowOuter* aWindow,
-                                 CallerType aCallerType, uint64_t aActionId) {
+                                 CallerType aCallerType,
+                                 LazyFocusActionId& aActionId) {
   
   
 
@@ -3251,7 +3254,7 @@ void nsFocusManager::RaiseWindow(nsPIDOMWindowOuter* aWindow,
       if (!mFocusedWindow ||
           !IsSameOrAncestor(aWindow->GetBrowsingContext(),
                             mFocusedWindow->GetBrowsingContext())) {
-        MoveFocusToWindowAfterRaise(aWindow, aActionId);
+        MoveFocusToWindowAfterRaise(aWindow, aActionId.Get());
       }
       return;
     }
@@ -3289,7 +3292,7 @@ void nsFocusManager::RaiseWindow(nsPIDOMWindowOuter* aWindow,
       
       
       
-      WindowRaised(aWindow, aActionId);
+      WindowRaised(aWindow, aActionId.Get());
     }
   }
 

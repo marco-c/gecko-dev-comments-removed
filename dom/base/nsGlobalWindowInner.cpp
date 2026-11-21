@@ -4050,10 +4050,10 @@ void nsGlobalWindowInner::Prompt(const nsAString& aMessage,
 }
 
 void nsGlobalWindowInner::Focus(CallerType aCallerType, ErrorResult& aError) {
-  FORWARD_TO_OUTER_OR_THROW(FocusOuter,
-                            (aCallerType,  false,
-                             nsFocusManager::GenerateFocusActionId()),
-                            aError, );
+  LazyFocusActionId actionId;
+  FORWARD_TO_OUTER_OR_THROW(
+      FocusOuter, (aCallerType,  false, actionId),
+      aError, );
 }
 
 nsresult nsGlobalWindowInner::Focus(CallerType aCallerType) {
@@ -7027,7 +7027,7 @@ void nsGlobalWindowInner::GetGamepads(nsTArray<RefPtr<Gamepad>>& aGamepads) {
   
   aGamepads.SetCapacity(mGamepads.Count());
   for (const auto& entry : mGamepads) {
-    Gamepad* gamepad = entry.GetWeak();
+    Gamepad* gamepad = entry.GetRawPtr();
     aGamepads.EnsureLengthAtLeast(gamepad->Index() + 1);
     aGamepads[gamepad->Index()] = gamepad;
   }
@@ -7066,7 +7066,7 @@ void nsGlobalWindowInner::SyncGamepadState() {
   if (mHasSeenGamepadInput) {
     RefPtr<GamepadManager> gamepadManager(GamepadManager::GetService());
     for (const auto& entry : mGamepads) {
-      gamepadManager->SyncGamepadState(entry.GetKey(), this, entry.GetWeak());
+      gamepadManager->SyncGamepadState(entry.GetKey(), this, entry.GetRawPtr());
     }
   }
 }

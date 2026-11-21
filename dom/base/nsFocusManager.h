@@ -6,6 +6,7 @@
 #define nsFocusManager_h_
 
 #include "mozilla/Attributes.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/dom/Document.h"
@@ -34,6 +35,7 @@ class ContentParent;
 }  
 
 struct nsDelayedBlurOrFocusEvent;
+class LazyFocusActionId;
 
 
 
@@ -244,7 +246,7 @@ class nsFocusManager final : public nsIFocusManager,
 
   MOZ_CAN_RUN_SCRIPT void RaiseWindow(nsPIDOMWindowOuter* aWindow,
                                       mozilla::dom::CallerType aCallerType,
-                                      uint64_t aActionId);
+                                      LazyFocusActionId& aActionId);
 
   
 
@@ -1086,6 +1088,35 @@ class nsFocusManager final : public nsIFocusManager,
 
   
   static mozilla::StaticRefPtr<nsFocusManager> sInstance;
+};
+
+
+
+
+
+
+
+
+
+
+class MOZ_STACK_CLASS LazyFocusActionId final {
+ public:
+  LazyFocusActionId() = default;
+  explicit LazyFocusActionId(uint64_t aActionId)
+      : mActionId(mozilla::Some(aActionId)) {}
+  LazyFocusActionId(const LazyFocusActionId&) = delete;
+  LazyFocusActionId& operator=(const LazyFocusActionId&) = delete;
+
+  
+  uint64_t Get() {
+    if (mActionId.isNothing()) {
+      mActionId.emplace(nsFocusManager::GenerateFocusActionId());
+    }
+    return *mActionId;
+  }
+
+ private:
+  mozilla::Maybe<uint64_t> mActionId;
 };
 
 nsresult NS_NewFocusManager(nsIFocusManager** aResult);
