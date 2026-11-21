@@ -413,7 +413,6 @@ nsresult FetchIconInfo(const UniquePtr<ConnectionAdapter>& aConn,
   
   
   
-  
 
   nsCString query = nsPrintfCString(
       "/* do not warn (bug no: not worth having a compound index) */ "
@@ -431,7 +430,7 @@ nsresult FetchIconInfo(const UniquePtr<ConnectionAdapter>& aConn,
       "FROM moz_icons i "
       "WHERE fixed_icon_url_hash = "
       "  hash(fixup_url(:hostAndPort) || '/favicon.ico') "
-      "ORDER BY %s width DESC, root ASC, id DESC",
+      "ORDER BY %s width DESC, root ASC",
       nsIFaviconService::ICONDATA_FLAGS_RICH,
       nsIFaviconService::ICONDATA_FLAGS_RICH,
       
