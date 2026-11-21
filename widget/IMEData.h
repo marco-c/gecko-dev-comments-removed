@@ -456,6 +456,21 @@ struct InputContext final {
            false;
   }
 
+  
+
+
+
+  bool HasSameURI(nsIURI* aURI) const;
+
+  
+
+
+
+
+
+
+  bool Equals(const InputContext& aOther) const;
+
   IMEState mIMEState;
 
   

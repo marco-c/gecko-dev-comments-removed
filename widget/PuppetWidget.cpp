@@ -628,12 +628,19 @@ nsRefreshDriver* PuppetWidget::GetTopLevelRefreshDriver() const {
 
 void PuppetWidget::SetInputContext(const InputContext& aContext,
                                    const InputContextAction& aAction) {
+  
+  
+  
+  
+  const bool parentHasEqualContext =
+      aContext.mIMEState.mEnabled == IMEEnabled::Disabled &&
+      HaveValidInputContextCache() && mInputContext.Equals(aContext);
   mInputContext = aContext;
   
   
   
   mInputContext.mIMEState.mOpen = IMEState::OPEN_STATE_NOT_SUPPORTED;
-  if (!mBrowserChild) {
+  if (!mBrowserChild || parentHasEqualContext) {
     return;
   }
   mBrowserChild->SendSetInputContext(aContext, aAction);
@@ -933,9 +940,9 @@ LayoutDeviceIntPoint PuppetWidget::GetWindowPosition() {
   }
 
   int32_t winX, winY, winW, winH;
-  NS_ENSURE_SUCCESS(GetOwningBrowserChild()->GetDimensions(
-                        DimensionKind::Outer, &winX, &winY, &winW, &winH),
-                    LayoutDeviceIntPoint());
+  NS_ENSURE_SUCCESS(
+      GetOwningBrowserChild()->GetDimensions(&winX, &winY, &winW, &winH),
+      LayoutDeviceIntPoint());
   return LayoutDeviceIntPoint(winX, winY) +
          GetOwningBrowserChild()->GetClientOffset();
 }

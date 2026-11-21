@@ -257,6 +257,8 @@ class nsPresContext : public nsISupports,
     return mDocument;
   }
 
+  bool IsInPrivateBrowsing() const;
+
   inline mozilla::ServoStyleSet* StyleSet() const;
 
   bool HasPendingMediaQueryUpdates() const {
@@ -1049,7 +1051,8 @@ class nsPresContext : public nsISupports,
 
 
 
-  nsIFrame* GetPrimaryFrameFor(nsIContent* aContent);
+
+  nsIFrame* GetPrimaryOrAreaImageFrameFor(nsIContent* aContent);
 
   virtual size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
   virtual size_t SizeOfIncludingThis(
@@ -1135,7 +1138,6 @@ class nsPresContext : public nsISupports,
   void DoUpdateHiddenByContentVisibilityForAnimations();
   friend class nsRunnableMethod<nsPresContext>;
   MOZ_CAN_RUN_SCRIPT void ThemeChangedInternal();
-  void RefreshSystemMetrics();
 
   
   void UIResolutionChangedInternal();
