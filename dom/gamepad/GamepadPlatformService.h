@@ -69,9 +69,8 @@ class GamepadPlatformService final {
 
   
   GamepadHandle AddGamepad(const char* aID, GamepadMappingType aMapping,
-                           GamepadHand aHand, uint32_t aNumButtons,
-                           uint32_t aNumAxes, uint32_t aNumHaptics,
-                           uint32_t aNumLightIndicator,
+                           uint32_t aNumButtons, uint32_t aNumAxes,
+                           uint32_t aNumHaptics, uint32_t aNumLightIndicator,
                            uint32_t aNumTouchEvents) MOZ_EXCLUDES(mMutex);
   
   void RemoveGamepad(GamepadHandle aHandle) MOZ_EXCLUDES(mMutex);
