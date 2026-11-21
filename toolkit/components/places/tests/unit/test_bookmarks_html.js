@@ -214,9 +214,6 @@ add_task(async function test_import_chromefavicon() {
   const CHROME_FAVICON_URI = Services.io.newURI(
     "chrome://global/skin/icons/delete.svg"
   );
-  const CHROME_FAVICON_URI_2 = Services.io.newURI(
-    "chrome://global/skin/icons/error.svg"
-  );
 
   info("Importing from html");
   await BookmarkHTMLUtils.importFromFile(gBookmarksFileNew, { replace: true });
@@ -251,14 +248,18 @@ add_task(async function test_import_chromefavicon() {
   await BookmarkHTMLUtils.exportToFile(gBookmarksFileNew);
   await PlacesTestUtils.promiseAsyncUpdates();
 
-  info("Set favicon");
-  
-  let dataURL_2 =
-    await PlacesTestUtils.getFaviconDataURLFromNetwork(CHROME_FAVICON_URI_2);
-  await PlacesTestUtils.setFaviconForPage(
-    PAGE_URI,
-    CHROME_FAVICON_URI_2,
-    dataURL_2
+  info("Check the exported chrome favicon");
+  let exported = await IOUtils.readUTF8(gBookmarksFileNew);
+  let anchor = exported
+    .split("\n")
+    .find(line => line.includes(`HREF="${PAGE_URI.spec}"`));
+  Assert.ok(
+    anchor.includes(`ICON_URI="${CHROME_FAVICON_URI.spec}"`),
+    "The chrome favicon URI is exported"
+  );
+  Assert.ok(
+    !anchor.includes(" ICON="),
+    "The chrome favicon data is not exported"
   );
 
   info("import from html");
