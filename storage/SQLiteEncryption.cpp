@@ -11,7 +11,6 @@
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/StaticPrefs_security.h"
-#include "mozilla/SyncRunnable.h"
 #include "mozilla/dom/quota/IPCStreamCipherStrategy.h"
 #include "mozilla/security/lockstore/lockstore_ffi_generated.h"
 #include "ScopedNSSTypes.h"
@@ -118,23 +117,22 @@ void EnsureProfilePathCached() {
 
 
 
-void EnsureProfilePathCachedAnyThread() {
+nsresult EnsureProfilePathCachedAnyThread() {
   {
     StaticMutexAutoLock lock(sStateMutex);
     if (!sCachedProfilePath.IsEmpty()) {
-      return;
+      return NS_OK;
     }
   }
   if (NS_IsMainThread()) {
     EnsureProfilePathCached();
-    return;
+    return NS_OK;
   }
-  nsCOMPtr<nsIRunnable> r =
-      NS_NewRunnableFunction("mozilla::storage::EnsureProfilePathCached",
-                             []() { EnsureProfilePathCached(); });
-  mozilla::SyncRunnable::DispatchToThread(GetMainThreadSerialEventTarget(), r);
+  NS_WARNING(
+      "Trying to open a database off the main thread before "
+      "profile-do-change! Forgot to call do_get_profile()?");
+  return NS_ERROR_NOT_INITIALIZED;
 }
-
 
 
 
@@ -149,7 +147,8 @@ nsresult GetCachedProfilePath(nsString& aOutPath) {
     aOutPath = sCachedProfilePath;
   }
   if (aOutPath.IsEmpty()) {
-    EnsureProfilePathCachedAnyThread();
+    nsresult rv = EnsureProfilePathCachedAnyThread();
+    NS_ENSURE_SUCCESS(rv, rv);
     StaticMutexAutoLock lock(sStateMutex);
     aOutPath = sCachedProfilePath;
   }
