@@ -31,7 +31,7 @@ async function promiseObserverNotification() {
 
       is(
         gamepads[1],
-        `["test gamepad 2","",10,4,2,0,0]`,
+        `["test gamepad 2","right",10,4,2,0,0]`,
         "The second gamepads metrics is expected."
       );
     },
@@ -56,6 +56,7 @@ add_task(async function test() {
         await GamepadService.addGamepad(
           "test gamepad 1",
           GamepadService.standardMapping,
+          GamepadService.noHand,
           4, 
           4, 
           0, 
@@ -66,6 +67,7 @@ add_task(async function test() {
         await GamepadService.addGamepad(
           "test gamepad 2",
           GamepadService.standardMapping,
+          GamepadService.rightHand,
           10, 
           4, 
           2, 
