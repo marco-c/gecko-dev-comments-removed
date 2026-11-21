@@ -2502,7 +2502,8 @@ void TrackBuffersManager::InsertFrames(TrackBuffer& aSamples,
   }
 
   TrackBuffer& data = trackBuffer.GetTrackBuffer();
-  data.InsertElementsAt(trackBuffer.mNextInsertionIndex.ref(), aSamples);
+  const uint32_t insertionStart = trackBuffer.mNextInsertionIndex.ref();
+  data.InsertElementsAt(insertionStart, aSamples);
   trackBuffer.mNextInsertionIndex.ref() += aSamples.Length();
 
   
@@ -2522,6 +2523,138 @@ void TrackBuffersManager::InsertFrames(TrackBuffer& aSamples,
     range.SetFuzz(trackBuffer.mLongestFrameDuration / 2);
     trackBuffer.mSanitizedBufferedRanges += range;
   }
+
+  EndFramesAtNextPresentation(trackBuffer, insertionStart, aSamples.Length());
+}
+
+void TrackBuffersManager::EndFramesAtNextPresentation(TrackData& aTrackData,
+                                                      uint32_t aStart,
+                                                      uint32_t aCount) {
+  
+  const bool isMp4 = mType.Type() == MEDIAMIMETYPE(VIDEO_MP4) ||
+                     mType.Type() == MEDIAMIMETYPE(AUDIO_MP4);
+  if (!StaticPrefs::media_mp4_frame_ends_across_fragments_enabled() || !isMp4 ||
+      &aTrackData != &mVideoTracks || !aCount) {
+    return;
+  }
+  
+  
+  
+  constexpr uint32_t kMaxReorderedFrames = 16;
+  
+  
+  
+  
+  
+  const TimeUnit maxDecodeStep = aTrackData.mLongestFrameDuration * 2;
+  TrackBuffer& data = aTrackData.GetTrackBuffer();
+  
+  
+  auto isContinuous = [&](uint32_t aIndex) {
+    const TimeUnit& earlier = data[aIndex]->mTimecode;
+    const TimeUnit& later = data[aIndex + 1]->mTimecode;
+    if (later < earlier) {
+      return false;
+    }
+    const TimeUnit step = later - earlier;
+    return step.IsValid() && step <= maxDecodeStep;
+  };
+  uint32_t begin = aStart;
+  while (begin > 0 && aStart - begin < kMaxReorderedFrames &&
+         isContinuous(begin - 1)) {
+    begin--;
+  }
+  const uint32_t newEnd = aStart + aCount;
+  uint32_t end = newEnd;
+  while (end < data.Length() && end - newEnd < kMaxReorderedFrames &&
+         isContinuous(end - 1)) {
+    end++;
+  }
+
+  
+  struct Frame {
+    MediaRawData* mSample;
+    
+    
+    bool mIsInThisAppend;
+  };
+  AutoTArray<Frame, 64> frames;
+  for (uint32_t i = begin; i < end; i++) {
+    frames.AppendElement(Frame{data[i].get(), i >= aStart && i < newEnd});
+  }
+  frames.StableSort([](const Frame& aA, const Frame& aB) {
+    const TimeUnit& a = aA.mSample->mTime;
+    const TimeUnit& b = aB.mSample->mTime;
+    return a < b ? -1 : (a > b ? 1 : 0);
+  });
+
+  
+  
+  
+  
+  
+  
+  
+  TimeIntervals extended;
+  for (size_t i = 1; i < frames.Length(); i++) {
+    if (frames[i - 1].mIsInThisAppend == frames[i].mIsInThisAppend) {
+      continue;
+    }
+    MediaRawData* frame = frames[i - 1].mSample;
+    const TimeUnit& nextStart = frames[i].mSample->mTime;
+    const TimeUnit oldEnd = frame->GetEndTime();
+    if (nextStart < oldEnd) {
+      
+      
+      
+      
+      if (frames[i - 1].mIsInThisAppend || nextStart <= frame->mTime) {
+        continue;
+      }
+      size_t next = i + 1;
+      while (next < frames.Length() && frames[next].mIsInThisAppend) {
+        next++;
+      }
+      if (next == frames.Length() || frames[next].mSample->mTime != oldEnd) {
+        continue;
+      }
+      MSE_DEBUGV("End frame [{},{}] at new frame start {}",
+                 frame->mTime.ToMicroseconds(), oldEnd.ToMicroseconds(),
+                 nextStart.ToMicroseconds());
+      frame->mDuration = nextStart - frame->mTime;
+      continue;
+    }
+    
+    if (frame->mOriginalPresentationWindow) {
+      continue;
+    }
+    
+    
+    
+    const TimeUnit duration = nextStart - frame->mTime;
+    const TimeUnit newFrameEnd =
+        duration.IsValid() ? frame->mTime + duration : TimeUnit::Invalid();
+    const TimeUnit newDecodeEnd =
+        duration.IsValid() ? frame->mTimecode + duration : TimeUnit::Invalid();
+    if (!newFrameEnd.IsValid() || newFrameEnd.IsInfinite() ||
+        !newDecodeEnd.IsValid() || newDecodeEnd.IsInfinite() ||
+        newFrameEnd <= oldEnd) {
+      continue;
+    }
+    MSE_DEBUGV("Extend frame [{},{}] to next presentation start {}",
+               frame->mTime.ToMicroseconds(), oldEnd.ToMicroseconds(),
+               nextStart.ToMicroseconds());
+    frame->mDuration = duration;
+    extended += TimeInterval(oldEnd, newFrameEnd);
+  }
+  
+  
+  if (extended.IsEmpty()) {
+    return;
+  }
+  aTrackData.mBufferedRanges += extended;
+  extended.SetFuzz(aTrackData.mLongestFrameDuration / 2);
+  aTrackData.mSanitizedBufferedRanges += extended;
 }
 
 void TrackBuffersManager::UpdateHighestTimestamp(
@@ -3224,11 +3357,24 @@ int32_t TrackBuffersManager::FindCurrentPosition(TrackInfo::TrackType aTrack,
   const auto& trackData = GetTracksData(aTrack);
   const TrackBuffer& track = GetTrackBuffer(aTrack);
   int32_t trackLength = AssertedCast<int32_t>(track.Length());
+  
+  
+  
+  
+  
+  auto decodeEnd = [&](int32_t aIndex) {
+    const TimeUnit end = track[aIndex]->GetEndTimecode();
+    if (aIndex + 1 >= trackLength) {
+      return end;
+    }
+    const TimeUnit& next = track[aIndex + 1]->mTimecode;
+    return next > track[aIndex]->mTimecode && next < end ? next : end;
+  };
 
   
   for (int32_t i = 0; i < trackLength; i++) {
     const RefPtr<MediaRawData>& sample = track[i];
-    TimeInterval sampleInterval{sample->mTimecode, sample->GetEndTimecode()};
+    TimeInterval sampleInterval{sample->mTimecode, decodeEnd(i)};
 
     if (sampleInterval.ContainsStrict(trackData.mNextSampleTimecode)) {
       return i;
@@ -3242,8 +3388,7 @@ int32_t TrackBuffersManager::FindCurrentPosition(TrackInfo::TrackType aTrack,
 
   for (int32_t i = 0; i < trackLength; i++) {
     const RefPtr<MediaRawData>& sample = track[i];
-    TimeInterval sampleInterval{sample->mTimecode, sample->GetEndTimecode(),
-                                aFuzz};
+    TimeInterval sampleInterval{sample->mTimecode, decodeEnd(i), aFuzz};
 
     if (sampleInterval.ContainsWithStrictEnd(trackData.mNextSampleTimecode)) {
       return i;

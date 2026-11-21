@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_TRACKBUFFERSMANAGER_H_
 #define MOZILLA_TRACKBUFFERSMANAGER_H_
 
@@ -447,6 +445,13 @@ class TrackBuffersManager final
   void InsertFrames(TrackBuffer& aSamples,
                     const media::TimeIntervals& aIntervals,
                     TrackData& aTrackData) MOZ_REQUIRES(mTaskQueueCapability);
+  
+  
+  
+  
+  void EndFramesAtNextPresentation(TrackData& aTrackData, uint32_t aStart,
+                                   uint32_t aCount)
+      MOZ_REQUIRES(mTaskQueueCapability);
   void UpdateHighestTimestamp(TrackData& aTrackData,
                               const media::TimeUnit& aHighestTime)
       MOZ_REQUIRES(mTaskQueueCapability);
