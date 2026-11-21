@@ -2579,7 +2579,10 @@ NSEvent* gLastDragMouseDownEvent = nil;
   
   
   
-  if (nsCocoaFeatures::OnGoldenGateOrLater() && [theEvent clickCount] == 1) {
+  
+  bool needsNativeZoomCheck = nsCocoaFeatures::OnGoldenGateOrLater() &&
+                              !nsCocoaFeatures::IsAtLeastVersion(27, 2, 1);
+  if (needsNativeZoomCheck && [theEvent clickCount] == 1) {
     mZoomStateAtLastSingleClick = [[self window] isZoomed];
   }
 
@@ -2588,7 +2591,7 @@ NSEvent* gLastDragMouseDownEvent = nil;
       !mGeckoChild->GetNonDraggableRegion().Contains(pos.x, pos.y)) {
     
     bool zoomStateAlreadyChanged =
-        nsCocoaFeatures::OnGoldenGateOrLater() &&
+        needsNativeZoomCheck &&
         ([[self window] isZoomed] != mZoomStateAtLastSingleClick);
 
     if (!zoomStateAlreadyChanged) {
@@ -3937,10 +3940,18 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
 
   if (dragSession) {
     if (aMessage == eDragOver) {
-      
-      
-      dragSession->FireDragEventAtSource(
-          eDrag, nsCocoaUtils::ModifiersForEvent([NSApp currentEvent]));
+      nsCOMPtr<nsIWidget> sourceWidget = dragSession->GetSourceWidget();
+      if (sourceWidget == mGeckoChild) {
+        NSPoint draggingLoc = [aSender draggingLocation];
+        LayoutDeviceIntPoint point =
+            [self convertWindowCoordinates:draggingLoc];
+
+        
+        
+        dragSession->FireDragEventAtSource(
+            eDrag, nsCocoaUtils::ModifiersForEvent([NSApp currentEvent]),
+            point);
+      }
       dragSession->SetCanDrop(false);
     } else if (aMessage == eDrop) {
       

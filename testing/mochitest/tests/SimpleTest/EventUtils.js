@@ -2238,6 +2238,28 @@ function synthesizeNativeKey(
   return true;
 }
 
+
+
+
+
+
+function isJapanese106KeyboardDriverLoaded() {
+  if (!_EU_isWin) {
+    throw new Error("This is not available on the platform");
+  }
+
+  const { WindowsRegistry } = _EU_ChromeUtils.importESModule(
+    "resource://gre/modules/WindowsRegistry.sys.mjs"
+  );
+  const driverName = WindowsRegistry.readRegKey(
+    _EU_Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
+    "SYSTEM\\CurrentControlSet\\Services\\i8042prt\\Parameters",
+    "LayerDriver JPN",
+    _EU_Ci.nsIWindowsRegKey.WOW64_64
+  );
+  return driverName == "kbd106.dll";
+}
+
 var _gSeenEvent = false;
 
 
@@ -4329,6 +4351,8 @@ async function _synthesizeMockDndFromChild(aParams) {
   const ds = SpecialPowers.Cc["@mozilla.org/widget/dragservice;1"].getService(
     SpecialPowers.Ci.nsIDragService
   );
+  const prevNeverAllowSessionIsSynthesizedForTests =
+    ds.neverAllowSessionIsSynthesizedForTests;
   ds.neverAllowSessionIsSynthesizedForTests = true;
 
   let sourceElt = document.getElementById(aParams.srcElement);
@@ -4415,6 +4439,8 @@ async function _synthesizeMockDndFromChild(aParams) {
     );
   } finally {
     info("Remote synthesizeMockDragAndDrop has completed.");
+    ds.neverAllowSessionIsSynthesizedForTests =
+      prevNeverAllowSessionIsSynthesizedForTests;
   }
 }
 

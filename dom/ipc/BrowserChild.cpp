@@ -2181,7 +2181,8 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealDragEvent(
     if (dragSession) {
       
       
-      dragSession->FireDragEventAtSource(eDrag, aEvent.mModifiers);
+      dragSession->FireDragEventAtSource(eDrag, aEvent.mModifiers,
+                                         aEvent.mRefPoint);
     }
   }
 
@@ -3044,7 +3045,8 @@ mozilla::ipc::IPCResult BrowserChild::RecvDestroy() {
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult BrowserChild::RecvRenderLayers(const bool& aEnabled) {
+mozilla::ipc::IPCResult BrowserChild::RecvRenderLayers(const bool& aEnabled,
+                                                       const uint64_t& aEpoch) {
   auto clearPaintWhileInterruptingJS = MakeScopeExit([&] {
     
     
@@ -3059,6 +3061,13 @@ mozilla::ipc::IPCResult BrowserChild::RecvRenderLayers(const bool& aEnabled) {
   if (aEnabled) {
     ProcessHangMonitor::MaybeStartPaintWhileInterruptingJS();
   }
+
+  
+  
+  if (aEpoch < mRenderLayersEpoch) {
+    return IPC_OK();
+  }
+  mRenderLayersEpoch = aEpoch;
 
   mRenderLayers = aEnabled;
   const bool wasVisible = IsVisible();
@@ -3775,7 +3784,7 @@ LayoutDeviceIntRect BrowserChild::GetOuterRect() {
   return RoundedToInt(mUnscaledOuterRect * mPuppetWidget->GetDefaultScale());
 }
 
-void BrowserChild::PaintWhileInterruptingJS() {
+void BrowserChild::PaintWhileInterruptingJS(uint64_t aEpoch) {
   if (!IPCOpen() || !mPuppetWidget || !mPuppetWidget->HasWindowRenderer()) {
     
     
@@ -3784,10 +3793,10 @@ void BrowserChild::PaintWhileInterruptingJS() {
 
   MOZ_DIAGNOSTIC_ASSERT(nsContentUtils::IsSafeToRunScript());
   nsAutoScriptBlocker scriptBlocker;
-  RecvRenderLayers( true);
+  RecvRenderLayers( true, aEpoch);
 }
 
-void BrowserChild::UnloadLayersWhileInterruptingJS() {
+void BrowserChild::UnloadLayersWhileInterruptingJS(uint64_t aEpoch) {
   if (!IPCOpen() || !mPuppetWidget || !mPuppetWidget->HasWindowRenderer()) {
     
     
@@ -3796,7 +3805,7 @@ void BrowserChild::UnloadLayersWhileInterruptingJS() {
 
   MOZ_DIAGNOSTIC_ASSERT(nsContentUtils::IsSafeToRunScript());
   nsAutoScriptBlocker scriptBlocker;
-  RecvRenderLayers( false);
+  RecvRenderLayers( false, aEpoch);
 }
 
 nsresult BrowserChild::CanCancelContentJS(
