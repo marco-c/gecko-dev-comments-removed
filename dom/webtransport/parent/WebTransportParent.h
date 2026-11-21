@@ -85,6 +85,13 @@ class WebTransportParent : public PWebTransportParent,
       const uint32_t& aOutgoingMaxBufferedDatagrams,
       const double& aOutgoingMaxAge);
 
+  
+  
+  
+  
+  
+  void MaybeSendDatagramCapacity();
+
   ::mozilla::ipc::IPCResult RecvGetMaxDatagramSize(
       GetMaxDatagramSizeResolver&& aResolver);
 
@@ -147,6 +154,9 @@ class WebTransportParent : public PWebTransportParent,
   
   bool mRetargeted = false;
   uint64_t mSessionId{0};
+  
+  
+  uint64_t mDatagramPrefixBytes{0};
 
   mozilla::Mutex mMutex{"WebTransportParent::mMutex"};
   std::function<void(ResolveType)> mResolver MOZ_GUARDED_BY(mMutex);
@@ -158,9 +168,44 @@ class WebTransportParent : public PWebTransportParent,
   
   
   
+  
   double mDatagramMaxAge{std::numeric_limits<double>::infinity()};
   
   TimeStamp mLastOutgoingDatagramTimestamp;
+  uint32_t mOutgoingMaxBufferedDatagrams{5};
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint64_t mCumulativeDatagramsRetired{0};
+  uint64_t mCumulativeBytesRetired{0};
+  
+  
+  
+  
+  
+  uint64_t mLastGrantedCumulativeDatagrams{0};
+  uint64_t mLastGrantedCumulativeBytes{0};
+  
+  
+  
+  
+  
+  uint64_t mParentExpiredOutgoing{0};
+  
+  
+  uint64_t mLastObservedSentOutgoing{0};
+  uint64_t mLastObservedExpiredOutgoingFromNeqo{0};
+  uint64_t mLastObservedDroppedOutgoing{0};
+  uint64_t mLastObservedParentExpiredOutgoing{0};
   
   
   

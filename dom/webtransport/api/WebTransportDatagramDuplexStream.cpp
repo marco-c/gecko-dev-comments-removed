@@ -23,8 +23,7 @@ namespace mozilla::dom {
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(WebTransportDatagramDuplexStream, mGlobal,
                                       mReadable, mWritable, mWebTransport,
                                       mIncomingAlgorithms, mOutgoingAlgorithms,
-                                      mCreatedWritables, mAllWritables,
-                                      mWritableDatagramMap)
+                                      mCreatedWritables, mAllWritables)
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(WebTransportDatagramDuplexStream)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(WebTransportDatagramDuplexStream)
@@ -440,6 +439,19 @@ void ImplCycleCollectionUnlink(
   ImplCycleCollectionUnlink(aField.mPromise);
 }
 
+
+void ImplCycleCollectionTraverse(
+    nsCycleCollectionTraversalCallback& aCallback,
+    OutgoingDatagramStreamAlgorithms::PendingDatagram& aField,
+    const char* aName, uint32_t aFlags) {
+  ImplCycleCollectionTraverse(aCallback, aField.mPromise, aName, aFlags);
+}
+
+void ImplCycleCollectionUnlink(
+    OutgoingDatagramStreamAlgorithms::PendingDatagram& aField) {
+  ImplCycleCollectionUnlink(aField.mPromise);
+}
+
 NS_IMPL_CYCLE_COLLECTION_INHERITED(OutgoingDatagramStreamAlgorithms,
                                    UnderlyingSinkAlgorithmsWrapper, mDatagrams,
                                    mSendGroup, mOwnerWritable,
@@ -477,6 +489,7 @@ void WebTransportDatagramDuplexStream::FlushOutgoingDatagrams() {
   
   
   
+  
   Span<const OutgoingDatagram> pending(mPendingOutgoing);
   size_t start = 0;
   size_t bytes = 0;
@@ -498,6 +511,7 @@ already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallbackImpl(
     WritableStreamDefaultController& aController, ErrorResult& aError) {
   
   
+  
   TimeStamp now = TimeStamp::Now();
 
   
@@ -512,6 +526,8 @@ already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallbackImpl(
   
   
 
+  
+  
   nsTArray<uint8_t> data;
   (void)AppendTypedArrayDataTo(arrayBuffer, data);
 
@@ -526,8 +542,7 @@ already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallbackImpl(
   RefPtr<Promise> promise =
       Promise::CreateInfallible(mDatagrams->GetParentObject());
 
-  
-  uint64_t datagramId = mDatagrams->mNextDatagramId++;
+  size_t dataLength = data.Length();
 
   
   if (mChild) {
@@ -536,55 +551,47 @@ already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallbackImpl(
     
     
     
-    mPendingDatagramPromises.InsertOrUpdate(datagramId, promise);
+    mInFlightCount++;
+
     
     
     
     
     
     
-    if (mPendingDatagramPromises.Count() <
-        mDatagrams->mOutgoingMaxBufferedDatagrams) {
-      
+    if (mInFlightCount < mDatagrams->mOutgoingMaxBufferedDatagrams &&
+        mDatagrams->HasCreditBytesFor(dataLength)) {
       promise->MaybeResolveWithUndefined();
+      mDatagrams->ChargeCredit(dataLength);
     } else {
       
       
       
+      mPendingDatagramPromises.AppendElement(
+          PendingDatagram{promise, dataLength});
     }
 
     
-    
-    
-    
-    
-    
-    mDatagrams->mWritableDatagramMap.InsertOrUpdate(datagramId, mOwnerWritable);
-
-    
-    
-    
     uint64_t sendGroupId = mSendGroup ? mSendGroup->GetGroupId() : 0;
-    LOG(("Queuing Datagram id=%" PRIu64 ", size = %zu, sendGroup = %" PRIu64
-         ", sendOrder = %" PRId64,
-         datagramId, data.Length(), sendGroupId, mSendOrder));
-    mDatagrams->QueueOutgoingDatagram(OutgoingDatagram(
-        datagramId, std::move(data), now, sendGroupId, mSendOrder));
+    LOG(("Queuing datagram size=%zu, sendGroup=%" PRIu64 ", sendOrder=%" PRId64,
+         dataLength, sendGroupId, mSendOrder));
+    mDatagrams->QueueOutgoingDatagram(
+        OutgoingDatagram(std::move(data), now, sendGroupId, mSendOrder));
   } else {
-    LOG(("Queuing datagram id=%" PRIu64 " for connect", datagramId));
+    LOG(("Queuing datagram for connect, size=%zu", dataLength));
     
     
     mWaitConnectQueue.AppendElement(QueuedDatagram(
-        datagramId, std::make_unique<DatagramEntry>(std::move(data), now),
-        promise));
+        std::make_unique<DatagramEntry>(std::move(data), now), promise));
 
-    
-    
-    
     
     if (mWaitConnectQueue.Length() <
         mDatagrams->mOutgoingMaxBufferedDatagrams) {
       promise->MaybeResolveWithUndefined();
+      mDatagrams->ChargeCredit(dataLength);
+    } else {
+      mPendingDatagramPromises.AppendElement(
+          PendingDatagram{promise, dataLength});
     }
   }
 
@@ -598,61 +605,103 @@ void OutgoingDatagramStreamAlgorithms::SetChild(WebTransportChild* aChild) {
        mWaitConnectQueue.Length()));
   mChild = aChild;
   
+  
+  mInFlightCount += mWaitConnectQueue.Length();
+  
   for (auto& queued : mWaitConnectQueue) {
-    
-    mPendingDatagramPromises.InsertOrUpdate(queued.mDatagramId,
-                                            queued.mPromise);
-
-    
-    mDatagrams->mWritableDatagramMap.InsertOrUpdate(queued.mDatagramId,
-                                                    mOwnerWritable);
-
     uint64_t sendGroupId = mSendGroup ? mSendGroup->GetGroupId() : 0;
-    uint64_t datagramId = queued.mDatagramId;
     mDatagrams->mPendingOutgoing.AppendElement(
-        OutgoingDatagram(datagramId, std::move(queued.mEntry->mBuffer),
+        OutgoingDatagram(std::move(queued.mEntry->mBuffer),
                          queued.mEntry->mTimeStamp, sendGroupId, mSendOrder));
   }
   mWaitConnectQueue.Clear();
 }
 
-void WebTransportDatagramDuplexStream::OnDatagramReady(uint64_t aDatagramId) {
-  Maybe<RefPtr<WebTransportDatagramsWritable>> entry =
-      mWritableDatagramMap.Extract(aDatagramId);
-  if (!entry) {
-    
-    
-    
-    MOZ_ASSERT(
-        mCleanedUp,
-        "OnDatagramReady for unregistered/already-completed datagram id");
-    return;
+bool OutgoingDatagramStreamAlgorithms::TryResolveOldestFromCredit(
+    uint64_t aAvailableBytes, size_t* aResolvedBytes) {
+  if (mPendingDatagramPromises.IsEmpty() ||
+      DatagramQueueCharge(mPendingDatagramPromises[0].mBytes,
+                          mDatagrams->mDatagramPrefixBytes) > aAvailableBytes) {
+    return false;
   }
-  RefPtr<WebTransportDatagramsWritable> writable = entry.extract();
-  if (writable) {
-    writable->OnDatagramReady(aDatagramId);
-  } else {
-    
-    
-    
-    
-    
-    
-    mOutgoingAlgorithms->OnDatagramReady(aDatagramId);
-  }
+  RefPtr<Promise> promise = std::move(mPendingDatagramPromises[0].mPromise);
+  *aResolvedBytes = mPendingDatagramPromises[0].mBytes;
+  mPendingDatagramPromises.RemoveElementAt(0);
+  promise->MaybeResolveWithUndefined();
+  return true;
 }
 
-void OutgoingDatagramStreamAlgorithms::OnDatagramReady(uint64_t aDatagramId) {
-  LOG(("OnDatagramReady for id=%" PRIu64, aDatagramId));
+void OutgoingDatagramStreamAlgorithms::RetireInFlight(uint64_t aCount) {
+  mInFlightCount -= std::min<uint64_t>(aCount, mInFlightCount);
+}
 
-  if (Maybe<RefPtr<Promise>> promise =
-          mPendingDatagramPromises.Extract(aDatagramId)) {
-    LOG(("Resolving promise for datagram id=%" PRIu64, aDatagramId));
-    (*promise)->MaybeResolveWithUndefined();
-  } else {
-    LOG(("Warning: No pending promise found for datagram id=%" PRIu64,
-         aDatagramId));
+void WebTransportDatagramDuplexStream::OnDatagramCapacity(
+    uint64_t aCumulativeDatagrams, uint64_t aCumulativeBytes,
+    uint64_t aSentDelta, uint64_t aExpiredDelta, uint64_t aDroppedDelta,
+    uint64_t aDatagramPrefixBytes) {
+  
+  
+  
+  
+
+  
+  
+  if (aDatagramPrefixBytes > mDatagramPrefixBytes) {
+    mCreditBytesUsed +=
+        (aDatagramPrefixBytes - mDatagramPrefixBytes) * mCreditDatagramsUsed;
+    mDatagramPrefixBytes = aDatagramPrefixBytes;
   }
+
+  mSentOutgoing += aSentDelta;
+  mExpiredOutgoing += aExpiredDelta;
+  mDroppedOutgoing += aDroppedDelta;
+
+  
+  
+  
+  uint64_t retiredCount = aSentDelta + aExpiredDelta + aDroppedDelta;
+  mOutgoingAlgorithms->RetireInFlight(retiredCount);
+  for (auto& writable : mAllWritables) {
+    writable->RetireInFlight(retiredCount);
+  }
+
+  
+  
+  mCreditDatagramsLimit = std::max(mCreditDatagramsLimit, aCumulativeDatagrams);
+  mCreditBytesLimit = std::max(mCreditBytesLimit, aCumulativeBytes);
+
+  
+  
+  
+
+  
+  
+  size_t resolvedCount = 0;
+  bool resolvedAny = true;
+  while (resolvedAny && mCreditDatagramsUsed < mCreditDatagramsLimit) {
+    resolvedAny = false;
+    size_t bytes = 0;
+    if (mOutgoingAlgorithms->TryResolveOldestFromCredit(CreditBytesAvailable(),
+                                                        &bytes)) {
+      ChargeCredit(bytes);
+      resolvedCount++;
+      resolvedAny = true;
+    }
+    for (auto& writable : mAllWritables) {
+      if (mCreditDatagramsUsed >= mCreditDatagramsLimit) {
+        break;
+      }
+      size_t writableBytes = 0;
+      if (writable->TryResolveOldestFromCredit(CreditBytesAvailable(),
+                                               &writableBytes)) {
+        ChargeCredit(writableBytes);
+        resolvedCount++;
+        resolvedAny = true;
+      }
+    }
+  }
+  LOG(("OnDatagramCapacity resolved %zu deferred promises from credit",
+       resolvedCount));
 }
 
 void OutgoingDatagramStreamAlgorithms::UpdateQueueParams(
@@ -668,8 +717,8 @@ void OutgoingDatagramStreamAlgorithms::UpdateQueueParams(
 }
 
 void OutgoingDatagramStreamAlgorithms::Cleanup() {
-  for (const auto& promise : mPendingDatagramPromises.Values()) {
-    promise->MaybeResolveWithUndefined();
+  for (const auto& pending : mPendingDatagramPromises) {
+    pending.mPromise->MaybeResolveWithUndefined();
   }
   mPendingDatagramPromises.Clear();
   for (auto& queued : mWaitConnectQueue) {
@@ -683,8 +732,6 @@ void WebTransportDatagramDuplexStream::Cleanup() {
   for (const auto& writable : mAllWritables) {
     writable->Cleanup();
   }
-  mWritableDatagramMap.Clear();
-  mCleanedUp = true;
 }
 
 
