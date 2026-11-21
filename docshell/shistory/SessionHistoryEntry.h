@@ -32,7 +32,6 @@ struct ParamTraits;
 namespace mozilla {
 namespace dom {
 
-class Document;
 struct LoadingSessionHistoryInfo;
 class SessionHistoryEntry;
 class SHEntrySharedParentState;
@@ -284,15 +283,9 @@ class PreviousSessionHistoryInfo {
   
   
   static Maybe<PreviousSessionHistoryInfo> CreateValidatedPreviousEntry(
-      SessionHistoryEntry* aCurrentEntry,
-      SessionHistoryEntry* aPreviousEntryForActivation,
-      Maybe<NavigationType> aNavigationType,
-      nsIPrincipal* aPreviousDocumentPrincipal);
-
-  
-  static Maybe<PreviousSessionHistoryInfo> CreateValidatedPreviousEntry(
-      const Document& aCurrentDocument, const Document& aPreviousDocument,
-      const SessionHistoryInfo* aPreviousEntryForActivation);
+      const SessionHistoryInfo& aCurrentEntry,
+      const Maybe<SessionHistoryInfo>& aPreviousEntryForActivation,
+      Maybe<NavigationType> aNavigationType);
 
   Maybe<SessionHistoryInfo> mSameOriginSessionHistoryInfo;
 };

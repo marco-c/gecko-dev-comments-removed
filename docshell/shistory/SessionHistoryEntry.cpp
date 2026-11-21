@@ -28,7 +28,6 @@
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/CSPMessageUtils.h"
 #include "mozilla/dom/PolicyContainerMessageUtils.h"
-#include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentBinding.h"
 #include "mozilla/dom/DOMTypes.h"
 #include "mozilla/dom/NavigationAPIIPCUtils.h"
@@ -415,6 +414,7 @@ LoadingSessionHistoryInfo::LoadingSessionHistoryInfo(
 LoadingSessionHistoryInfo::LoadingSessionHistoryInfo(
     SessionHistoryEntry* aEntry, const LoadingSessionHistoryInfo* aInfo)
     : mInfo(aEntry->Info()),
+      mPreviousEntry(aInfo->mPreviousEntry),
       mTriggeringNavigationType(aInfo->mTriggeringNavigationType),
       mLoadId(aInfo->mLoadId),
       mLoadIsFromSessionHistory(aInfo->mLoadIsFromSessionHistory),
@@ -1475,22 +1475,18 @@ already_AddRefed<nsSHistory> SessionHistoryEntry::GetSessionHistory() {
 
 Maybe<PreviousSessionHistoryInfo>
 PreviousSessionHistoryInfo::CreateValidatedPreviousEntry(
-    SessionHistoryEntry* aCurrentEntry,
-    SessionHistoryEntry* aPreviousEntryForActivation,
-    Maybe<NavigationType> aNavigationType,
-    nsIPrincipal* aPreviousDocumentPrincipal) {
+    const SessionHistoryInfo& aCurrentEntry,
+    const Maybe<SessionHistoryInfo>& aPreviousEntryForActivation,
+    Maybe<NavigationType> aNavigationType) {
   
   
   
   
   
   
-  if (!aPreviousEntryForActivation || !aNavigationType) {
-    return Nothing();
-  }
-  bool isReload = *aNavigationType == NavigationType::Reload;
-  if (!isReload && aCurrentEntry->Info().SharesDocumentWith(
-                       aPreviousEntryForActivation->Info())) {
+  if (!aPreviousEntryForActivation || !aNavigationType ||
+      (*aNavigationType != NavigationType::Reload &&
+       aCurrentEntry.SharesDocumentWith(*aPreviousEntryForActivation))) {
     return Nothing();
   }
 
@@ -1502,36 +1498,15 @@ PreviousSessionHistoryInfo::CreateValidatedPreviousEntry(
   
   
   
-  
-  
-  nsCOMPtr currentURI = aCurrentEntry->GetURIOrInheritedForAboutBlankOrSrcdoc();
-  if (isReload || (aPreviousDocumentPrincipal &&
-                   aPreviousDocumentPrincipal->IsSameOrigin(currentURI))) {
-    return Some(
-        PreviousSessionHistoryInfo(aPreviousEntryForActivation->Info()));
+  nsCOMPtr previousURI =
+      aPreviousEntryForActivation->GetURIOrInheritedForAboutBlankOrSrcdoc();
+  nsCOMPtr currentURI = aCurrentEntry.GetURIOrInheritedForAboutBlankOrSrcdoc();
+  if (NS_FAILED(nsContentUtils::GetSecurityManager()->CheckSameOriginURI(
+          currentURI, previousURI, false, false))) {
+    return Some(PreviousSessionHistoryInfo{});
   }
 
-  return Some(PreviousSessionHistoryInfo{});
-}
-
-
-Maybe<PreviousSessionHistoryInfo>
-PreviousSessionHistoryInfo::CreateValidatedPreviousEntry(
-    const Document& aCurrentDocument, const Document& aPreviousDocument,
-    const SessionHistoryInfo* aPreviousEntryForActivation) {
-  
-  if (&aCurrentDocument == &aPreviousDocument) {
-    return Nothing();
-  }
-
-  
-  
-  if (aPreviousEntryForActivation && !aPreviousDocument.IsInitialDocument() &&
-      aPreviousDocument.NodePrincipal()->Equals(
-          aCurrentDocument.NodePrincipal())) {
-    return Some(PreviousSessionHistoryInfo(*aPreviousEntryForActivation));
-  }
-  return Some(PreviousSessionHistoryInfo{});
+  return Some(PreviousSessionHistoryInfo(aPreviousEntryForActivation));
 }
 
 SessionHistoryEntry* SessionHistoryEntry::GetAsSessionHistoryEntry() {
