@@ -165,6 +165,8 @@ class WebTransportParent : public PWebTransportParent,
   
   TimeStamp mLastOutgoingDatagramTimestamp;
   
+  TimeStamp mSessionReadyTime;
+  
   
   
   nsTArray<GetStatsResolver> mGetStatsResolvers;
