@@ -948,6 +948,10 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   void SetDocShell(nsDocShell* aDocShell);
 
   
+  
+  void SendPendingCommandUpdatesToParentProcess();
+
+  
   friend class nsPIDOMWindowInner;
   friend class nsPIDOMWindowOuter;
 
@@ -1090,6 +1094,11 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   
   
   bool mIsInFullScreenTransition = false;
+
+  
+  
+  
+  AutoTArray<nsString, 1> mPendingCommandUpdateActions;
 
   friend class nsDOMWindowUtils;
   friend class mozilla::dom::BrowsingContext;
