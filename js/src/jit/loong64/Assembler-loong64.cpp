@@ -4352,24 +4352,18 @@ void Assembler::processCodeLabels(uint8_t* rawCode) {
   }
 }
 
-uint32_t Assembler::PatchWrite_NearCallSize() {
-  
-  return (3 + 1) * sizeof(uint32_t);
-}
+uint32_t Assembler::PatchWrite_NearCallSize() { return 2 * sizeof(uint32_t); }
 
 void Assembler::PatchWrite_NearCall(CodeLocationLabel start,
                                     CodeLocationLabel toCall) {
-  Instruction* inst = (Instruction*)start.raw();
-  uint8_t* dest = toCall.raw();
-
   
-  
-  
-  
-  
-  Assembler::WriteLoad64Instructions(inst, SavedScratchRegister,
-                                     (uint64_t)dest);
-  inst[3] = InstImm(op_jirl, BOffImm16(0), SavedScratchRegister, ra);
+  static_assert(MaxCodeBytesPerProcess <= (UINT64_C(1) << 37),
+                "All JIT code jump offsets must fit in 128GiB to use call36");
+  Instruction* const inst = reinterpret_cast<Instruction*>(start.raw());
+  const int64_t offset = toCall.raw() - start.raw();
+  const auto [si20, offs16] = SplitJump36Offset(offset);
+  inst[0] = InstImm(op_pcaddu18i, si20, SavedScratchRegister, false);
+  inst[1] = InstImm(op_jirl, BOffImm16(offs16), SavedScratchRegister, ra);
 }
 
 uint64_t Assembler::ExtractLoad64Value(Instruction* inst0) {
