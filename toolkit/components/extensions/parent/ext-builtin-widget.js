@@ -14,6 +14,10 @@ ChromeUtils.defineESModuleGetters(this, {
 
 this.builtinWidget = class extends ExtensionAPI {
   
+
+
+
+
   readyListener = null;
 
   onManifestEntry() {
