@@ -2239,13 +2239,6 @@ nsresult nsStandardURL::EqualsInternal(
 
   
   
-  if (mSupportsFileURL != other->mSupportsFileURL) {
-    *result = false;
-    return NS_OK;
-  }
-
-  
-  
   if (!SegmentIs(mScheme, other->mSpec.get(), other->mScheme) ||
       
       
@@ -2267,55 +2260,11 @@ nsresult nsStandardURL::EqualsInternal(
   }
 
   
-  if (SegmentIs(mDirectory, other->mSpec.get(), other->mDirectory) &&
-      SegmentIs(mBasename, other->mSpec.get(), other->mBasename) &&
-      SegmentIs(mExtension, other->mSpec.get(), other->mExtension)) {
-    *result = true;
-    return NS_OK;
-  }
-
   
   
-  
-  
-  if (mSupportsFileURL) {
-    
-    
-    *result = false;
-
-    nsCOMPtr<nsIFile> file, otherFile;
-    rv = ResolveFile(getter_AddRefs(file));
-    nsresult rv2 = other->ResolveFile(getter_AddRefs(otherFile));
-
-    
-    
-    
-    
-    if (rv == NS_ERROR_NO_INTERFACE || rv2 == NS_ERROR_NO_INTERFACE) {
-      return NS_OK;
-    }
-
-    if (NS_FAILED(rv)) {
-      LOG(("nsStandardURL::Equals [this=%p spec=%s] failed to ensure file",
-           this, mSpec.get()));
-      return rv;
-    }
-
-    rv = rv2;
-    if (NS_FAILED(rv)) {
-      LOG(
-          ("nsStandardURL::Equals [other=%p spec=%s] other failed to ensure "
-           "file",
-           other.get(), other->mSpec.get()));
-      return rv;
-    }
-    return file->Equals(otherFile, result);
-  }
-
-  
-  
-  *result = false;
-
+  *result = SegmentIs(mDirectory, other->mSpec.get(), other->mDirectory) &&
+            SegmentIs(mBasename, other->mSpec.get(), other->mBasename) &&
+            SegmentIs(mExtension, other->mSpec.get(), other->mExtension);
   return NS_OK;
 }
 
