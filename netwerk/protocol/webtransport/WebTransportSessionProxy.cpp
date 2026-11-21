@@ -496,14 +496,6 @@ WebTransportSessionProxy::RegisterSendGroup(uint64_t aGroupId) {
   RefPtr<WebTransportSessionBase> session;
   {
     MutexAutoLock lock(mMutex);
-    if (!mWebTransportSession &&
-        (mState == WebTransportSessionProxyState::INIT ||
-         mState == WebTransportSessionProxyState::NEGOTIATING)) {
-      
-      
-      mPendingSendGroups.AppendElement(aGroupId);
-      return NS_OK;
-    }
     session = mWebTransportSession;
   }
 
@@ -1374,14 +1366,6 @@ WebTransportSessionProxy::OnSessionReadyInternal(
             ->SetAnticipatedConcurrentIncomingBidirectionalStreams(
                 mAnticipatedConcurrentIncomingBidirectionalStreams);
       }
-      for (uint64_t groupId : mPendingSendGroups) {
-        nsresult rv = mWebTransportSession->RegisterSendGroup(groupId);
-        if (NS_FAILED(rv)) {
-          LOG(("RegisterSendGroup %" PRIu64 " failed: %" PRIx32, groupId,
-               static_cast<uint32_t>(rv)));
-        }
-      }
-      mPendingSendGroups.Clear();
       ChangeState(WebTransportSessionProxyState::NEGOTIATING_SUCCEEDED);
       mWebTransportSession->StartReading();
       break;
