@@ -411,7 +411,11 @@ class HistoryClearedListener final : public INativePlacesEventCallback {
     for (const auto& event : aEvents) {
       if (event->Type() == PlacesEventType::History_cleared) {
         
-        History::GetService()->OnHistoryCleared();
+        History* history = History::GetService();
+        
+        
+        history->ClearRecentlyVisitedURIs();
+        history->OnHistoryCleared();
         return;
       }
     }
