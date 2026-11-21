@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+#include "libANGLE/renderer/vulkan/CompilerVk.h"
+
+#include "common/debug.h"
+
+namespace rx
+{
+
+CompilerVk::CompilerVk() : CompilerImpl() {}
+
+CompilerVk::~CompilerVk() {}
+
+ShShaderOutput CompilerVk::getTranslatorOutputType() const
+{
+    return SH_SPIRV_VULKAN_OUTPUT;
+}
+
+}  

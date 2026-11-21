@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SOURCE_LATEST_VERSION_OPENCL_STD_HEADER_H_
+#define SOURCE_LATEST_VERSION_OPENCL_STD_HEADER_H_
+
+#include "spirv/unified1/OpenCL.std.h"
+
+#endif  
