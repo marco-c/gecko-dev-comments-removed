@@ -2401,7 +2401,7 @@ class TrustPanel {
 
 
   #recordCurrentPageLog(browser) {
-    if (!this.#trackerCountEnabled) {
+    if (!UrlbarPrefs.get("trackerCountFeatureGate")) {
       return;
     }
     const windowGlobal = browser?.browsingContext?.currentWindowGlobal;
@@ -2444,7 +2444,7 @@ class TrustPanel {
 
   #getTrackerLogs() {
     const browser = gBrowser.selectedBrowser;
-    if (!this.#trackerCountEnabled) {
+    if (!UrlbarPrefs.get("trackerCountFeatureGate")) {
       const log = browser.getContentBlockingLog();
       return log ? [JSON.parse(log)] : [];
     }
