@@ -114,7 +114,6 @@ CSPDirective CSP_StringToCSPDirective(const nsAString& aDir);
   MACRO(CSP_UNSAFE_EVAL, "'unsafe-eval'")           \
   MACRO(CSP_UNSAFE_HASHES, "'unsafe-hashes'")       \
   MACRO(CSP_NONE, "'none'")                         \
-  MACRO(CSP_NONCE, "'nonce-")                       \
   MACRO(CSP_REPORT_SAMPLE, "'report-sample'")       \
   MACRO(CSP_STRICT_DYNAMIC, "'strict-dynamic'")     \
   MACRO(CSP_WASM_UNSAFE_EVAL, "'wasm-unsafe-eval'") \
@@ -128,12 +127,7 @@ enum CSPKeyword {
 
   
   
-  CSP_LAST_KEYWORD_VALUE,
-
-  
-  
-  
-  CSP_HASH
+  CSP_LAST_KEYWORD_VALUE
 };
 
 
