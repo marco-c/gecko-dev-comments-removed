@@ -12,6 +12,8 @@ ChromeUtils.defineESModuleGetters(this, {
 
 
 
+
+
 this.builtinWidget = class extends ExtensionAPI {
   
 
@@ -20,10 +22,16 @@ this.builtinWidget = class extends ExtensionAPI {
 
   readyListener = null;
 
-  onManifestEntry() {
+  onManifestEntry(entryName) {
     const { extension } = this;
-    const options = extension.manifest.builtin_widget;
-    this.readyListener = () => this.onReady(options);
+    
+    
+    
+    if (entryName == "generated_widget" && extension.manifest.builtin_widget) {
+      return;
+    }
+    const options = extension.manifest[entryName];
+    this.readyListener = () => this.onReady(entryName, options);
     
     extension.once("ready", this.readyListener);
   }
@@ -34,7 +42,9 @@ this.builtinWidget = class extends ExtensionAPI {
 
 
 
-  onReady(options) {
+
+
+  onReady(entryName, options) {
     const { extension } = this;
     this.readyListener = null;
     if (extension.hasShutdown) {
@@ -47,6 +57,7 @@ this.builtinWidget = class extends ExtensionAPI {
       sizes: options.sizes,
       defaultSize: options.default_size,
       prefBranch: options.pref_branch,
+      generated: entryName == "generated_widget",
     });
   }
 
