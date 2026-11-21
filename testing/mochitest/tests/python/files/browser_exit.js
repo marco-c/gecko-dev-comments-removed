@@ -1,0 +1,7 @@
+add_task(async function () {
+  
+  
+  
+  Services.startup.quit(Ci.nsIAppStartup.eForceQuit, 3);
+  await new Promise(() => {});
+});
