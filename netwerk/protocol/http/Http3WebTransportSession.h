@@ -143,6 +143,9 @@ class Http3WebTransportSession final : public WebTransportSessionBase,
   bool GetDatagramSessionStats(uint64_t* aSent, uint64_t* aExpired,
                                uint64_t* aDropped) override;
 
+  void RequestOutgoingDatagramProgress() override;
+  bool TakeOutgoingDatagramProgressRequest();
+
   nsresult ExportKeyingMaterial(const nsTArray<uint8_t>& aLabel,
                                 const nsTArray<uint8_t>& aContext,
                                 uint32_t aOutputLength,
@@ -185,6 +188,8 @@ class Http3WebTransportSession final : public WebTransportSessionBase,
   
   
   uint64_t mFailedOutgoingDatagrams{0};
+  
+  bool mOutgoingDatagramProgressRequested = false;
 };
 
 }  

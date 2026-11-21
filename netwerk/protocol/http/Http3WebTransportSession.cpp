@@ -5,6 +5,8 @@
 
 #include "Http3WebTransportSession.h"
 
+#include <utility>
+
 #include "Http3Session.h"
 #include "Http3Stream.h"
 #include "Http3WebTransportStream.h"
@@ -668,6 +670,17 @@ bool Http3WebTransportSession::GetDatagramSessionStats(uint64_t* aSent,
   }
   *aDropped += mFailedOutgoingDatagrams;
   return true;
+}
+
+void Http3WebTransportSession::RequestOutgoingDatagramProgress() {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  mOutgoingDatagramProgressRequested = true;
+  mSession->RequestOutgoingDatagramProgress();
+}
+
+bool Http3WebTransportSession::TakeOutgoingDatagramProgressRequest() {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  return std::exchange(mOutgoingDatagramProgressRequested, false);
 }
 
 void Http3WebTransportSession::GetStats() {
