@@ -71,19 +71,6 @@ loader.lazyRequireGetter(
 
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
-const lazy = {};
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs",
-  { global: "contextual" }
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "layoutCssAttrEnabled",
-  "layout.css.attr.enabled",
-  false
-);
-
 
 
 
@@ -612,6 +599,7 @@ class StyleRuleActor extends Actor {
               declarationValue.includes("env(")
             ) {
               substitutedValue = InspectorUtils.getSubstitutedValue(
+                decl.name,
                 declarationValue,
                 this.pageStyle.selectedElement,
                 this._pseudoElement
@@ -621,6 +609,7 @@ class StyleRuleActor extends Actor {
             if (
               !InspectorUtils.valueMatchesSyntax(
                 targetDocument,
+                decl.name,
                 substitutedValue || declarationValue,
                 registeredProperty.syntax
               )
@@ -1587,11 +1576,7 @@ class StyleRuleActor extends Actor {
         }
         if (
           lastStack.tokenType === "Function" &&
-          lastStack.functionName === "attr" &&
-          
-          
-          
-          lazy.layoutCssAttrEnabled
+          lastStack.functionName === "attr"
         ) {
           
           if (!lastStack.attrNameFound) {

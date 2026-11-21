@@ -306,6 +306,7 @@ class InspectorUtils {
 
 
   static bool ValueMatchesSyntax(GlobalObject&, Document& aDocument,
+                                 const nsACString& aProperty,
                                  const nsACString& aValue,
                                  const nsACString& aSyntax);
 
@@ -341,6 +342,7 @@ class InspectorUtils {
                                   const nsAString& aPseudo,
                                   nsTArray<nsCString>& aResult);
   static void GetSubstitutedValue(GlobalObject& aGlobal,
+                                  const nsACString& aProperty,
                                   const nsACString& aExpression, Element&,
                                   const nsAString& aPseudo,
                                   nsACString& aResult);
