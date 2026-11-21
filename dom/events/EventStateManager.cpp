@@ -1570,8 +1570,7 @@ void EventStateManager::NotifyTargetUserActivation(WidgetEvent* aEvent,
 
   
   
-  if (StaticPrefs::dom_user_activation_ignore_scrollbars() &&
-      (aEvent->mMessage == ePointerDown || aEvent->mMessage == ePointerUp) &&
+  if ((aEvent->mMessage == ePointerDown || aEvent->mMessage == ePointerUp) &&
       aTargetContent->IsInNativeAnonymousSubtree()) {
     nsIContent* current = aTargetContent;
     do {
