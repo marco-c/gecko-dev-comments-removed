@@ -209,14 +209,14 @@ class SharedScreenCastStreamPrivate {
     ~PipeWireThreadLoop() {
       pw_thread_loop_stop(main_loop);
 
+      
+      
+      
+      DestroyStream();
+
       if (renegotiate) {
         pw_loop_destroy_source(pw_thread_loop_get_loop(main_loop), renegotiate);
         renegotiate = nullptr;
-      }
-
-      if (stream) {
-        pw_stream_disconnect(stream);
-        pw_stream_destroy(stream);
       }
 
       if (core) {
@@ -225,6 +225,20 @@ class SharedScreenCastStreamPrivate {
 
       pw_context_destroy(context);
       pw_thread_loop_destroy(main_loop);
+    }
+
+    
+    
+    
+    
+    
+    void DestroyStream() {
+      if (!stream) {
+        return;
+      }
+      pw_stream_disconnect(stream);
+      pw_stream_destroy(stream);
+      stream = nullptr;
     }
 
     struct pw_thread_loop* const main_loop;
@@ -749,6 +763,8 @@ void SharedScreenCastStreamPrivate::StopAndCleanupStream() {
   
   
   
+  
+  
 
   
   
@@ -760,6 +776,8 @@ void SharedScreenCastStreamPrivate::StopAndCleanupStream() {
   pw_thread_loop_stop(pw_->main_loop);
 
   if (pw_->stream) {
+    pw_->DestroyStream();
+
     {
       MutexLock latest_frame_lock(&latest_frame_lock_);
       latest_available_frame_ = nullptr;
