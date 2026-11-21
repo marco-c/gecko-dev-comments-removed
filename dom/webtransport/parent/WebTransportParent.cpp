@@ -1306,7 +1306,16 @@ static constexpr size_t kPendingIncomingDatagramOverhead = 16;
 NS_IMETHODIMP WebTransportParent::OnDatagramReceived(
     const nsTArray<uint8_t>& aData) {
   
-  MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
+  
+  
+  if (!mSocketThread->IsOnCurrentThread()) {
+    mSocketThread->Dispatch(
+        NS_NewRunnableFunction("WebTransportParent::OnDatagramReceived",
+                               [self = RefPtr{this}, data = aData.Clone()] {
+                                 self->OnDatagramReceived(data);
+                               }));
+    return NS_OK;
+  }
 
   LOG(("WebTransportParent received datagram length = %zu", aData.Length()));
 
@@ -1324,7 +1333,14 @@ NS_IMETHODIMP WebTransportParent::OnDatagramReceived(
 }
 
 NS_IMETHODIMP WebTransportParent::OnDatagramsFlush() {
-  MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
+  
+  
+  if (!mSocketThread->IsOnCurrentThread()) {
+    mSocketThread->Dispatch(NS_NewRunnableFunction(
+        "WebTransportParent::OnDatagramsFlush",
+        [self = RefPtr{this}] { self->OnDatagramsFlush(); }));
+    return NS_OK;
+  }
 
   FlushIncomingDatagrams();
   return NS_OK;
