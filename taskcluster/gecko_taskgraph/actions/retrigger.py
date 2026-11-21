@@ -8,9 +8,7 @@ import logging
 import sys
 import textwrap
 
-from taskgraph.util.taskcluster import get_task_definition, rerun_task
-
-from gecko_taskgraph.util.taskcluster import state_task
+from taskgraph.util.taskcluster import get_task_definition, rerun_task, state_task
 
 from .registry import register_callback_action
 from .util import (
@@ -56,6 +54,7 @@ def _should_retrigger(task_graph, label):
         {"kind": "action-callback"},
         {"kind": "cron-task"},
         {"action": "backfill-task"},
+        {"action": "ab-profiles-task"},
     ],
 )
 def retrigger_decision_action(parameters, graph_config, input, task_group_id, task_id):
