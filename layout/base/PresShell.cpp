@@ -3543,6 +3543,14 @@ static void AccumulateFrameBounds(nsIFrame* aContainerFrame, nsIFrame* aFrame,
   nsRect transformedBounds = nsLayoutUtils::TransformFrameRectToAncestor(
       frame, frameBounds, aContainerFrame);
 
+  if (aFrame->IsInSVGTextSubtree()) {
+    
+    
+    aPrevBlock = nullptr;
+    aLines = nullptr;
+    aCurLine = 0;
+  }
+
   if (aHaveRect) {
     
     
