@@ -341,6 +341,10 @@ var allowlist = [
 
   
   { file: "moz-src:///browser/components/widgets/WidgetGenerator.sys.mjs" },
+  
+  {
+    file: "moz-src:///browser/components/aiwindow/models/memories/digests/DigestManager.sys.mjs",
+  },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {
