@@ -223,10 +223,6 @@ WebTransportDatagramDuplexStream::CreateWritable(
 void WebTransportDatagramDuplexStream::NewDatagramReceived(
     nsTArray<uint8_t>&& aData, const mozilla::TimeStamp& aTimeStamp) {
   LOG(("received Datagram, size = %zu", aData.Length()));
-  if (mWebTransport->mState == WebTransport::WebTransportState::CLOSED ||
-      mWebTransport->mState == WebTransport::WebTransportState::FAILED) {
-    return;
-  }
 
   
   
@@ -759,21 +755,9 @@ void OutgoingDatagramStreamAlgorithms::Cleanup() {
   mWaitConnectQueue.Clear();
 }
 
-nsTArray<RefPtr<WebTransportDatagramsWritable>>
-WebTransportDatagramDuplexStream::Cleanup() {
-  
-  nsTArray<RefPtr<WebTransportDatagramsWritable>> writables =
-      std::move(mAllWritables);
-  mCreatedWritables.Clear();
-  
-  
-  
-  
-  
-  
-  
+void WebTransportDatagramDuplexStream::Cleanup() {
   mOutgoingAlgorithms->Cleanup();
-  for (const auto& writable : writables) {
+  for (const auto& writable : mAllWritables) {
     writable->Cleanup();
   }
   
@@ -783,10 +767,6 @@ WebTransportDatagramDuplexStream::Cleanup() {
   
   mPendingOutgoing.Clear();
   mPendingOutgoingBytes = 0;
-  
-  
-  mIncomingDatagramsQueue.Clear();
-  return writables;
 }
 
 
@@ -819,22 +799,13 @@ void WebTransportDatagramDuplexStream::CloseOrErrorWritable(
 }
 
 void WebTransportDatagramDuplexStream::CloseOrErrorWritables(
-    JSContext* aCx,
-    const nsTArray<RefPtr<WebTransportDatagramsWritable>>& aWritables,
-    bool aClean, JS::Handle<JS::Value> aErrorValue) {
-  CloseOrErrorWritable(aCx, MOZ_KnownLive(mWritable), aClean, aErrorValue);
-  for (const auto& writable : aWritables) {
-    CloseOrErrorWritable(aCx, MOZ_KnownLive(writable), aClean, aErrorValue);
-  }
-}
-
-void WebTransportDatagramDuplexStream::CloseOrErrorReadable(
     JSContext* aCx, bool aClean, JS::Handle<JS::Value> aErrorValue) {
-  RefPtr<ReadableStream> readable = mReadable;
-  if (aClean) {
-    readable->CloseNative(aCx, IgnoreErrors());
-  } else {
-    readable->ErrorNative(aCx, aErrorValue, IgnoreErrors());
+  CloseOrErrorWritable(aCx, MOZ_KnownLive(mWritable), aClean, aErrorValue);
+  
+  nsTArray<RefPtr<WebTransportDatagramsWritable>> writables =
+      mAllWritables.Clone();
+  for (const auto& writable : writables) {
+    CloseOrErrorWritable(aCx, MOZ_KnownLive(writable), aClean, aErrorValue);
   }
 }
 
