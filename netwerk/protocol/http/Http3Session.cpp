@@ -3346,14 +3346,6 @@ nsresult Http3Session::SendDatagram(Http3WebTransportSession* aSession,
   LOG(("Http3Session::SendDatagram %p res=%" PRIx32 ", sendGroup=%" PRIu64
        ", sendOrder=%" PRId64,
        this, static_cast<uint32_t>(rv), aSendGroupId, aSendOrder));
-
-  
-  
-  
-  
-  if (NS_SUCCEEDED(rv) && mUdpConn && !IsClosing()) {
-    (void)mUdpConn->ForceSendNow();
-  }
   return rv;
 }
 
