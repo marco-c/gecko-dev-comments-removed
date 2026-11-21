@@ -428,6 +428,10 @@ class XPCStringConvert {
 namespace xpc {
 
 
+
+void RefreshSandboxesRTPCallerType();
+
+
 bool Base64Encode(JSContext* cx, JS::Handle<JS::Value> val,
                   JS::MutableHandle<JS::Value> out);
 bool Base64Decode(JSContext* cx, JS::Handle<JS::Value> val,
