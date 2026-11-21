@@ -3960,6 +3960,21 @@ void CodeGenerator::visitOsiPoint(LOsiPoint* lir) {
 
   MOZ_ASSERT(masm.framePushed() == frameSize());
 
+#ifdef DEBUG
+  
+  if (!osiIndices_.empty() && !masm.oom()) {
+    for (OutOfLineCode* ool : currentInstructionOols_) {
+      Label* rejoin = ool->rejoin();
+      if (rejoin->bound()) {
+        MOZ_ASSERT(uint32_t(rejoin->offset()) - lastOsiPointOffset_ >=
+                       Assembler::PatchWrite_NearCallSize(),
+                   "Invalidation patch for the previous OsiPoint overwrites "
+                   "an OOL rejoin");
+      }
+    }
+  }
+#endif
+
   uint32_t osiCallPointOffset = markOsiPoint(lir);
 
   LSafepoint* safepoint = lir->associatedSafepoint();
@@ -7632,13 +7647,21 @@ void CodeGenerator::emitAllocateSpaceForApply(T* apply, Register calleeReg,
 
     Label noUnderflow;
     if (apply->hasSingleTarget()) {
-      masm.branch32(Assembler::AboveOrEqual, argcreg,
-                    Imm32(apply->getSingleTarget()->nargs()), &noUnderflow);
+      uint32_t nargs = apply->getSingleTarget()->nargs();
+      MOZ_RELEASE_ASSERT(nargs <= JIT_ARGS_LENGTH_MAX);
+      masm.branch32(Assembler::AboveOrEqual, argcreg, Imm32(nargs),
+                    &noUnderflow);
     } else {
       masm.branchTestObjIsFunction(Assembler::NotEqual, calleeReg, scratch,
                                    calleeReg, &noUnderflow);
       masm.loadFunctionArgCount(calleeReg, scratch);
       masm.branch32(Assembler::AboveOrEqual, argcreg, scratch, &noUnderflow);
+
+      
+      
+      
+      masm.branch32(Assembler::Above, scratch, Imm32(JIT_ARGS_LENGTH_MAX),
+                    &noUnderflow);
     }
     masm.branchIfFunctionHasJitEntry(calleeReg, ool->entry());
     masm.bind(&noUnderflow);
@@ -7759,13 +7782,21 @@ void CodeGenerator::emitAllocateSpaceForConstructAndPushNewTarget(
 
     Label noUnderflow;
     if (construct->hasSingleTarget()) {
-      masm.branch32(Assembler::AboveOrEqual, argcreg,
-                    Imm32(construct->getSingleTarget()->nargs()), &noUnderflow);
+      uint32_t nargs = construct->getSingleTarget()->nargs();
+      MOZ_RELEASE_ASSERT(nargs <= JIT_ARGS_LENGTH_MAX);
+      masm.branch32(Assembler::AboveOrEqual, argcreg, Imm32(nargs),
+                    &noUnderflow);
     } else {
       masm.branchTestObjIsFunction(Assembler::NotEqual, calleeReg, scratch,
                                    calleeReg, &noUnderflow);
       masm.loadFunctionArgCount(calleeReg, scratch);
       masm.branch32(Assembler::AboveOrEqual, argcreg, scratch, &noUnderflow);
+
+      
+      
+      
+      masm.branch32(Assembler::Above, scratch, Imm32(JIT_ARGS_LENGTH_MAX),
+                    &noUnderflow);
     }
     masm.branchIfFunctionHasJitEntry(calleeReg, ool->entry());
     masm.bind(&noUnderflow);
@@ -8110,6 +8141,14 @@ void CodeGenerator::emitApplyGeneric(T* apply) {
 
   
   masm.branchIfFunctionHasNoJitEntry(calleereg, &invoke);
+
+  
+  
+  if (!apply->hasSingleTarget()) {
+    masm.loadFunctionArgCount(calleereg, scratch);
+    masm.branch32(Assembler::Above, scratch, Imm32(JIT_ARGS_LENGTH_MAX),
+                  &invoke);
+  }
 
   
   if (constructing) {
@@ -9099,6 +9138,12 @@ bool CodeGenerator::generateBlock(LBlock* current, size_t blockNumber,
 #ifdef CHECK_OSIPOINT_REGISTERS
     if (iter->safepoint() && !compilingWasm) {
       resetOsiPointRegs(iter->safepoint());
+    }
+#endif
+
+#ifdef DEBUG
+    if (!iter->isOsiPoint()) {
+      currentInstructionOols_.clear();
     }
 #endif
 
@@ -22204,6 +22249,12 @@ void CodeGenerator::visitGeneratorResume(LGeneratorResume* lir) {
   Register callee = ToRegister(lir->temp0());
   Register scratch = ToRegister(lir->temp1());
 
+  using Fn = bool (*)(JSContext*, HandleObject, HandleValue, int32_t,
+                      MutableHandleValue);
+  OutOfLineCode* ool = oolCallVM<Fn, jit::ResumeGeneratorFromJit>(
+      lir, ArgList(genObj, value, Imm32(resumeKind)),
+      StoreValueTo(ToOutValue(lir)));
+
   
   masm.unboxObject(
       Address(genObj, AbstractGeneratorObject::offsetOfCalleeOrModuleSlot()),
@@ -22212,6 +22263,11 @@ void CodeGenerator::visitGeneratorResume(LGeneratorResume* lir) {
   
   
   masm.loadFunctionArgCount(callee, scratch);
+
+  
+  masm.branch32(Assembler::Above, scratch, Imm32(JIT_ARGS_LENGTH_MAX),
+                ool->entry());
+
   masm.alignJitStackBasedOnNArgs(scratch,  false,
                                   ResumeFrameArgs::NumSlots);
 
@@ -22256,6 +22312,7 @@ void CodeGenerator::visitGeneratorResume(LGeneratorResume* lir) {
 
   masm.setFramePushed(frameSize());
   emitRestoreStackPointerFromFP();
+  masm.bind(ool->rejoin());
 }
 
 
