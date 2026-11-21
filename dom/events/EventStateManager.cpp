@@ -6516,6 +6516,8 @@ nsresult EventStateManager::PostHandleMouseUp(
       nsIContent::FromEventTargetOrNull(aMouseUpEvent->mClickTarget);
   NS_ENSURE_STATE(clickTarget);
 
+  const bool mouseUpDefaultPrevented = aMouseUpEvent->DefaultPrevented();
+
   
   
   
@@ -6531,23 +6533,24 @@ nsresult EventStateManager::PostHandleMouseUp(
   
   
   
-  
-  if (status == nsEventStatus_eConsumeNoDefault) {
-    *aStatus = nsEventStatus_eConsumeNoDefault;
-    return NS_OK;
-  }
-
-  
-  
-  
   if (aMouseUpEvent->mCommand && XRE_IsParentProcess() &&
       !aMouseUpEvent->HasBeenPostedToRemoteProcess() &&
-      !aMouseUpEvent->DefaultPrevented()) {
+      !mouseUpDefaultPrevented) {
     if (!mPresContext || NS_WARN_IF(!mPresContext->GetRootWidget())) {
       return NS_OK;
     }
     nsCOMPtr widget = mPresContext->GetRootWidget();
     aMouseUpEvent->mCommand.Run(widget);
+  }
+
+  
+  
+  
+  
+  
+  
+  if (status == nsEventStatus_eConsumeNoDefault) {
+    *aStatus = nsEventStatus_eConsumeNoDefault;
     return NS_OK;
   }
 

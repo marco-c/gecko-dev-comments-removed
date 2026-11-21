@@ -49,7 +49,10 @@ async function test_mouse_xbuttons(url) {
       
       const current = content.location.hash;
       if (current === "#1") {
-        await content.navigation.forward();
+        await new Promise(r => {
+          content.addEventListener("hashchange", r);
+          content.history.forward();
+        });
       }
       
       content
@@ -135,7 +138,7 @@ async function test_mouse_xbuttons(url) {
 
     
     
-    if (preventDefault === "mousedown") {
+    if (preventDefault !== "mouseup") {
       info(`Wait for default action (${command})`);
       await waitForDefaultAction;
     } else {
