@@ -198,9 +198,6 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   [[nodiscard]] bool ProcessPendingQForEntry(nsHttpConnectionInfo*);
   void ProcessPendingQForEntry(ConnectionEntry*);
 
-  
-  void ActivateTimeoutTick();
-
   already_AddRefed<PendingTransactionInfo> FindTransactionHelper(
       bool removeWhenFound, ConnectionEntry* aEnt, nsAHttpTransaction* aTrans);
 
@@ -214,6 +211,9 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   void MaybeRemoveEntryFromPendingSet(ConnectionEntry* ent);
 
  public:
+  
+  void ActivateTimeoutTick();
+
   void RegisterOriginCoalescingKey(HttpConnectionBase*, const nsACString& host,
                                    int32_t port);
   

@@ -230,6 +230,10 @@ class Http3Session final : public Http3SessionBase,
   bool IsClosing() const { return (mState == CLOSING || mState == CLOSED); }
   bool IsClosed() const { return mState == CLOSED; }
 
+  
+  
+  uint32_t ReadTimeoutTick();
+
   bool AddStream(nsAHttpTransaction* aHttpTransaction, int32_t aPriority,
                  nsIInterfaceRequestor* aCallbacks);
 
@@ -480,6 +484,9 @@ class Http3Session final : public Http3SessionBase,
   TimeStamp mTimerShouldTrigger;
   TimeStamp mZeroRttStarted;
   TimeStamp mLastTRRResponseTime;  
+  
+  
+  TimeStamp mNoInputSince;
   uint64_t mBlockedByStreamLimitCount = 0;
   uint64_t mTransactionsBlockedByStreamLimitCount = 0;
   uint64_t mTransactionsSenderBlockedByFlowControlCount = 0;
