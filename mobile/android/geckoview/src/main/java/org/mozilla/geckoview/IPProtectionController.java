@@ -9,6 +9,7 @@ import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringDef;
 import androidx.annotation.UiThread;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -322,14 +323,43 @@ public class IPProtectionController {
   }
 
   
+  @Retention(RetentionPolicy.SOURCE)
+  @StringDef(value = {SIGNED_OUT_AUTH_NONE, SIGNED_OUT_AUTH_GPI})
+  public @interface SignedOutAuth {}
+
+  
+  public static final String SIGNED_OUT_AUTH_NONE = "none";
+
+  
+
+
+
+
+
+  public static final String SIGNED_OUT_AUTH_GPI = "gpi";
+
+  
 
 
 
 
   @HandlerThread
   public @NonNull GeckoResult<Void> init() {
+    return init(SIGNED_OUT_AUTH_NONE);
+  }
+
+  
+
+
+
+
+
+  @HandlerThread
+  public @NonNull GeckoResult<Void> init(final @NonNull @SignedOutAuth String signedOutAuth) {
     ThreadUtils.assertOnHandlerThread();
-    return EventDispatcher.getInstance().queryVoid("GeckoView:IPProtection:Init");
+    final GeckoBundle bundle = new GeckoBundle(1);
+    bundle.putString("signedOutAuth", signedOutAuth);
+    return EventDispatcher.getInstance().queryVoid("GeckoView:IPProtection:Init", bundle);
   }
 
   
@@ -410,7 +440,6 @@ public class IPProtectionController {
   }
 
   
-
 
 
 
@@ -820,6 +849,8 @@ public class IPProtectionController {
             final GpiProvider gpiProvider = mGpiProvider;
             if (gpiProvider == null) {
               Log.w(LOGTAG, "Received " + event + " but no GPI provider is set");
+              EventDispatcher.getInstance()
+                  .dispatch("GeckoView:IPProtection:GPI:WarmUpFailed", null);
               break;
             }
             gpiProvider
