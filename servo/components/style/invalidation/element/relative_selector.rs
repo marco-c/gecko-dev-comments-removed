@@ -4,7 +4,6 @@
 
 
 
-use crate::FxHashMap;
 use crate::data::ElementData;
 use crate::dom::{TElement, TNode};
 use crate::invalidation::element::element_wrapper::{ElementWrapper, Snapshots};
@@ -21,9 +20,10 @@ use crate::invalidation::element::invalidator::{
 use crate::invalidation::element::restyle_hints::RestyleHint;
 use crate::invalidation::element::state_and_attributes::{
     check_dependency, dependency_may_be_relevant, invalidated_descendants, invalidated_self,
-    invalidated_sibling, push_invalidation, should_process_descendants,
+    invalidated_sibling_subtree, push_invalidation, should_process_descendants,
 };
 use crate::stylist::{CascadeData, Stylist};
+use crate::{FxHashMap, FxHashSet};
 use dom::ElementState;
 use selectors::OpaqueElement;
 use selectors::kleene_value::KleeneValue;
@@ -337,6 +337,13 @@ where
 
 type Invalidations<'a> = SmallVec<[RelativeSelectorInvalidation<'a>; 1]>;
 type InnerInvalidations<'a, E> = SmallVec<[(E, RelativeSelectorInvalidation<'a>); 1]>;
+
+type HandledAnchors<E> = FxHashSet<(
+    E,
+    *const Dependency,
+    Option<OpaqueElement>,
+    RelativeDependencyInvalidationKind,
+)>;
 
 struct ToInvalidate<'a, E: TElement + 'a> {
     
@@ -902,6 +909,7 @@ where
 
     
     fn invalidate_from_dependencies(&self, to_invalidate: ToInvalidate<'a, E>) {
+        let mut handled = HandledAnchors::default();
         for (element, dependencies) in to_invalidate.dependencies {
             let mut selector_caches = SelectorCaches::default();
             let mut processor = RelativeSelectorInnerInvalidationProcessor::new(
@@ -913,15 +921,20 @@ where
             );
             TreeStyleInvalidator::new(element, None, &mut processor).invalidate();
             for (element, invalidation) in processor.take_invalidations() {
-                self.invalidate_upwards(element, &invalidation);
+                self.invalidate_upwards(element, &invalidation, &mut handled);
             }
         }
         for invalidation in to_invalidate.invalidations {
-            self.invalidate_upwards(self.element, &invalidation);
+            self.invalidate_upwards(self.element, &invalidation, &mut handled);
         }
     }
 
-    fn invalidate_upwards(&self, element: E, invalidation: &RelativeSelectorInvalidation<'a>) {
+    fn invalidate_upwards(
+        &self,
+        element: E,
+        invalidation: &RelativeSelectorInvalidation<'a>,
+        handled: &mut HandledAnchors<E>,
+    ) {
         
         
         match invalidation.kind {
@@ -933,7 +946,7 @@ where
                     ) {
                         return;
                     }
-                    self.handle_anchor(e, invalidation.dependency, invalidation.host);
+                    self.handle_anchor(e, invalidation, handled);
                 });
             },
             RelativeDependencyInvalidationKind::Ancestors => {
@@ -945,7 +958,10 @@ where
                     ) {
                         return;
                     }
-                    self.handle_anchor(par, invalidation.dependency, invalidation.host);
+                    if !self.handle_anchor(par, invalidation, handled) {
+                        
+                        return;
+                    }
                     parent = par.parent_element();
                 }
             },
@@ -959,7 +975,7 @@ where
                         ) {
                             return;
                         }
-                        self.handle_anchor(e, invalidation.dependency, invalidation.host);
+                        self.handle_anchor(e, invalidation, handled);
                     });
             },
             RelativeDependencyInvalidationKind::AncestorPrevSibling => {
@@ -978,7 +994,7 @@ where
                         ) {
                             return;
                         }
-                        self.handle_anchor(e, invalidation.dependency, invalidation.host);
+                        self.handle_anchor(e, invalidation, handled);
                     });
                     parent = par.parent_element();
                 }
@@ -992,7 +1008,7 @@ where
                     ) {
                         return;
                     }
-                    self.handle_anchor(sib, invalidation.dependency, invalidation.host);
+                    self.handle_anchor(sib, invalidation, handled);
                     sibling = sib.prev_sibling_element();
                 }
             },
@@ -1013,7 +1029,7 @@ where
                         ) {
                             return;
                         }
-                        self.handle_anchor(sib, invalidation.dependency, invalidation.host);
+                        self.handle_anchor(sib, invalidation, handled);
                         sibling = sib.prev_sibling_element();
                     }
                     parent = par.parent_element();
@@ -1030,12 +1046,23 @@ where
     }
 
     
+    
     fn handle_anchor(
         &self,
         element: E,
-        outer_dependency: &Dependency,
-        host: Option<OpaqueElement>,
-    ) {
+        invalidation: &RelativeSelectorInvalidation<'a>,
+        handled: &mut HandledAnchors<E>,
+    ) -> bool {
+        let outer_dependency = invalidation.dependency;
+        let host = invalidation.host;
+        if !handled.insert((
+            element,
+            std::ptr::from_ref(outer_dependency),
+            host,
+            invalidation.kind,
+        )) {
+            return false;
+        }
         let is_rightmost = Self::is_subject(outer_dependency);
         if (is_rightmost
             && !element.has_selector_flags(ElementSelectorFlags::ANCHORS_RELATIVE_SELECTOR))
@@ -1045,7 +1072,7 @@ where
                 ))
         {
             
-            return;
+            return true;
         }
         let mut selector_caches = SelectorCaches::default();
         let matching_context = MatchingContext::<'_, E::Impl>::new_for_visited(
@@ -1059,7 +1086,7 @@ where
         );
         let mut data = match element.mutate_data() {
             Some(data) => data,
-            None => return,
+            None => return true,
         };
         let mut processor = RelativeSelectorOuterInvalidationProcessor {
             element,
@@ -1071,6 +1098,7 @@ where
         };
         let result = TreeStyleInvalidator::new(element, None, &mut processor).invalidate();
         (self.invalidated)(element, &result);
+        true
     }
 
     
@@ -1270,9 +1298,9 @@ where
         invalidated_self(element);
     }
 
-    fn invalidated_sibling(&mut self, element: E, of: E) {
+    fn invalidated_sibling_subtree(&mut self, element: E, of: E, invalidated_sibling: bool) {
         debug_assert_ne!(element, self.element);
-        invalidated_sibling(element, of);
+        invalidated_sibling_subtree(element, of, invalidated_sibling);
     }
 }
 
@@ -1437,7 +1465,7 @@ where
 
     
     fn invalidated_self(&mut self, _element: E) {}
-    fn invalidated_sibling(&mut self, _sibling: E, _of: E) {}
+    fn invalidated_sibling_subtree(&mut self, _sibling: E, _of: E, _: bool) {}
     fn invalidated_descendants(&mut self, _element: E, _child: E) {}
 
     fn found_relative_selector_invalidation(
