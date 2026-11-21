@@ -219,6 +219,8 @@ void JitFrameIter::settle() {
     }
 
     uintptr_t* shadowStackPointer = wasmFrame.shadowStackPointer();
+    
+    MOZ_ASSERT(!wasmFrame.shadowStackSwitchPointer());
     iter_.destroy();
     iter_.construct<jit::JSJitFrameIter>(act_, prevFP, mustUnwindActivation_,
                                          shadowStackPointer);

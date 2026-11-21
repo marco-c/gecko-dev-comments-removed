@@ -104,7 +104,16 @@ class WasmFrameIter {
   
   
   
+  
+  
+  
   uintptr_t* shadowStackPointer_ = nullptr;
+  
+  
+  
+  
+  
+  uintptr_t* shadowStackSwitchPointer_ = nullptr;
 #endif
 
   
@@ -246,6 +255,14 @@ class WasmFrameIter {
   uintptr_t* shadowStackPointer() const {
 #ifdef JS_HW_SHADOW_STACK
     return shadowStackPointer_;
+#else
+    return nullptr;
+#endif
+  }
+
+  uintptr_t* shadowStackSwitchPointer() const {
+#ifdef JS_HW_SHADOW_STACK
+    return shadowStackSwitchPointer_;
 #else
     return nullptr;
 #endif

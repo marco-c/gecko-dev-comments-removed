@@ -103,6 +103,17 @@ WasmFrameIter::WasmFrameIter(JitActivation* activation, wasm::Frame* fp,
   
   
   bool dynamicSwitchToMainStack = contStack_ && fp_ == activation->wasmExitFP();
+#  ifdef JS_HW_SHADOW_STACK
+  if (shadowStackPointer_ && dynamicSwitchToMainStack) {
+    
+    
+    
+    
+    shadowStackPointer_ = contStack_->exitShadowStackPointer();
+    MOZ_RELEASE_ASSERT(shadowStackPointer_);
+    shadowStackSwitchPointer_ = shadowStackPointer_;
+  }
+#  endif
 #endif
 
   
@@ -310,6 +321,19 @@ void WasmFrameIter::popContBaseFrame() {
   const Handlers* handlers = stack->handlers();
   fp_ = (wasm::Frame*)handlers->returnTarget.framePointer;
   uint8_t* returnAddress = (uint8_t*)handlers->returnTarget.resumePC;
+#  ifdef JS_HW_SHADOW_STACK
+  if (shadowStackPointer_) {
+    MOZ_RELEASE_ASSERT(handlers->returnTarget.shadowStackPointer);
+    
+    
+    
+    
+    
+    shadowStackPointer_ = handlers->returnTarget.shadowStackPointer;
+    shadowStackSwitchPointer_ =
+        handlers->returnTarget.stack->stack ? shadowStackPointer_ : nullptr;
+  }
+#  endif
   instance_ = handlers->returnTarget.instance;
   const CodeRange* codeRange;
   code_ = LookupCode(returnAddress, &codeRange);

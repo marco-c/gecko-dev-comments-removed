@@ -746,6 +746,11 @@ void MacroAssemblerX64::handleFailureWithHandlerTail(
 #ifdef JS_HW_SHADOW_STACK
   
   
+  
+  
+  loadPtr(Address(rsp, ResumeFromException::offsetOfShadowStackSwitchPointer()),
+          rax);
+  switchToShadowStackPtr(rax);
   loadPtr(Address(rsp, ResumeFromException::offsetOfShadowStackPointer()), rax);
   unwindToShadowStackPtr(rax, rcx);
 #endif

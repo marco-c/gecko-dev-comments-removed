@@ -358,7 +358,16 @@ struct ResumeFromException {
   
   
   
+  
+  
   uintptr_t* shadowStackPointer = nullptr;
+  
+  
+  
+  
+  
+  
+  uintptr_t* shadowStackSwitchPointer = nullptr;
 #endif
   ExceptionResumeKind kind;
   wasm::Instance* instance;
@@ -388,6 +397,9 @@ struct ResumeFromException {
 #ifdef JS_HW_SHADOW_STACK
   static size_t offsetOfShadowStackPointer() {
     return offsetof(ResumeFromException, shadowStackPointer);
+  }
+  static size_t offsetOfShadowStackSwitchPointer() {
+    return offsetof(ResumeFromException, shadowStackSwitchPointer);
   }
 #endif
 
