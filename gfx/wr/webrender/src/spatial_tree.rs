@@ -230,6 +230,22 @@ impl SceneSpatialTree {
     }
 
     
+    pub fn is_in_preserve_3d_context(&self, mut index: SpatialNodeIndex) -> bool {
+        loop {
+            let node = self.get_node_info(index);
+            if let SpatialNodeType::ReferenceFrame(ref info) = node.node_type {
+                if info.transform_style == TransformStyle::Preserve3D {
+                    return true;
+                }
+            }
+            match node.parent {
+                Some(parent) => index = parent,
+                None => return false,
+            }
+        }
+    }
+
+    
     pub fn add_slice_root(&mut self, index: SpatialNodeIndex) {
         self.updates.slice_roots.push(index);
     }
@@ -283,11 +299,13 @@ impl SceneSpatialTree {
             match node.node_type {
                 SpatialNodeType::ReferenceFrame(ref info) => {
                     match info.kind {
-                        ReferenceFrameKind::Transform { is_2d_scale_translation: true, .. } => {
+                        ReferenceFrameKind::Transform { is_2d_scale_translation: true, .. }
+                            if info.transform_style != TransformStyle::Preserve3D => {
                             
                         }
-                        ReferenceFrameKind::Transform { is_2d_scale_translation: false, .. } |
-                        ReferenceFrameKind::Perspective { .. } => {
+                        _ => {
+                            
+                            
                             
                             
                             real_scroll_root = self.root_reference_frame_index;

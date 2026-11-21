@@ -553,6 +553,8 @@ fn create_tile_cache(
     
     
     
+    
+    
     let mut shared_clip_node_id = shared_clip_node_id.unwrap_or(ClipNodeId::NONE);
     let mut current_node_id = shared_clip_node_id;
     let mut rounded_rect_count = 0;
@@ -574,7 +576,9 @@ fn create_tile_cache(
         let clip_node_data = &clips[node.handle];
 
         
-        let is_rcs = spatial_tree.is_root_coord_system(node.spatial_node_index);
+        
+        let is_rcs = spatial_tree.is_root_coord_system(node.spatial_node_index) &&
+            !spatial_tree.is_in_preserve_3d_context(node.spatial_node_index);
 
         let node_valid = if is_rcs {
             match clip_node_data.kind {
@@ -611,6 +615,7 @@ fn create_tile_cache(
                 }
             }
         } else {
+            
             
             false
         };
