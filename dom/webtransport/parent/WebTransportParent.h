@@ -95,7 +95,7 @@ class WebTransportParent : public PWebTransportParent,
 
   
   
-  void RemoveFinishedStream(uint64_t aStreamId);
+  void RemoveFinishedIncomingStream(uint64_t aStreamId);
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
