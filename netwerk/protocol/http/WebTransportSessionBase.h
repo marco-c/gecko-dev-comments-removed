@@ -85,6 +85,19 @@ class WebTransportSessionBase {
   
   void NotifyOutgoingDatagramSpaceAvailable();
 
+  
+  
+  
+  virtual bool GetDatagramQueueCapacity(size_t* aRemainingBytes,
+                                        size_t* aQueuedDatagrams,
+                                        size_t* aMaxQueuedBytes) {
+    return false;
+  }
+  virtual bool GetDatagramSessionStats(uint64_t* aSent, uint64_t* aExpired,
+                                       uint64_t* aDropped) {
+    return false;
+  }
+
   virtual Http3WebTransportSession* GetHttp3WebTransportSession() {
     return nullptr;
   }

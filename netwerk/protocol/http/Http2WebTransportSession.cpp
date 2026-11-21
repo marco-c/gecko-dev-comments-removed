@@ -12,6 +12,7 @@
 #include "Http2Session.h"
 #include "Http2WebTransportStream.h"
 #include "HttpLog.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/net/NeqoHttp3Conn.h"
 #include "nsHttp.h"
 #include "nsIOService.h"
@@ -138,11 +139,21 @@ void Http2WebTransportSessionImpl::SendDatagram(nsTArray<uint8_t>&& aData,
   
   
 
+  mQueuedDatagrams++;
+  mQueuedDatagramBytes += aData.Length();
+
   Capsule capsule = Capsule::WebTransportDatagram(std::move(aData));
 
   auto encoder = std::make_unique<CapsuleEncoder>();
   encoder->EncodeCapsule(capsule);
   EnqueueOutCapsule(CapsuleTransmissionPriority::Normal, std::move(encoder));
+}
+
+void Http2WebTransportSessionImpl::OnDatagramSent(size_t aSize) {
+  MOZ_ASSERT(mQueuedDatagrams > 0 && mQueuedDatagramBytes >= aSize);
+  mQueuedDatagrams--;
+  mQueuedDatagramBytes -= aSize;
+  mSentDatagrams++;
 }
 
 void Http2WebTransportSessionImpl::SetDatagramMaxBufferedDatagrams(
@@ -156,6 +167,30 @@ void Http2WebTransportSessionImpl::SetDatagramMaxBufferedDatagrams(
 void Http2WebTransportSessionImpl::SetDatagramMaxAge(double aMaxAge) {
   LOG(("Http2WebTransportSessionImpl::SetDatagramMaxAge %p age=%f", this,
        aMaxAge));
+}
+
+
+
+
+static constexpr size_t kMaxQueuedDatagramBytes = 256 * 1024;
+
+bool Http2WebTransportSessionImpl::GetDatagramQueueCapacity(
+    size_t* aRemainingBytes, size_t* aQueuedDatagrams,
+    size_t* aMaxQueuedBytes) {
+  *aRemainingBytes = kMaxQueuedDatagramBytes -
+                     std::min(mQueuedDatagramBytes, kMaxQueuedDatagramBytes);
+  *aQueuedDatagrams = mQueuedDatagrams;
+  *aMaxQueuedBytes = kMaxQueuedDatagramBytes;
+  return true;
+}
+
+bool Http2WebTransportSessionImpl::GetDatagramSessionStats(uint64_t* aSent,
+                                                           uint64_t* aExpired,
+                                                           uint64_t* aDropped) {
+  *aSent = mSentDatagrams;
+  *aExpired = 0;
+  *aDropped = 0;
+  return true;
 }
 
 void Http2WebTransportSessionImpl::CreateOutgoingStreamInternal(
@@ -739,6 +774,15 @@ Http2WebTransportSession::OnOutputStreamReady(nsIAsyncOutputStream* aOut) {
     mCurrentOutCapsule = mOutgoingQueue.Pop();
   }
 
+  
+  
+  bool datagramSent = false;
+  auto notifyDatagramSent = MakeScopeExit([&] {
+    if (datagramSent && mImpl) {
+      mImpl->NotifyOutgoingDatagramSpaceAvailable();
+    }
+  });
+
   while (mCurrentOutCapsule && mOutput) {
     auto buffer = mCurrentOutCapsule->GetBuffer();
     const char* writeBuffer =
@@ -756,6 +800,9 @@ Http2WebTransportSession::OnOutputStreamReady(nsIAsyncOutputStream* aOut) {
       LOG(("Http2WebTransportSession::OnOutputStreamReady %p failed %u\n", this,
            static_cast<uint32_t>(rv)));
       
+      
+      
+      
       return NS_OK;
     }
 
@@ -772,6 +819,10 @@ Http2WebTransportSession::OnOutputStreamReady(nsIAsyncOutputStream* aOut) {
     }
 
     if (toWrite == wrote) {
+      if (Maybe<size_t> size = mCurrentOutCapsule->GetDatagramSize()) {
+        mImpl->OnDatagramSent(*size);
+        datagramSent = true;
+      }
       mWriteOffset = 0;
       mCurrentOutCapsule =
           mOutgoingQueue.IsEmpty() ? nullptr : mOutgoingQueue.Pop();

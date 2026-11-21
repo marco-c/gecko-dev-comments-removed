@@ -35,6 +35,7 @@ class CapsuleEncoder final {
   mozilla::Span<const uint8_t> GetBuffer();
 
   Maybe<StreamMetadata>& GetStreamMetadata() { return mStreamMetadata; }
+  Maybe<size_t> GetDatagramSize() const { return mDatagramSize; }
 
  private:
   RefPtr<NeqoEncoder> mEncoder;
@@ -56,6 +57,8 @@ class CapsuleEncoder final {
   
   
   Maybe<StreamMetadata> mStreamMetadata;
+  
+  Maybe<size_t> mDatagramSize;
 };
 
 }  

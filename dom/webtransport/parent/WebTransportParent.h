@@ -176,6 +176,10 @@ class WebTransportParent : public PWebTransportParent,
   
   
   
+  bool mInOutgoingDatagramsBatch{false};
+  
+  
+  
   
   
   

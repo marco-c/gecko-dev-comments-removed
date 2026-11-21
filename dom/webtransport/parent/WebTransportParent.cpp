@@ -8,6 +8,7 @@
 #include <cmath>
 
 #include "Http3WebTransportSession.h"
+#include "mozilla/AutoRestore.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/TimeStamp.h"
@@ -1170,6 +1171,8 @@ WebTransportParent::OnIncomingBidirectionalStreamAvailable(
     return IPC_FAIL(this, "Outgoing datagram batch is too large");
   }
 
+  AutoRestore<bool> inBatch(mInOutgoingDatagramsBatch);
+  mInOutgoingDatagramsBatch = true;
   TimeStamp now = TimeStamp::Now();
   for (auto& datagram : aDatagrams) {
     double ageMs = (now - datagram.timestamp()).ToMilliseconds();
@@ -1366,8 +1369,9 @@ NS_IMETHODIMP WebTransportParent::OnOutgoingDatagramSpaceAvailable() {
   
   
   
-  
-  
+  if (mInOutgoingDatagramsBatch) {
+    return NS_OK;
+  }
   MaybeSendDatagramCapacity();
   return NS_OK;
 }

@@ -97,6 +97,11 @@ class Http2WebTransportSessionImpl final : public WebTransportSessionBase,
       uint16_t aValue) override;
   void SetDatagramMaxBufferedDatagrams(uint32_t aMaxBufferedDatagrams) override;
   void SetDatagramMaxAge(double aMaxAge) override;
+  bool GetDatagramQueueCapacity(size_t* aRemainingBytes,
+                                size_t* aQueuedDatagrams,
+                                size_t* aMaxQueuedBytes) override;
+  bool GetDatagramSessionStats(uint64_t* aSent, uint64_t* aExpired,
+                               uint64_t* aDropped) override;
   nsresult RegisterSendGroup(uint64_t aGroupId) override;
   void CreateOutgoingBidirectionalStream(
       std::function<void(Result<RefPtr<WebTransportStreamBase>, nsresult>&&)>&&
@@ -117,6 +122,8 @@ class Http2WebTransportSessionImpl final : public WebTransportSessionBase,
 
   void StreamHasCapsuleToSend();
   void OnStreamDataSent(StreamId aId, size_t aCount);
+  
+  void OnDatagramSent(size_t aSize);
   void OnError(uint64_t aError);
 
  private:
@@ -181,6 +188,12 @@ class Http2WebTransportSessionImpl final : public WebTransportSessionBase,
 
   RefPtr<CapsuleIOHandler> mHandler;
   CapsuleQueue mCapsuleQueue;
+  
+  
+  
+  size_t mQueuedDatagrams = 0;
+  size_t mQueuedDatagramBytes = 0;
+  uint64_t mSentDatagrams = 0;
   SenderFlowControlSession mSessionDataFc;
   ReceiverFlowControlSession mReceiverFc;
 };
