@@ -297,20 +297,11 @@ def android_build_geckoview_example(command_context, args):
 @CommandArgument("args", nargs=argparse.REMAINDER)
 def android_compile_all(command_context, args):
     tasks = command_context.substs["GRADLE_ANDROID_COMPILE_ALL_TASKS"]
-
-    
-    
-    
-    if command_context.substs.get("ENABLE_MOZSEARCH_PLUGIN"):
-        tasks = tasks + ["--max-workers=1"]
-
-    ret = gradle(
+    return gradle(
         command_context,
         tasks + args,
         verbose=True,
     )
-
-    return ret
 
 
 def install_app_bundle(command_context, bundle):
@@ -744,16 +735,33 @@ https://experimenter.info/nimbus-cli for the full documentation.""",
 @CommandArgument(
     "--update",
     action="store_true",
-    help="Check for a newer nimbus-cli before running, ignoring the cached version.",
+    help="Check for a newer nimbus-cli and download if it exists.",
+)
+@CommandArgument(
+    "--force-update",
+    action="store_true",
+    help=(
+        "Download the latest version of nimbus-cli, whether it has been updated or not"
+    ),
 )
 @CommandArgument("args", nargs=argparse.REMAINDER)
-def android_nimbus_cli(command_context, update=False, args=()):
+def android_nimbus_cli(command_context, update=False, force_update=False, args=()):
     
     
     nimbus_cli = load_source(
         "nimbus_cli", os.path.join(os.path.dirname(__file__), "nimbus_cli.py")
     )
-    return nimbus_cli.run(command_context, args, force_update=update)
+
+    update_mode = None
+    if force_update:
+        update_mode = "force"
+    elif update:
+        update_mode = "check"
+
+    if update_mode is not None:
+        return nimbus_cli.update(command_context, update_mode)
+    else:
+        return nimbus_cli.run(command_context, args)
 
 
 @Command(
