@@ -240,25 +240,6 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
 
   void LogHistory();
 
-  enum class SearchDirection : int8_t { Left = -1, Right = 1 };
-
-  
-  mozilla::dom::SessionHistoryEntry* FindAdjacentEntryFor(
-      mozilla::dom::SessionHistoryEntry* aEntry,
-      SearchDirection aSearchDirection);
-
-  
-  
-  mozilla::dom::SessionHistoryEntry* FindClosestAdjacentContiguousEntryFor(
-      mozilla::dom::SessionHistoryEntry* aEntry,
-      SearchDirection aSearchDirection);
-
-  
-  
-  mozilla::dom::SessionHistoryEntry* FindLeftmostAdjacentContiguousEntryFor(
-      mozilla::dom::SessionHistoryEntry* aEntry,
-      SearchDirection aSearchDirection);
-
   bool ContainsEntry(SessionHistoryEntry* aEntry);
 
  protected:
@@ -268,6 +249,34 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
 
  private:
   friend class nsSHistoryObserver;
+
+  enum class SearchDirection : int8_t { Left = -1, Right = 1 };
+
+  
+  int32_t GetRootIndexOfEntry(mozilla::dom::SessionHistoryEntry* aEntry);
+
+  
+  
+  
+  
+  
+  mozilla::dom::SessionHistoryEntry* FindAdjacentEntryFor(
+      mozilla::dom::SessionHistoryEntry* aEntry,
+      SearchDirection aSearchDirection, int32_t* aRootIndex);
+
+  
+  
+  
+  mozilla::dom::SessionHistoryEntry* FindClosestAdjacentContiguousEntryFor(
+      mozilla::dom::SessionHistoryEntry* aEntry,
+      SearchDirection aSearchDirection, int32_t* aRootIndex);
+
+  
+  
+  
+  mozilla::dom::SessionHistoryEntry* FindLeftmostAdjacentContiguousEntryFor(
+      mozilla::dom::SessionHistoryEntry* aEntry,
+      SearchDirection aSearchDirection, int32_t* aRootIndex);
 
   bool ForEachDifferingEntry(
       SessionHistoryEntry* aPrevEntry, SessionHistoryEntry* aNextEntry,
