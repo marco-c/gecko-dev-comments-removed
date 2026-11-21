@@ -11,6 +11,8 @@
 #include <media/NdkImage.h>
 #include <media/NdkImageReader.h>
 
+#include <mutex>
+
 #include "GLContext.h"
 #include "GLContextEGL.h"
 #include "GLContextProvider.h"
@@ -19,12 +21,17 @@
 #include "OGLShaderConfig.h"
 #include "ScopedGLHelpers.h"
 #include "mozilla/DataMutex.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/RemoteMediaManagerParent.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/java/RemoteSurfaceAllocatorNatives.h"
+#include "mozilla/java/RemoteSurfaceAllocatorWrappers.h"
+#include "mozilla/java/SurfaceAllocatorNatives.h"
+#include "mozilla/java/SurfaceAllocatorWrappers.h"
 #include "mozilla/layers/AndroidHardwareBuffer.h"
 #include "mozilla/layers/AndroidImageConsumer.h"
 #include "mozilla/webrender/RenderThread.h"
@@ -78,10 +85,7 @@ namespace {
 using FrameReleaseCallback = SurfaceTextureImage::SetCurrentCallback;
 using FrameCallbackMap =
     std::unordered_map<uint64_t, UniquePtr<FrameReleaseCallback>>;
-struct ReaderFrameState {
-  FrameCallbackMap mCallbacks;
-};
-using ReaderFrameMap = std::unordered_map<uint64_t, ReaderFrameState>;
+using ReaderFrameMap = std::unordered_map<uint64_t, FrameCallbackMap>;
 MOZ_RUNINIT static StaticDataMutex<ReaderFrameMap> sReaderFrames(
     "ImageReaderClientFrames");
 
@@ -100,6 +104,8 @@ class ImageReaderFrameRegistry final {
     MOZ_ASSERT(inserted);
   }
 
+  
+  
   static void UnregisterReader(uint64_t aReaderId) {
     FrameCallbackMap discarded;
     {
@@ -108,7 +114,7 @@ class ImageReaderFrameRegistry final {
       if (it == readers->end()) {
         return;
       }
-      discarded.swap(it->second.mCallbacks);
+      discarded.swap(it->second);
       readers->erase(it);
     }
   }
@@ -123,8 +129,7 @@ class ImageReaderFrameRegistry final {
     
     
     [[maybe_unused]] const bool inserted =
-        it->second.mCallbacks.try_emplace(aFrameId, std::move(aCallback))
-            .second;
+        it->second.try_emplace(aFrameId, std::move(aCallback)).second;
     MOZ_ASSERT(inserted);
   }
 
@@ -137,12 +142,12 @@ class ImageReaderFrameRegistry final {
       if (reader == readers->end()) {
         return false;
       }
-      auto frame = reader->second.mCallbacks.find(aFrameId);
-      if (frame == reader->second.mCallbacks.end()) {
+      auto frame = reader->second.find(aFrameId);
+      if (frame == reader->second.end()) {
         return false;
       }
       callback = std::move(frame->second);
-      reader->second.mCallbacks.erase(frame);
+      reader->second.erase(frame);
     }
     return (*callback)(aRender);
   }
@@ -153,51 +158,230 @@ class ImageReaderFrameRegistry final {
       auto readers = sReaderFrames.Lock();
       auto it = readers->find(aReaderId);
       if (it != readers->end()) {
-        discarded.swap(it->second.mCallbacks);
+        discarded.swap(it->second);
       }
     }
   }
 };
 
+
+
+class NativeImageReaderFrames final
+    : public java::SurfaceAllocator::Natives<NativeImageReaderFrames> {
+ public:
+  static bool ReleaseImageReaderFrame(int64_t aReaderId, int64_t aFrameId,
+                                      bool aRender) {
+    return ImageReaderFrameRegistry::ReleaseFrame(uint64_t(aReaderId),
+                                                  uint64_t(aFrameId), aRender);
+  }
+
+  static void DiscardImageReaderFrames(int64_t aReaderId) {
+    ImageReaderFrameRegistry::UnregisterReader(uint64_t(aReaderId));
+  }
+};
+
+using RemoteReaders = std::unordered_map<int64_t, RefPtr<AndroidImageReader>>;
+struct RemoteReaderRegistry {
+  
+  bool mShuttingDown = true;
+  RemoteReaders mReaders;
+};
+MOZ_RUNINIT static StaticDataMutex<RemoteReaderRegistry> sRemoteReaders(
+    "RemoteImageReaders");
+
+
+
+
+
+
+
+
+
+class NativeImageReaderAllocator final
+    : public java::RemoteSurfaceAllocator::Natives<NativeImageReaderAllocator> {
+ public:
+  static jni::Object::LocalRef CreateImageReaderSurface(int64_t aHandle) {
+    
+    
+    auto readers = sRemoteReaders.Lock();
+    if (readers->mShuttingDown) {
+      return nullptr;
+    }
+    if ((!XRE_IsGPUProcess() && !XRE_IsParentProcess()) ||
+        !wr::RenderThread::Get()) {
+      return nullptr;
+    }
+    
+    
+    
+    RefPtr<AndroidImageReader> reader =
+        AndroidImageReader::Create(GpuProcessAndroidImageReaderId{
+            uint64_t(aHandle) | GpuProcessAndroidImageReaderId::kRemoteIdBit});
+    if (!reader) {
+      return nullptr;
+    }
+    JNIEnv* env = jni::GetEnvForThread();
+    auto surface = jni::Object::LocalRef::Adopt(
+        env, ANativeWindow_toSurface(env, reader->GetANativeWindow()));
+    if (!surface) {
+      return nullptr;
+    }
+    reader->InitRemote(aHandle);
+    readers->mReaders.emplace(aHandle, reader);
+    return surface;
+  }
+
+  static void MaybeRenderImageReaderFirstFrameNative(int64_t aHandle,
+                                                     int64_t aFrameId) {
+    if (RefPtr<AndroidImageReader> reader = GetReader(aHandle)) {
+      reader->MaybeRenderFirstFrame(
+          AndroidMediaCodecFrameId{uint64_t(aFrameId)});
+    }
+  }
+
+  static void NotifyImageReaderFrameReleaseFailedNative(int64_t aHandle,
+                                                        int64_t aFrameId) {
+    if (RefPtr<AndroidImageReader> reader = GetReader(aHandle)) {
+      reader->NotifyRemoteFrameReleaseFailed(
+          AndroidMediaCodecFrameId{uint64_t(aFrameId)});
+    }
+  }
+
+  static void DisposeImageReaderSurface(int64_t aHandle) {
+    RefPtr<AndroidImageReader> reader;
+    {
+      auto readers = sRemoteReaders.Lock();
+      auto it = readers->mReaders.find(aHandle);
+      if (it == readers->mReaders.end()) {
+        return;
+      }
+      reader = std::move(it->second);
+      readers->mReaders.erase(it);
+    }
+    reader->DisconnectRemote();
+  }
+
+ private:
+  static RefPtr<AndroidImageReader> GetReader(int64_t aHandle) {
+    auto readers = sRemoteReaders.Lock();
+    auto it = readers->mReaders.find(aHandle);
+    return it != readers->mReaders.end() ? it->second : nullptr;
+  }
+};
+
+class LocalAndroidImageReaderClient final : public AndroidImageReaderClient {
+ public:
+  static already_AddRefed<AndroidImageReaderClient> Create() {
+    RefPtr<AndroidImageReader> reader = AndroidImageReader::Create();
+    if (!reader) {
+      return nullptr;
+    }
+    JNIEnv* env = jni::GetEnvForThread();
+    auto surface = java::sdk::Surface::LocalRef::Adopt(
+        env, ANativeWindow_toSurface(env, reader->GetANativeWindow()));
+    if (!surface) {
+      return nullptr;
+    }
+    RefPtr<AndroidImageReaderClient> client =
+        new LocalAndroidImageReaderClient(reader, surface);
+    return client.forget();
+  }
+
+  void Shutdown() override { mReader->Shutdown(); }
+
+ private:
+  LocalAndroidImageReaderClient(AndroidImageReader* aReader,
+                                java::sdk::Surface::LocalRef aSurface)
+      : AndroidImageReaderClient(aReader->mImageReaderId, aSurface),
+        mReader(aReader) {}
+
+  ~LocalAndroidImageReaderClient() override { UnregisterReader(); }
+
+  void RenderFirstFrame(AndroidMediaCodecFrameId aFrameId) override {
+    mReader->MaybeRenderFirstFrame(aFrameId);
+  }
+
+  const RefPtr<AndroidImageReader> mReader;
+};
+
+class RemoteAndroidImageReaderClient final : public AndroidImageReaderClient {
+ public:
+  static already_AddRefed<AndroidImageReaderClient> Create() {
+    
+    static std::once_flag sNativeMethodsInitialized;
+    std::call_once(sNativeMethodsInitialized,
+                   [] { NativeImageReaderFrames::Init(); });
+    java::GeckoSurface::GlobalRef surface = java::GeckoSurface::LocalRef(
+        java::SurfaceAllocator::AcquireImageReaderSurface());
+    if (!surface) {
+      return nullptr;
+    }
+    RefPtr<AndroidImageReaderClient> client =
+        new RemoteAndroidImageReaderClient(surface);
+    return client.forget();
+  }
+
+  bool IsValid() const override {
+    return AndroidImageReaderClient::IsValid() && !mAllocation->IsReleased();
+  }
+
+  void Shutdown() override {
+    
+    
+    UnregisterReader();
+    java::SurfaceAllocator::DisposeSurface(mAllocation);
+  }
+
+ private:
+  explicit RemoteAndroidImageReaderClient(
+      java::GeckoSurface::GlobalRef aSurface)
+      : AndroidImageReaderClient(GpuProcessAndroidImageReaderId{uint64_t(
+                                     aSurface->GetImageReaderId())},
+                                 aSurface->GetSurface()),
+        mAllocation(aSurface) {
+    
+    
+    
+    if (!IsValid()) {
+      UnregisterReader();
+    }
+  }
+
+  ~RemoteAndroidImageReaderClient() override { Shutdown(); }
+
+  void RenderFirstFrame(AndroidMediaCodecFrameId aFrameId) override {
+    AUTO_PROFILER_MARKER_TEXT("RDD ImageReader first frame IPC", MEDIA_PLAYBACK,
+                              {}, "Wait for compositor ImageReader"_ns);
+    java::SurfaceAllocator::MaybeRenderImageReaderFirstFrame(
+        mAllocation->GetHandle(), int64_t(aFrameId.mId));
+  }
+
+  const java::GeckoSurface::GlobalRef mAllocation;
+};
+
 }  
 
-already_AddRefed<AndroidImageReaderClient> AndroidImageReaderClient::Create() {
-  if (!XRE_IsGPUProcess()) {
-    return nullptr;
-  }
-  return CreateLocal();
-}
-
-already_AddRefed<AndroidImageReaderClient>
-AndroidImageReaderClient::CreateLocal() {
-  RefPtr<AndroidImageReader> reader = AndroidImageReader::Create();
-  if (!reader) {
-    return nullptr;
-  }
-  JNIEnv* env = jni::GetEnvForThread();
-  auto surface = java::sdk::Surface::LocalRef::Adopt(
-      env, ANativeWindow_toSurface(env, reader->GetANativeWindow()));
-  if (!surface) {
-    return nullptr;
-  }
-  RefPtr<AndroidImageReaderClient> client =
-      new AndroidImageReaderClient(reader, surface);
-  return client.forget();
-}
-
 AndroidImageReaderClient::AndroidImageReaderClient(
-    AndroidImageReader* aReader, java::sdk::Surface::LocalRef aSurface)
-    : mImageReaderId(aReader->mImageReaderId),
-      mLocalReader(aReader),
-      mOutputSurface(aSurface) {
+    GpuProcessAndroidImageReaderId aId, java::sdk::Surface::LocalRef aSurface)
+    : mImageReaderId(aId), mOutputSurface(aSurface) {
   ImageReaderFrameRegistry::RegisterReader(mImageReaderId.mId);
 }
 
-AndroidImageReaderClient::~AndroidImageReaderClient() {
+void AndroidImageReaderClient::UnregisterReader() {
   ImageReaderFrameRegistry::UnregisterReader(mImageReaderId.mId);
 }
 
 bool AndroidImageReaderClient::IsValid() const { return bool(mOutputSurface); }
+
+already_AddRefed<AndroidImageReaderClient> AndroidImageReaderClient::Create() {
+  if (XRE_IsGPUProcess()) {
+    return LocalAndroidImageReaderClient::Create();
+  }
+  if (XRE_IsRDDProcess()) {
+    return RemoteAndroidImageReaderClient::Create();
+  }
+  return nullptr;
+}
 
 java::sdk::Surface::LocalRef AndroidImageReaderClient::GetSurface() const {
   return java::sdk::Surface::LocalRef(mOutputSurface);
@@ -208,7 +392,7 @@ void AndroidImageReaderClient::MaybeRenderFirstFrame(
   if (!IsValid()) {
     return;
   }
-  mLocalReader->MaybeRenderFirstFrame(aFrameId);
+  RenderFirstFrame(aFrameId);
 }
 
 
@@ -217,8 +401,6 @@ void AndroidImageReaderClient::MaybeRenderFirstFrame(
 void AndroidImageReaderClient::DiscardFrames() {
   ImageReaderFrameRegistry::DiscardFrames(mImageReaderId.mId);
 }
-
-void AndroidImageReaderClient::Shutdown() { mLocalReader->Shutdown(); }
 
 void AndroidImageReaderClient::RegisterFrame(
     AndroidMediaCodecFrameId aFrameId,
@@ -233,6 +415,123 @@ void AndroidImageReaderClient::RegisterFrame(
 void AndroidImageReaderClient::ForgetFrame(AndroidMediaCodecFrameId aFrameId) {
   ImageReaderFrameRegistry::ReleaseFrame(mImageReaderId.mId, aFrameId.mId,
                                          false);
+}
+
+void AndroidImageReader::InitRemote(int64_t aHandle) {
+  MonitorAutoLock lock(mMonitor);
+  MOZ_ASSERT(mRemoteState.isNothing());
+  mRemoteState.emplace(aHandle);
+}
+
+void AndroidImageReader::ClearPendingFrame() {
+  mPendingFrameId.reset();
+  mWaitingFrameAvailable = false;
+}
+
+void AndroidImageReader::NotifyRemoteFrameReleaseFailed(
+    AndroidMediaCodecFrameId aFrameId) {
+  MonitorAutoLock lock(mMonitor);
+  
+  
+  if (!IsPendingFrame(aFrameId)) {
+    return;
+  }
+  ClearPendingFrame();
+  mMonitor.NotifyAll();
+}
+
+void AndroidImageReader::DisconnectRemote() {
+  
+  RefPtr<AndroidImageWrapper> image;
+  {
+    MonitorAutoLock lock(mMonitor);
+    image = DisconnectRemoteLocked();
+  }
+}
+
+RefPtr<AndroidImageWrapper> AndroidImageReader::DisconnectRemoteLocked() {
+  MOZ_ASSERT(mRemoteState.isSome());
+  mRemoteState->mDisconnected = true;
+  ClearPendingFrame();
+  mMonitor.NotifyAll();
+  return std::move(mCurrentImage);
+}
+
+void AndroidImageReader::ExpireRemoteFrame() {
+  
+  
+  gfxCriticalNoteOnce << "Remote ImageReader frame timed out";
+  RefPtr<AndroidImageWrapper> image = DisconnectRemoteLocked();
+  MonitorAutoUnlock unlock(mMonitor);
+  image = nullptr;
+}
+
+void AndroidImageReader::StartRemoteFrameRequest() {
+  MOZ_ASSERT(mRemoteState.isSome());
+  
+  const TimeDuration kRemoteFrameTimeout = TimeDuration::FromSeconds(5);
+  mRemoteState->mFrameDeadline = TimeStamp::Now() + kRemoteFrameTimeout;
+  mRemoteState->mFrameTimeoutScheduled = false;
+}
+
+bool AndroidImageReader::HandleRemoteFrameNoBuffer() {
+  MOZ_ASSERT(mRemoteState.isSome());
+  if (TimeStamp::Now() >= mRemoteState->mFrameDeadline) {
+    ExpireRemoteFrame();
+    return true;
+  }
+  
+  ScheduleRemoteFrameTimeout();
+  return false;
+}
+
+void AndroidImageReader::ScheduleRemoteFrameTimeout() {
+  MOZ_ASSERT(mRemoteState.isSome());
+  if (mRemoteState->mFrameTimeoutScheduled) {
+    return;
+  }
+  auto* target = GetMainThreadSerialEventTarget();
+  if (!target) {
+    return;
+  }
+
+  const double remainingMs =
+      (mRemoteState->mFrameDeadline - TimeStamp::Now()).ToMilliseconds();
+  
+  const auto delayMs = remainingMs > 0 ? uint32_t(remainingMs) + 1 : 1u;
+  mRemoteState->mFrameTimeoutScheduled = NS_SUCCEEDED(target->DelayedDispatch(
+      NS_NewRunnableFunction(
+          "AndroidImageReader::OnRemoteFrameTimeout",
+          [weakReader = ThreadSafeWeakPtr<AndroidImageReader>(this),
+           frameId = mPendingFrameId.value(),
+           deadline = mRemoteState->mFrameDeadline] {
+            if (auto reader =
+                    static_cast<RefPtr<AndroidImageReader>>(weakReader)) {
+              reader->OnRemoteFrameTimeout(frameId, deadline);
+            }
+          }),
+      delayMs));
+}
+
+void AndroidImageReader::OnRemoteFrameTimeout(AndroidMediaCodecFrameId aFrameId,
+                                              TimeStamp aDeadline) {
+  MonitorAutoLock lock(mMonitor);
+  
+  
+  if (mRemoteState.isNothing() || IsStopped() || !IsPendingFrame(aFrameId) ||
+      mRemoteState->mFrameDeadline != aDeadline) {
+    return;
+  }
+  
+  if (mIsPendingNextImage) {
+    return;
+  }
+  
+  
+  
+  if (AcquirePendingImage() == AcquireImageResult::NoBufferAvailable) {
+    ExpireRemoteFrame();
+  }
 }
 
 AndroidImageReaderImage::AndroidImageReaderImage(
@@ -260,6 +559,10 @@ void AndroidImageReaderImage::OnSetCurrent() {
 nsresult AndroidImageReaderImage::BuildSurfaceDescriptorBuffer(
     SurfaceDescriptorBuffer& aSdBuffer, BuildSdbFlags aFlags,
     const std::function<MemoryOrShmem(uint32_t)>& aAllocate) {
+  
+  if (XRE_IsRDDProcess()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
   MOZ_ASSERT(RemoteMediaManagerParent::OnManagerThread());
 
   StaticMutexAutoLock lock(sAImageReadbackMutex);
@@ -286,7 +589,7 @@ nsresult AndroidImageReaderImage::BuildSurfaceDescriptorBuffer(
     ReleaseAImageSnapshotContext();
   });
 
-  auto* imageReaderMap = layers::GpuProcessAndroidImageReaderMap::Get();
+  auto imageReaderMap = layers::GpuProcessAndroidImageReaderMap::Get();
   if (!imageReaderMap) {
     return NS_ERROR_FAILURE;
   }
@@ -419,18 +722,20 @@ void AndroidImageWrapper::SetReadFenceFd(UniqueFileHandle&& aFenceFd) {
 }
 
 
-already_AddRefed<AndroidImageReader> AndroidImageReader::Create() {
-  if (!XRE_IsGPUProcess()) {
+already_AddRefed<AndroidImageReader> AndroidImageReader::Create(
+    GpuProcessAndroidImageReaderId aId) {
+  if ((!XRE_IsGPUProcess() && !XRE_IsParentProcess()) ||
+      !wr::RenderThread::Get()) {
     MOZ_ASSERT_UNREACHABLE("unexpected to be called");
     return nullptr;
   }
 
-  auto* imageReaderMap = layers::GpuProcessAndroidImageReaderMap::Get();
+  auto imageReaderMap = layers::GpuProcessAndroidImageReaderMap::Get();
   if (!imageReaderMap) {
     return nullptr;
   }
 
-  RefPtr<AndroidImageReader> imageReader = new AndroidImageReader();
+  RefPtr<AndroidImageReader> imageReader = new AndroidImageReader(aId);
   bool ret = imageReader->Init();
   if (!ret) {
     return nullptr;
@@ -442,12 +747,13 @@ already_AddRefed<AndroidImageReader> AndroidImageReader::Create() {
   return imageReader.forget();
 }
 
-AndroidImageReader::AndroidImageReader()
-    : mImageReaderId(GpuProcessAndroidImageReaderId::GetNext()),
+AndroidImageReader::AndroidImageReader(GpuProcessAndroidImageReaderId aId)
+    : mImageReaderId(aId.IsValid() ? aId
+                                   : GpuProcessAndroidImageReaderId::GetNext()),
       mMonitor("mozilla.layers.AndroidImageReader.mMonitor") {}
 
 AndroidImageReader::~AndroidImageReader() {
-  auto* imageReaderMap = layers::GpuProcessAndroidImageReaderMap::Get();
+  auto imageReaderMap = layers::GpuProcessAndroidImageReaderMap::Get();
   if (imageReaderMap && mRegistered) {
     imageReaderMap->Unregister(mImageReaderId);
   }
@@ -551,6 +857,11 @@ void AndroidImageReader::OnFrameAvailable(void* aContext,
 
 void AndroidImageReader::NotifyFrameAvailable() {
   MonitorAutoLock lock(mMonitor);
+  if (IsRemoteDisconnected()) {
+    return;
+  }
+  
+  
   mWaitingFrameAvailable = false;
   mMonitor.NotifyAll();
 }
@@ -690,20 +1001,21 @@ bool AndroidImageReader::DoUpdateTexImage(const MonitorAutoLock& aProofOfLock,
                                           AndroidMediaCodecFrameId aFrameId) {
   MOZ_ASSERT(static_cast<int32_t>(mAcquiredImageCount) <= mMaxImageCount);
 
-  if (mShuttingDown || mCurrentFrameId == aFrameId) {
+  if (IsStopped() || mCurrentFrameId == aFrameId) {
     return false;
   }
 
   
-  const TimeDuration pendingTimeout = TimeDuration::FromMilliseconds(20);
-  while (mIsPendingNextImage && !mShuttingDown) {
-    CVStatus status = mMonitor.Wait(pendingTimeout);
+  const TimeDuration concurrentUpdateTimeout =
+      TimeDuration::FromMilliseconds(20);
+  while (mIsPendingNextImage && !IsStopped()) {
+    CVStatus status = mMonitor.Wait(concurrentUpdateTimeout);
     if (status == CVStatus::Timeout) {
       gfxCriticalNoteOnce << "Pending next image wait timeout";
       return false;
     }
   }
-  if (mShuttingDown) {
+  if (IsStopped()) {
     return false;
   }
   MOZ_ASSERT(!mIsPendingNextImage);
@@ -717,98 +1029,122 @@ bool AndroidImageReader::DoUpdateTexImage(const MonitorAutoLock& aProofOfLock,
 
   
   
-  const TimeStamp deadline =
+  const TimeStamp notificationDeadline =
       TimeStamp::Now() + TimeDuration::FromMilliseconds(20);
-  bool updated = false;
+  
+  
+  bool acquiredAnyImage = false;
 
   while (mCurrentFrameId != aFrameId) {
     if (mPendingFrameId.isNothing()) {
       MOZ_ASSERT(!mWaitingFrameAvailable);
       mPendingFrameId = Some(aFrameId);
       mWaitingFrameAvailable = true;
+      if (mRemoteState.isSome()) {
+        StartRemoteFrameRequest();
+      }
       const bool released = MaybeReleaseFrameToCodec(aProofOfLock, aFrameId,
                                                       true);
       
       
-      if (mShuttingDown) {
+      
+      if (IsStopped()) {
         return false;
       }
-      if (mPendingFrameId.isNothing() || mPendingFrameId.value() != aFrameId) {
-        return updated;
+      if (!IsPendingFrame(aFrameId)) {
+        return acquiredAnyImage;
       }
       if (!released) {
-        mPendingFrameId.reset();
-        mWaitingFrameAvailable = false;
-        return updated;
+        ClearPendingFrame();
+        return acquiredAnyImage;
       }
     }
 
-    while (mWaitingFrameAvailable && !mShuttingDown) {
-      const TimeDuration remaining = deadline - TimeStamp::Now();
-      if (remaining <= TimeDuration()) {
-        gfxCriticalNoteOnce << "UpdateTexImage wait timeout";
-        
-        
-        break;
-      }
-      mMonitor.Wait(remaining);
-    }
+    WaitForFrameNotification(notificationDeadline);
 
-    if (mShuttingDown) {
+    
+    
+    if (IsStopped()) {
       return false;
     }
 
-    
-    
-    if (!AcquirePendingImage()) {
+    if (mPendingFrameId.isNothing()) {
       
-      
-      return updated;
+      return acquiredAnyImage;
     }
-    updated = true;
+
+    
+    
+    const auto result = AcquirePendingImage();
+    if (result == AcquireImageResult::Success) {
+      acquiredAnyImage = true;
+      continue;
+    }
+
+    if (mRemoteState.isSome() &&
+        result == AcquireImageResult::NoBufferAvailable &&
+        HandleRemoteFrameNoBuffer()) {
+      return false;
+    }
+    return acquiredAnyImage;
   }
 
-  return updated;
+  return acquiredAnyImage;
 }
 
-bool AndroidImageReader::AcquirePendingImage() {
+void AndroidImageReader::WaitForFrameNotification(TimeStamp aDeadline) {
+  while (mWaitingFrameAvailable && !IsStopped()) {
+    const TimeDuration remaining = aDeadline - TimeStamp::Now();
+    if (remaining <= TimeDuration()) {
+      gfxCriticalNoteOnce << "UpdateTexImage wait timeout";
+      
+      
+      return;
+    }
+    mMonitor.Wait(remaining);
+  }
+}
+
+AndroidImageReader::AcquireImageResult
+AndroidImageReader::AcquirePendingImage() {
+  if (IsStopped()) {
+    return AcquireImageResult::Failure;
+  }
   MOZ_ASSERT(mPendingFrameId.isSome());
   
 
   AImage* image = nullptr;
-  media_status_t ret = AMEDIA_OK;
   UniqueFileHandle fence;
-  ret = AImageReader_acquireNextImageAsync(mAImageReader, &image,
-                                           getter_Transfers(fence));
+  const media_status_t ret = AImageReader_acquireNextImageAsync(
+      mAImageReader, &image, getter_Transfers(fence));
   
 
   switch (ret) {
     case AMEDIA_ERROR_INVALID_PARAMETER:
       MOZ_ASSERT_UNREACHABLE("unexpected to be called");
-      return false;
+      return AcquireImageResult::Failure;
     case AMEDIA_IMGREADER_MAX_IMAGES_ACQUIRED:
-      MOZ_ASSERT_UNREACHABLE("unexpected to be called");
-      return false;
-    case AMEDIA_IMGREADER_NO_BUFFER_AVAILABLE:
-      return false;
-    case AMEDIA_ERROR_UNKNOWN:
-      return false;
-    case AMEDIA_OK:
       
+      
+      return AcquireImageResult::Failure;
+    case AMEDIA_IMGREADER_NO_BUFFER_AVAILABLE:
+      return AcquireImageResult::NoBufferAvailable;
+    case AMEDIA_ERROR_UNKNOWN:
+      return AcquireImageResult::Failure;
+    case AMEDIA_OK:
       break;
     default:
       MOZ_ASSERT_UNREACHABLE("unexpected to be called");
-      return false;
+      return AcquireImageResult::Failure;
   }
 
   if (!image) {
-    return false;
+    return AcquireImageResult::Failure;
   }
 
   
   const AndroidMediaCodecFrameId frameId = mPendingFrameId.value();
-  mPendingFrameId.reset();
-  mWaitingFrameAvailable = false;
+  ClearPendingFrame();
 
   AHardwareBuffer* nativeBuffer = nullptr;
   media_status_t result = AImage_getHardwareBuffer(image, &nativeBuffer);
@@ -820,7 +1156,7 @@ bool AndroidImageReader::AcquirePendingImage() {
     } else {
       AImage_delete(image);
     }
-    return false;
+    return AcquireImageResult::Failure;
   }
 
   AHardwareBuffer_Desc bufferInfo = {};
@@ -838,7 +1174,7 @@ bool AndroidImageReader::AcquirePendingImage() {
 
   MOZ_ASSERT(static_cast<int32_t>(mAcquiredImageCount) <= mMaxImageCount);
 
-  return true;
+  return AcquireImageResult::Success;
 }
 
 ANativeWindow* AndroidImageReader::GetANativeWindow() {
@@ -860,39 +1196,85 @@ bool AndroidImageReader::MaybeReleaseFrameToCodec(
     const MonitorAutoLock& aProofOfLock,
     const AndroidMediaCodecFrameId aFrameId, const bool aRender) {
   aProofOfLock.AssertOwns(mMonitor);
-  if (mShuttingDown) {
+  if (IsStopped()) {
     return false;
   }
+  if (mRemoteState.isSome()) {
+    
+    
+    const int64_t handle = mRemoteState->mHandle;
+    MonitorAutoUnlock unlock(mMonitor);
+    
+    
+    return java::RemoteSurfaceAllocator::ReleaseImageReaderFrame(
+        handle, int64_t(mImageReaderId.mId), int64_t(aFrameId.mId), aRender);
+  }
+
   
   MonitorAutoUnlock unlock(mMonitor);
   return ImageReaderFrameRegistry::ReleaseFrame(mImageReaderId.mId,
                                                 aFrameId.mId, aRender);
 }
 
-StaticAutoPtr<GpuProcessAndroidImageReaderMap>
-    GpuProcessAndroidImageReaderMap::sInstance;
+static StaticMutex sImageReaderMapMutex;
+static StaticRefPtr<GpuProcessAndroidImageReaderMap> sImageReaderMap
+    MOZ_GUARDED_BY(sImageReaderMapMutex);
+
+
+RefPtr<GpuProcessAndroidImageReaderMap> GpuProcessAndroidImageReaderMap::Get() {
+  StaticMutexAutoLock lock(sImageReaderMapMutex);
+  return sImageReaderMap.get();
+}
 
 
 void GpuProcessAndroidImageReaderMap::Init() {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(XRE_IsGPUProcess());
+  MOZ_ASSERT(XRE_IsGPUProcess() || XRE_IsParentProcess());
+  NativeImageReaderAllocator::Init();
 
-  StaticMutexAutoLock lock(sAImageReadbackMutex);
-  MOZ_ASSERT(!sInstance);
-  MOZ_ASSERT(!sAImageSnapshotContext);
-  sAImageReadbackShuttingDown = false;
-  sInstance = new GpuProcessAndroidImageReaderMap();
+  {
+    StaticMutexAutoLock lock(sAImageReadbackMutex);
+    MOZ_ASSERT(!sAImageSnapshotContext);
+    sAImageReadbackShuttingDown = false;
+  }
+  {
+    StaticMutexAutoLock lock(sImageReaderMapMutex);
+    MOZ_ASSERT(!sImageReaderMap);
+    sImageReaderMap = new GpuProcessAndroidImageReaderMap();
+  }
+  {
+    auto readers = sRemoteReaders.Lock();
+    readers->mShuttingDown = false;
+  }
 }
 
 
 void GpuProcessAndroidImageReaderMap::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
 
+  RemoteReaders readers;
+  {
+    auto remoteReaders = sRemoteReaders.Lock();
+    remoteReaders->mShuttingDown = true;
+    readers.swap(remoteReaders->mReaders);
+  }
+  for (auto& [handle, reader] : readers) {
+    reader->DisconnectRemote();
+  }
+  readers.clear();
+
+  
+  
+  RefPtr<GpuProcessAndroidImageReaderMap> map;
+  {
+    StaticMutexAutoLock lock(sImageReaderMapMutex);
+    map = sImageReaderMap.forget();
+  }
+
   
   StaticMutexAutoLock lock(sAImageReadbackMutex);
   sAImageReadbackShuttingDown = true;
   DestroyAImageSnapshotContext();
-  sInstance = nullptr;
 }
 
 GpuProcessAndroidImageReaderMap::GpuProcessAndroidImageReaderMap()
