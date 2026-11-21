@@ -712,7 +712,6 @@ WebTransportParent::OnSessionReady(uint64_t aSessionId) {
 
   mSessionReady = true;
   mSessionId = aSessionId;
-  mSessionReadyTime = TimeStamp::Now();
 
   
   
@@ -1179,10 +1178,9 @@ WebTransportParent::OnIncomingBidirectionalStreamAvailable(
   
   
   
-  TimeStamp timestamp = aTimestamp;
-  if (!std::isfinite(mDatagramMaxAge) && timestamp < mSessionReadyTime) {
-    timestamp = mSessionReadyTime;
-  }
+  
+  TimeStamp timestamp =
+      std::isfinite(mDatagramMaxAge) ? aTimestamp : TimeStamp::Now();
 
   
   
