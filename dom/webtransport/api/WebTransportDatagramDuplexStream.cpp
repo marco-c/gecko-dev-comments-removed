@@ -82,12 +82,12 @@ void WebTransportDatagramDuplexStream::SetChild(WebTransportChild* aChild) {
   mOutgoingAlgorithms->SetChild(aChild);
   mOutgoingAlgorithms->UpdateQueueParams(
       mOutgoingMaxBufferedDatagrams,
-      mOutgoingMaxAge.IsNull() ? INFINITY : mOutgoingMaxAge.Value());
+      mOutgoingMaxAge.IsNull() ? NAN : mOutgoingMaxAge.Value());
   for (auto& writable : mCreatedWritables) {
     writable->SetChild(aChild);
     writable->UpdateQueueParams(
         mOutgoingMaxBufferedDatagrams,
-        mOutgoingMaxAge.IsNull() ? INFINITY : mOutgoingMaxAge.Value());
+        mOutgoingMaxAge.IsNull() ? NAN : mOutgoingMaxAge.Value());
   }
   mCreatedWritables.Clear();
 
@@ -136,7 +136,7 @@ void WebTransportDatagramDuplexStream::SetOutgoingMaxAge(
   
   mOutgoingAlgorithms->UpdateQueueParams(
       mOutgoingMaxBufferedDatagrams,
-      mOutgoingMaxAge.IsNull() ? INFINITY : mOutgoingMaxAge.Value());
+      mOutgoingMaxAge.IsNull() ? NAN : mOutgoingMaxAge.Value());
 }
 
 void WebTransportDatagramDuplexStream::SetIncomingMaxBufferedDatagrams(
@@ -158,7 +158,7 @@ void WebTransportDatagramDuplexStream::SetOutgoingMaxBufferedDatagrams(
   
   mOutgoingAlgorithms->UpdateQueueParams(
       mOutgoingMaxBufferedDatagrams,
-      mOutgoingMaxAge.IsNull() ? INFINITY : mOutgoingMaxAge.Value());
+      mOutgoingMaxAge.IsNull() ? NAN : mOutgoingMaxAge.Value());
 }
 
 already_AddRefed<WebTransportDatagramsWritable>

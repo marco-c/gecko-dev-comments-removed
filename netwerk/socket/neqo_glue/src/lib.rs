@@ -2904,10 +2904,7 @@ pub extern "C" fn neqo_http3conn_webtransport_set_datagram_max_age(
     
     
     
-    
-    
-    
-    let max_age = max_age.is_finite().then(|| {
+    let max_age = (!max_age.is_nan()).then(|| {
         Duration::try_from_secs_f64(max_age.max(0.0) / 1000.0).unwrap_or(Duration::MAX)
     });
     conn.conn
