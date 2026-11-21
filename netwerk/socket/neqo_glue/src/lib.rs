@@ -144,7 +144,8 @@ pub struct NeqoHttp3Conn {
     
     
     
-    webtransport_send_groups: HashMap<u64, SendGroupId>,
+    
+    webtransport_send_groups: HashMap<(u64, u64), SendGroupId>,
     
     
     last_datagram_written: Option<Instant>,
@@ -383,11 +384,13 @@ type BorrowedSocket = std::os::windows::io::BorrowedSocket<'static>;
 impl NeqoHttp3Conn {
     
     
-    fn neqo_send_group_id(&self, child_id: u64) -> Option<SendGroupId> {
+    fn neqo_send_group_id(&self, session_id: u64, child_id: u64) -> Option<SendGroupId> {
         if child_id == 0 {
             Some(SendGroupId::new(0))
         } else {
-            self.webtransport_send_groups.get(&child_id).copied()
+            self.webtransport_send_groups
+                .get(&(session_id, child_id))
+                .copied()
         }
     }
 
@@ -2373,6 +2376,11 @@ pub extern "C" fn neqo_http3conn_event(
                 Http3Event::EchFallbackAuthenticationNeeded
             }
             Http3ClientEvent::WebTransport(e) => {
+                if let WebTransportEvent::SessionClosed { stream_id, .. } = &e {
+                    let session_id = stream_id.as_u64();
+                    conn.webtransport_send_groups
+                        .retain(|&(sid, _), _| sid != session_id);
+                }
                 Http3Event::WebTransport(WebTransportEventExternal::new(e, data))
             }
             Http3ClientEvent::ConnectUdp(e) => {
@@ -2750,7 +2758,7 @@ pub extern "C" fn neqo_http3conn_webtransport_send_datagram(
     
     
     let translated_group_id = conn
-        .neqo_send_group_id(send_group_id)
+        .neqo_send_group_id(session_id, send_group_id)
         .unwrap_or(SendGroupId::new(0));
     
     
@@ -2936,6 +2944,7 @@ pub unsafe extern "C" fn neqo_http3conn_webtransport_set_sendorder(
 #[no_mangle]
 pub unsafe extern "C" fn neqo_http3conn_webtransport_set_sendgroup(
     conn: &mut NeqoHttp3Conn,
+    session_id: u64,
     stream_id: u64,
     sendgroup_id: u64,
 ) -> nsresult {
@@ -2949,7 +2958,7 @@ pub unsafe extern "C" fn neqo_http3conn_webtransport_set_sendgroup(
             Err(_) => NS_ERROR_UNEXPECTED,
         };
     }
-    let Some(sg_id) = conn.neqo_send_group_id(sendgroup_id) else {
+    let Some(sg_id) = conn.neqo_send_group_id(session_id, sendgroup_id) else {
         return NS_ERROR_UNEXPECTED;
     };
     match conn
@@ -2973,7 +2982,8 @@ pub extern "C" fn neqo_http3conn_webtransport_register_send_group(
         .webtransport_create_send_group(StreamId::from(session_id))
     {
         Ok(neqo_id) => {
-            conn.webtransport_send_groups.insert(group_id, neqo_id);
+            conn.webtransport_send_groups
+                .insert((session_id, group_id), neqo_id);
             NS_OK
         }
         Err(_) => NS_ERROR_UNEXPECTED,
