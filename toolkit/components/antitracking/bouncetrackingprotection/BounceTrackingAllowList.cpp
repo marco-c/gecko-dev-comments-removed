@@ -12,6 +12,7 @@ nsTArray<nsCString> BounceTrackingAllowList::GetAllowListPermissionTypes() {
   types.AppendElement("trackingprotection");
   types.AppendElement("trackingprotection-pb");
   types.AppendElement("cookie");
+  types.AppendElement("bounce-tracking-protection-exception");
   return types;
 }
 
@@ -28,13 +29,16 @@ nsresult BounceTrackingAllowList::IsAllowListPermission(
   
   MOZ_ASSERT(type.EqualsLiteral("trackingprotection") ||
              type.EqualsLiteral("trackingprotection-pb") ||
-             type.EqualsLiteral("cookie"));
+             type.EqualsLiteral("cookie") ||
+             type.EqualsLiteral("bounce-tracking-protection-exception"));
 
-  if (type.EqualsLiteral("cookie")) {
+  if (type.EqualsLiteral("cookie") ||
+      type.EqualsLiteral("bounce-tracking-protection-exception")) {
     uint32_t capability;
     rv = aPermission->GetCapability(&capability);
     NS_ENSURE_SUCCESS(rv, rv);
 
+    
     
     
     if (capability != nsIPermissionManager::ALLOW_ACTION) {

@@ -11,6 +11,7 @@ namespace mozilla {
 
 
 
+
 class BounceTrackingAllowList final : public ContentBlockingAllowListCache {
  private:
   nsTArray<nsCString> GetAllowListPermissionTypes() override;
