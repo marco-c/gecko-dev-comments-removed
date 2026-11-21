@@ -1955,8 +1955,15 @@ impl<'a> SceneBuilder<'a> {
 
         
         
+        
+        
+        
         if let Some(clip_chain_id) = clip_chain_id {
-            if self.clip_tree_builder.clip_chain_has_complex_clips(clip_chain_id, &self.scene_stores.clips) {
+            let clips = &self.scene_stores.clips;
+            if self.clip_tree_builder.clip_chain_has_complex_clips(clip_chain_id, clips) &&
+               !(flags.contains(StackingContextFlags::WRAPS_BACKDROP_FILTER) &&
+                 self.clip_tree_builder.clip_chain_complex_clips_are_rounded_rects(clip_chain_id, clips))
+            {
                 
                 
                 
@@ -2712,8 +2719,11 @@ impl<'a> SceneBuilder<'a> {
 
             
             
+            
+            
             let sc_index = self.sc_stack.iter().rposition(|sc| {
-                !sc.flags.contains(StackingContextFlags::WRAPS_BACKDROP_FILTER)
+                !sc.flags.contains(StackingContextFlags::WRAPS_BACKDROP_FILTER) ||
+                !sc.has_surface()
             });
 
             match sc_index {
@@ -3408,6 +3418,16 @@ impl FlattenedStackingContext {
     
     pub fn is_3d(&self) -> bool {
         self.transform_style == TransformStyle::Preserve3D && self.composite_ops.is_empty()
+    }
+
+    
+    
+    
+    fn has_surface(&self) -> bool {
+        !self.blit_reason.is_empty() ||
+            self.composite_ops.has_valid_filters() ||
+            self.composite_ops.mix_blend_mode.is_some() ||
+            !matches!(self.context_3d, Picture3DContext::Out)
     }
 
     
