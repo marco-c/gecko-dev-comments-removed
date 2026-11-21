@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_GamepadPlatformService_h_
 #define mozilla_dom_GamepadPlatformService_h_
 
@@ -21,7 +19,6 @@ namespace mozilla::dom {
 
 class GamepadEventChannelParent;
 enum class GamepadLightIndicatorType : uint8_t;
-struct GamepadPoseState;
 class GamepadTestChannelParent;
 struct GamepadTouchState;
 class GamepadPlatformService;
@@ -75,9 +72,9 @@ class GamepadPlatformService final {
                            GamepadHand aHand, uint32_t aNumButtons,
                            uint32_t aNumAxes, uint32_t aNumHaptics,
                            uint32_t aNumLightIndicator,
-                           uint32_t aNumTouchEvents);
+                           uint32_t aNumTouchEvents) MOZ_EXCLUDES(mMutex);
   
-  void RemoveGamepad(GamepadHandle aHandle);
+  void RemoveGamepad(GamepadHandle aHandle) MOZ_EXCLUDES(mMutex);
 
   
   
@@ -85,44 +82,47 @@ class GamepadPlatformService final {
   
   
   void NewButtonEvent(GamepadHandle aHandle, uint32_t aButton, bool aPressed,
-                      bool aTouched, double aValue);
+                      bool aTouched, double aValue) MOZ_EXCLUDES(mMutex);
   
-  void NewButtonEvent(GamepadHandle aHandle, uint32_t aButton, bool aPressed);
-  
-  void NewButtonEvent(GamepadHandle aHandle, uint32_t aButton, bool aPressed,
-                      bool aTouched);
+  void NewButtonEvent(GamepadHandle aHandle, uint32_t aButton, bool aPressed)
+      MOZ_EXCLUDES(mMutex);
   
   void NewButtonEvent(GamepadHandle aHandle, uint32_t aButton, bool aPressed,
-                      double aValue);
+                      bool aTouched) MOZ_EXCLUDES(mMutex);
+  
+  void NewButtonEvent(GamepadHandle aHandle, uint32_t aButton, bool aPressed,
+                      double aValue) MOZ_EXCLUDES(mMutex);
   
   
   
-  void NewAxisMoveEvent(GamepadHandle aHandle, uint32_t aAxis, double aValue);
-  
-  
-  void NewPoseEvent(GamepadHandle aHandle, const GamepadPoseState& aState);
+  void NewAxisMoveEvent(GamepadHandle aHandle, uint32_t aAxis, double aValue)
+      MOZ_EXCLUDES(mMutex);
   
   
   void NewLightIndicatorTypeEvent(GamepadHandle aHandle, uint32_t aLight,
-                                  GamepadLightIndicatorType aType);
+                                  GamepadLightIndicatorType aType)
+      MOZ_EXCLUDES(mMutex);
   
   
   void NewMultiTouchEvent(GamepadHandle aHandle, uint32_t aTouchArrayIndex,
-                          const GamepadTouchState& aState);
+                          const GamepadTouchState& aState) MOZ_EXCLUDES(mMutex);
 
   
   
-  void ResetGamepadIndexes();
+  void ResetGamepadIndexes() MOZ_EXCLUDES(mMutex);
 
   
-  void AddChannelParent(GamepadEventChannelParent* aParent);
+  void AddChannelParent(GamepadEventChannelParent* aParent)
+      MOZ_EXCLUDES(mMutex);
 
   
-  void RemoveChannelParent(GamepadEventChannelParent* aParent);
+  void RemoveChannelParent(GamepadEventChannelParent* aParent)
+      MOZ_EXCLUDES(mMutex);
 
-  void MaybeShutdown();
+  void MaybeShutdown() MOZ_EXCLUDES(mMutex);
 
-  nsTArray<GamepadAdded> GetAllGamePads() {
+  nsTArray<GamepadAdded> GetAllGamePads() MOZ_EXCLUDES(mMutex) {
+    MutexAutoLock autoLock(mMutex);
     nsTArray<GamepadAdded> gamepads;
 
     for (const auto& elem : mGamepadAdded) {
@@ -135,23 +135,24 @@ class GamepadPlatformService final {
   GamepadPlatformService();
   ~GamepadPlatformService();
   template <class T>
-  void NotifyGamepadChange(GamepadHandle aHandle, const T& aInfo);
+  void NotifyGamepadChange(GamepadHandle aHandle, const T& aInfo)
+      MOZ_REQUIRES(mMutex);
 
-  void Cleanup();
-
-  
-  uint32_t mNextGamepadHandleValue;
+  void Cleanup() MOZ_EXCLUDES(mMutex);
 
   
   
-  
-  nsTArray<RefPtr<GamepadEventChannelParent>> mChannelParents;
+  Mutex mMutex;
+
+  uint32_t mNextGamepadHandleValue MOZ_GUARDED_BY(mMutex);
 
   
   
-  Mutex mMutex MOZ_UNANNOTATED;
+  
+  nsTArray<RefPtr<GamepadEventChannelParent>> mChannelParents
+      MOZ_GUARDED_BY(mMutex);
 
-  std::map<GamepadHandle, GamepadAdded> mGamepadAdded;
+  std::map<GamepadHandle, GamepadAdded> mGamepadAdded MOZ_GUARDED_BY(mMutex);
 };
 
 }  

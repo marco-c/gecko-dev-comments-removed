@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GamepadTestChannelParent.h"
 
 #include "mozilla/StaticPrefs_dom.h"
@@ -105,11 +103,6 @@ mozilla::ipc::IPCResult GamepadTestChannelParent::RecvGamepadTestEvent(
     case GamepadChangeEventBody::TGamepadAxisInformation: {
       const GamepadAxisInformation& a = body.get_GamepadAxisInformation();
       service->NewAxisMoveEvent(handle, a.axis(), a.value());
-      break;
-    }
-    case GamepadChangeEventBody::TGamepadPoseInformation: {
-      const GamepadPoseInformation& a = body.get_GamepadPoseInformation();
-      service->NewPoseEvent(handle, a.pose_state());
       break;
     }
     case GamepadChangeEventBody::TGamepadTouchInformation: {

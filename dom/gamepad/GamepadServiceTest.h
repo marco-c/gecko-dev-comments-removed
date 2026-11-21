@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_GamepadServiceTest_h_
 #define mozilla_dom_GamepadServiceTest_h_
 
@@ -60,14 +58,6 @@ class GamepadServiceTest final : public DOMEventTargetHelper,
   already_AddRefed<Promise> NewAxisMoveEvent(uint32_t aHandleSlot,
                                              uint32_t aAxis, double aValue,
                                              ErrorResult& aRv);
-
-  already_AddRefed<Promise> NewPoseMove(
-      uint32_t aHandleSlot, const Nullable<Float32Array>& aOrient,
-      const Nullable<Float32Array>& aPos,
-      const Nullable<Float32Array>& aAngVelocity,
-      const Nullable<Float32Array>& aAngAcceleration,
-      const Nullable<Float32Array>& aLinVelocity,
-      const Nullable<Float32Array>& aLinAcceleration, ErrorResult& aRv);
 
   already_AddRefed<Promise> NewTouch(uint32_t aHandleSlot,
                                      uint32_t aTouchArrayIndex,

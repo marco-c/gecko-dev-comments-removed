@@ -586,11 +586,6 @@ bool GamepadManager::SetGamepadByEvent(const GamepadChangeEvent& aEvent,
         gamepad->SetAxis(a.axis(), a.value());
         break;
       }
-      case GamepadChangeEventBody::TGamepadPoseInformation: {
-        const GamepadPoseInformation& a = body.get_GamepadPoseInformation();
-        gamepad->SetPose(a.pose_state());
-        break;
-      }
       case GamepadChangeEventBody::TGamepadLightIndicatorTypeInformation: {
         const GamepadLightIndicatorTypeInformation& a =
             body.get_GamepadLightIndicatorTypeInformation();
@@ -690,7 +685,7 @@ void GamepadManager::StopHaptics() {
   }
 
   for (const auto& entry : mGamepads) {
-    const GamepadHandle handle = entry.GetWeak()->GetHandle();
+    const GamepadHandle handle = entry.GetRawPtr()->GetHandle();
     if (handle.GetKind() == GamepadHandleKind::VR) {
       if (gfx::VRManagerChild::IsCreated()) {
         gfx::VRManagerChild* vm = gfx::VRManagerChild::Get();
