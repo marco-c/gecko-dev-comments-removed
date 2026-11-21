@@ -117,7 +117,7 @@ pub unsafe extern "C" fn mozilla_net_domain_to_display_and_ascii_impl(
             }
         }
         let unpercent: Cow<'_, [u8]> = percent_decode(src).into();
-        match Uts46::new().process(
+        let result = Uts46::new().process(
             &unpercent,
             AsciiDenyList::URL,
             Hyphens::Allow,
@@ -137,13 +137,24 @@ pub unsafe extern "C" fn mozilla_net_domain_to_display_and_ascii_impl(
             },
             &mut IdnaWriteWrapper::new(dst),
             Some(&mut IdnaWriteWrapper::new(ascii_dst)),
-        ) {
-            Ok(ProcessingSuccess::Passthrough) => {
-                
-            }
+        );
+        match result {
+            Ok(ProcessingSuccess::Passthrough) => {}
             Ok(ProcessingSuccess::WroteToSink) => return nserror::NS_OK,
-
-            Err(ProcessingError::ValidityError) => return nserror::NS_ERROR_MALFORMED_URI,
+            Err(ProcessingError::ValidityError) => {
+                
+                
+                
+                if !unpercent.is_ascii()
+                    || unpercent.iter().any(|&b| is_forbidden_domain_code_point(b))
+                {
+                    return nserror::NS_ERROR_MALFORMED_URI;
+                }
+                dst.truncate();
+                ascii_dst.truncate();
+                dst.append(&unpercent.to_ascii_lowercase());
+                return nserror::NS_OK;
+            }
             Err(ProcessingError::SinkError) => unreachable!(),
         }
         match unpercent {
@@ -152,6 +163,11 @@ pub unsafe extern "C" fn mozilla_net_domain_to_display_and_ascii_impl(
         }
         nserror::NS_OK
     }
+}
+
+
+fn is_forbidden_domain_code_point(b: u8) -> bool {
+    b <= 0x20 || b == 0x7F || b"%#/:<>?@[\\]^|".contains(&b)
 }
 
 type BufferString = arraystring::ArrayString<arraystring::typenum::U255>;

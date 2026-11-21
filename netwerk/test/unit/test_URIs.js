@@ -1014,8 +1014,29 @@ add_task(async function round_trip_invalid_ace_label() {
   Assert.equal(uri.spec, "http://xn--xn--d--fg4n/");
 
   
+  
+  uri = Services.io.newURI("http://a.b.c.XN--pokxncvks");
+  Assert.equal(uri.spec, "http://a.b.c.xn--pokxncvks/");
+  Assert.equal(uri.displayHost, "a.b.c.xn--pokxncvks");
+
+  let tests = [
+    ["xn--ab-j1t", "xn--ab-j1t"],
+    ["XN--A.pt", "xn--a.pt"],
+    ["xn--", "xn--"],
+    ["xn--ASCII-", "xn--ascii-"],
+    ["xn--1ug.example", "xn--1ug.example"],
+    ["xn--ls8h=", "xn--ls8h="],
+  ];
+  for (let [input, expected] of tests) {
+    uri = Services.io.newURI(`https://${input}/x`);
+    Assert.equal(uri.asciiHost, expected, input);
+    Assert.equal(uri.host, expected, input);
+    Assert.equal(uri.spec, `https://${expected}/x`, input);
+  }
+
+  
   Assert.throws(() => {
-    uri = Services.io.newURI("http://a.b.c.XN--pokxncvks");
+    Services.io.newURI("http://xn--a%5E/");
   }, /NS_ERROR_MALFORMED_URI/);
 });
 
