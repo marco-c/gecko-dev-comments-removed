@@ -1204,9 +1204,20 @@ WebTransportParent::OnIncomingBidirectionalStreamAvailable(
     
     
     
+    
+    
+    
+    
+    
+    TimeStamp timestamp =
+        std::isfinite(mDatagramMaxAge) ? datagram.timestamp() : now;
+
+    
+    
+    
     if (mLastOutgoingDatagramTimestamp.IsNull() ||
-        datagram.timestamp() > mLastOutgoingDatagramTimestamp) {
-      mLastOutgoingDatagramTimestamp = datagram.timestamp();
+        timestamp > mLastOutgoingDatagramTimestamp) {
+      mLastOutgoingDatagramTimestamp = timestamp;
     }
 
     
@@ -1282,10 +1293,6 @@ void WebTransportParent::MaybeSendDatagramCapacity() {
        aOutgoingMaxBufferedDatagrams, aOutgoingMaxAge));
   MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
   MOZ_ASSERT(mWebTransport);
-  
-  if (std::isnan(aOutgoingMaxAge) || aOutgoingMaxAge <= 0.) {
-    return IPC_FAIL(this, "Invalid outgoingMaxAge");
-  }
   mWebTransport->SetDatagramMaxBufferedDatagrams(aOutgoingMaxBufferedDatagrams);
   mWebTransport->SetDatagramMaxAge(aOutgoingMaxAge);
   mDatagramMaxAge = aOutgoingMaxAge;

@@ -24,6 +24,7 @@ promise_test(async t => {
   wt.closed.catch(() => {});
   t.add_cleanup(() => wt.close());
   await wt.ready;
+  wt.datagrams.outgoingMaxAge = Infinity;
 
   const N = 5;
   wt.datagrams.incomingMaxBufferedDatagrams = N;
@@ -84,6 +85,7 @@ promise_test(async t => {
   wt.closed.catch(() => {});
   t.add_cleanup(() => wt.close());
   await wt.ready;
+  wt.datagrams.outgoingMaxAge = Infinity;
 
   const N = 5;
   wt.datagrams.incomingMaxBufferedDatagrams = N;
@@ -151,9 +153,9 @@ promise_test(async t => {
   
   
   
-  
   const burst = 4000;
   wt.datagrams.outgoingMaxBufferedDatagrams = burst * 2;
+  wt.datagrams.outgoingMaxAge = Infinity;
   wt.datagrams.incomingMaxBufferedDatagrams = burst;
 
   let received = 0;
