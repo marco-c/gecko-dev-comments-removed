@@ -2934,7 +2934,7 @@ const SingleSelect = ({
     }
   }, [activeSingleSelectSelections]); 
 
-  const CONFIGURABLE_STYLES = ["background", "border", "borderRadius", "height", "marginBlock", "marginBlockStart", "marginBlockEnd", "marginInline", "paddingBlock", "paddingBlockStart", "paddingBlockEnd", "paddingInline", "paddingInlineStart", "paddingInlineEnd", "width"];
+  const CONFIGURABLE_STYLES = ["background", "backgroundImage", "border", "borderRadius", "height", "marginBlock", "marginBlockStart", "marginBlockEnd", "marginInline", "paddingBlock", "paddingBlockStart", "paddingBlockEnd", "paddingInline", "paddingInlineStart", "paddingInlineEnd", "width"];
   return external_React_default().createElement("div", {
     className: `tiles-single-select-container ${isCarousel ? "carousel" : ""}`
   }, isCarousel ? external_React_default().createElement(CarouselNav, {
