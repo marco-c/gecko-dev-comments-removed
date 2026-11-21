@@ -3826,6 +3826,14 @@ pref("browser.privatebrowsing.lockOnScreenLock.enabled", false);
 
 
 
+#ifdef NIGHTLY_BUILD
+pref("browser.privatebrowsing.lockOnScreenLock.featureGate", true);
+#else
+pref("browser.privatebrowsing.lockOnScreenLock.featureGate", false);
+#endif
+
+
+
 pref("browser.mailto.dualPrompt", false);
 
 
