@@ -761,6 +761,9 @@ Object.defineProperty(this, "gFindBarPromise", {
 });
 
 function shouldSuppressPopupNotifications() {
+  const { WindowLock } = ChromeUtils.importESModule(
+    "moz-src:///browser/modules/WindowLock.sys.mjs"
+  );
   
   
   
@@ -769,7 +772,8 @@ function shouldSuppressPopupNotifications() {
   return (
     window.windowState == window.STATE_MINIMIZED ||
     gBrowser?.selectedBrowser.hasAttribute("tabDialogShowing") ||
-    gDialogBox?.isOpen
+    gDialogBox?.isOpen ||
+    WindowLock.isWindowLocked(window)
   );
 }
 
@@ -3889,6 +3893,14 @@ function CanCloseWindow() {
   
   
   if (Services.startup.shuttingDown || window.skipNextCanClose) {
+    return true;
+  }
+
+  
+  const { WindowLock } = ChromeUtils.importESModule(
+    "moz-src:///browser/modules/WindowLock.sys.mjs"
+  );
+  if (WindowLock.isWindowLocked(window)) {
     return true;
   }
 
