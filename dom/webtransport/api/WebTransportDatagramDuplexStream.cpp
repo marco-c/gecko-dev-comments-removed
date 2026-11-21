@@ -92,10 +92,9 @@ void WebTransportDatagramDuplexStream::Init(bool aUseByteStream,
 void WebTransportDatagramDuplexStream::SetChild(WebTransportChild* aChild) {
   
   
-  
-  
-  aChild->SendUpdateDatagramQueueParams(mOutgoingMaxBufferedDatagrams,
-                                        mOutgoingMaxAge);
+  aChild->SendUpdateDatagramQueueParams(
+      mOutgoingMaxBufferedDatagrams,
+      mOutgoingMaxAge.IsNull() ? NAN : mOutgoingMaxAge.Value());
   mOutgoingAlgorithms->SetChild(aChild);
   for (auto& writable : mCreatedWritables) {
     writable->SetChild(aChild);
@@ -128,21 +127,30 @@ void WebTransportDatagramDuplexStream::SetIncomingMaxAge(
   mIncomingMaxAge = value;
 }
 
-void WebTransportDatagramDuplexStream::SetOutgoingMaxAge(double aMaxAge,
-                                                         ErrorResult& aRv) {
+void WebTransportDatagramDuplexStream::SetOutgoingMaxAge(
+    const Nullable<double>& aMaxAge, ErrorResult& aRv) {
   
-  
-  if (isnan(aMaxAge) || aMaxAge <= 0.) {
-    aRv.ThrowRangeError("Invalid OutgoingMaxAge");
-    return;
+  Nullable<double> value = aMaxAge;
+  if (!value.IsNull()) {
+    
+    if (isnan(value.Value()) || value.Value() < 0.) {
+      aRv.ThrowRangeError("Invalid OutgoingMaxAge");
+      return;
+    }
+    
+    if (value.Value() == 0.) {
+      value.SetNull();
+    }
   }
   
-  mOutgoingMaxAge = aMaxAge;
+  mOutgoingMaxAge = value;
 
   
   FlushOutgoingDatagrams();
-  mOutgoingAlgorithms->UpdateQueueParams(mOutgoingMaxBufferedDatagrams,
-                                         mOutgoingMaxAge);
+  
+  mOutgoingAlgorithms->UpdateQueueParams(
+      mOutgoingMaxBufferedDatagrams,
+      mOutgoingMaxAge.IsNull() ? NAN : mOutgoingMaxAge.Value());
 }
 
 void WebTransportDatagramDuplexStream::SetIncomingMaxBufferedDatagrams(
@@ -164,8 +172,9 @@ void WebTransportDatagramDuplexStream::SetOutgoingMaxBufferedDatagrams(
 
   
   FlushOutgoingDatagrams();
-  mOutgoingAlgorithms->UpdateQueueParams(mOutgoingMaxBufferedDatagrams,
-                                         mOutgoingMaxAge);
+  mOutgoingAlgorithms->UpdateQueueParams(
+      mOutgoingMaxBufferedDatagrams,
+      mOutgoingMaxAge.IsNull() ? NAN : mOutgoingMaxAge.Value());
 }
 
 already_AddRefed<WebTransportDatagramsWritable>

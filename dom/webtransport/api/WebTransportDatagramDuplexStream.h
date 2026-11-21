@@ -5,8 +5,6 @@
 #ifndef DOM_WEBTRANSPORT_API_WEBTRANSPORTDATAGRAMDUPLEXSTREAM_H_
 #define DOM_WEBTRANSPORT_API_WEBTRANSPORTDATAGRAMDUPLEXSTREAM_H_
 
-#include <limits>
-
 #include "mozilla/dom/DatagramCredit.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ReadableStream.h"
@@ -260,8 +258,10 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
     return mIncomingMaxAge;
   }
   void SetIncomingMaxAge(const Nullable<double>& aMaxAge, ErrorResult& aRv);
-  double GetOutgoingMaxAge(ErrorResult& aRv) const { return mOutgoingMaxAge; }
-  void SetOutgoingMaxAge(double aMaxAge, ErrorResult& aRv);
+  Nullable<double> GetOutgoingMaxAge(ErrorResult& aRv) const {
+    return mOutgoingMaxAge;
+  }
+  void SetOutgoingMaxAge(const Nullable<double>& aMaxAge, ErrorResult& aRv);
   uint32_t IncomingMaxBufferedDatagrams() const {
     return mIncomingMaxBufferedDatagrams;
   }
@@ -294,9 +294,8 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
 
   
   
-  
   Nullable<double> mIncomingMaxAge;
-  double mOutgoingMaxAge = std::numeric_limits<double>::infinity();
+  Nullable<double> mOutgoingMaxAge;
   
   
   
