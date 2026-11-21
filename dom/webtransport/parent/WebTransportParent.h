@@ -141,6 +141,10 @@ class WebTransportParent : public PWebTransportParent,
   
   void CloseSessionForDestroyedActor();
 
+  
+  
+  void AddParentExpiredOutgoing(WebTransportStatsData& aStats) const;
+
   using ResolveType =
       std::tuple<const nsresult&, const uint8_t&, const uint64_t&>;
 
