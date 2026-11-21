@@ -141,8 +141,6 @@ pub struct NeqoHttp3Conn {
     would_block_counter: WouldBlockCounter,
     
     
-    
-    
     webtransport_send_groups: HashMap<u64, SendGroupId>,
     
     
@@ -377,16 +375,6 @@ type BorrowedSocket = std::os::fd::BorrowedFd<'static>;
 type BorrowedSocket = std::os::windows::io::BorrowedSocket<'static>;
 
 impl NeqoHttp3Conn {
-    
-    
-    fn neqo_send_group_id(&self, child_id: u64) -> Option<SendGroupId> {
-        if child_id == 0 {
-            Some(SendGroupId::new(0))
-        } else {
-            self.webtransport_send_groups.get(&child_id).copied()
-        }
-    }
-
     
     
     
@@ -2740,15 +2728,6 @@ pub extern "C" fn neqo_http3conn_webtransport_send_datagram(
     };
     
     
-    
-    
-    
-    
-    let translated_group_id = conn
-        .neqo_send_group_id(send_group_id)
-        .unwrap_or(SendGroupId::new(0));
-    
-    
     let now = Instant::now();
     let written = now
         .checked_sub(Duration::from_micros(age_us))
@@ -2758,7 +2737,7 @@ pub extern "C" fn neqo_http3conn_webtransport_send_datagram(
         data,
         id,
         written,
-        translated_group_id,
+        SendGroupId::new(send_group_id),
         send_order,
     ) {
         Ok(DatagramQueueOutcome::Rejected) => NS_BASE_STREAM_WOULD_BLOCK,
@@ -2876,7 +2855,7 @@ pub unsafe extern "C" fn neqo_http3conn_webtransport_set_sendgroup(
             Err(_) => NS_ERROR_UNEXPECTED,
         };
     }
-    let Some(sg_id) = conn.neqo_send_group_id(sendgroup_id) else {
+    let Some(&sg_id) = conn.webtransport_send_groups.get(&sendgroup_id) else {
         return NS_ERROR_UNEXPECTED;
     };
     match conn
