@@ -98,6 +98,10 @@ using UniqueContStack = mozilla::UniquePtr<ContStack, ContStackDeleter>;
 struct alignas(16) SwitchTarget {
   void* framePointer = nullptr;
   void* stackPointer = nullptr;
+#  ifdef JS_HW_SHADOW_STACK
+  
+  uintptr_t* shadowStackPointer = nullptr;
+#  endif
   void* resumePC = nullptr;
   wasm::Instance* instance = nullptr;
   
@@ -177,6 +181,10 @@ struct ContStackSize {
   size_t jitStackSize = 0;
   size_t headerSize = 0;
   size_t totalSize = 0;
+#  ifdef JS_HW_SHADOW_STACK
+  
+  size_t shadowStackSize = 0;
+#  endif
 
   void compute();
 };
@@ -197,6 +205,15 @@ class ContStack {
   JS::NativeStackBase stackBase_ = 0;
   JS::NativeStackLimit stackLimitForSystem_ = JS::NativeStackLimitMin;
   JS::NativeStackLimit stackLimitForJit_ = JS::NativeStackLimitMin;
+
+#  ifdef JS_HW_SHADOW_STACK
+  
+  uintptr_t shadowStackAllocationBase_ = 0;
+
+  
+  
+  uintptr_t* initialShadowStackPointer_ = nullptr;
+#  endif
 
   
   SwitchTarget initialResumeTarget_{};
@@ -256,6 +273,12 @@ class ContStack {
   
   
   void decommit();
+
+  
+  bool ensureShadowStack();
+  
+  
+  void freeShadowStack();
 
   static void free(ContStack* stack);
   friend ContStackDeleter;
@@ -448,6 +471,11 @@ class ContStackArena {
 
   
   ContStack* findForAddress(uintptr_t address) const;
+
+#  ifdef JS_HW_SHADOW_STACK
+  
+  size_t shadowStackMappedBytes() const;
+#  endif
 
   template <typename Fn>
   void forEachAllocatedStack(Fn&& fn) const {
