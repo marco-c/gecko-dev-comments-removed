@@ -114,9 +114,10 @@ nsresult ProfileResetCleanup(nsToolkitProfileService* aService,
   if (!appStartup) return NS_ERROR_FAILURE;
 
   nsCOMPtr<mozIDOMWindowProxy> progressWindow;
-  rv = windowWatcher->OpenWindow(nullptr, nsDependentCString(kResetProgressURL),
-                                 "_blank"_ns, "centerscreen,chrome,titlebar"_ns,
-                                 nullptr, getter_AddRefs(progressWindow));
+  rv =
+      windowWatcher->OpenWindow(nullptr, nsDependentCString(kResetProgressURL),
+                                u"_blank"_ns, "centerscreen,chrome,titlebar"_ns,
+                                nullptr, getter_AddRefs(progressWindow));
   if (NS_FAILED(rv)) return rv;
 
   
@@ -137,8 +138,11 @@ nsresult ProfileResetCleanup(nsToolkitProfileService* aService,
     return rv;
   }
   
-  auto* piWindow = nsPIDOMWindowOuter::From(progressWindow);
-  MOZ_KnownLive(piWindow)->Close();
+  
+  if (const nsCOMPtr<nsPIDOMWindowOuter> piWindow =
+          nsPIDOMWindowOuter::From(progressWindow)) {
+    piWindow->Close();
+  }
 
   return aService->ApplyResetProfile(aOldProfile);
 }
