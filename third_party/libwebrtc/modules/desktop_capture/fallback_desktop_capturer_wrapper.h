@@ -12,7 +12,6 @@
 #define MODULES_DESKTOP_CAPTURE_FALLBACK_DESKTOP_CAPTURER_WRAPPER_H_
 
 #include <memory>
-#include <string>
 
 #include "absl/strings/string_view.h"
 #include "modules/desktop_capture/desktop_capture_types.h"
@@ -37,21 +36,29 @@ class FallbackDesktopCapturerWrapper final : public DesktopCapturer,
   
   
   
-  enum class SelectSourceResult {
-    kMainSucceededSecondarySucceeded = 0,
-    kMainSucceededSecondaryFailed = 1,
-    kMainFailedSecondarySucceeded = 2,
-    kMainFailedSecondaryFailed = 3,
-    kMaxValue = kMainFailedSecondaryFailed,
+  
+  
+  
+  
+  enum class StartOutcome {
+    kMainWorked = 0,
+    kMainAcceptedSecondaryRejected = 1,
+    kMainRejectedSecondaryRejected = 2,
+    kMainRejectedSecondaryWorked = 3,
+    kMainRejectedSecondaryFailed = 4,
+    kMainStartErrorSecondaryWorked = 5,
+    kMainStartErrorSecondaryFailed = 6,
+    kMaxValue = kMainStartErrorSecondaryFailed,
   };
 
+  
   
   
   
   FallbackDesktopCapturerWrapper(
       std::unique_ptr<DesktopCapturer> main_capturer,
       std::unique_ptr<DesktopCapturer> secondary_capturer,
-      absl::string_view select_source_histogram = "");
+      absl::string_view start_histogram = "");
   ~FallbackDesktopCapturerWrapper() override;
 
   
@@ -66,13 +73,16 @@ class FallbackDesktopCapturerWrapper final : public DesktopCapturer,
   bool IsOccluded(const DesktopVector& pos) override;
 
  private:
+  class OutcomeRecorder;
+
   
   void OnCaptureResult(Result result,
                        std::unique_ptr<DesktopFrame> frame) override;
 
+  
+  const std::unique_ptr<OutcomeRecorder> outcome_recorder_;
   const std::unique_ptr<DesktopCapturer> main_capturer_;
   const std::unique_ptr<DesktopCapturer> secondary_capturer_;
-  const std::string select_source_histogram_;
   std::unique_ptr<SharedMemoryFactory> shared_memory_factory_;
   bool main_capturer_permanent_error_ = false;
   DesktopCapturer::Callback* callback_ = nullptr;

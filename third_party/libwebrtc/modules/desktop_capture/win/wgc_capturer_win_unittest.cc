@@ -72,13 +72,13 @@ constexpr int detector_result_failure_slide_show_not_chosen = 3;
 constexpr char kCaptureFullscreenDetectorHistogram[] =
     "WebRTC.Screenshare.DesktopCapturerFullscreenDetector";
 
-constexpr char kWgcWindowFallbackSelectSourceHistogram[] =
-    "WebRTC.DesktopCapture.Win.WgcWindowFallbackSelectSource";
-using SelectSourceResult = FallbackDesktopCapturerWrapper::SelectSourceResult;
+constexpr char kWgcWindowFallbackStartOutcomeHistogram[] =
+    "WebRTC.DesktopCapture.Win.WgcWindowFallbackStartOutcome";
+using StartOutcome = FallbackDesktopCapturerWrapper::StartOutcome;
 
-int NumSelectSourceEvents(SelectSourceResult result) {
-  return metrics::NumEvents(kWgcWindowFallbackSelectSourceHistogram,
-                            static_cast<int>(result));
+int NumStartOutcomeEvents(StartOutcome outcome) {
+  return metrics::NumEvents(kWgcWindowFallbackStartOutcomeHistogram,
+                            static_cast<int>(outcome));
 }
 
 
@@ -532,36 +532,40 @@ class WgcCapturerWindowTest : public WgcCapturerWinTest {
 
     capturer_ = DesktopCapturer::CreateWindowCapturer(options);
     ASSERT_TRUE(capturer_);
-    HWND child_hwnd = CreateChildWindow();
-    ASSERT_NE(child_hwnd, nullptr);
-    EXPECT_TRUE(capturer_->SelectSource(
-        reinterpret_cast<DesktopCapturer::SourceId>(child_hwnd)));
-    EXPECT_EQ(NumSelectSourceEvents(
-                  SelectSourceResult::kMainFailedSecondarySucceeded),
-              1);
-
+    EXPECT_TRUE(capturer_->SelectSource(source_id_));
     capturer_->Start(this);
     capturer_->CaptureFrame();
     EXPECT_EQ(result_, DesktopCapturer::Result::SUCCESS);
     ASSERT_TRUE(frame_);
+    EXPECT_EQ(frame_->capturer_id(), DesktopCapturerId::kWgcCapturerWin);
+    EXPECT_EQ(NumStartOutcomeEvents(StartOutcome::kMainWorked), 1);
+
+    capturer_ = DesktopCapturer::CreateWindowCapturer(options);
+    ASSERT_TRUE(capturer_);
+    HWND child_hwnd = CreateChildWindow();
+    ASSERT_NE(child_hwnd, nullptr);
+    EXPECT_TRUE(capturer_->SelectSource(
+        reinterpret_cast<DesktopCapturer::SourceId>(child_hwnd)));
+    capturer_->Start(this);
+    
+    result_ = DesktopCapturer::Result::ERROR_TEMPORARY;
+    frame_.reset();
+    capturer_->CaptureFrame();
+    EXPECT_EQ(result_, DesktopCapturer::Result::SUCCESS);
+    ASSERT_TRUE(frame_);
     EXPECT_NE(frame_->capturer_id(), DesktopCapturerId::kWgcCapturerWin);
+    EXPECT_EQ(NumStartOutcomeEvents(StartOutcome::kMainRejectedSecondaryWorked),
+              1);
 
     capturer_ = DesktopCapturer::CreateWindowCapturer(options);
     ASSERT_TRUE(capturer_);
     MinimizeTestWindow(window_info_.hwnd);
     EXPECT_FALSE(capturer_->SelectSource(source_id_));
     EXPECT_EQ(
-        NumSelectSourceEvents(SelectSourceResult::kMainFailedSecondaryFailed),
-        1);
-
+        NumStartOutcomeEvents(StartOutcome::kMainRejectedSecondaryRejected), 1);
     UnminimizeTestWindow(window_info_.hwnd);
-    capturer_ = DesktopCapturer::CreateWindowCapturer(options);
-    ASSERT_TRUE(capturer_);
-    EXPECT_TRUE(capturer_->SelectSource(source_id_));
-    EXPECT_EQ(NumSelectSourceEvents(
-                  SelectSourceResult::kMainSucceededSecondarySucceeded),
-              1);
-    EXPECT_EQ(metrics::NumSamples(kWgcWindowFallbackSelectSourceHistogram), 3);
+
+    EXPECT_EQ(metrics::NumSamples(kWgcWindowFallbackStartOutcomeHistogram), 3);
   }
 };
 
@@ -932,7 +936,7 @@ TEST_F(WgcCapturerWindowTest, CreateWindowCapturerWithoutFallback) {
 
   EXPECT_FALSE(capturer_->SelectSource(
       reinterpret_cast<DesktopCapturer::SourceId>(child_hwnd)));
-  EXPECT_EQ(metrics::NumSamples(kWgcWindowFallbackSelectSourceHistogram), 0);
+  EXPECT_EQ(metrics::NumSamples(kWgcWindowFallbackStartOutcomeHistogram), 0);
 }
 
 
