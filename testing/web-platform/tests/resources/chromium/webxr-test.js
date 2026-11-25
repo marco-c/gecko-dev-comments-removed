@@ -1307,6 +1307,8 @@ class MockRuntime {
                                    xrSessionMojom.XRSessionFeature.LAYERS) ?
                   (16 - 1) / 2 :
                   1,
+              
+              supportedFrameRates: [],
             },
             enviromentBlendMode: this.enviromentBlendMode_,
             interactionMode: this.interactionMode_
