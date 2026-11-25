@@ -5323,6 +5323,50 @@ TEST_P(PeerConnectionIntegrationTest, PerPeerConnectionHeaderExtensions) {
   }
 }
 
+TEST_P(PeerConnectionIntegrationTest, CryptexStrippedFromReceivedAnswer) {
+  PeerConnectionInterface::RTCConfiguration caller_config;
+  caller_config.crypto_options.srtp.cryptex_policy =
+      CryptoOptions::Srtp::CryptexPolicy::kNegotiate;
+  PeerConnectionInterface::RTCConfiguration callee_config;
+  callee_config.crypto_options.srtp.cryptex_policy =
+      CryptoOptions::Srtp::CryptexPolicy::kRequire;
+
+  const bool create_media_engine = true;
+  SetCallerPcWrapperAndReturnCurrent(CreatePeerConnectionWrapper(
+      "caller", nullptr, &caller_config, PeerConnectionDependencies(nullptr),
+      nullptr, false,
+      false, create_media_engine));
+  SetCalleePcWrapperAndReturnCurrent(CreatePeerConnectionWrapper(
+      "callee", nullptr, &callee_config, PeerConnectionDependencies(nullptr),
+      nullptr, false,
+      false, create_media_engine));
+
+  ConnectFakeSignaling();
+
+  caller()->AddAudioVideoTracks();
+  callee()->AddAudioVideoTracks();
+  caller()->SetReceivedSdpMunger(
+      [](std::unique_ptr<SessionDescriptionInterface>& sdp) {
+        sdp->description()->set_cryptex(false);
+      });
+
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE(WaitUntil([&] {
+    return PeerConnectionStateIs(
+        PeerConnectionInterface::PeerConnectionState::kConnected);
+  }));
+
+  MediaExpectations media_expectations;
+  
+  
+  media_expectations.CallerExpectsSomeAudioAndVideo();
+  
+  
+  media_expectations.CalleeExpectsNoAudio();
+  media_expectations.CalleeExpectsNoVideo();
+  ASSERT_TRUE(ExpectNewFrames(media_expectations));
+}
+
 TEST_P(PeerConnectionIntegrationTest, CryptexRenegotiation) {
   CryptoOptions crypto_options;
   crypto_options.srtp.cryptex_policy =

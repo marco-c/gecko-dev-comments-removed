@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 
+#include "api/crypto/crypto_options.h"
 #include "api/field_trials_view.h"
 #include "api/rtp_header_extension_id.h"
 #include "call/rtp_demuxer.h"
@@ -57,7 +58,7 @@ class SrtpTransport : public RtpTransport {
   bool IsWritable(bool rtcp) const override;
 
   
-  bool UseCryptex(bool enable, bool require);
+  bool UseCryptex(CryptoOptions::Srtp::CryptexPolicy policy, bool negotiated);
 
   
   
@@ -137,8 +138,9 @@ class SrtpTransport : public RtpTransport {
   int decryption_failure_count_ = 0;
   int rtcp_decryption_failure_count_ = 0;
 
-  bool enable_cryptex_ = false;
-  bool require_cryptex_ = false;
+  CryptoOptions::Srtp::CryptexPolicy cryptex_policy_ =
+      CryptoOptions::Srtp::CryptexPolicy::kDisabled;
+  bool use_cryptex_ = false;
 
   const FieldTrialsView& field_trials_;
 };

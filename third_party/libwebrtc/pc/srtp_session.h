@@ -46,7 +46,8 @@ class SrtpSession {
   SrtpSession& operator=(const SrtpSession&) = delete;
 
   
-  bool UseCryptex(bool enabled, bool require, bool sending_session);
+  
+  bool UseCryptex(bool negotiated, bool required, bool sending_session);
 
   
   
@@ -134,6 +135,5 @@ class SrtpSession {
 };
 
 }  
-
 
 #endif  

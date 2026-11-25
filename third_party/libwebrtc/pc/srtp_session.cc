@@ -165,20 +165,23 @@ SrtpSession::~SrtpSession() {
   }
 }
 
-bool SrtpSession::UseCryptex(bool enable, bool require, bool sending_session) {
+bool SrtpSession::UseCryptex(bool negotiated,
+                             bool required,
+                             bool sending_session) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   if (session_) {
     srtp_ssrc_t ssrc;
     ssrc.type = sending_session ? ssrc_any_outbound : ssrc_any_inbound;
-    int err = srtp_set_stream_use_cryptex(session_, &ssrc, enable);
+    int err = srtp_set_stream_use_cryptex(session_, &ssrc,
+                                          negotiated || !sending_session);
     
     RTC_DCHECK(err == srtp_err_status_ok);
     if (err != srtp_err_status_ok) {
       return false;
     }
   }
-  use_cryptex_ = enable;
-  require_cryptex_ = require;
+  use_cryptex_ = negotiated;
+  require_cryptex_ = required;
   return true;
 }
 
@@ -285,7 +288,6 @@ bool SrtpSession::ProtectRtcp(CopyOnWriteBuffer& buffer) {
   buffer.SetSize(out_len);
   return true;
 }
-
 
 bool SrtpSession::UnprotectRtp(CopyOnWriteBuffer& buffer) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
