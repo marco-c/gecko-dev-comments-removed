@@ -3427,8 +3427,6 @@ void QuotaManager::UnloadQuota() {
             
             
             
-            
-            
             MOZ_ASSERT(mOriginUpserter, "We must have an origin upserter here");
             QM_WARNONLY_TRY(mOriginUpserter->Refresh(metadata));
             ++transactionCount;
@@ -6128,6 +6126,7 @@ nsresult QuotaManager::EnsureStorageIsInitializedInternal() {
 
     if (mCacheUsable && shouldInvalidateCache) {
       QM_TRY(InvalidateCache(*connection));
+      mCacheRequiresFullScan = true;
     }
 
     uint32_t pauseOnIOThreadMs =
