@@ -32,6 +32,7 @@ SYSTEM_ADDON_UPDATES_PREF = "extensions.systemAddon.update.enabled"
 DOWNLOAD_TO_TEMP_PREF = "browser.download.start_downloads_in_tmp_dir"
 DELETE_DOWNLOADS_PREF = "browser.helperApps.deleteTempFileOnExit"
 PLATFORM_OVERRIDE_PREF = "extensions.webcompat.platform_override"
+EME_ENABLED_PREF = "media.eme.enabled"
 
 
 class WebDriver:
@@ -134,6 +135,9 @@ class FirefoxWebDriver(WebDriver):
             prefs["layout.css.prefixes.transforms"] = False
 
         
+        prefs[EME_ENABLED_PREF] = False
+
+        
         prefs[SYSTEM_ADDON_UPDATES_PREF] = False
 
         cookieBehavior = 4 if test_config.get("without_tcp") else 5
@@ -157,6 +161,7 @@ class FirefoxWebDriver(WebDriver):
         if self.browser_binary:
             fx_options["binary"] = self.browser_binary
             if self.headless:
+                fx_options.setdefault("args", [])
                 fx_options["args"].append("--headless")
 
         if self.device_serial:
