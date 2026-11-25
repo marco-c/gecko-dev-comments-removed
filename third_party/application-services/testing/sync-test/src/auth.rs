@@ -10,11 +10,11 @@ use logins::LoginStore;
 use std::collections::{hash_map::RandomState, HashMap};
 use std::sync::Arc;
 use sync15::{
-    client::{SetupStorageClient, Sync15StorageClient},
-    DeviceType,
+    client::{SetupStorageClient, Sync15ClientResponse, Sync15StorageClient},
+    DeviceType, EngineChoicesModel,
 };
 use sync_manager::{
-    manager::SyncManager, DeviceSettings, SyncEngineSelection, SyncParams, SyncReason,
+    manager::SyncManager, DeviceSettings, SyncEngineSelection, SyncParams, SyncReason, SyncResult,
 };
 use tabs::TabsStore;
 
@@ -35,8 +35,12 @@ pub struct TestClient {
     pub logins_store: Arc<LoginStore>,
     pub encdec: Arc<dyn EncryptorDecryptor>,
     pub tabs_store: Arc<TabsStore>,
+    tabs_db_name: String,
     sync_manager: SyncManager,
     persisted_state: Option<String>,
+    
+    
+    pub engine_choices_model: EngineChoicesModel,
 }
 
 impl TestClient {
@@ -44,7 +48,7 @@ impl TestClient {
         
         
         let account = cli.account().expect("CliFxa must be logged in");
-        let device = match account
+        let mut device = match account
             .get_devices(false)?
             .into_iter()
             .find(|d| d.is_current_device)
@@ -60,6 +64,11 @@ impl TestClient {
             }
         };
 
+        
+        
+        device.id = format!("{}-{}", device.id, device_name.replace(' ', "-"));
+        device.display_name = device_name.to_string();
+
         let key = create_key().unwrap();
         let encdec = Arc::new(ManagedEncryptorDecryptor::new(Arc::new(
             StaticKeyManager::new(key.clone()),
@@ -68,7 +77,8 @@ impl TestClient {
         
         
         
-        let autofill_db_name = format!("sync-test-{}", device_name);
+        let autofill_db_name = format!("sync-test-{device_name}");
+        let tabs_db_name = format!("sync-test-tabs-{device_name}");
 
         Ok(Self {
             cli,
@@ -81,28 +91,30 @@ impl TestClient {
             key,
             logins_store: Arc::new(LoginStore::new(":memory:", encdec.clone())?),
             encdec,
-            tabs_store: Arc::new(TabsStore::new_with_mem_path("sync-test-tabs")),
+            tabs_store: Arc::new(TabsStore::new_with_mem_path(tabs_db_name.as_str())),
+            tabs_db_name,
             sync_manager: SyncManager::new(),
             persisted_state: None,
+            engine_choices_model: EngineChoicesModel::default(),
         })
     }
 
-    pub fn sync(
+    fn sync_params(
         &mut self,
         engines: &[String],
         local_encryption_keys: HashMap<String, String>,
-    ) -> Result<()> {
+    ) -> Result<SyncParams> {
         
         self.autofill_store.clone().register_with_sync_manager();
         self.tabs_store.clone().register_with_sync_manager();
         self.logins_store.clone().register_with_sync_manager();
         let sync_info = self.cli.sync_info()?.expect("CliFxa must have SYNC_SCOPE");
-        let params = SyncParams {
+        Ok(SyncParams {
             reason: SyncReason::User,
             engines: SyncEngineSelection::Some {
                 engines: engines.to_vec(),
             },
-            enabled_changes: HashMap::new(),
+            engine_choices_model: self.engine_choices_model.clone(),
             local_encryption_keys,
             auth_info: sync_info.auth_info,
             persisted_state: self.persisted_state.take(),
@@ -110,8 +122,17 @@ impl TestClient {
                 fxa_device_id: self.device.id.clone(),
                 name: self.device.display_name.clone(),
                 kind: self.device.device_type,
+                enabled_engines: vec![],
             },
-        };
+        })
+    }
+
+    pub fn sync(
+        &mut self,
+        engines: &[String],
+        local_encryption_keys: HashMap<String, String>,
+    ) -> Result<SyncResult> {
+        let params = self.sync_params(engines, local_encryption_keys)?;
         let result = self.sync_manager.sync(params)?;
         
         
@@ -125,8 +146,8 @@ impl TestClient {
             "Engines failed: {:?}",
             result.failures
         );
-        self.persisted_state = Some(result.persisted_state);
-        Ok(())
+        self.persisted_state = Some(result.persisted_state.clone());
+        Ok(result)
     }
 
     pub fn sync_with_failure(
@@ -134,26 +155,7 @@ impl TestClient {
         engines: &[String],
         local_encryption_keys: HashMap<String, String>,
     ) -> Result<HashMap<String, String, RandomState>> {
-        
-        self.autofill_store.clone().register_with_sync_manager();
-        self.tabs_store.clone().register_with_sync_manager();
-        self.logins_store.clone().register_with_sync_manager();
-        let sync_info = self.cli.sync_info()?.expect("CliFxa must have SYNC_SCOPE");
-        let params = SyncParams {
-            reason: SyncReason::User,
-            engines: SyncEngineSelection::Some {
-                engines: engines.to_vec(),
-            },
-            enabled_changes: HashMap::new(),
-            local_encryption_keys,
-            auth_info: sync_info.auth_info,
-            persisted_state: self.persisted_state.take(),
-            device_settings: DeviceSettings {
-                fxa_device_id: self.device.id.clone(),
-                name: self.device.display_name.clone(),
-                kind: self.device.device_type,
-            },
-        };
+        let params = self.sync_params(engines, local_encryption_keys)?;
         let result = self.sync_manager.sync(params)?;
         
         assert!(
@@ -166,9 +168,68 @@ impl TestClient {
         Ok(result.failures)
     }
 
-    pub fn fully_wipe_server(&mut self) -> Result<()> {
+    
+    
+    pub fn server_meta_global(&self) -> Result<serde_json::Value> {
+        match self.storage_client()?.fetch_meta_global()? {
+            Sync15ClientResponse::Success { record, .. } => Ok(serde_json::to_value(record)?),
+            other => Err(other.create_storage_error().into()),
+        }
+    }
+
+    
+    pub fn server_sync_ids(&self) -> Result<serde_json::Value> {
+        match self.storage_client()?.fetch_sync_ids()? {
+            Sync15ClientResponse::Success {
+                record: Some(record),
+                ..
+            } => Ok(serde_json::to_value(record)?),
+            Sync15ClientResponse::Success { .. } => anyhow::bail!("Unparseable meta/syncids"),
+            other => Err(other.create_storage_error().into()),
+        }
+    }
+
+    
+    pub fn update_server_meta_global(&self, f: impl FnOnce(&mut serde_json::Value)) -> Result<()> {
+        let client = self.storage_client()?;
+        let Sync15ClientResponse::Success {
+            record,
+            last_modified,
+            ..
+        } = client.fetch_meta_global()?
+        else {
+            anyhow::bail!("No meta/global");
+        };
+        let mut value = serde_json::to_value(record)?;
+        f(&mut value);
+        client.put_meta_global(last_modified, &serde_json::from_value(value)?)?;
+        Ok(())
+    }
+
+    
+    pub fn update_server_sync_ids(&self, f: impl FnOnce(&mut serde_json::Value)) -> Result<()> {
+        let client = self.storage_client()?;
+        let Sync15ClientResponse::Success {
+            record: Some(record),
+            last_modified,
+            ..
+        } = client.fetch_sync_ids()?
+        else {
+            anyhow::bail!("No meta/syncids");
+        };
+        let mut value = serde_json::to_value(record)?;
+        f(&mut value);
+        client.put_sync_ids(last_modified, &serde_json::from_value(value)?)?;
+        Ok(())
+    }
+
+    fn storage_client(&self) -> Result<Sync15StorageClient> {
         let sync_info = self.cli.sync_info()?.expect("CliFxa must have SYNC_SCOPE");
-        Sync15StorageClient::new(sync_info.client_init)?.wipe_all_remote()?;
+        Ok(Sync15StorageClient::new(sync_info.client_init)?)
+    }
+
+    pub fn fully_wipe_server(&mut self) -> Result<()> {
+        self.storage_client()?.wipe_all_remote()?;
         Ok(())
     }
 
@@ -179,7 +240,12 @@ impl TestClient {
             self.encdec.clone(),
         )?);
         self.logins_store = Arc::new(LoginStore::new(":memory:", self.encdec.clone())?);
-        self.tabs_store = Arc::new(TabsStore::new_with_mem_path("sync-test-tabs"));
+        self.tabs_store = Arc::new(TabsStore::new_with_mem_path(&self.tabs_db_name));
+        
+        
+        self.sync_manager = SyncManager::new();
+        self.persisted_state = None;
+        self.engine_choices_model = EngineChoicesModel::default();
         Ok(())
     }
 

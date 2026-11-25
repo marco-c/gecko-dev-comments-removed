@@ -117,7 +117,7 @@ where
         
         
         
-        crate::report_error_to_app(report_class, e.to_string());
+        crate::report_error(report_class, e.to_string());
     }
     handling.err
 }

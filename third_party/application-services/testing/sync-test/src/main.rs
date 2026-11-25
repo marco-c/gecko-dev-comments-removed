@@ -12,6 +12,7 @@ use std::{collections::HashSet, process};
 
 mod auth;
 mod autofill;
+mod engine_choices;
 mod logins;
 mod sync15;
 mod tabs;
@@ -28,7 +29,7 @@ macro_rules! cleanup_clients {
 }
 
 pub fn init_testing() {
-    viaduct_hyper::viaduct_init_backend_hyper();
+    viaduct_backend_rust::viaduct_init_backend_rust();
     ensure_initialized();
 
     
@@ -37,9 +38,13 @@ pub fn init_testing() {
     
     
     
-    let log_filter = "trace,tokio_threadpool=warn,tokio_reactor=warn,tokio_core=warn,tokio=warn,\
-         hyper=warn,want=warn,mio=warn,trust_dns_proto=warn,trust_dns_resolver=warn";
+    let log_filter = "trace,\
+        reqwest=info,hyper=warn,want=warn,mio=warn,\
+        tokio=warn,tokio_threadpool=warn,tokio_reactor=warn,tokio_core=warn,\
+        trust_dns_proto=warn,trust_dns_resolver=warn";
     env_logger::init_from_env(env_logger::Env::default().filter_or("RUST_LOG", log_filter));
+    
+    cli_support::init_logging_with("tabs=debug,sync15=debug,sync_manager=debug");
 }
 
 
@@ -90,6 +95,8 @@ pub fn run_test_group(opts: &Opts, group: TestGroup) {
         (&mut c0s[0], &mut c1s[0])
     };
     log::info!("++ TestGroup begin {}", group.name);
+    
+    crate::auth::cleanup_server(vec![&mut *c0, &mut *c1]).expect("Initial server wipe failed");
     for (name, test) in group.tests {
         log::info!("+++ Test begin {}::{}", group.name, name);
         test(c0, c1);
@@ -147,6 +154,7 @@ pub fn main() {
         crate::tabs::get_test_group(),
         crate::sync15::get_test_group(),
         crate::autofill::get_test_group(),
+        crate::engine_choices::get_test_group(),
     ];
     if opts.show_groups {
         println!(

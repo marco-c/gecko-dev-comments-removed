@@ -7,11 +7,13 @@ use std::{
     time::{Duration, Instant, SystemTime},
 };
 
+use crate::glean_metrics;
 use parking_lot::Mutex;
 
 static GLOBALS: Mutex<Globals> = Mutex::new(Globals::new());
 
-pub fn report_error_to_app(type_name: String, message: String) {
+#[uniffi::export]
+pub fn report_error(type_name: String, message: String) {
     
     let breadcrumbs = {
         let mut globals = GLOBALS.lock();
@@ -28,23 +30,11 @@ pub fn report_error_to_app(type_name: String, message: String) {
     
     
     
-    
-    
     let breadcrumb_string = breadcrumbs.join("\n");
     let message = truncate_message(message);
     tracing_support::error!(target: "app-services-error-reporter::error", message, type_name, breadcrumbs = breadcrumb_string);
 
     
-    
-    
-    
-    #[cfg(feature = "glean-sym")]
-    report_error_to_app_via_glean_sym(type_name, message, breadcrumbs);
-}
-
-#[cfg(feature = "glean-sym")]
-fn report_error_to_app_via_glean_sym(type_name: String, message: String, breadcrumbs: Vec<String>) {
-    use crate::glean_metrics;
     glean_metrics::rust_component_errors::error_type.set(type_name);
     glean_metrics::rust_component_errors::details.set(message);
     glean_metrics::rust_component_errors::breadcrumbs.set(breadcrumbs);
@@ -395,7 +385,7 @@ mod test {
         let subscriber = tracing_subscriber::registry().with(tracing_support::simple_event_layer());
         tracing_support::tracing::subscriber::with_default(subscriber, || {
             report_breadcrumb("breadcrumb".into(), "foo::bar".into(), 10, 20);
-            report_error_to_app("test-component-error".to_string(), "oh no".to_string());
+            report_error("test-component-error".to_string(), "oh no".to_string());
         });
         tracing_support::unregister_event_sink(sink_id);
 

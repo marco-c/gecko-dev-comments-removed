@@ -703,8 +703,6 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_fxa_client_checksum_method_firefoxaccount_process_event(
     ): Int
-    external fun uniffi_fxa_client_checksum_method_firefoxaccount_reset_auth_recheck_timer(
-    ): Int
     external fun uniffi_fxa_client_checksum_method_firefoxaccount_simulate_permanent_auth_token_issue(
     ): Int
     external fun uniffi_fxa_client_checksum_method_firefoxaccount_simulate_temporary_auth_token_issue(
@@ -814,8 +812,6 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_fxa_client_fn_method_firefoxaccount_process_event(`ptr`: Long,`event`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    external fun uniffi_fxa_client_fn_method_firefoxaccount_reset_auth_recheck_timer(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-    ): Unit
     external fun uniffi_fxa_client_fn_method_firefoxaccount_simulate_permanent_auth_token_issue(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_fxa_client_fn_method_firefoxaccount_simulate_temporary_auth_token_issue(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -1480,20 +1476,6 @@ public interface FirefoxAccountInterface {
      * On error, the state will remain the same.
      */
     fun `processEvent`(`event`: FxaEvent): FxaState
-    
-    /**
-     * Reset the timer indicating time since last auth issues were encountered.
-     *
-     * **💾 This method alters the persisted account state.**
-     *
-     * Call this if we have encountered the [FxaState.AuthIssues] state as a result of a
-     * failure happening (i.e. not as a result of initialization simply loading that state from a
-     * previous failure).
-     * Most likely, this should not need to be called externally except in testing since the state
-     * machine's `transition` function should generally call the internal version of this function
-     * when necessary.
-     */
-    fun `resetAuthRecheckTimer`()
     
     /**
      * Used by the application to test auth token issues
@@ -2310,30 +2292,6 @@ open class FirefoxAccount: Disposable, AutoCloseable, FirefoxAccountInterface
     }
     )
     }
-    
-
-    
-    /**
-     * Reset the timer indicating time since last auth issues were encountered.
-     *
-     * **💾 This method alters the persisted account state.**
-     *
-     * Call this if we have encountered the [FxaState.AuthIssues] state as a result of a
-     * failure happening (i.e. not as a result of initialization simply loading that state from a
-     * previous failure).
-     * Most likely, this should not need to be called externally except in testing since the state
-     * machine's `transition` function should generally call the internal version of this function
-     * when necessary.
-     */override fun `resetAuthRecheckTimer`()
-        = 
-    callWithHandle {
-    uniffiRustCall() { _status ->
-    UniffiLib.uniffi_fxa_client_fn_method_firefoxaccount_reset_auth_recheck_timer(
-        it,
-        _status)
-}
-    }
-    
     
 
     
@@ -4602,12 +4560,15 @@ sealed class FxaEvent {
     /**
      * Check the authorization status for a connected account.
      *
+     * This event is only valid for the `Connected` state.  In other states, this event is ignored.
+     *
      * Send this when issues are detected with the auth tokens for a connected account.  It will
      * double check for authentication issues with the account.  If it detects them, the state
      * machine will transition to [FxaState::AuthIssues].  From there you can start an OAuth flow
      * again to re-connect the user.
      *
-     * This event is valid for the `Connected` state.
+     * If the request fails, for example from a network error, then the user will stay in the
+     * current state.
      */
     object CheckAuthorizationStatus : FxaEvent()
     

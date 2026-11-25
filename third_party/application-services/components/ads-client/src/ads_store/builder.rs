@@ -7,6 +7,7 @@ use crate::ads_store::store::AdsStoreHolder;
 use crate::ads_store::AdsStore;
 use crate::bytesize::ByteSize;
 use crate::telemetry;
+use crate::IN_MEMORY_DB_PATH;
 use rusqlite::OpenFlags;
 use sql_support::{open_database, LazyDb};
 use std::path::{Path, PathBuf};
@@ -15,12 +16,13 @@ const DEFAULT_MAX_SIZE: ByteSize = ByteSize::mib(10);
 const MIN_STORE_SIZE: ByteSize = ByteSize::kib(1);
 const MAX_STORE_SIZE: ByteSize = ByteSize::mib(100);
 
-pub const IN_MEMORY_DB_PATH: &'static str = ":memory:";
-
 #[derive(Debug, thiserror::Error)]
 pub enum AdsStoreBuilderError {
     #[error("Database error: {0}")]
     Database(#[from] open_database::Error),
+    
+    #[error("Database (memory) error: {0}")]
+    DatabaseMemory(open_database::Error),
     #[error("Database path cannot be empty")]
     EmptyDbPath,
     #[error(
@@ -34,33 +36,34 @@ pub enum AdsStoreBuilderError {
 }
 
 pub struct AdsStoreBuilder {
-    db_path: PathBuf,
-    
-    
-    is_memory: bool,
+    db_path: Option<PathBuf>,
     max_size: Option<ByteSize>,
 }
 
 impl AdsStoreBuilder {
-    pub fn new(db_path: impl Into<PathBuf>) -> Self {
+    
+    
+    pub fn new() -> Self {
         Self {
-            db_path: db_path.into(),
-            is_memory: false,
+            db_path: None,
             max_size: None,
         }
     }
 
-    pub fn build(&mut self) -> Result<AdsStore, AdsStoreBuilderError> {
+    pub fn build(&self) -> Result<AdsStore, AdsStoreBuilderError> {
         self.validate()?;
 
-        let db = self.open_connection()?;
+        
+        let db = self.open_db()?;
         let holder = AdsStoreHolder::new(db);
         let max_size = self.max_size.unwrap_or(DEFAULT_MAX_SIZE);
-        Ok(AdsStore {
-            holder,
-            is_memory: self.is_memory,
-            max_size,
-        })
+        Ok(AdsStore { holder, max_size })
+    }
+
+    
+    pub fn db_path(mut self, db_path: impl Into<PathBuf>) -> Self {
+        self.db_path = Some(db_path.into());
+        self
     }
 
     pub fn max_size(mut self, max_size: ByteSize) -> Self {
@@ -68,41 +71,24 @@ impl AdsStoreBuilder {
         self
     }
 
-    fn open_connection(
-        &mut self,
-    ) -> Result<LazyDb<AdsStoreConnectionInitializer>, AdsStoreBuilderError> {
-        if !cfg!(test) {
-            let db = LazyDb::new(
-                &self.db_path,
-                OpenFlags::default(),
-                AdsStoreConnectionInitializer {},
-            );
-
-            
-            let conn = db.lock();
-            if let Some(e) = conn.err() {
-                telemetry::record_ads_store_error(&AdsStoreBuilderError::from(e));
-            } else {
-                return Ok(db);
+    
+    fn open_db(&self) -> Result<LazyDb<AdsStoreConnectionInitializer>, AdsStoreBuilderError> {
+        if let Some(db_path) = &self.db_path {
+            match open_connection(db_path) {
+                Ok(db) => return Ok(db),
+                Err(e) => telemetry::record_ads_store_error(&AdsStoreBuilderError::from(e)),
             }
         }
-
         
-        let memory_db = LazyDb::new(
-            &Path::new(IN_MEMORY_DB_PATH),
-            OpenFlags::default(),
-            AdsStoreConnectionInitializer {},
-        );
-        self.is_memory = true;
-
-        
-        let _ = memory_db.lock()?;
-
-        Ok(memory_db)
+        open_connection(Path::new(IN_MEMORY_DB_PATH)).map_err(AdsStoreBuilderError::DatabaseMemory)
     }
 
     fn validate(&self) -> Result<(), AdsStoreBuilderError> {
-        if self.db_path.to_string_lossy().trim().is_empty() {
+        if self
+            .db_path
+            .as_ref()
+            .is_some_and(|p| p.to_string_lossy().trim().is_empty())
+        {
             return Err(AdsStoreBuilderError::EmptyDbPath);
         }
 
@@ -120,27 +106,46 @@ impl AdsStoreBuilder {
     }
 }
 
+
+fn open_connection(
+    path: &Path,
+) -> Result<LazyDb<AdsStoreConnectionInitializer>, open_database::Error> {
+    let db = LazyDb::new(path, OpenFlags::default(), AdsStoreConnectionInitializer {});
+    drop(db.lock()?);
+    Ok(db)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     fn make_test_builder(path: &str) -> AdsStoreBuilder {
-        AdsStoreBuilder::new(path)
+        AdsStoreBuilder::new().db_path(path)
     }
 
     #[test]
     fn test_store_builder_with_defaults() {
-        let mut builder = make_test_builder("test.db");
-        assert_eq!(builder.db_path, PathBuf::from("test.db"));
+        let builder = make_test_builder(IN_MEMORY_DB_PATH);
+        assert_eq!(builder.db_path, Some(PathBuf::from(IN_MEMORY_DB_PATH)));
         assert_eq!(builder.max_size, None);
         assert!(builder.build().is_ok());
     }
 
     #[test]
-    fn test_cache_builder_valid_custom() {
-        let mut builder = make_test_builder("custom.db").max_size(ByteSize::b(1024));
+    fn test_unopenable_path_falls_back_to_memory_db() {
+        
+        let _lock = crate::telemetry::test_lock();
+        let store = make_test_builder("this/is/a/test/bad/path")
+            .build()
+            .unwrap();
+        assert!(store.is_memory().unwrap());
+    }
 
-        assert_eq!(builder.db_path, PathBuf::from("custom.db"));
+    #[test]
+    fn test_cache_builder_valid_custom() {
+        let builder = make_test_builder(IN_MEMORY_DB_PATH).max_size(ByteSize::b(1024));
+
+        assert_eq!(builder.db_path, Some(PathBuf::from(IN_MEMORY_DB_PATH)));
         assert_eq!(builder.max_size, Some(ByteSize::b(1024)));
         assert!(builder.build().is_ok());
     }
@@ -153,7 +158,7 @@ mod tests {
 
     #[test]
     fn test_validation_max_size_too_small() {
-        let result = make_test_builder("test.db")
+        let result = make_test_builder(IN_MEMORY_DB_PATH)
             .max_size(ByteSize::b(512))
             .build();
         assert!(matches!(
@@ -168,7 +173,7 @@ mod tests {
 
     #[test]
     fn test_validation_max_size_too_large() {
-        let result = make_test_builder("test.db")
+        let result = make_test_builder(IN_MEMORY_DB_PATH)
             .max_size(ByteSize::b(2 * 1024 * 1024 * 1024))
             .build();
         assert!(matches!(
@@ -183,10 +188,10 @@ mod tests {
 
     #[test]
     fn test_validation_max_size_boundaries() {
-        let mut builder_min = make_test_builder("test.db").max_size(MIN_STORE_SIZE);
+        let builder_min = make_test_builder(IN_MEMORY_DB_PATH).max_size(MIN_STORE_SIZE);
         assert!(builder_min.build().is_ok());
 
-        let mut builder_max = make_test_builder("test.db").max_size(MAX_STORE_SIZE);
+        let builder_max = make_test_builder(IN_MEMORY_DB_PATH).max_size(MAX_STORE_SIZE);
         assert!(builder_max.build().is_ok());
     }
 }

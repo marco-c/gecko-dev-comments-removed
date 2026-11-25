@@ -595,6 +595,7 @@ impl TabsStorage {
 
     
     
+    
     pub fn remove_old_pending_closures(
         &mut self,
         
@@ -609,70 +610,80 @@ impl TabsStorage {
                 Some(json) => serde_json::from_str(&json).unwrap(),
             }
         };
+        let fxa_device_id = |client_id: &str| -> String {
+            remote_clients
+                .get(client_id)
+                .and_then(|r| r.fxa_device_id.clone())
+                .unwrap_or_else(|| client_id.to_string())
+        };
 
         let conn = self.open_or_create()?;
         let tx = conn.unchecked_transaction()?;
 
         
-        conn.execute(
-            "CREATE TEMP TABLE if not exists new_remote_tabs (device_id TEXT, url TEXT)",
-            [],
+        
+        tx.execute_batch(
+            "CREATE TEMP TABLE IF NOT EXISTS new_remote_devices (device_id TEXT PRIMARY KEY);
+             CREATE TEMP TABLE IF NOT EXISTS new_remote_tabs (device_id TEXT, url TEXT);
+             DELETE FROM new_remote_devices;
+             DELETE FROM new_remote_tabs;",
         )?;
-        conn.execute("DELETE FROM new_remote_tabs", [])?; 
-
         for (record, _) in new_remote_tabs.iter() {
-            let fxa_id = remote_clients
-                .get(&record.id)
-                .and_then(|r| r.fxa_device_id.as_ref())
-                .unwrap_or(&record.id);
+            let device_id = fxa_device_id(&record.id);
+            tx.execute_cached(
+                "INSERT OR IGNORE INTO new_remote_devices (device_id) VALUES (?)",
+                [&device_id],
+            )?;
             for tab in &record.tabs {
                 if let Some(url) = tab.url_history.first() {
-                    conn.execute(
+                    tx.execute_cached(
                         "INSERT INTO new_remote_tabs (device_id, url) VALUES (?, ?)",
-                        rusqlite::params![fxa_id, url],
+                        rusqlite::params![device_id, url],
                     )?;
                 }
             }
         }
 
-        
-        let delete_sql = "
-         DELETE FROM remote_tab_commands
-         WHERE
-            (device_id IN (SELECT device_id from new_remote_tabs))
-         AND
-         (
-            url NOT IN (
-            SELECT url from new_remote_tabs
-            WHERE new_remote_tabs.device_id = device_id
-            AND :command_close_tab = remote_tab_commands.command)
-         )";
-        conn.execute(
-            delete_sql,
+        let num_completed = tx.execute_cached(
+            "DELETE FROM remote_tab_commands
+             WHERE command = :command_close_tab
+               AND device_id IN (SELECT device_id FROM new_remote_devices)
+               AND url NOT IN (
+                   SELECT url FROM new_remote_tabs
+                   WHERE new_remote_tabs.device_id = remote_tab_commands.device_id
+               )",
             rusqlite::named_params! {
                 ":command_close_tab": CommandKind::CloseTab,
             },
         )?;
-
-        info!(
-            "deleted {} pending tab closures because they were not in the new tabs",
-            conn.changes()
-        );
+        info!("deleted {num_completed} pending tab closures because they were not in the new tabs");
 
         
         
-        let sql = format!("
-            DELETE FROM remote_tab_commands
-            WHERE device_id IN (
-                SELECT guid FROM tabs
-            ) AND (SELECT last_modified FROM tabs WHERE guid = device_id) - time_requested >= {REMOTE_COMMAND_TTL_MS}
-        ");
-        tx.execute_cached(&sql, [])?;
-        info!("deleted {} records because they timed out", conn.changes());
+        
+        let devices: Vec<(String, i64)> = tx.query_rows_and_then_cached(
+            "SELECT guid, last_modified FROM tabs",
+            [],
+            |row| -> rusqlite::Result<_> { Ok((row.get(0)?, row.get(1)?)) },
+        )?;
+        let mut num_timed_out = 0;
+        for (client_id, last_modified) in devices {
+            num_timed_out += tx.execute_cached(
+                "DELETE FROM remote_tab_commands
+                 WHERE device_id = :device_id
+                   AND :last_modified - time_requested >= :ttl",
+                rusqlite::named_params! {
+                    ":device_id": fxa_device_id(&client_id),
+                    ":last_modified": last_modified,
+                    ":ttl": REMOTE_COMMAND_TTL_MS,
+                },
+            )?;
+        }
+        info!("deleted {num_timed_out} pending commands because they timed out");
 
         
         tx.commit()?;
-        conn.execute("DROP TABLE new_remote_tabs", [])?;
+        conn.execute_batch("DROP TABLE new_remote_devices; DROP TABLE new_remote_tabs;")?;
         Ok(())
     }
 }
@@ -1404,6 +1415,162 @@ mod tests {
             .contains(&("device-1".to_string(), "https://example1.com".to_string())));
         assert!(remaining_commands
             .contains(&("device-2".to_string(), "https://example3.com".to_string())));
+    }
+
+    
+    
+    
+    #[test]
+    fn test_remove_pending_closures_matches_urls_per_device() {
+        error_support::init_for_tests();
+        let mut storage =
+            TabsStorage::new_with_mem_path("test_remove_pending_closures_matches_urls_per_device");
+        let now = Timestamp::now();
+
+        let db = storage.open_if_exists().unwrap().unwrap();
+        for guid in ["device-1", "device-2"] {
+            db.execute(
+                "INSERT INTO tabs (guid, record, last_modified) VALUES (:guid, '', :now);",
+                rusqlite::named_params! { ":guid": guid, ":now": now },
+            )
+            .unwrap();
+        }
+
+        
+        storage
+            .add_remote_tab_command("device-1", &RemoteCommand::close_tab("https://a.com"))
+            .unwrap();
+        storage
+            .add_remote_tab_command("device-2", &RemoteCommand::close_tab("https://b.com"))
+            .unwrap();
+
+        
+        
+        let record = |id: &str, url: &str| {
+            (
+                TabsRecord {
+                    id: id.to_string(),
+                    tabs: vec![TabsRecordTab {
+                        url_history: vec![url.to_string()],
+                        ..Default::default()
+                    }],
+                    ..Default::default()
+                },
+                ServerTimestamp::default(),
+            )
+        };
+        let new_records = vec![
+            record("device-1", "https://b.com"),
+            record("device-2", "https://a.com"),
+        ];
+
+        storage.remove_old_pending_closures(&new_records).unwrap();
+
+        assert_eq!(
+            storage.get_unsent_commands().unwrap(),
+            vec![],
+            "both closures were completed on the device they were sent to"
+        );
+    }
+
+    
+    
+    #[test]
+    fn test_remove_pending_closures_device_with_no_tabs() {
+        error_support::init_for_tests();
+        let mut storage =
+            TabsStorage::new_with_mem_path("test_remove_pending_closures_device_with_no_tabs");
+        storage
+            .open_if_exists()
+            .unwrap()
+            .unwrap()
+            .execute(
+                "INSERT INTO tabs (guid, record, last_modified) VALUES ('device-1', '', :now);",
+                rusqlite::named_params! { ":now": Timestamp::now() },
+            )
+            .unwrap();
+        storage
+            .add_remote_tab_command("device-1", &RemoteCommand::close_tab("https://a.com"))
+            .unwrap();
+
+        let new_records = vec![(
+            TabsRecord {
+                id: "device-1".to_string(),
+                tabs: vec![],
+                ..Default::default()
+            },
+            ServerTimestamp::default(),
+        )];
+        storage.remove_old_pending_closures(&new_records).unwrap();
+
+        assert_eq!(storage.get_unsent_commands().unwrap(), vec![]);
+    }
+
+    
+    
+    
+    
+    #[test]
+    fn test_remove_old_pending_closures_timed_removal_uses_fxa_device_id() {
+        error_support::init_for_tests();
+        let mut storage = TabsStorage::new_with_mem_path(
+            "test_remove_old_pending_closures_timed_removal_uses_fxa_device_id",
+        );
+        let now = Timestamp::now();
+        let older = now
+            .checked_sub(Duration::from_millis(REMOTE_COMMAND_TTL_MS))
+            .unwrap();
+
+        let remote_clients = HashMap::from([(
+            "sync-client-id".to_string(),
+            RemoteClient {
+                fxa_device_id: Some("fxa-device-id".to_string()),
+                device_name: "other device".to_string(),
+                device_type: DeviceType::Desktop,
+            },
+        )]);
+        storage
+            .put_meta(
+                schema::REMOTE_CLIENTS_KEY,
+                &serde_json::to_string(&remote_clients).unwrap(),
+            )
+            .unwrap();
+        storage
+            .open_if_exists()
+            .unwrap()
+            .unwrap()
+            .execute(
+                "INSERT INTO tabs (guid, record, last_modified) VALUES ('sync-client-id', '', :now);",
+                rusqlite::named_params! { ":now": now },
+            )
+            .unwrap();
+        storage
+            .add_remote_tab_command_at(
+                "fxa-device-id",
+                &RemoteCommand::close_tab("https://timed-out.com"),
+                older,
+            )
+            .unwrap();
+        storage
+            .add_remote_tab_command_at(
+                "fxa-device-id",
+                &RemoteCommand::close_tab("https://recent.com"),
+                now,
+            )
+            .unwrap();
+
+        storage.remove_old_pending_closures(&[]).unwrap();
+
+        let remaining: Vec<_> = storage
+            .get_unsent_commands()
+            .unwrap()
+            .into_iter()
+            .map(|c| c.command)
+            .collect();
+        assert_eq!(
+            remaining,
+            vec![RemoteCommand::close_tab("https://recent.com")]
+        );
     }
 
     #[test]

@@ -152,12 +152,30 @@ pub fn record_client_error(operation: ClientOperation, error: &impl Display) {
 
 pub fn record_build_cache_error(error: &HttpCacheBuilderError) {
     let label = match error {
-        HttpCacheBuilderError::Database(_) => BuildCacheErrorLabel::DatabaseError,
+        HttpCacheBuilderError::Database(_) | HttpCacheBuilderError::DatabaseMemory(_) => {
+            BuildCacheErrorLabel::DatabaseError
+        }
         HttpCacheBuilderError::EmptyDbPath => BuildCacheErrorLabel::EmptyDbPath,
         HttpCacheBuilderError::InvalidMaxSize { .. } => BuildCacheErrorLabel::InvalidMaxSize,
         HttpCacheBuilderError::InvalidTtl { .. } => BuildCacheErrorLabel::InvalidTtl,
     };
-    backend::build_cache_error(label.as_str(), error.to_string());
+    let value = match error {
+        HttpCacheBuilderError::Database(sql_support::open_database::Error::SqlError(
+            rusqlite::Error::SqliteFailure(
+                rusqlite::ffi::Error {
+                    code: _,
+                    extended_code,
+                },
+                Some(_),
+            ),
+        )) => format!("{error} ({extended_code})"),
+        HttpCacheBuilderError::Database(_)
+        | HttpCacheBuilderError::DatabaseMemory(_)
+        | HttpCacheBuilderError::EmptyDbPath
+        | HttpCacheBuilderError::InvalidMaxSize { .. }
+        | HttpCacheBuilderError::InvalidTtl { .. } => error.to_string(),
+    };
+    backend::build_cache_error(label.as_str(), value);
 }
 
 
@@ -170,11 +188,29 @@ pub fn record_ads_store_error(error: &crate::ads_store::builder::AdsStoreBuilder
     use crate::ads_store::builder::AdsStoreBuilderError;
 
     let label = match error {
-        AdsStoreBuilderError::Database(_) => BuildCacheErrorLabel::StoreDatabaseError,
+        AdsStoreBuilderError::Database(_) | AdsStoreBuilderError::DatabaseMemory(_) => {
+            BuildCacheErrorLabel::DatabaseError
+        }
         AdsStoreBuilderError::EmptyDbPath => BuildCacheErrorLabel::StoreEmptyDbPath,
         AdsStoreBuilderError::InvalidMaxSize { .. } => BuildCacheErrorLabel::StoreInvalidMaxSize,
     };
-    backend::build_cache_error(label.as_str(), error.to_string());
+    let value = match error {
+        AdsStoreBuilderError::Database(sql_support::open_database::Error::SqlError(
+            rusqlite::Error::SqliteFailure(
+                rusqlite::ffi::Error {
+                    code: _,
+                    extended_code,
+                },
+                Some(_),
+            ),
+        )) => format!("{error} ({extended_code})"),
+        AdsStoreBuilderError::Database(_)
+        | AdsStoreBuilderError::DatabaseMemory(_)
+        | AdsStoreBuilderError::EmptyDbPath
+        | AdsStoreBuilderError::InvalidMaxSize { .. } => error.to_string(),
+    };
+
+    backend::build_cache_error(label.as_str(), value);
 }
 
 
@@ -196,9 +232,46 @@ pub fn record_http_cache_outcome(outcome: &CacheOutcome) {
 
 
 
-pub fn record_invalid_ad_item(error: &serde_json::Error) {
+pub fn record_invalid_ad_item(error: &impl Display) {
     backend::deserialization_error(
         DeserializationErrorLabel::InvalidAdItem.as_str(),
         error.to_string(),
     );
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_record_build_cache_error_includes_extended_sqlite_error_code() {
+        
+        let _test_lock = backend::test_lock();
+        let recording = backend::RecordingTelemetry::default();
+        backend::install(recording.clone());
+
+        let error_code = 4874;
+        let error_without_message =
+            HttpCacheBuilderError::Database(sql_support::open_database::Error::SqlError(
+                rusqlite::Error::SqliteFailure(rusqlite::ffi::Error::new(error_code), None),
+            ));
+        let error_with_message = HttpCacheBuilderError::Database(
+            sql_support::open_database::Error::SqlError(rusqlite::Error::SqliteFailure(
+                rusqlite::ffi::Error::new(error_code),
+                Some("Some obscure description".to_string()),
+            )),
+        );
+
+        record_build_cache_error(&error_without_message);
+        record_build_cache_error(&error_with_message);
+
+        let records_lock = recording.build_cache_errors.lock();
+        let records = records_lock.get("database_error").unwrap();
+        assert_ne!(records[0], records[1]);
+        assert!(records[0].contains(&error_code.to_string()));
+        assert!(records[1].contains(&error_code.to_string()));
+
+        
+        backend::uninstall();
+    }
 }

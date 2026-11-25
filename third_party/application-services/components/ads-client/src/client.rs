@@ -9,7 +9,7 @@ use crate::ads_store::AdsStore;
 use crate::bytesize::ByteSize;
 use crate::http_cache::{CachePolicy, HttpCache};
 use crate::mars::ad_request::{AdPlacementRequest, AdRequestFlags, AdRequestRelevance};
-use crate::mars::ad_response::{AdResponse, AdResponseValue};
+use crate::mars::ad_response::AdResponse;
 use crate::mars::error::{RecordClickError, RecordImpressionError, ReportAdError};
 use crate::mars::{MARSClient, ReportReason};
 use crate::telemetry::{self, ClientOperation};
@@ -23,14 +23,12 @@ use std::time::Duration;
 use url::Url;
 use uuid::Uuid;
 
-pub mod config;
-pub mod error;
+pub(crate) mod config;
+pub(crate) mod error;
 
-const DEFAULT_TTL_SECONDS: u64 = 300;
-const DEFAULT_MAX_CACHE_SIZE_MIB: u64 = 10;
 const DEFAULT_ROTATION_DAYS: u8 = 3;
 
-pub struct AdsClient {
+pub(crate) struct AdsClient {
     inner: Arc<AdsClientInner>,
 }
 
@@ -42,12 +40,12 @@ pub struct AdsClientInner {
 }
 
 impl AdsClient {
-    pub fn new(client_config: AdsClientConfig) -> Self {
+    pub(crate) fn new(client_config: AdsClientConfig) -> Self {
         let inner = Arc::new(AdsClientInner::new(client_config));
         AdsClient { inner }
     }
 
-    pub fn clear_cache(&self) -> Result<(), open_database::Error> {
+    pub(crate) fn clear_cache(&self) -> Result<(), open_database::Error> {
         self.inner.clear_cache()
     }
 
@@ -56,11 +54,11 @@ impl AdsClient {
         self.inner.get_context_id()
     }
 
-    pub fn record_click(&self, click_url: Url, ohttp: bool) -> Result<(), RecordClickError> {
+    pub(crate) fn record_click(&self, click_url: Url, ohttp: bool) -> Result<(), RecordClickError> {
         self.inner.record_click(click_url, ohttp)
     }
 
-    pub fn record_impression(
+    pub(crate) fn record_impression(
         &self,
         impression_url: Url,
         ohttp: bool,
@@ -68,7 +66,7 @@ impl AdsClient {
         self.inner.record_impression(impression_url, ohttp)
     }
 
-    pub fn report_ad(
+    pub(crate) fn report_ad(
         &self,
         report_url: Url,
         reason: ReportReason,
@@ -77,7 +75,7 @@ impl AdsClient {
         self.inner.report_ad(report_url, reason, ohttp)
     }
 
-    pub fn request_image_ads(
+    pub(crate) fn request_image_ads(
         &self,
         ad_placement_requests: Vec<AdPlacementRequest>,
         flags: AdRequestFlags,
@@ -89,7 +87,7 @@ impl AdsClient {
             .request_image_ads(ad_placement_requests, flags, options, ohttp, blocks)
     }
 
-    pub fn request_spoc_ads(
+    pub(crate) fn request_spoc_ads(
         &self,
         ad_placement_requests: Vec<AdPlacementRequest>,
         flags: AdRequestFlags,
@@ -101,7 +99,7 @@ impl AdsClient {
             .request_spoc_ads(ad_placement_requests, flags, options, ohttp, blocks)
     }
 
-    pub fn request_tile_ads(
+    pub(crate) fn request_tile_ads(
         &self,
         ad_placement_requests: Vec<AdPlacementRequest>,
         flags: AdRequestFlags,
@@ -120,7 +118,7 @@ impl AdsClient {
         )
     }
 
-    pub fn request_spoc_or_image_ads(
+    pub(crate) fn request_spoc_or_image_ads(
         &self,
         ad_placement_requests: Vec<AdPlacementRequest>,
         flags: AdRequestFlags,
@@ -132,12 +130,12 @@ impl AdsClient {
             .request_spoc_or_image_ads(ad_placement_requests, flags, options, ohttp, blocks)
     }
 
-    pub fn shutdown(&self) {
+    pub(crate) fn shutdown(&self) {
         self.inner.shutdown();
     }
 
     #[cfg(test)]
-    fn request_ads<A>(
+    fn request_ads(
         &self,
         placements: Vec<AdPlacementRequest>,
         flags: AdRequestFlags,
@@ -145,17 +143,14 @@ impl AdsClient {
         ohttp: bool,
         blocks: Vec<String>,
         relevance: AdRequestRelevance,
-    ) -> Result<AdResponse<A>, RequestAdsError>
-    where
-        A: AdResponseValue,
-    {
+    ) -> Result<AdResponse, RequestAdsError> {
         self.inner
             .request_ads(placements, flags, options, ohttp, blocks, relevance)
     }
 }
 
 impl AdsClientInner {
-    pub fn new(client_config: AdsClientConfig) -> Self {
+    pub(crate) fn new(client_config: AdsClientConfig) -> Self {
         let context_id_component = ContextIDComponent::new(
             &Uuid::new_v4().to_string(),
             0,
@@ -167,41 +162,42 @@ impl AdsClientInner {
 
         
         
-        let http_cache = client_config.cache_config.and_then(|cache_cfg| {
-            let default_cache_ttl = Duration::from_secs(
-                cache_cfg
-                    .default_cache_ttl_seconds
-                    .unwrap_or(DEFAULT_TTL_SECONDS),
-            );
-            let max_cache_size =
-                ByteSize::mib(cache_cfg.max_size_mib.unwrap_or(DEFAULT_MAX_CACHE_SIZE_MIB));
-
-            match HttpCache::builder(cache_cfg.db_path)
-                .max_size(max_cache_size)
-                .default_ttl(default_cache_ttl)
-                .build()
-            {
-                Ok(cache) => Some(cache),
-                Err(e) => {
-                    telemetry::record_build_cache_error(&e);
-                    None
-                }
+        let mut http_cache = HttpCache::builder();
+        if let Some(config) = client_config.cache_config {
+            http_cache = http_cache.db_path(config.db_path);
+            if let Some(default_cache_ttl) = config.default_cache_ttl_seconds {
+                http_cache = http_cache.default_ttl(Duration::from_secs(default_cache_ttl));
             }
-        });
+            if let Some(max_size_mib) = config.max_size_mib {
+                http_cache = http_cache.max_size(ByteSize::mib(max_size_mib));
+            }
+        }
 
+        let http_cache = match http_cache.build() {
+            Ok(cache) => Some(cache),
+            Err(e) => {
+                telemetry::record_build_cache_error(&e);
+                None
+            }
+        };
+
+        
         #[cfg(feature = "stateful")]
-        let ads_store =
-            client_config
-                .store_config
-                .and_then(|x| match AdsStore::builder(x.db_path).build() {
-                    Ok(store) => Some(store),
-                    Err(e) => {
-                        telemetry::record_ads_store_error(&e);
-                        None
-                    }
-                });
+        let mut ads_store = AdsStore::builder();
+        #[cfg(feature = "stateful")]
+        if let Some(config) = client_config.store_config {
+            ads_store = ads_store.db_path(config.db_path);
+        }
+        #[cfg(feature = "stateful")]
+        let ads_store = match ads_store.build() {
+            Ok(store) => Some(store),
+            Err(e) => {
+                telemetry::record_ads_store_error(&e);
+                None
+            }
+        };
 
-        let client = MARSClient::new(environment, http_cache);
+        let client = MARSClient::new(environment, http_cache, client_config.user_agent);
         telemetry::record_client_operation(ClientOperation::New);
         Self {
             #[cfg(feature = "stateful")]
@@ -211,15 +207,15 @@ impl AdsClientInner {
         }
     }
 
-    pub fn clear_cache(&self) -> Result<(), open_database::Error> {
+    pub(crate) fn clear_cache(&self) -> Result<(), open_database::Error> {
         self.client.clear_cache()
     }
 
-    pub fn get_context_id(&self) -> context_id::ApiResult<String> {
+    pub(crate) fn get_context_id(&self) -> context_id::ApiResult<String> {
         self.context_id_component.request(DEFAULT_ROTATION_DAYS)
     }
 
-    pub fn record_click(&self, click_url: Url, ohttp: bool) -> Result<(), RecordClickError> {
+    pub(crate) fn record_click(&self, click_url: Url, ohttp: bool) -> Result<(), RecordClickError> {
         
         
         
@@ -236,7 +232,7 @@ impl AdsClientInner {
             })
     }
 
-    pub fn record_impression(
+    pub(crate) fn record_impression(
         &self,
         impression_url: Url,
         ohttp: bool,
@@ -280,7 +276,7 @@ impl AdsClientInner {
             })
     }
 
-    pub fn report_ad(
+    pub(crate) fn report_ad(
         &self,
         report_url: Url,
         reason: ReportReason,
@@ -297,7 +293,7 @@ impl AdsClientInner {
     }
 
     
-    pub fn request_image_ads(
+    pub(crate) fn request_image_ads(
         &self,
         ad_placement_requests: Vec<AdPlacementRequest>,
         flags: AdRequestFlags,
@@ -306,7 +302,7 @@ impl AdsClientInner {
         blocks: Vec<String>,
     ) -> Result<HashMap<String, AdImage>, RequestAdsError> {
         let response = self
-            .request_ads::<AdImage>(
+            .request_ads(
                 ad_placement_requests,
                 flags,
                 options,
@@ -318,11 +314,11 @@ impl AdsClientInner {
                 telemetry::record_client_error(ClientOperation::RequestAds, e);
             })?;
         telemetry::record_client_operation(ClientOperation::RequestAds);
-        Ok(response.take_first())
+        Ok(response.take_first::<AdImage>())
     }
 
     
-    pub fn request_spoc_ads(
+    pub(crate) fn request_spoc_ads(
         &self,
         ad_placement_requests: Vec<AdPlacementRequest>,
         flags: AdRequestFlags,
@@ -330,7 +326,7 @@ impl AdsClientInner {
         ohttp: bool,
         blocks: Vec<String>,
     ) -> Result<HashMap<String, Vec<AdSpoc>>, RequestAdsError> {
-        let result = self.request_ads::<AdSpoc>(
+        let result = self.request_ads(
             ad_placement_requests,
             flags,
             options,
@@ -344,7 +340,7 @@ impl AdsClientInner {
             })
             .map(|response| {
                 telemetry::record_client_operation(ClientOperation::RequestAds);
-                response.data
+                response.into_kind::<AdSpoc>()
             })
     }
 
@@ -352,7 +348,7 @@ impl AdsClientInner {
     
     
     
-    pub fn request_spoc_or_image_ads(
+    pub(crate) fn request_spoc_or_image_ads(
         &self,
         ad_placement_requests: Vec<AdPlacementRequest>,
         flags: AdRequestFlags,
@@ -360,7 +356,7 @@ impl AdsClientInner {
         ohttp: bool,
         blocks: Vec<String>,
     ) -> Result<HashMap<String, Vec<AdImageOrSpoc>>, RequestAdsError> {
-        let result = self.request_ads::<AdImageOrSpoc>(
+        let result = self.request_ads(
             ad_placement_requests,
             flags,
             options,
@@ -374,11 +370,11 @@ impl AdsClientInner {
             })
             .map(|response| {
                 telemetry::record_client_operation(ClientOperation::RequestAds);
-                response.data
+                response.into_kind::<AdImageOrSpoc>()
             })
     }
 
-    pub fn request_tile_ads(
+    pub(crate) fn request_tile_ads(
         &self,
         ad_placement_requests: Vec<AdPlacementRequest>,
         flags: AdRequestFlags,
@@ -387,7 +383,7 @@ impl AdsClientInner {
         blocks: Vec<String>,
         relevance: AdRequestRelevance,
     ) -> Result<HashMap<String, AdTile>, RequestAdsError> {
-        let result = self.request_ads::<AdTile>(
+        let result = self.request_ads(
             ad_placement_requests,
             flags,
             options,
@@ -401,11 +397,11 @@ impl AdsClientInner {
             })
             .map(|response| {
                 telemetry::record_client_operation(ClientOperation::RequestAds);
-                response.take_first()
+                response.take_first::<AdTile>()
             })
     }
 
-    pub fn shutdown(&self) {
+    pub(crate) fn shutdown(&self) {
         telemetry::uninstall();
 
         #[cfg(feature = "stateful")]
@@ -416,7 +412,7 @@ impl AdsClientInner {
         self.client.shutdown_db();
     }
 
-    fn request_ads<A>(
+    fn request_ads(
         &self,
         placements: Vec<AdPlacementRequest>,
         flags: AdRequestFlags,
@@ -424,10 +420,7 @@ impl AdsClientInner {
         ohttp: bool,
         blocks: Vec<String>,
         relevance: AdRequestRelevance,
-    ) -> Result<AdResponse<A>, RequestAdsError>
-    where
-        A: AdResponseValue,
-    {
+    ) -> Result<AdResponse, RequestAdsError> {
         let context_id = if relevance.is_empty() {
             Some(self.get_context_id()?)
         } else {
@@ -435,7 +428,7 @@ impl AdsClientInner {
         };
 
         let cache_policy = options.unwrap_or_default();
-        let (mut response, request_hash) = self.client.fetch_ads::<A>(
+        let (mut response, request_hash) = self.client.fetch_ads(
             context_id,
             flags,
             placements,
@@ -468,7 +461,8 @@ mod tests {
         let inner = Arc::new(AdsClientInner {
             #[cfg(feature = "stateful")]
             ads_store: Arc::new(Some(
-                AdsStoreBuilder::new("test_store.db")
+                AdsStoreBuilder::new()
+                    .db_path(crate::IN_MEMORY_DB_PATH)
                     .build()
                     .expect("Simplest AdsStoreBuilder should be constructable"),
             )),
@@ -492,6 +486,7 @@ mod tests {
             environment: Environment::Test,
             #[cfg(feature = "stateful")]
             store_config: None,
+            user_agent: None,
         };
         let client = AdsClient::new(config);
         let context_id = client.get_context_id().unwrap();
@@ -509,7 +504,7 @@ mod tests {
             .with_body(serde_json::to_string(&expected_response.data).unwrap())
             .create();
 
-        let mars_client = MARSClient::new(Environment::Test, None);
+        let mars_client = MARSClient::new(Environment::Test, None, None);
         let ads_client = new_with_mars_client(mars_client);
 
         let result = ads_client.request_image_ads(
@@ -534,7 +529,7 @@ mod tests {
             .with_body(serde_json::to_string(&expected_response.data).unwrap())
             .create();
 
-        let mars_client = MARSClient::new(Environment::Test, None);
+        let mars_client = MARSClient::new(Environment::Test, None, None);
         let ads_client = new_with_mars_client(mars_client);
 
         let result = ads_client.request_spoc_ads(
@@ -559,7 +554,7 @@ mod tests {
             .with_body(serde_json::to_string(&expected_response.data).unwrap())
             .create();
 
-        let mars_client = MARSClient::new(Environment::Test, None);
+        let mars_client = MARSClient::new(Environment::Test, None, None);
         let ads_client = new_with_mars_client(mars_client);
 
         let result = ads_client.request_tile_ads(
@@ -583,6 +578,7 @@ mod tests {
             environment: Environment::Test,
             #[cfg(feature = "stateful")]
             store_config: None,
+            user_agent: None,
         };
         let client = AdsClient::new(config);
 
@@ -621,6 +617,7 @@ mod tests {
             environment: Environment::Test,
             #[cfg(feature = "stateful")]
             store_config: None,
+            user_agent: None,
         };
         let client = AdsClient::new(config);
 
@@ -654,7 +651,7 @@ mod tests {
     #[test]
     fn test_record_impression_removes_cap_key() {
         viaduct_dev::init_backend_dev();
-        let mars_client = MARSClient::new(Environment::Test, None);
+        let mars_client = MARSClient::new(Environment::Test, None, None);
         let ads_client = new_with_mars_client(mars_client);
 
         let base_url = mockito::server_url();
@@ -682,10 +679,8 @@ mod tests {
     #[ignore = "Cache invalidation temporarily disabled - will be re-enabled behind Nimbus experiment"]
     fn test_record_click_invalidates_cache() {
         viaduct_dev::init_backend_dev();
-        let cache = HttpCache::builder("test_record_click_invalidates_cache")
-            .build()
-            .unwrap();
-        let mars_client = MARSClient::new(Environment::Test, Some(cache));
+        let cache = HttpCache::builder().build().unwrap();
+        let mars_client = MARSClient::new(Environment::Test, Some(cache), None);
         let ads_client = new_with_mars_client(mars_client);
 
         let response = get_example_happy_image_response();
@@ -725,7 +720,7 @@ mod tests {
         ads_client.record_click(callback_url, false).unwrap();
 
         ads_client
-            .request_ads::<AdImage>(
+            .request_ads(
                 make_happy_placement_requests(),
                 AdRequestFlags::default(),
                 Some(CachePolicy::default()),

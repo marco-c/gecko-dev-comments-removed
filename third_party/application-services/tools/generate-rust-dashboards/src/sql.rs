@@ -51,10 +51,6 @@ impl Query {
         sql
     }
 
-    pub fn as_subquery(&self) -> String {
-        format!("(\n{})", self.sql())
-    }
-
     pub fn add_count_per_day_column(
         &mut self,
         count_expr: impl Into<String>,
@@ -80,19 +76,6 @@ impl Query {
             "submission_timestamp".into(),
         ])
     }
-
-    pub fn add_from_using_application_var(&mut self, table_name: &str) {
-        
-        
-        
-        
-        
-        
-        
-        self.from = format!(
-            "(SELECT * FROM mozdata.fenix.{table_name} WHERE '${{application}}' = 'firefox_android')"
-        );
-    }
 }
 
 
@@ -115,5 +98,9 @@ impl Union {
             sql.push_str(&format!("{}\n", q.sql()));
         }
         sql
+    }
+
+    pub fn as_subquery(&self) -> String {
+        format!("(\n{})", self.sql())
     }
 }
