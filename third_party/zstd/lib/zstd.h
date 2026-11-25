@@ -110,8 +110,8 @@ extern "C" {
 
 
 #define ZSTD_VERSION_MAJOR    1
-#define ZSTD_VERSION_MINOR    5
-#define ZSTD_VERSION_RELEASE  7
+#define ZSTD_VERSION_MINOR    6
+#define ZSTD_VERSION_RELEASE  0
 #define ZSTD_VERSION_NUMBER  (ZSTD_VERSION_MAJOR *100*100 + ZSTD_VERSION_MINOR *100 + ZSTD_VERSION_RELEASE)
 
 
@@ -226,6 +226,28 @@ ZSTDLIB_API unsigned long long ZSTD_getDecompressedSize(const void* src, size_t 
 
 ZSTDLIB_API size_t ZSTD_findFrameCompressedSize(const void* src, size_t srcSize);
 
+typedef enum { ZSTD_frame, ZSTD_skippableFrame } ZSTD_FrameType_e;
+#define ZSTD_frameType_e ZSTD_FrameType_e /* old name */
+typedef struct {
+    unsigned long long frameContentSize; 
+    unsigned long long windowSize;       
+    unsigned blockSizeMax;
+    ZSTD_FrameType_e frameType;          
+    unsigned headerSize;
+    unsigned dictID;                     
+    unsigned checksumFlag;
+    unsigned _reserved1;
+    unsigned _reserved2;
+} ZSTD_FrameHeader;
+#define ZSTD_frameHeader ZSTD_FrameHeader /* old name */
+
+
+
+
+
+
+ZSTDLIB_API size_t ZSTD_getFrameHeader(ZSTD_FrameHeader* zfhPtr, const void* src, size_t srcSize);
+
 
 
 
@@ -303,6 +325,9 @@ ZSTDLIB_API size_t ZSTD_compressCCtx(ZSTD_CCtx* cctx,
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 ZSTDLIB_API ZSTD_DCtx* ZSTD_createDCtx(void);
 ZSTDLIB_API size_t     ZSTD_freeDCtx(ZSTD_DCtx* dctx);  
+
+
+
 
 
 
@@ -606,6 +631,7 @@ typedef enum {
 
 
 
+
 ZSTDLIB_API size_t ZSTD_CCtx_reset(ZSTD_CCtx* cctx, ZSTD_ResetDirective reset);
 
 
@@ -684,6 +710,10 @@ ZSTDLIB_API ZSTD_bounds ZSTD_dParam_getBounds(ZSTD_dParameter dParam);
 
 
 ZSTDLIB_API size_t ZSTD_DCtx_setParameter(ZSTD_DCtx* dctx, ZSTD_dParameter param, int value);
+
+
+
+
 
 
 
@@ -945,6 +975,9 @@ ZSTDLIB_API size_t ZSTD_initDStream(ZSTD_DStream* zds);
 
 
 
+
+
+
 ZSTDLIB_API size_t ZSTD_decompressStream(ZSTD_DStream* zds, ZSTD_outBuffer* output, ZSTD_inBuffer* input);
 
 ZSTDLIB_API size_t ZSTD_DStreamInSize(void);    
@@ -966,6 +999,8 @@ ZSTDLIB_API size_t ZSTD_compress_usingDict(ZSTD_CCtx* ctx,
                                      const void* src, size_t srcSize,
                                      const void* dict,size_t dictSize,
                                            int compressionLevel);
+
+
 
 
 
@@ -1025,7 +1060,17 @@ ZSTDLIB_API ZSTD_DDict* ZSTD_createDDict(const void* dictBuffer, size_t dictSize
 
 
 
+
+
+ZSTDLIB_API ZSTD_DDict* ZSTD_createDDict_byReference(const void* dictBuffer, size_t dictSize);
+
+
+
+
 ZSTDLIB_API size_t      ZSTD_freeDDict(ZSTD_DDict* ddict);
+
+
+
 
 
 
@@ -1107,6 +1152,23 @@ ZSTDLIB_API unsigned ZSTD_getDictID_fromFrame(const void* src, size_t srcSize);
 
 ZSTDLIB_API size_t ZSTD_CCtx_loadDictionary(ZSTD_CCtx* cctx, const void* dict, size_t dictSize);
 
+typedef enum {
+    ZSTD_dct_auto = 0,       
+    ZSTD_dct_rawContent = 1, 
+    ZSTD_dct_fullDict = 2    
+} ZSTD_dictContentType_e;
+
+typedef enum {
+    ZSTD_dlm_byCopy = 0,  
+    ZSTD_dlm_byRef = 1    
+} ZSTD_dictLoadMethod_e;
+
+
+
+
+
+ZSTDLIB_API size_t ZSTD_CCtx_loadDictionary_advanced(ZSTD_CCtx* cctx, const void* dict, size_t dictSize, ZSTD_dictLoadMethod_e dictLoadMethod, ZSTD_dictContentType_e dictContentType);
+
 
 
 
@@ -1158,7 +1220,23 @@ ZSTDLIB_API size_t ZSTD_CCtx_refPrefix(ZSTD_CCtx* cctx,
 
 
 
+
+
 ZSTDLIB_API size_t ZSTD_DCtx_loadDictionary(ZSTD_DCtx* dctx, const void* dict, size_t dictSize);
+
+
+
+
+
+
+ZSTDLIB_API size_t ZSTD_DCtx_loadDictionary_advanced(ZSTD_DCtx* dctx, const void* dict, size_t dictSize, ZSTD_dictLoadMethod_e dictLoadMethod, ZSTD_dictContentType_e dictContentType);
+
+
+
+
+
+
+
 
 
 
@@ -1178,6 +1256,28 @@ ZSTDLIB_API size_t ZSTD_DCtx_loadDictionary(ZSTD_DCtx* dctx, const void* dict, s
 
 
 ZSTDLIB_API size_t ZSTD_DCtx_refDDict(ZSTD_DCtx* dctx, const ZSTD_DDict* ddict);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1371,17 +1471,6 @@ typedef struct {
 } ZSTD_parameters;
 
 typedef enum {
-    ZSTD_dct_auto = 0,       
-    ZSTD_dct_rawContent = 1, 
-    ZSTD_dct_fullDict = 2    
-} ZSTD_dictContentType_e;
-
-typedef enum {
-    ZSTD_dlm_byCopy = 0,  
-    ZSTD_dlm_byRef = 1    
-} ZSTD_dictLoadMethod_e;
-
-typedef enum {
     ZSTD_f_zstd1 = 0,           
     ZSTD_f_zstd1_magicless = 1  
 
@@ -1499,6 +1588,7 @@ ZSTDLIB_STATIC_API unsigned long long ZSTD_findDecompressedSize(const void* src,
 
 
 
+
 ZSTDLIB_STATIC_API unsigned long long ZSTD_decompressBound(const void* src, size_t srcSize);
 
 
@@ -1507,27 +1597,6 @@ ZSTDLIB_STATIC_API unsigned long long ZSTD_decompressBound(const void* src, size
 
 ZSTDLIB_STATIC_API size_t ZSTD_frameHeaderSize(const void* src, size_t srcSize);
 
-typedef enum { ZSTD_frame, ZSTD_skippableFrame } ZSTD_FrameType_e;
-#define ZSTD_frameType_e ZSTD_FrameType_e /* old name */
-typedef struct {
-    unsigned long long frameContentSize; 
-    unsigned long long windowSize;       
-    unsigned blockSizeMax;
-    ZSTD_FrameType_e frameType;          
-    unsigned headerSize;
-    unsigned dictID;                     
-    unsigned checksumFlag;
-    unsigned _reserved1;
-    unsigned _reserved2;
-} ZSTD_FrameHeader;
-#define ZSTD_frameHeader ZSTD_FrameHeader /* old name */
-
-
-
-
-
-
-ZSTDLIB_STATIC_API size_t ZSTD_getFrameHeader(ZSTD_FrameHeader* zfhPtr, const void* src, size_t srcSize);
 
 
 
@@ -1701,6 +1770,8 @@ ZSTD_compressSequences(ZSTD_CCtx* cctx,
 
 
 
+
+
 ZSTDLIB_STATIC_API size_t
 ZSTD_compressSequencesAndLiterals(ZSTD_CCtx* cctx,
                                   void* dst, size_t dstCapacity,
@@ -1815,9 +1886,14 @@ ZSTDLIB_STATIC_API size_t ZSTD_estimateDStreamSize_fromFrame(const void* src, si
 
 
 
+
+
 ZSTDLIB_STATIC_API size_t ZSTD_estimateCDictSize(size_t dictSize, int compressionLevel);
 ZSTDLIB_STATIC_API size_t ZSTD_estimateCDictSize_advanced(size_t dictSize, ZSTD_compressionParameters cParams, ZSTD_dictLoadMethod_e dictLoadMethod);
 ZSTDLIB_STATIC_API size_t ZSTD_estimateDDictSize(size_t dictSize, ZSTD_dictLoadMethod_e dictLoadMethod);
+
+
+
 
 
 
@@ -1868,14 +1944,13 @@ ZSTDLIB_STATIC_API const ZSTD_DDict* ZSTD_initStaticDDict(
 typedef void* (*ZSTD_allocFunction) (void* opaque, size_t size);
 typedef void  (*ZSTD_freeFunction) (void* opaque, void* address);
 typedef struct { ZSTD_allocFunction customAlloc; ZSTD_freeFunction customFree; void* opaque; } ZSTD_customMem;
-static
-#ifdef __GNUC__
-__attribute__((__unused__))
-#endif
-
 #if defined(__clang__) && __clang_major__ >= 5
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
+static
+#ifdef __GNUC__
+__attribute__((__unused__))
 #endif
 ZSTD_customMem const ZSTD_defaultCMem = { NULL, NULL, NULL };  
 #if defined(__clang__) && __clang_major__ >= 5
@@ -1892,6 +1967,7 @@ ZSTDLIB_STATIC_API ZSTD_CDict* ZSTD_createCDict_advanced(const void* dict, size_
                                                   ZSTD_dictContentType_e dictContentType,
                                                   ZSTD_compressionParameters cParams,
                                                   ZSTD_customMem customMem);
+
 
 
 
@@ -2011,12 +2087,6 @@ size_t ZSTD_compress_usingCDict_advanced(ZSTD_CCtx* cctx,
 
 
 ZSTDLIB_STATIC_API size_t ZSTD_CCtx_loadDictionary_byReference(ZSTD_CCtx* cctx, const void* dict, size_t dictSize);
-
-
-
-
-
-ZSTDLIB_STATIC_API size_t ZSTD_CCtx_loadDictionary_advanced(ZSTD_CCtx* cctx, const void* dict, size_t dictSize, ZSTD_dictLoadMethod_e dictLoadMethod, ZSTD_dictContentType_e dictContentType);
 
 
 
@@ -2457,21 +2527,9 @@ ZSTDLIB_STATIC_API unsigned ZSTD_isFrame(const void* buffer, size_t size);
 
 
 
-ZSTDLIB_STATIC_API ZSTD_DDict* ZSTD_createDDict_byReference(const void* dictBuffer, size_t dictSize);
-
-
-
-
-
-
 ZSTDLIB_STATIC_API size_t ZSTD_DCtx_loadDictionary_byReference(ZSTD_DCtx* dctx, const void* dict, size_t dictSize);
 
 
-
-
-
-
-ZSTDLIB_STATIC_API size_t ZSTD_DCtx_loadDictionary_advanced(ZSTD_DCtx* dctx, const void* dict, size_t dictSize, ZSTD_dictLoadMethod_e dictLoadMethod, ZSTD_dictContentType_e dictContentType);
 
 
 
@@ -2541,6 +2599,21 @@ ZSTDLIB_STATIC_API size_t ZSTD_DCtx_getParameter(ZSTD_DCtx* dctx, ZSTD_dParamete
 
 
 #define ZSTD_d_forceIgnoreChecksum ZSTD_d_experimentalParam3
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3030,10 +3103,6 @@ ZSTDLIB_STATIC_API size_t ZSTD_compressBegin_usingDict(ZSTD_CCtx* cctx, const vo
 ZSTD_DEPRECATED("The buffer-less API is deprecated in favor of the normal streaming API. See docs.")
 ZSTDLIB_STATIC_API size_t ZSTD_compressBegin_usingCDict(ZSTD_CCtx* cctx, const ZSTD_CDict* cdict); 
 
-ZSTD_DEPRECATED("This function will likely be removed in a future release. It is misleading and has very limited utility.")
-ZSTDLIB_STATIC_API
-size_t ZSTD_copyCCtx(ZSTD_CCtx* cctx, const ZSTD_CCtx* preparedCCtx, unsigned long long pledgedSrcSize); 
-
 ZSTD_DEPRECATED("The buffer-less API is deprecated in favor of the normal streaming API. See docs.")
 ZSTDLIB_STATIC_API size_t ZSTD_compressContinue(ZSTD_CCtx* cctx, void* dst, size_t dstCapacity, const void* src, size_t srcSize);
 ZSTD_DEPRECATED("The buffer-less API is deprecated in favor of the normal streaming API. See docs.")
@@ -3121,22 +3190,50 @@ size_t ZSTD_compressBegin_usingCDict_advanced(ZSTD_CCtx* const cctx, const ZSTD_
 
 
 
+
+
+
+
 ZSTDLIB_STATIC_API size_t ZSTD_decodingBufferSize_min(unsigned long long windowSize, unsigned long long frameContentSize);  
+
+
+
+
+
+
+
 
 ZSTDLIB_STATIC_API size_t ZSTD_decompressBegin(ZSTD_DCtx* dctx);
 ZSTDLIB_STATIC_API size_t ZSTD_decompressBegin_usingDict(ZSTD_DCtx* dctx, const void* dict, size_t dictSize);
 ZSTDLIB_STATIC_API size_t ZSTD_decompressBegin_usingDDict(ZSTD_DCtx* dctx, const ZSTD_DDict* ddict);
 
 ZSTDLIB_STATIC_API size_t ZSTD_nextSrcSizeToDecompress(ZSTD_DCtx* dctx);
+
+
+
+
+
+
+
 ZSTDLIB_STATIC_API size_t ZSTD_decompressContinue(ZSTD_DCtx* dctx, void* dst, size_t dstCapacity, const void* src, size_t srcSize);
 
 
-ZSTD_DEPRECATED("This function will likely be removed in the next minor release. It is misleading and has very limited utility.")
-ZSTDLIB_STATIC_API void   ZSTD_copyDCtx(ZSTD_DCtx* dctx, const ZSTD_DCtx* preparedDCtx);
 typedef enum { ZSTDnit_frameHeader, ZSTDnit_blockHeader, ZSTDnit_block, ZSTDnit_lastBlock, ZSTDnit_checksum, ZSTDnit_skippableFrame } ZSTD_nextInputType_e;
 ZSTDLIB_STATIC_API ZSTD_nextInputType_e ZSTD_nextInputType(ZSTD_DCtx* dctx);
 
 
+
+
+
+
+
+
+
+
+
+
+
+ZSTDLIB_API int ZSTD_isDeterministicBuild(void);
 
 
 
@@ -3195,4 +3292,4 @@ ZSTDLIB_STATIC_API size_t ZSTD_insertBlock    (ZSTD_DCtx* dctx, const void* bloc
 }
 #endif
 
-#endif
+#endif   

@@ -156,6 +156,9 @@ struct ZSTD_DCtx_s
     int isFrameDecompression;
 #if DYNAMIC_BMI2
     int bmi2;                     
+
+
+
 #endif
 
     
@@ -207,8 +210,20 @@ struct ZSTD_DCtx_s
     
 #if ZSTD_TRACE
     ZSTD_TraceCtx traceCtx;
+    size_t traceDictSize;       
 #endif
 };  
+
+
+
+
+
+
+
+
+
+
+
 
 MEM_STATIC int ZSTD_DCtx_get_bmi2(const struct ZSTD_DCtx_s *dctx) {
 #if DYNAMIC_BMI2
@@ -228,6 +243,8 @@ MEM_STATIC int ZSTD_DCtx_get_bmi2(const struct ZSTD_DCtx_s *dctx) {
 
 size_t ZSTD_loadDEntropy(ZSTD_entropyDTables_t* entropy,
                    const void* const dict, size_t const dictSize);
+
+
 
 
 

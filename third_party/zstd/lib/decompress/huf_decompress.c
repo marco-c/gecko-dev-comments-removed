@@ -15,7 +15,9 @@
 
 
 
+#include <stddef.h>               
 #include "../common/zstd_deps.h"  
+#include "../common/bmi2.h"
 #include "../common/compiler.h"
 #include "../common/bitstream.h"  
 #include "../common/fse.h"        
@@ -116,9 +118,10 @@ typedef size_t (*HUF_DecompressUsingDTableFn)(void *dst, size_t dstSize,
     static size_t fn(void* dst, size_t dstSize, void const* cSrc,           \
                      size_t cSrcSize, HUF_DTable const* DTable, int flags)  \
     {                                                                       \
-        if (flags & HUF_flags_bmi2) {                                       \
+        if (ZSTD_USE_BMI2(flags & HUF_flags_bmi2)) {                        \
             return fn##_bmi2(dst, dstSize, cSrc, cSrcSize, DTable);         \
         }                                                                   \
+        (void)flags;                                                        \
         return fn##_default(dst, dstSize, cSrc, cSrcSize, DTable);          \
     }
 
@@ -195,7 +198,7 @@ static size_t HUF_DecompressFastArgs_init(HUF_DecompressFastArgs* args, void* ds
 
     const BYTE* const istart = (const BYTE*)src;
 
-    BYTE* const oend = ZSTD_maybeNullPtrAdd((BYTE*)dst, dstSize);
+    BYTE* const oend = (BYTE*)ZSTD_maybeNullPtrAdd(dst, (ptrdiff_t)dstSize);
 
     
 
@@ -287,8 +290,9 @@ static size_t HUF_initRemainingDStream(BIT_DStream_t* bit, HUF_DecompressFastArg
 
 
 
-
-    if (args->ip[stream] < args->iend[stream] - 8)
+    if (args->ip[stream] < args->ilowest
+        || (args->ip[stream] < args->iend[stream]
+            && (size_t)(args->iend[stream] - args->ip[stream]) > 8))
         return ERROR(corruption_detected);
 
     
@@ -578,7 +582,7 @@ HUF_decompress1X1_usingDTable_internal_body(
     const HUF_DTable* DTable)
 {
     BYTE* op = (BYTE*)dst;
-    BYTE* const oend = ZSTD_maybeNullPtrAdd(op, dstSize);
+    BYTE* const oend = (BYTE*)ZSTD_maybeNullPtrAdd(op, (ptrdiff_t)dstSize);
     const void* dtPtr = DTable + 1;
     const HUF_DEltX1* const dt = (const HUF_DEltX1*)dtPtr;
     BIT_DStream_t bitD;
@@ -703,6 +707,8 @@ size_t HUF_decompress4X1_usingDTable_internal_bmi2(void* dst, size_t dstSize, vo
                     size_t cSrcSize, HUF_DTable const* DTable) {
     return HUF_decompress4X1_usingDTable_internal_body(dst, dstSize, cSrc, cSrcSize, DTable);
 }
+#else
+#define HUF_decompress4X1_usingDTable_internal_bmi2 HUF_decompress4X1_usingDTable_internal_default
 #endif
 
 static
@@ -784,19 +790,19 @@ void HUF_decompress4X1_usingDTable_internal_fast_c_loop(HUF_DecompressFastArgs* 
         }
 #endif
 
-#define HUF_4X1_DECODE_SYMBOL(_stream, _symbol)                 \
-    do {                                                        \
-        int const index = (int)(bits[(_stream)] >> 53);         \
-        int const entry = (int)dtable[index];                   \
-        bits[(_stream)] <<= (entry & 0x3F);                     \
-        op[(_stream)][(_symbol)] = (BYTE)((entry >> 8) & 0xFF); \
+#define HUF_4X1_DECODE_SYMBOL(_stream, _symbol)        \
+    do {                                               \
+        U64 const index = bits[(_stream)] >> 53;       \
+        U16 const entry = dtable[index];               \
+        bits[(_stream)] <<= entry & 0x3F;              \
+        op[(_stream)][(_symbol)] = (BYTE)(entry >> 8); \
     } while (0)
 
-#define HUF_4X1_RELOAD_STREAM(_stream)                              \
+#define HUF_5X1_RELOAD_STREAM(_stream)                              \
     do {                                                            \
-        int const ctz = ZSTD_countTrailingZeros64(bits[(_stream)]); \
-        int const nbBits = ctz & 7;                                 \
-        int const nbBytes = ctz >> 3;                               \
+        U64 const ctz = ZSTD_countTrailingZeros64(bits[(_stream)]); \
+        U64 const nbBits = ctz & 7;                                 \
+        U64 const nbBytes = ctz >> 3;                               \
         op[(_stream)] += 5;                                         \
         ip[(_stream)] -= nbBytes;                                   \
         bits[(_stream)] = MEM_read64(ip[(_stream)]) | 1;            \
@@ -815,11 +821,11 @@ void HUF_decompress4X1_usingDTable_internal_fast_c_loop(HUF_DecompressFastArgs* 
             HUF_4X_FOR_EACH_STREAM_WITH_VAR(HUF_4X1_DECODE_SYMBOL, 4);
 
             
-            HUF_4X_FOR_EACH_STREAM(HUF_4X1_RELOAD_STREAM);
+            HUF_4X_FOR_EACH_STREAM(HUF_5X1_RELOAD_STREAM);
         } while (op[3] < olimit);
 
 #undef HUF_4X1_DECODE_SYMBOL
-#undef HUF_4X1_RELOAD_STREAM
+#undef HUF_5X1_RELOAD_STREAM
     }
 
 _out:
@@ -845,7 +851,7 @@ HUF_decompress4X1_usingDTable_internal_fast(
 {
     void const* dt = DTable + 1;
     BYTE const* const ilowest = (BYTE const*)cSrc;
-    BYTE* const oend = ZSTD_maybeNullPtrAdd((BYTE*)dst, dstSize);
+    BYTE* const oend = (BYTE*)ZSTD_maybeNullPtrAdd(dst, (ptrdiff_t)dstSize);
     HUF_DecompressFastArgs args;
     {   size_t const ret = HUF_DecompressFastArgs_init(&args, dst, dstSize, cSrc, cSrcSize, DTable);
         FORWARD_IF_ERROR(ret, "Failed to init fast loop args");
@@ -900,18 +906,16 @@ static size_t HUF_decompress4X1_usingDTable_internal(void* dst, size_t dstSize, 
     HUF_DecompressUsingDTableFn fallbackFn = HUF_decompress4X1_usingDTable_internal_default;
     HUF_DecompressFastLoopFn loopFn = HUF_decompress4X1_usingDTable_internal_fast_c_loop;
 
-#if DYNAMIC_BMI2
-    if (flags & HUF_flags_bmi2) {
+    if (ZSTD_USE_BMI2(flags & HUF_flags_bmi2)) {
         fallbackFn = HUF_decompress4X1_usingDTable_internal_bmi2;
 # if ZSTD_ENABLE_ASM_X86_64_BMI2
         if (!(flags & HUF_flags_disableAsm)) {
             loopFn = HUF_decompress4X1_usingDTable_internal_fast_asm_loop;
         }
 # endif
-    } else {
+    } else if (DYNAMIC_BMI2) {
         return fallbackFn(dst, dstSize, cSrc, cSrcSize, DTable);
     }
-#endif
 
 #if ZSTD_ENABLE_ASM_X86_64_BMI2 && defined(__BMI2__)
     if (!(flags & HUF_flags_disableAsm)) {
@@ -1314,7 +1318,9 @@ HUF_decodeStreamX2(BYTE* p, BIT_DStream_t* bitDPtr, BYTE* const pEnd,
     if ((size_t)(pEnd - p) >= sizeof(bitDPtr->bitContainer)) {
         if (dtLog <= 11 && MEM_64bits()) {
             
-            while ((BIT_reloadDStream(bitDPtr) == BIT_DStream_unfinished) & (p < pEnd-9)) {
+            
+            BYTE* const pLimit = (size_t)(pEnd - p) >= 10 ? pEnd - 9 : p;
+            while ((BIT_reloadDStream(bitDPtr) == BIT_DStream_unfinished) & (p < pLimit)) {
                 HUF_DECODE_SYMBOLX2_0(p, bitDPtr);
                 HUF_DECODE_SYMBOLX2_0(p, bitDPtr);
                 HUF_DECODE_SYMBOLX2_0(p, bitDPtr);
@@ -1362,7 +1368,7 @@ HUF_decompress1X2_usingDTable_internal_body(
 
     
     {   BYTE* const ostart = (BYTE*) dst;
-        BYTE* const oend = ZSTD_maybeNullPtrAdd(ostart, dstSize);
+        BYTE* const oend = (BYTE*)ZSTD_maybeNullPtrAdd(ostart, (ptrdiff_t)dstSize);
         const void* const dtPtr = DTable+1;   
         const HUF_DEltX2* const dt = (const HUF_DEltX2*)dtPtr;
         DTableDesc const dtd = HUF_getDTableDesc(DTable);
@@ -1506,6 +1512,8 @@ size_t HUF_decompress4X2_usingDTable_internal_bmi2(void* dst, size_t dstSize, vo
                     size_t cSrcSize, HUF_DTable const* DTable) {
     return HUF_decompress4X2_usingDTable_internal_body(dst, dstSize, cSrc, cSrcSize, DTable);
 }
+#else
+#define HUF_decompress4X2_usingDTable_internal_bmi2 HUF_decompress4X2_usingDTable_internal_default
 #endif
 
 static
@@ -1602,29 +1610,36 @@ void HUF_decompress4X2_usingDTable_internal_fast_c_loop(HUF_DecompressFastArgs* 
         }
 #endif
 
-#define HUF_4X2_DECODE_SYMBOL(_stream, _decode3)                      \
-    do {                                                              \
-        if ((_decode3) || (_stream) != 3) {                           \
-            int const index = (int)(bits[(_stream)] >> 53);           \
-            HUF_DEltX2 const entry = dtable[index];                   \
-            MEM_write16(op[(_stream)], entry.sequence); \
-            bits[(_stream)] <<= (entry.nbBits) & 0x3F;                \
-            op[(_stream)] += (entry.length);                          \
-        }                                                             \
+#define HUF_4X2_DECODE_SYMBOL(_stream, _decode3)               \
+    do {                                                       \
+        if ((_decode3) || (_stream) != 3) {                    \
+            U64 const index = bits[(_stream)] >> 53;           \
+            size_t const entry = MEM_readLE32(&dtable[index]); \
+            MEM_write16(op[(_stream)], (U16)entry);            \
+            bits[(_stream)] <<= (entry >> 16) & 0x3F;          \
+            op[(_stream)] += entry >> 24;                      \
+        }                                                      \
     } while (0)
 
-#define HUF_4X2_RELOAD_STREAM(_stream)                                  \
+#define HUF_5X2_RELOAD_STREAM(_stream, _decode3)                        \
     do {                                                                \
-        HUF_4X2_DECODE_SYMBOL(3, 1);                                    \
+        if (_decode3) HUF_4X2_DECODE_SYMBOL(3, 1);                      \
         {                                                               \
-            int const ctz = ZSTD_countTrailingZeros64(bits[(_stream)]); \
-            int const nbBits = ctz & 7;                                 \
-            int const nbBytes = ctz >> 3;                               \
+            U64 const ctz = ZSTD_countTrailingZeros64(bits[(_stream)]); \
+            U64 const nbBits = ctz & 7;                                 \
+            U64 const nbBytes = ctz >> 3;                               \
             ip[(_stream)] -= nbBytes;                                   \
             bits[(_stream)] = MEM_read64(ip[(_stream)]) | 1;            \
             bits[(_stream)] <<= nbBits;                                 \
         }                                                               \
     } while (0)
+
+#if defined(__aarch64__)
+#  define HUF_4X2_4WAY 1
+#else
+#  define HUF_4X2_4WAY 0
+#endif
+#define HUF_4X2_3WAY !HUF_4X2_4WAY
 
         
 
@@ -1634,25 +1649,26 @@ void HUF_decompress4X2_usingDTable_internal_fast_c_loop(HUF_DecompressFastArgs* 
 
 
 
-            HUF_4X_FOR_EACH_STREAM_WITH_VAR(HUF_4X2_DECODE_SYMBOL, 0);
-            HUF_4X_FOR_EACH_STREAM_WITH_VAR(HUF_4X2_DECODE_SYMBOL, 0);
-            HUF_4X_FOR_EACH_STREAM_WITH_VAR(HUF_4X2_DECODE_SYMBOL, 0);
-            HUF_4X_FOR_EACH_STREAM_WITH_VAR(HUF_4X2_DECODE_SYMBOL, 0);
-            HUF_4X_FOR_EACH_STREAM_WITH_VAR(HUF_4X2_DECODE_SYMBOL, 0);
+            HUF_4X_FOR_EACH_STREAM_WITH_VAR(HUF_4X2_DECODE_SYMBOL, HUF_4X2_4WAY);
+            HUF_4X_FOR_EACH_STREAM_WITH_VAR(HUF_4X2_DECODE_SYMBOL, HUF_4X2_4WAY);
+            HUF_4X_FOR_EACH_STREAM_WITH_VAR(HUF_4X2_DECODE_SYMBOL, HUF_4X2_4WAY);
+            HUF_4X_FOR_EACH_STREAM_WITH_VAR(HUF_4X2_DECODE_SYMBOL, HUF_4X2_4WAY);
+            HUF_4X_FOR_EACH_STREAM_WITH_VAR(HUF_4X2_DECODE_SYMBOL, HUF_4X2_4WAY);
 
             
-            HUF_4X2_DECODE_SYMBOL(3, 1);
+            HUF_4X2_DECODE_SYMBOL(3, HUF_4X2_3WAY);
 
             
 
 
 
-            HUF_4X_FOR_EACH_STREAM(HUF_4X2_RELOAD_STREAM);
+
+            HUF_4X_FOR_EACH_STREAM_WITH_VAR(HUF_5X2_RELOAD_STREAM, HUF_4X2_3WAY);
         } while (op[3] < olimit);
     }
 
 #undef HUF_4X2_DECODE_SYMBOL
-#undef HUF_4X2_RELOAD_STREAM
+#undef HUF_5X2_RELOAD_STREAM
 
 _out:
 
@@ -1671,7 +1687,7 @@ HUF_decompress4X2_usingDTable_internal_fast(
     HUF_DecompressFastLoopFn loopFn) {
     void const* dt = DTable + 1;
     const BYTE* const ilowest = (const BYTE*)cSrc;
-    BYTE* const oend = ZSTD_maybeNullPtrAdd((BYTE*)dst, dstSize);
+    BYTE* const oend = (BYTE*)ZSTD_maybeNullPtrAdd(dst, (ptrdiff_t)dstSize);
     HUF_DecompressFastArgs args;
     {
         size_t const ret = HUF_DecompressFastArgs_init(&args, dst, dstSize, cSrc, cSrcSize, DTable);
@@ -1722,18 +1738,16 @@ static size_t HUF_decompress4X2_usingDTable_internal(void* dst, size_t dstSize, 
     HUF_DecompressUsingDTableFn fallbackFn = HUF_decompress4X2_usingDTable_internal_default;
     HUF_DecompressFastLoopFn loopFn = HUF_decompress4X2_usingDTable_internal_fast_c_loop;
 
-#if DYNAMIC_BMI2
-    if (flags & HUF_flags_bmi2) {
+    if (ZSTD_USE_BMI2(flags & HUF_flags_bmi2)) {
         fallbackFn = HUF_decompress4X2_usingDTable_internal_bmi2;
 # if ZSTD_ENABLE_ASM_X86_64_BMI2
         if (!(flags & HUF_flags_disableAsm)) {
             loopFn = HUF_decompress4X2_usingDTable_internal_fast_asm_loop;
         }
 # endif
-    } else {
+    } else if (DYNAMIC_BMI2) {
         return fallbackFn(dst, dstSize, cSrc, cSrcSize, DTable);
     }
-#endif
 
 #if ZSTD_ENABLE_ASM_X86_64_BMI2 && defined(__BMI2__)
     if (!(flags & HUF_flags_disableAsm)) {
