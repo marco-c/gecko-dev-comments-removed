@@ -3083,6 +3083,10 @@ nsIFrame* nsCSSFrameConstructor::ConstructFieldSetFrame(
   nsFrameConstructorSaveState absoluteSaveState;
   nsFrameList childList;
 
+  
+  
+  
+  fieldsetFrame->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
   contentFrameTop->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
   if (fieldsetFrame->IsAbsPosContainingBlock()) {
     aState.PushAbsoluteContainingBlock(contentFrameTop, fieldsetFrame,
@@ -5326,7 +5330,9 @@ nsContainerFrame* nsCSSFrameConstructor::GetAbsoluteContainingBlock(
     nsIFrame* aFrame, ContainingBlockType aType) {
   
   
-  for (nsIFrame* frame = aFrame; frame; frame = frame->GetParent()) {
+  nsIFrame* child = nullptr;
+  for (nsIFrame* frame = aFrame; frame;
+       child = frame, frame = frame->GetParent()) {
     if (frame->IsMathMLFrame()) {
       
       
@@ -5356,10 +5362,14 @@ nsContainerFrame* nsCSSFrameConstructor::GetAbsoluteContainingBlock(
     }
     nsIFrame* absPosCBCandidate = frame;
     if (absPosCBCandidate->IsFieldSetFrame()) {
-      absPosCBCandidate =
-          static_cast<nsFieldSetFrame*>(absPosCBCandidate)->GetInner();
-      if (!absPosCBCandidate) {
-        continue;
+      auto* fieldset = static_cast<nsFieldSetFrame*>(absPosCBCandidate);
+      
+      
+      if (!child || child != fieldset->GetLegend()) {
+        absPosCBCandidate = fieldset->GetInner();
+        if (!absPosCBCandidate) {
+          continue;
+        }
       }
     }
     if (absPosCBCandidate->IsScrollContainerOrSubclass()) {
@@ -5470,7 +5480,8 @@ void nsCSSFrameConstructor::AppendFramesToParent(
   MOZ_ASSERT(
       !aParentFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR) ||
           !IsFramePartOfIBSplit(aParentFrame),
-      "We should have wiped aParentFrame in WipeContainingBlock() "
+      "We should have wiped aParentFrame in "
+      "MaybeRecreateForInsertedChildren() "
       "if it's part of an IB split!");
 
   nsIFrame* nextSibling = ::GetInsertNextSibling(aParentFrame, aPrevSibling);
@@ -5769,6 +5780,8 @@ nsIFrame* nsCSSFrameConstructor::GetInsertionPrevSibling(
         prevSibling->GetParent()->GetContentInsertionFrame();
 
     if (IsAnonymousItem(aInsertion->mParentFrame)) {
+      
+      
       
       
       
@@ -6284,7 +6297,7 @@ void nsCSSFrameConstructor::ContentRangeInserted(
   }
 
   LAYOUT_PHASE_TEMP_EXIT();
-  if (WipeInsertionParent(insertion.mParentFrame)) {
+  if (MaybeRecreateForInsertionParent(insertion.mParentFrame)) {
     LAYOUT_PHASE_TEMP_REENTER();
     return;
   }
@@ -6433,8 +6446,9 @@ void nsCSSFrameConstructor::ContentRangeInserted(
   
   
   LAYOUT_PHASE_TEMP_EXIT();
-  if (WipeContainingBlock(state, containingBlock, insertion.mParentFrame, items,
-                          isAppend, prevSibling)) {
+  if (MaybeRecreateForInsertedChildren(state, containingBlock,
+                                       insertion.mParentFrame, items, isAppend,
+                                       prevSibling)) {
     LAYOUT_PHASE_TEMP_REENTER();
     return;
   }
@@ -7356,7 +7370,12 @@ nsIFrame* nsCSSFrameConstructor::CreateContinuingFrame(
     newFrame = NS_NewContinuingTextFrame(mPresShell, computedStyle);
     newFrame->Init(content, aParentFrame, aFrame);
   } else if (LayoutFrameType::Inline == frameType) {
-    newFrame = NS_NewInlineFrame(mPresShell, computedStyle);
+    if (aFrame->GetClassID() ==
+        nsQueryFrame::ClassID::nsMathMLmathInlineFrame_id) {
+      newFrame = NS_NewMathMLmathInlineFrame(mPresShell, computedStyle);
+    } else {
+      newFrame = NS_NewInlineFrame(mPresShell, computedStyle);
+    }
     newFrame->Init(content, aParentFrame, aFrame);
   } else if (LayoutFrameType::Block == frameType) {
     MOZ_ASSERT(!aFrame->IsTableCaption(),
@@ -8898,7 +8917,16 @@ inline void nsCSSFrameConstructor::ConstructFramesFromItemList(
         
         nsFieldSetFrame* fieldSetFrame = GetFieldSetFrameFor(aParentFrame);
         nsFrameList renderedLegend;
-        ConstructFramesFromItem(aState, iter, fieldSetFrame, renderedLegend);
+        {
+          
+          
+          nsFrameConstructorSaveState absoluteSaveState;
+          if (fieldSetFrame->IsAbsPosContainingBlock()) {
+            aState.PushAbsoluteContainingBlock(fieldSetFrame, fieldSetFrame,
+                                               absoluteSaveState);
+          }
+          ConstructFramesFromItem(aState, iter, fieldSetFrame, renderedLegend);
+        }
         MOZ_ASSERT(renderedLegend.OnlyChild(),
                    "a rendered legend should have exactly one frame");
         fieldSetFrame->InsertFrames(FrameChildListID::Principal, nullptr,
@@ -10353,7 +10381,7 @@ bool nsCSSFrameConstructor::MaybeRecreateForColumnSpan(
 
   MOZ_ASSERT(!IsFramePartOfIBSplit(aParentFrame),
              "We should have wiped aParentFrame in "
-             "WipeContainingBlock if it's part of IB split!");
+             "MaybeRecreateForInsertedChildren if it's part of IB split!");
 
   nsIFrame* nextSibling = ::GetInsertNextSibling(aParentFrame, aPrevSibling);
   if (!nextSibling && IsLastContinuationForColumnContent(aParentFrame)) {
@@ -10374,6 +10402,7 @@ bool nsCSSFrameConstructor::MaybeRecreateForColumnSpan(
   };
 
   if (HasColumnSpan(aFrameList)) {
+    
     
     
     
@@ -10718,15 +10747,16 @@ static bool IsSafeToAppendToIBSplitInline(nsIFrame* aParentFrame,
   return true;
 }
 
-bool nsCSSFrameConstructor::WipeInsertionParent(nsContainerFrame* aFrame) {
-#define TRACE(reason)                                                  \
-  PROFILER_MARKER("WipeInsertionParent: " reason, LAYOUT, {}, Tracing, \
-                  "Layout");
+bool nsCSSFrameConstructor::MaybeRecreateForInsertionParent(
+    nsContainerFrame* aInsertionParent) {
+#define TRACE(reason)                                                     \
+  PROFILER_MARKER("MaybeRecreateForInsertionParent: " reason, LAYOUT, {}, \
+                  Tracing, "Layout");
 
-  const LayoutFrameType frameType = aFrame->Type();
+  const LayoutFrameType frameType = aInsertionParent->Type();
 
-  if (aFrame->PresContext()->IsPaginated()) {
-    if (auto* table = GetNearestFragmentedTable(aFrame)) {
+  if (aInsertionParent->PresContext()->IsPaginated()) {
+    if (auto* table = GetNearestFragmentedTable(aInsertionParent)) {
       TRACE("Paginated fragmented table");
       RecreateFramesForContent(table->GetContent(), InsertionKind::Async);
       return true;
@@ -10735,9 +10765,10 @@ bool nsCSSFrameConstructor::WipeInsertionParent(nsContainerFrame* aFrame) {
 
   
   
-  if (aFrame->IsMathMLFrame()) {
+  if (aInsertionParent->IsMathMLFrame()) {
     TRACE("MathML");
-    RecreateFramesForContent(aFrame->GetContent(), InsertionKind::Async);
+    RecreateFramesForContent(aInsertionParent->GetContent(),
+                             InsertionKind::Async);
     return true;
   }
 
@@ -10751,21 +10782,23 @@ bool nsCSSFrameConstructor::WipeInsertionParent(nsContainerFrame* aFrame) {
   
   
   
-  if (IsRubyPseudo(aFrame) || frameType == LayoutFrameType::Ruby ||
+  if (IsRubyPseudo(aInsertionParent) || frameType == LayoutFrameType::Ruby ||
       RubyUtils::IsRubyContainerBox(frameType)) {
     
     
     
     TRACE("Ruby");
-    RecreateFramesForContent(aFrame->GetContent(), InsertionKind::Async);
+    RecreateFramesForContent(aInsertionParent->GetContent(),
+                             InsertionKind::Async);
     return true;
   }
 
   
   
-  if (aFrame->IsColumnSetWrapperFrame()) {
+  if (aInsertionParent->IsColumnSetWrapperFrame()) {
     TRACE("Multi-column");
-    RecreateFramesForContent(aFrame->GetContent(), InsertionKind::Async);
+    RecreateFramesForContent(aInsertionParent->GetContent(),
+                             InsertionKind::Async);
     return true;
   }
 
@@ -10774,13 +10807,13 @@ bool nsCSSFrameConstructor::WipeInsertionParent(nsContainerFrame* aFrame) {
 #undef TRACE
 }
 
-bool nsCSSFrameConstructor::WipeContainingBlock(
+bool nsCSSFrameConstructor::MaybeRecreateForInsertedChildren(
     nsFrameConstructorState& aState, nsIFrame* aContainingBlock,
-    nsIFrame* aFrame, FrameConstructionItemList& aItems, bool aIsAppend,
-    nsIFrame* aPrevSibling) {
-#define TRACE(reason)                                                  \
-  PROFILER_MARKER("WipeContainingBlock: " reason, LAYOUT, {}, Tracing, \
-                  "Layout");
+    nsIFrame* aInsertionParent, FrameConstructionItemList& aItems,
+    bool aIsAppend, nsIFrame* aPrevSibling) {
+#define TRACE(reason)                                                      \
+  PROFILER_MARKER("MaybeRecreateForInsertedChildren: " reason, LAYOUT, {}, \
+                  Tracing, "Layout");
 
   if (aItems.IsEmpty()) {
     return false;
@@ -10789,7 +10822,7 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
   
   
 
-  if (aFrame->GetContent() == mDocument->GetRootElement()) {
+  if (aInsertionParent->GetContent() == mDocument->GetRootElement()) {
     
     
     
@@ -10804,7 +10837,7 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
     for (FCItemIterator iter(aItems); !iter.IsDone(); iter.Next()) {
       const WritingMode bodyWM(iter.item().mComputedStyle);
       if (iter.item().mContent == bodyElement &&
-          bodyWM != aFrame->GetWritingMode()) {
+          bodyWM != aInsertionParent->GetWritingMode()) {
         TRACE("Root");
         RecreateFramesForContent(mDocument->GetRootElement(),
                                  InsertionKind::Async);
@@ -10813,21 +10846,24 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
     }
   }
 
-  nsIFrame* nextSibling = ::GetInsertNextSibling(aFrame, aPrevSibling);
+  nsIFrame* nextSibling =
+      ::GetInsertNextSibling(aInsertionParent, aPrevSibling);
 
   
   
   
-  if (aFrame->IsFlexOrGridContainer()) {
+  if (aInsertionParent->IsFlexOrGridContainer()) {
     FCItemIterator iter(aItems);
 
     
     
-    const bool isLegacyWebKitBox = IsFlexContainerForLegacyWebKitBox(aFrame);
+    const bool isLegacyWebKitBox =
+        IsFlexContainerForLegacyWebKitBox(aInsertionParent);
     if (aPrevSibling && IsAnonymousItem(aPrevSibling) &&
         iter.item().NeedsAnonFlexOrGridItem(aState, isLegacyWebKitBox)) {
       TRACE("Inserting inline after anon flex or grid item");
-      RecreateFramesForContent(aFrame->GetContent(), InsertionKind::Async);
+      RecreateFramesForContent(aInsertionParent->GetContent(),
+                               InsertionKind::Async);
       return true;
     }
 
@@ -10839,7 +10875,8 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
       iter.Prev();
       if (iter.item().NeedsAnonFlexOrGridItem(aState, isLegacyWebKitBox)) {
         TRACE("Inserting inline before anon flex or grid item");
-        RecreateFramesForContent(aFrame->GetContent(), InsertionKind::Async);
+        RecreateFramesForContent(aInsertionParent->GetContent(),
+                                 InsertionKind::Async);
         return true;
       }
     }
@@ -10847,8 +10884,8 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
 
   
   
-  if (IsAnonymousItem(aFrame)) {
-    AssertAnonymousFlexOrGridItemParent(aFrame);
+  if (IsAnonymousItem(aInsertionParent)) {
+    AssertAnonymousFlexOrGridItemParent(aInsertionParent);
 
     
     
@@ -10862,7 +10899,7 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
     FCItemIterator iter(aItems);
     
     
-    nsIFrame* containerFrame = aFrame->GetParent();
+    nsIFrame* containerFrame = aInsertionParent->GetParent();
     const bool isLegacyWebKitBox =
         IsFlexContainerForLegacyWebKitBox(containerFrame);
     if (!iter.SkipItemsThatNeedAnonFlexOrGridItem(aState, isLegacyWebKitBox)) {
@@ -10879,7 +10916,8 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
   }
 
   
-  ParentType parentType = GetParentType(aFrame);
+  ParentType parentType = GetParentType(aInsertionParent);
+  
   
   
   
@@ -10890,7 +10928,9 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
     
     
     
-    if (parentType != eTypeBlock && !aFrame->IsGeneratedContentFrame()) {
+    if (parentType != eTypeBlock &&
+        !aInsertionParent->IsGeneratedContentFrame()) {
+      
       
       
       
@@ -10956,7 +10996,7 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
           nsIFrame* prevSibling = aPrevSibling;
           if (!prevSibling) {
             
-            nsIFrame* parentPrevCont = aFrame->GetPrevContinuation();
+            nsIFrame* parentPrevCont = aInsertionParent->GetPrevContinuation();
             while (parentPrevCont) {
               prevSibling = parentPrevCont->PrincipalChildList().LastChild();
               if (prevSibling) {
@@ -10970,7 +11010,7 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
               
               break;
             }
-          } else if (IsTablePseudo(aFrame)) {
+          } else if (IsTablePseudo(aInsertionParent)) {
             
             break;
           }
@@ -10988,7 +11028,8 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
           if (!okToDrop) {
             if (!nextSibling) {
               
-              nsIFrame* parentNextCont = aFrame->GetNextContinuation();
+              nsIFrame* parentNextCont =
+                  aInsertionParent->GetNextContinuation();
               while (parentNextCont) {
                 nextSibling = parentNextCont->PrincipalChildList().FirstChild();
                 if (nextSibling) {
@@ -10999,9 +11040,10 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
             }
 
             okToDrop = (nextSibling && !IsTablePseudo(nextSibling)) ||
-                       (!nextSibling && !IsTablePseudo(aFrame));
+                       (!nextSibling && !IsTablePseudo(aInsertionParent));
           } else {
-            NS_ASSERTION(!IsTablePseudo(aFrame), "How did that happen?");
+            NS_ASSERTION(!IsTablePseudo(aInsertionParent),
+                         "How did that happen?");
           }
         } else {
           okToDrop = (spaceEndIter.item().DesiredParentType() == parentType);
@@ -11037,17 +11079,18 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
     
     
     if (!aItems.AllWantParentType(parentType) &&
-        !SafeToInsertPseudoNeedingChildren(aFrame)) {
+        !SafeToInsertPseudoNeedingChildren(aInsertionParent)) {
       
       
       TRACE("Pseudo-frames going wrong");
-      RecreateFramesForContent(aFrame->GetContent(), InsertionKind::Async);
+      RecreateFramesForContent(aInsertionParent->GetContent(),
+                               InsertionKind::Async);
       return true;
     }
   }
 
   
-  if (aFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
+  if (aInsertionParent->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
     bool anyColumnSpanItems = false;
     for (FCItemIterator iter(aItems); !iter.IsDone(); iter.Next()) {
       if (iter.item().mComputedStyle->StyleColumn()->IsColumnSpanStyle()) {
@@ -11062,16 +11105,16 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
         
         
         
-        aFrame->Style()->GetPseudoType() ==
+        aInsertionParent->Style()->GetPseudoType() ==
             PseudoStyleType::MozColumnSpanWrapper ||
         
         
-        IsFramePartOfIBSplit(aFrame);
+        IsFramePartOfIBSplit(aInsertionParent);
 
     if (needsReframe) {
       TRACE("Multi-column");
       RecreateFramesForContent(
-          GetMultiColumnContainingBlockFor(aFrame)->GetContent(),
+          GetMultiColumnContainingBlockFor(aInsertionParent)->GetContent(),
           InsertionKind::Async);
       return true;
     }
@@ -11087,7 +11130,7 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
   
   
   
-  if (const auto* fieldset = GetFieldSetFrameFor(aFrame)) {
+  if (const auto* fieldset = GetFieldSetFrameFor(aInsertionParent)) {
     
     for (FCItemIterator iter(aItems); !iter.IsDone(); iter.Next()) {
       const auto& item = iter.item();
@@ -11108,13 +11151,13 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
   
   
   do {
-    if (IsInlineFrame(aFrame)) {
+    if (IsInlineFrame(aInsertionParent)) {
       if (aItems.AreAllItemsInline()) {
         
         return false;
       }
 
-      if (!IsFramePartOfIBSplit(aFrame)) {
+      if (!IsFramePartOfIBSplit(aInsertionParent)) {
         
         break;
       }
@@ -11127,7 +11170,8 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
       
       
       
-      if (aIsAppend && IsSafeToAppendToIBSplitInline(aFrame, nextSibling)) {
+      if (aIsAppend &&
+          IsSafeToAppendToIBSplitInline(aInsertionParent, nextSibling)) {
         return false;
       }
 
@@ -11137,7 +11181,7 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
 
     
     
-    if (!IsFramePartOfIBSplit(aFrame)) {
+    if (!IsFramePartOfIBSplit(aInsertionParent)) {
       return false;
     }
 
@@ -11152,8 +11196,9 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
   } while (false);
 
   
+  
   if (!aContainingBlock) {
-    aContainingBlock = aFrame;
+    aContainingBlock = aInsertionParent;
   }
 
   
