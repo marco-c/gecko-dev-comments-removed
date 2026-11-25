@@ -1398,10 +1398,6 @@ static void GetScrollableOverflowForPerspective(
             (postScroll.YMost() - preScroll.YMost() + 600.0) / 600.0;
 
         
-        NS_ASSERTION(rightDelta > 0.0f && bottomDelta > 0.0f,
-                     "Scrolling can't be reversed!");
-
-        
         preScroll += offset + scrollPos;
 
         
@@ -1415,14 +1411,25 @@ static void GetScrollableOverflowForPerspective(
 
         
         
-        overhang.top = NSCoordSaturatingMultiply(
-            overhang.top, static_cast<float>(1 / bottomDelta));
-        overhang.right = NSCoordSaturatingMultiply(
-            overhang.right, static_cast<float>(1 / rightDelta));
-        overhang.bottom = NSCoordSaturatingMultiply(
-            overhang.bottom, static_cast<float>(1 / bottomDelta));
-        overhang.left = NSCoordSaturatingMultiply(
-            overhang.left, static_cast<float>(1 / rightDelta));
+        
+        
+        
+        auto scaleOverhang = [](nscoord aOverhang, double aRate) {
+          return aRate == 0.0
+                     ? 0
+                     : NSCoordSaturatingMultiply(
+                           aOverhang, static_cast<float>(1 / std::abs(aRate)));
+        };
+        if (bottomDelta < 0.0) {
+          std::swap(overhang.top, overhang.bottom);
+        }
+        if (rightDelta < 0.0) {
+          std::swap(overhang.left, overhang.right);
+        }
+        overhang.top = scaleOverhang(overhang.top, bottomDelta);
+        overhang.right = scaleOverhang(overhang.right, rightDelta);
+        overhang.bottom = scaleOverhang(overhang.bottom, bottomDelta);
+        overhang.left = scaleOverhang(overhang.left, rightDelta);
 
         
         
