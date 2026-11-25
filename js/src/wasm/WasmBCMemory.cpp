@@ -2732,7 +2732,7 @@ bool BaseCompiler::atomicNotify(MemoryAccessDesc* access) {
 
 
 
-void BaseCompiler::memCopyInlineM32() {
+bool BaseCompiler::memCopyInlineM32() {
   MOZ_ASSERT(MaxInlineMemoryCopyLength != 0);
 
   
@@ -2747,22 +2747,34 @@ void BaseCompiler::memCopyInlineM32() {
 
   
   size_t remainder = length;
+  
+  size_t numPushes = 0;
 #ifdef ENABLE_JIT_SIMD
   size_t numCopies16 = 0;
   if (MacroAssembler::SupportsFastUnalignedFPAccesses()) {
     numCopies16 = remainder / sizeof(V128);
+    numPushes += numCopies16;
     remainder %= sizeof(V128);
   }
 #endif
 #ifdef JS_64BIT
   size_t numCopies8 = remainder / sizeof(uint64_t);
+  numPushes += numCopies8;
   remainder %= sizeof(uint64_t);
 #endif
   size_t numCopies4 = remainder / sizeof(uint32_t);
+  numPushes += numCopies4;
   remainder %= sizeof(uint32_t);
   size_t numCopies2 = remainder / sizeof(uint16_t);
+  numPushes += numCopies2;
   remainder %= sizeof(uint16_t);
   size_t numCopies1 = remainder;
+  numPushes += numCopies1;
+
+  
+  if (!stk_.reserve(stk_.length() + numPushes + 1)) {
+    return false;
+  }
 
   
   
@@ -2947,6 +2959,8 @@ void BaseCompiler::memCopyInlineM32() {
 
   freeI32(dest);
   freeI32(src);
+
+  return true;
 }
 
 void BaseCompiler::memFillInlineM32() {
