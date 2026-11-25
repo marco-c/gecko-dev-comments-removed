@@ -18,6 +18,7 @@
 #include "mozilla/dom/WorkerScope.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "nsIGlobalObject.h"
+#include "nsNetUtil.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
 
@@ -204,37 +205,41 @@ already_AddRefed<Promise> Clients::OpenWindow(const nsAString& aURL,
   MOZ_DIAGNOSTIC_ASSERT(workerPrivate->IsServiceWorker());
   workerPrivate->AssertIsOnWorkerThread();
 
+  
+  
+  
+  
+  nsCOMPtr<nsIURI> uri;
+  nsIURI* baseURI = workerPrivate->GetBaseURI();
+  nsresult rv = NS_NewURI(getter_AddRefs(uri), aURL, nullptr, baseURI);
+  if (NS_FAILED(rv)) {
+    aRv.ThrowTypeError<MSG_INVALID_URL>(NS_ConvertUTF16toUTF8(aURL));
+    return nullptr;
+  }
+
+  
+  if (NS_IsAboutBlankAllowQueryAndFragment(uri)) {
+    aRv.ThrowTypeError(
+        "Passing \"about:blank\" to Clients.openWindow is not allowed");
+    return nullptr;
+  }
+
+  
+  
+  if (!workerPrivate->GlobalScope()->WindowInteractionAllowed()) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_ACCESS_ERR);
+    return nullptr;
+  }
+
   RefPtr<Promise> outerPromise = Promise::Create(mGlobal, aRv);
   if (aRv.Failed()) {
     return outerPromise.forget();
   }
 
-  if (aURL.EqualsLiteral(u"about:blank") ||
-      StringBeginsWith(aURL, u"about:blank?"_ns) ||
-      StringBeginsWith(aURL, u"about:blank#"_ns)) {
-    CopyableErrorResult rv;
-    rv.ThrowTypeError(
-        "Passing \"about:blank\" to Clients.openWindow is not allowed");
-    outerPromise->MaybeReject(std::move(rv));
-    return outerPromise.forget();
-  }
-
-  if (!workerPrivate->GlobalScope()->WindowInteractionAllowed()) {
-    outerPromise->MaybeReject(NS_ERROR_DOM_INVALID_ACCESS_ERR);
-    return outerPromise.forget();
-  }
-
   const PrincipalInfo& principalInfo = workerPrivate->GetPrincipalInfo();
   Maybe<const CSPInfo&> cspInfo = workerPrivate->GetCSPInfo();
-  nsCString baseURL;
-  nsresult rv = workerPrivate->GetBaseURI()->GetSpec(baseURL);
-  if (NS_FAILED(rv)) {
-    outerPromise->MaybeReject(rv);
-    return outerPromise.forget();
-  }
-
   ClientOpenWindowArgs args(principalInfo, cspInfo ? Some(*cspInfo) : Nothing(),
-                            NS_ConvertUTF16toUTF8(aURL), baseURL);
+                            WrapNotNull(uri.get()), WrapNotNull(baseURI));
 
   nsCOMPtr<nsIGlobalObject> global = mGlobal;
 
