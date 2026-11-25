@@ -43,6 +43,7 @@
 #include "mozilla/dom/FromParser.h"
 #include "mozilla/fallible.h"
 #include "mozilla/gfx/Point.h"
+#include "mozilla/intl/FluentArg.h"
 #include "nsCOMPtr.h"
 #include "nsIContent.h"
 #include "nsIContentPolicy.h"
@@ -281,6 +282,10 @@ enum class PropertiesFile : uint8_t {
 
 namespace mozilla::dom {
 enum JSONBehavior { UndefinedIsNullStringLiteral, UndefinedIsVoidString };
+
+
+enum class FluentResourceFile : uint8_t { DOM, _COUNT };
+
 }  
 
 
@@ -1424,6 +1429,25 @@ class nsContentUtils {
 
 
 
+  static nsresult ReportToConsole(
+      uint32_t aErrorFlags, const nsACString& aCategory,
+      const Document* aDocument, mozilla::dom::FluentResourceFile aFile,
+      const nsACString& aL10nId,
+      const nsTArray<mozilla::intl::FluentArg>& aArgs =
+          nsTArray<mozilla::intl::FluentArg>(),
+      const mozilla::SourceLocation& aLocation =
+          mozilla::JSCallingLocation::Get());
+
+  
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1564,6 +1588,15 @@ class nsContentUtils {
   static nsresult FormatMaybeLocalizedString(
       PropertiesFile aFile, const char* aKey, Document* aDocument,
       const nsTArray<nsString>& aParamArray, nsAString& aResult);
+
+  
+
+
+
+
+  static nsresult FormatFluentString(
+      mozilla::dom::FluentResourceFile aFile, const nsACString& aL10nId,
+      const nsTArray<mozilla::intl::FluentArg>& aArgs, nsAString& aResult);
 
   
 
