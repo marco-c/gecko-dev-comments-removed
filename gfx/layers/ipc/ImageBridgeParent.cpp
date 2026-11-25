@@ -160,6 +160,9 @@ void ImageBridgeParent::ActorDestroy(ActorDestroyReason aWhy) {
     MonitorAutoLock lock(*sImageBridgesLock);
     sImageBridges.erase(OtherPid());
   }
+  if (auto* remoteTextureMap = RemoteTextureMap::Get()) {
+    remoteTextureMap->ClearDestroyedProcess(OtherPid());
+  }
   GetThread()->Dispatch(
       NewRunnableMethod("layers::ImageBridgeParent::DeferredDestroy", this,
                         &ImageBridgeParent::DeferredDestroy));
@@ -451,7 +454,7 @@ bool ImageBridgeParent::DeallocShmem(ipc::Shmem& aShmem) {
 }
 
 bool ImageBridgeParent::IsSameProcess() const {
-  return OtherPid() == base::GetCurrentProcId();
+  return OtherChildID() == XRE_GetChildID();
 }
 
 void ImageBridgeParent::NotifyNotUsed(PTextureParent* aTexture,
