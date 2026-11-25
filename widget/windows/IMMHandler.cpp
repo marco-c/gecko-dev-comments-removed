@@ -80,7 +80,7 @@ class GetIMEGeneralPropertyName : public nsAutoCString {
       AppendLiteral("IME_PROP_ACCEPT_WIDE_VKEY");
     }
   }
-  virtual ~GetIMEGeneralPropertyName() {}
+  virtual ~GetIMEGeneralPropertyName() = default;
 };
 
 class GetIMEUIPropertyName : public nsAutoCString {
@@ -102,7 +102,7 @@ class GetIMEUIPropertyName : public nsAutoCString {
       AppendLiteral("UI_CAP_ROTANY");
     }
   }
-  virtual ~GetIMEUIPropertyName() {}
+  virtual ~GetIMEUIPropertyName() = default;
 };
 
 class GetReconvertStringLog : public nsAutoCString {
@@ -133,7 +133,7 @@ class GetReconvertStringLog : public nsAutoCString {
     }
     AppendLiteral("\" }");
   }
-  virtual ~GetReconvertStringLog() {}
+  virtual ~GetReconvertStringLog() = default;
 };
 
 namespace mozilla {
@@ -1901,7 +1901,7 @@ bool IMMHandler::GetCharacterRectOfSelectedTextAt(
   
   if (aOffset != caretOffset) {
     WidgetQueryContentEvent queryTextRectEvent(true, eQueryTextRect, aWindow);
-    WidgetQueryContentEvent::Options options;
+    QueryContentOptions options;
     options.mRelativeToInsertionPoint = true;
     queryTextRectEvent.InitForQueryTextRect(aOffset, 1, options);
     aWindow->InitEvent(queryTextRectEvent, &point);
@@ -1931,7 +1931,7 @@ bool IMMHandler::GetCaretRect(nsWindow* aWindow,
   LayoutDeviceIntPoint point(0, 0);
 
   WidgetQueryContentEvent queryCaretRectEvent(true, eQueryCaretRect, aWindow);
-  WidgetQueryContentEvent::Options options;
+  QueryContentOptions options;
   options.mRelativeToInsertionPoint = true;
   queryCaretRectEvent.InitForQueryCaretRect(0, options);
   aWindow->InitEvent(queryCaretRectEvent, &point);

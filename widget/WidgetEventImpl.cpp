@@ -2546,6 +2546,13 @@ bool WidgetKeyboardEvent::IsLockableModifier(KeyNameIndex aKeyNameIndex) {
 
 
 
+QueryContentOptions::QueryContentOptions(const WidgetQueryContentEvent& aEvent)
+    : mRelativeToInsertionPoint(aEvent.mInput.mRelativeToInsertionPoint) {}
+
+
+
+
+
 std::string format_as(const QueryContentResult& aResult) {
   if (aResult.mEventMessage == eQueryDOMWidgetHittest) {
     return fmt::format("{{ mWidgetIsHit={} }}", aResult.mWidgetIsHit);
