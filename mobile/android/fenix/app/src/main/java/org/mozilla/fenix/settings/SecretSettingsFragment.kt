@@ -427,11 +427,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_oled_theme).apply {
-            isChecked = settings.enableOledTheme
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_account_settings_new_ui).apply {
             isChecked = settings.accountSettingsNewUi
             onPreferenceChangeListener = SharedPreferenceUpdater()
@@ -607,11 +602,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_native_share_sheet).apply {
             isVisible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
             isChecked = settings.nativeShareSheetEnabled
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
-        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_longfox).apply {
-            isChecked = settings.longfoxEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
