@@ -1004,6 +1004,19 @@ RTCError RtpTransceiver::TryToEnableSframe() {
                             "disabled by a completed negotiation.");
   }
 
+  if (stopping_ || stopped_) {
+    return RTC_LOG_ERROR(RTCError::InvalidState()
+                         << "Cannot enable Sframe on a stopped transceiver.");
+  }
+
+  
+  
+  
+  if (!channel_ && !owned_send_channel_) {
+    return RTC_LOG_ERROR(RTCError::InvalidState()
+                         << "Cannot enable Sframe without a media channel.");
+  }
+
   sframe_enabled_ = true;
 
   on_negotiation_needed_();
