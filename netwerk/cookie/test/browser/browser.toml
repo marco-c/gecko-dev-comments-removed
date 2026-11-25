@@ -20,6 +20,9 @@ support-files = ["setFetchCookie.sjs"]
 
 ["browser_cookieStore_bfcache_leak.js"]
 
+["browser_cookieStore_http_process_secure.js"]
+skip-if = ["!fission"] # Requires HTTP and HTTPS in different processes
+
 ["browser_cookieStore_ip_domain.js"]
 
 ["browser_cookieStore_serviceWorker.js"]
@@ -30,6 +33,9 @@ support-files = ["chips.sjs"]
 
 ["browser_cookie_empty_name_value.js"]
 support-files = ["cookie_empty_name_value.sjs"]
+
+["browser_cookie_file_url_blocked.js"]
+support-files = ["file_cookie_domain.html"]
 
 ["browser_cookie_file_url_domain.js"]
 support-files = ["file_cookie_domain.html"]
