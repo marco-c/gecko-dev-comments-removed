@@ -55,12 +55,14 @@ static base::ThreadLocalPointer<MessageLoop>& get_tls_ptr() {
 
 #if defined(XP_WIN)
 
+#  ifdef HAVE_SEH_EXCEPTIONS
 
 
 static int SEHFilter(LPTOP_LEVEL_EXCEPTION_FILTER old_filter) {
   ::SetUnhandledExceptionFilter(old_filter);
   return EXCEPTION_CONTINUE_SEARCH;
 }
+#  endif
 
 
 

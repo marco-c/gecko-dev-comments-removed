@@ -229,9 +229,9 @@ WindowsUIUtils::GetIsTabletCapable(bool* aResult) {
   return NS_OK;
 }
 
+#ifndef __MINGW32__
 static IInspectable* GetUISettings() {
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
-#ifndef __MINGW32__
   
   
   static StaticRefPtr<IInspectable> sUiSettingsAsInspectable;
@@ -308,10 +308,8 @@ static IInspectable* GetUISettings() {
   }
 
   return sUiSettingsAsInspectable.get();
-#else
-  return nullptr;
-#endif
 }
+#endif
 
 Maybe<nscolor> WindowsUIUtils::GetAccentColor(int aTone) {
   MOZ_ASSERT(aTone >= -3);
