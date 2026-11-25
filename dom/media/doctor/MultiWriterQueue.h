@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_MultiWriterQueue_h_
 #define mozilla_MultiWriterQueue_h_
 
@@ -474,17 +472,17 @@ class MultiWriterQueue {
     explicit AtomicCountAndWatermark(int aCount)
         : mCount(aCount), mWatermark(aCount) {}
 
-    int Count() const { return int(mCount); }
+    int Count() const { return mCount.load(); }
 
     CountAndWatermark Get() const {
-      return CountAndWatermark{int(mCount), int(mWatermark)};
+      return CountAndWatermark{mCount.load(), mWatermark.load()};
     }
 
     int operator++() {
       int count = int(++mCount);
       
       for (;;) {
-        int watermark = int(mWatermark);
+        int watermark = mWatermark.load();
         if (watermark >= count) {
           
           break;

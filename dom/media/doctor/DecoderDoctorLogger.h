@@ -41,7 +41,7 @@ class DecoderDoctorLogger {
   
   
   static inline bool IsDDLoggingEnabled() {
-    return MOZ_UNLIKELY(static_cast<LogState>(sLogState) == scEnabled);
+    return MOZ_UNLIKELY(sLogState.load() == scEnabled);
   }
 
   
@@ -459,13 +459,13 @@ static void inline MOZ_FORMAT_PRINTF(1, 2) DDLOGPRCheck(const char*, ...) {}
 #endif
 
 
-#define DDLOGPR(_category, _label, _format, ...)                            \
-  do {                                                                      \
-    if (DecoderDoctorLogger::IsDDLoggingEnabled()) {                        \
-      DDLOGPR_CHECK(_format, ##__VA_ARGS__);                                \
-      DecoderDoctorLogger::EagerLogPrintf(this, _category, _label, _format, \
-                                          ##__VA_ARGS__);                   \
-    }                                                                       \
+#define DDLOGPR(_category, _label, _format, ...)                   \
+  do {                                                             \
+    if (DecoderDoctorLogger::IsDDLoggingEnabled()) {               \
+      DDLOGPR_CHECK(_format, ##__VA_ARGS__);                       \
+      DecoderDoctorLogger::EagerLogPrintf(this, _category, _label, \
+                                          _format, ##__VA_ARGS__); \
+    }                                                              \
   } while (0)
 
 
@@ -475,12 +475,12 @@ static void inline MOZ_FORMAT_PRINTF(1, 2) DDLOGPRCheck(const char*, ...) {}
 
 
 
-#define DDLOGPR_FMT(_category, _label, _format, ...)                     \
-  do {                                                                   \
-    if (DecoderDoctorLogger::IsDDLoggingEnabled()) {                     \
-      DecoderDoctorLogger::EagerLogFmt(this, _category, _label, _format, \
-                                       ##__VA_ARGS__);                   \
-    }                                                                    \
+#define DDLOGPR_FMT(_category, _label, _format, ...)            \
+  do {                                                          \
+    if (DecoderDoctorLogger::IsDDLoggingEnabled()) {            \
+      DecoderDoctorLogger::EagerLogFmt(this, _category, _label, \
+                                       _format, ##__VA_ARGS__); \
+    }                                                           \
   } while (0)
 
 
@@ -531,21 +531,21 @@ static void inline MOZ_FORMAT_PRINTF(1, 2) DDLOGPRCheck(const char*, ...) {}
 
 
 #if !defined(ANDROID) || !defined(RELEASE_OR_BETA)
-#  define DDMOZ_LOGEX_FMT(_this, _logModule, _logLevel, _format, ...)         \
-    do {                                                                      \
-      if (DecoderDoctorLogger::IsDDLoggingEnabled() ||                        \
-          MOZ_LOG_TEST(_logModule, _logLevel)) {                              \
-        DecoderDoctorLogger::MozLogFmt(_this, _logModule, _logLevel, _format, \
-                                       ##__VA_ARGS__);                        \
-      }                                                                       \
+#  define DDMOZ_LOGEX_FMT(_this, _logModule, _logLevel, _format, ...) \
+    do {                                                              \
+      if (DecoderDoctorLogger::IsDDLoggingEnabled() ||                \
+          MOZ_LOG_TEST(_logModule, _logLevel)) {                      \
+        DecoderDoctorLogger::MozLogFmt(_this, _logModule, _logLevel,  \
+                                       _format, ##__VA_ARGS__);       \
+      }                                                               \
     } while (0)
 #else
-#  define DDMOZ_LOGEX_FMT(_this, _logModule, _logLevel, _format, ...)         \
-    do {                                                                      \
-      if (DecoderDoctorLogger::IsDDLoggingEnabled()) {                        \
-        DecoderDoctorLogger::MozLogFmt(_this, _logModule, _logLevel, _format, \
-                                       ##__VA_ARGS__);                        \
-      }                                                                       \
+#  define DDMOZ_LOGEX_FMT(_this, _logModule, _logLevel, _format, ...) \
+    do {                                                              \
+      if (DecoderDoctorLogger::IsDDLoggingEnabled()) {                \
+        DecoderDoctorLogger::MozLogFmt(_this, _logModule, _logLevel,  \
+                                       _format, ##__VA_ARGS__);       \
+      }                                                               \
     } while (0)
 #endif
 
