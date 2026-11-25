@@ -663,10 +663,6 @@ class LogMessage {
   static void UpdateMinLogSeverity();
   
   
-  [[deprecated("Use InitializeLogging instead.")]]
-  static void ConfigureLogging(absl::string_view params);
-  
-  
   
   
   static bool IsNoop(LoggingSeverity severity);
@@ -711,8 +707,6 @@ class LogMessage {
   inline static void RemoveLogToStream(LogSink* stream) {}
   inline static int GetLogToStream(LogSink* stream = nullptr) { return 0; }
   inline static int GetMinLogSeverity() { return 0; }
-  [[deprecated("Use InitializeLogging instead.")]]
-  inline static void ConfigureLogging(absl::string_view params) {}
   static constexpr bool IsNoop(LoggingSeverity severity) { return true; }
   template <LoggingSeverity S>
   static constexpr bool IsNoop() {
