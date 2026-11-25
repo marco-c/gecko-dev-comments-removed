@@ -39,7 +39,7 @@ struct RtpTransportConfig {
   
   TimeDelta default_pacing_time_window = PacerConfig::kDefaultTimeInterval;
 
-  TaskQueueBase* const worker_thread;
+  TaskQueueBase* const network_thread;
 };
 }  
 
