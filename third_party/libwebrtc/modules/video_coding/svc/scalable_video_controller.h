@@ -95,6 +95,12 @@ class ScalableVideoController {
   virtual std::vector<LayerFrameConfig> NextFrameConfig(bool restart) = 0;
 
   
+  
+  
+  
+  virtual void OnFrameDropped(const LayerFrameConfig& config) {}
+
+  
   virtual GenericFrameInfo OnEncodeDone(const LayerFrameConfig& config) = 0;
 };
 

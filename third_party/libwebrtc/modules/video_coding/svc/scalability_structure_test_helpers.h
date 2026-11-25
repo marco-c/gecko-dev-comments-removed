@@ -39,6 +39,10 @@ class ScalabilityStructureWrapper {
   }
   void GenerateFrames(int num_temporal_units,
                       std::vector<GenericFrameInfo>& frames);
+  
+  void EncodeTemporalUnit(
+      std::span<const ScalableVideoController::LayerFrameConfig> layer_frames,
+      std::vector<GenericFrameInfo>& frames);
 
   
   
