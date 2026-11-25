@@ -983,6 +983,7 @@ void Statistics::beginGC(JS::GCOptions options, const TimeStamp& currentTime) {
   sccTimes.clearAndFree();
   gcOptions = options;
   nonincrementalReason_ = GCAbortReason::None;
+  grayBitsWereValidAtStart = gc->areGrayBitsValid();
 
   startingMajorGCNumber = gc->majorGCCount();
   startingSliceNumber = gc->gcNumber();
@@ -1041,6 +1042,7 @@ void Statistics::sendGCTelemetry() {
   
   
   runtime->metrics().GC_IS_COMPARTMENTAL(!gc->fullGCRequested);
+  runtime->metrics().GC_GRAY_BITS_VALID(grayBitsWereValidAtStart);
   runtime->metrics().GC_ZONE_COUNT(zoneStats.zoneCount);
   runtime->metrics().GC_ZONES_COLLECTED(zoneStats.collectedZoneCount);
   runtime->metrics().GC_MARK_STACK_MAX_CAPACITY(

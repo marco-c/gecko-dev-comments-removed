@@ -135,6 +135,7 @@ const char* const XPCJSRuntime::mStrings[] = {
     "indexedDB",        
     "structuredClone",  
     "locks",            
+    "storage",          
     "suppressed",       
     "error",            
     
@@ -2780,6 +2781,17 @@ static void AccumulateTelemetryCallback(JSMetric id,
       } else {
         glean::javascript_gc::is_zone_gc
             .EnumGet(glean::javascript_gc::IsZoneGcLabel::eFalse)
+            .Add(1);
+      }
+      break;
+    case JSMetric::GC_GRAY_BITS_VALID:
+      if (sample.as<bool>()) {
+        glean::javascript_gc::gray_bits_valid
+            .EnumGet(glean::javascript_gc::GrayBitsValidLabel::eTrue)
+            .Add(1);
+      } else {
+        glean::javascript_gc::gray_bits_valid
+            .EnumGet(glean::javascript_gc::GrayBitsValidLabel::eFalse)
             .Add(1);
       }
       break;

@@ -342,6 +342,8 @@ struct Statistics {
 
   GCAbortReason nonincrementalReason_;
 
+  bool grayBitsWereValidAtStart = false;
+
   SliceDataVector slices_;
 
   
