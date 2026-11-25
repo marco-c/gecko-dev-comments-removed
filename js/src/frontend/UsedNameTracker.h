@@ -119,6 +119,49 @@ namespace frontend {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct UnboundPrivateName {
   TaggedParserAtomIndex atom;
   TokenPos position;
@@ -146,17 +189,45 @@ class UsedNameTracker {
     
     mozilla::Maybe<TokenPos> firstUsePos_;
 
-    void resetToScope(uint32_t scriptId, uint32_t scopeId);
+    
+    
+    
+    bool pushUse(uint32_t scriptId, uint32_t scopeId,
+                 size_t* unboundPrivateCounter) {
+      if (!uses_.append(Use{scriptId, scopeId})) {
+        return false;
+      }
 
-    bool noteUsedInScope(uint32_t scriptId, uint32_t scopeId) {
+      if (visibility_ == NameVisibility::Private) {
+        *unboundPrivateCounter += 1;
+      }
+
+      return true;
+    }
+
+    
+    void popUse(size_t* unboundPrivateCounter) {
+      if (visibility_ == NameVisibility::Private) {
+        MOZ_ASSERT(*unboundPrivateCounter != 0);
+        *unboundPrivateCounter -= 1;
+      }
+
+      uses_.popBack();
+    }
+
+    void resetToScope(uint32_t scriptId, uint32_t scopeId,
+                      size_t* unboundPrivateCounter);
+
+    bool noteUsedInScope(uint32_t scriptId, uint32_t scopeId,
+                         size_t* unboundPrivateCounter) {
       if (uses_.empty() || uses_.back().scopeId < scopeId) {
-        return uses_.append(Use{scriptId, scopeId});
+        return pushUse(scriptId, scopeId, unboundPrivateCounter);
       }
       return true;
     }
 
-    void noteBoundInScope(uint32_t scriptId, uint32_t scopeId,
-                          bool* closedOver) {
+    void noteBoundInScope(uint32_t scriptId, uint32_t scopeId, bool* closedOver,
+                          size_t* unboundPrivateCounter) {
       *closedOver = false;
       while (!uses_.empty()) {
         Use& innermost = uses_.back();
@@ -166,7 +237,7 @@ class UsedNameTracker {
         if (innermost.scriptId > scriptId) {
           *closedOver = true;
         }
-        uses_.popBack();
+        popUse(unboundPrivateCounter);
       }
     }
 
@@ -230,14 +301,15 @@ class UsedNameTracker {
 
   
   
-  bool hasPrivateNames_;
+  
+  size_t unboundPrivateCounter_;
 
  public:
   explicit UsedNameTracker(FrontendContext* fc)
       : map_(fc),
         scriptCounter_(0),
         scopeCounter_(0),
-        hasPrivateNames_(false) {}
+        unboundPrivateCounter_(0) {}
 
   uint32_t nextScriptId() {
     MOZ_ASSERT(scriptCounter_ != UINT32_MAX,
@@ -257,7 +329,8 @@ class UsedNameTracker {
   void noteBindingInScope(TaggedParserAtomIndex name, uint32_t scriptId,
                           uint32_t scopeId, bool* closedOver) {
     if (auto p = map_.lookup(name)) {
-      p->value().noteBoundInScope(scriptId, scopeId, closedOver);
+      p->value().noteBoundInScope(scriptId, scopeId, closedOver,
+                                  &unboundPrivateCounter_);
     }
   }
 
