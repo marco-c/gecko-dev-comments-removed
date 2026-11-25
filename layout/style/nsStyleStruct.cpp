@@ -2726,11 +2726,6 @@ nsChangeHint nsStyleDisplay::CalcDifference(
         aOldStyle.StylePosition()->NeedsHypotheticalPositionIfAbsPos()) {
       hint |=
           nsChangeHint_NeedReflow | nsChangeHint_ReflowChangesSizeOrPosition;
-    } else if (mWebkitLineClamp.webkit_legacy) {
-      
-      
-      
-      hint |= NS_STYLE_HINT_REFLOW;
     } else {
       hint |= nsChangeHint_NeutralChange;
     }
