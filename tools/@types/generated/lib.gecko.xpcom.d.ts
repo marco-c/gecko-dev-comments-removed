@@ -13971,7 +13971,7 @@ interface nsIAboutModule extends nsISupports {
   
   readonly ENABLE_INDEXED_DB?: 8;
   
-  readonly URI_CAN_LOAD_IN_CHILD?: 16;
+  readonly URI_IS_ERROR_PAGE?: 16;
   
   readonly URI_MUST_LOAD_IN_CHILD?: 32;
   

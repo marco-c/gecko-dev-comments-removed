@@ -182,8 +182,11 @@ enum class IsolationBehavior {
   
   PrivilegedMozilla,
   
-  Parent,
   
+  
+  ErrorPage,
+  
+  Parent,
   
   
   Anywhere,
@@ -215,6 +218,8 @@ static const char* IsolationBehaviorName(IsolationBehavior aBehavior) {
       return "File";
     case IsolationBehavior::PrivilegedMozilla:
       return "PrivilegedMozilla";
+    case IsolationBehavior::ErrorPage:
+      return "ErrorPage";
     case IsolationBehavior::Parent:
       return "Parent";
     case IsolationBehavior::Anywhere:
@@ -320,8 +325,11 @@ static IsolationBehavior IsolationBehaviorForURI(nsIURI* aURI,
       return IsolationBehavior::ForceWebRemoteType;
     }
 
-    if (flags & nsIAboutModule::URI_CAN_LOAD_IN_CHILD) {
-      return IsolationBehavior::Anywhere;
+    if (flags & nsIAboutModule::URI_IS_ERROR_PAGE) {
+      
+      
+      return aForChannelCreationURI ? IsolationBehavior::ErrorPage
+                                    : IsolationBehavior::ForceWebRemoteType;
     }
 
     return IsolationBehavior::Parent;
@@ -767,6 +775,7 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
   
   
   if (StaticPrefs::browser_tabs_remote_systemTriggeredAboutBlankAnywhere() &&
+      triggeringRemoteType.IsNotRemote() &&
       NS_IsAboutBlank(aChannelCreationURI)) {
     if (loadInfo->TriggeringPrincipal()->IsSystemPrincipal() &&
         resultOrPrecursor->GetIsNullPrincipal()) {
@@ -783,10 +792,34 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
   
   if (aLoadStateLoadType == LOAD_ERROR_PAGE) {
     MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
-            ("Forcing error page load to complete in the current process"));
-    behavior = IsolationBehavior::Anywhere;
+            ("Using ErrorPage behavior for android error page load"));
+    behavior = IsolationBehavior::ErrorPage;
   }
 #endif
+
+  
+  
+  if (behavior == IsolationBehavior::ErrorPage) {
+    if (aLoadStateLoadType != LOAD_ERROR_PAGE) {
+      MOZ_LOG(
+          gProcessIsolationLog, LogLevel::Verbose,
+          ("ErrorPage load without LOAD_ERROR_PAGE, forcing web remote type"));
+      behavior = IsolationBehavior::ForceWebRemoteType;
+    } else if (triggeringRemoteType != aCurrentRemoteType) {
+      MOZ_LOG(gProcessIsolationLog, LogLevel::Warning,
+              ("Unexpected ErrorPage load triggered by %s onto %s, forcing web "
+               "remote type",
+               triggeringRemoteType.Stringify().get(),
+               aCurrentRemoteType.Stringify().get()));
+      
+      behavior = IsolationBehavior::ForceWebRemoteType;
+    } else {
+      MOZ_LOG(
+          gProcessIsolationLog, LogLevel::Verbose,
+          ("ErrorPage load with LOAD_ERROR_PAGE triggered by current process"));
+      behavior = IsolationBehavior::Anywhere;
+    }
+  }
 
   
   
@@ -856,19 +889,6 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
                                           false,
                                           false);
     }
-  }
-
-  
-  
-  if (behavior == IsolationBehavior::Anywhere &&
-      !triggeringRemoteType.IsNotRemote() &&
-      triggeringRemoteType != aCurrentRemoteType) {
-    MOZ_LOG(gProcessIsolationLog, LogLevel::Warning,
-            ("Unexpected Anywhere page load triggered by %s onto %s, forcing "
-             "web remote type",
-             triggeringRemoteType.Stringify().get(),
-             aCurrentRemoteType.Stringify().get()));
-    behavior = IsolationBehavior::ForceWebRemoteType;
   }
 
   
@@ -1099,6 +1119,7 @@ static bool ValidateBehaviorForWorker(IsolationBehavior aBehavior,
       return false;
 
     case IsolationBehavior::AboutReader:
+    case IsolationBehavior::ErrorPage:
     case IsolationBehavior::Inherit:
       
       return false;
@@ -1428,6 +1449,12 @@ Result<RemoteType, nsresult> PredictRemoteTypeForURI(
     behavior = IsolationBehavior::WebContent;
   }
 
+  if (behavior == IsolationBehavior::ErrorPage) {
+    MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
+            ("predicting shared web remote type for error page load"));
+    behavior = IsolationBehavior::ForceWebRemoteType;
+  }
+
   
   
   if (behavior == IsolationBehavior::WebContent) {
@@ -1739,7 +1766,7 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
         
         return aOptions.contains(
             ValidatePrincipalOptions::Internal_ValidatingPrecursor);
-      case IsolationBehavior::Anywhere:
+      case IsolationBehavior::ErrorPage:
         return true;
       case IsolationBehavior::AboutReader:
         
