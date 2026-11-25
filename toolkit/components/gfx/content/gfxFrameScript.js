@@ -2,6 +2,10 @@
 
 
 
+const { testVideoEncode, CodecTestResult } = ChromeUtils.importESModule(
+  "resource://gre/modules/SanityTestChecks.sys.mjs"
+);
+
 const gfxFrameScript = {
   domUtils: null,
 
@@ -17,6 +21,8 @@ const gfxFrameScript = {
 
     this.domUtils = content.windowUtils;
 
+    addMessageListener("gfxSanity:RunEncoderTest", this);
+
     let loadURIOptions = {
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
     };
@@ -29,10 +35,34 @@ const gfxFrameScript = {
   handleEvent(aEvent) {
     switch (aEvent.type) {
       case "MozAfterPaint":
-        sendAsyncMessage("gfxSanity:ContentLoaded");
+        this.sendContentLoaded();
         removeEventListener("MozAfterPaint", this);
         break;
     }
+  },
+
+  receiveMessage(aMessage) {
+    switch (aMessage.name) {
+      case "gfxSanity:RunEncoderTest":
+        testVideoEncode(content).then(
+          result => sendAsyncMessage("gfxSanity:EncoderResult", result),
+          e =>
+            sendAsyncMessage("gfxSanity:EncoderResult", {
+              status: CodecTestResult.Failed,
+              reason: `encode check threw: ${e}`,
+            })
+        );
+        break;
+    }
+  },
+
+  sendContentLoaded() {
+    ChromeUtils.addProfilerMarker(
+      "GfxSanityTest",
+      { category: "Graphics" },
+      `content loaded, video readyState ${content.document.querySelector("video").readyState}`
+    );
+    sendAsyncMessage("gfxSanity:ContentLoaded");
   },
 
   isSanityTest(aUri) {
@@ -55,7 +85,7 @@ const gfxFrameScript = {
       if (this.domUtils.isMozAfterPaintPending) {
         addEventListener("MozAfterPaint", this);
       } else {
-        sendAsyncMessage("gfxSanity:ContentLoaded");
+        this.sendContentLoaded();
       }
     }
   },
