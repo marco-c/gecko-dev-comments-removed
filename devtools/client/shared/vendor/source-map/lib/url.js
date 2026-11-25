@@ -9,5 +9,4 @@
 
 
 
-
-module.exports = typeof URL === "function" ? URL : require("url").URL;
+module.exports = URL;

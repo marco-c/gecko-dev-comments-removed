@@ -6,38 +6,72 @@ const isNode =
   process.versions.node != null;
 
 let mappingsWasm = null;
+let cachedGlue = null;
 
 if (isNode) {
-  const fs = require("fs");
-  const path = require("path");
-
   module.exports = function readWasm() {
-    return new Promise((resolve, reject) => {
-      const wasmPath = path.join(__dirname, "mappings.wasm");
-      fs.readFile(wasmPath, null, (error, data) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-
-        resolve(data.buffer);
-      });
-    });
+    
+    
+    return Promise.resolve(require("./mappings-glue.js"));
   };
 } else {
   module.exports = function readWasm() {
-    if (typeof mappingsWasm === "string") {
-      return fetch(mappingsWasm)
-        .then(response => response.arrayBuffer());
-    }
-    if (mappingsWasm instanceof ArrayBuffer) {
-      return Promise.resolve(mappingsWasm);
+    if (
+      typeof mappingsWasm !== "string" &&
+      !(mappingsWasm instanceof ArrayBuffer)
+    ) {
+      throw new Error(
+        "You must provide the string URL or ArrayBuffer contents " +
+        "of lib/mappings.wasm by calling " +
+        "SourceMapConsumer.initialize({ 'lib/mappings.wasm': ... }) " +
+        "before using SourceMapConsumer"
+      );
     }
 
-    throw new Error("You must provide the string URL or ArrayBuffer contents " +
-                    "of lib/mappings.wasm by calling " +
-                    "SourceMapConsumer.initialize({ 'lib/mappings.wasm': ... }) " +
-                    "before using SourceMapConsumer");
+    if (cachedGlue) {
+      return cachedGlue;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    const glueURL =
+      "resource://devtools/client/shared/vendor/source-map/lib/mappings-glue-browser.mjs";
+    const isMainThread =
+      typeof WorkerGlobalScope === "undefined" &&
+      typeof ChromeUtils !== "undefined";
+    const gluePromise = isMainThread
+      ? Promise.resolve().then(() =>
+          ChromeUtils.importESModule(glueURL, { global: "contextual" })
+        )
+      : import(glueURL);
+    
+    
+    
+    const bytesPromise =
+      typeof mappingsWasm === "string"
+        ? fetch(mappingsWasm).then(response => response.arrayBuffer())
+        : Promise.resolve(mappingsWasm);
+    cachedGlue = Promise.all([gluePromise, bytesPromise])
+      .then(([glue, bytes]) =>
+        
+        
+        
+        glue
+          .default(isMainThread ? bytes : { module_or_path: bytes })
+          .then(() => glue)
+      )
+      .catch(e => {
+        cachedGlue = null;
+        throw e;
+      });
+
+    return cachedGlue;
   };
 }
 
