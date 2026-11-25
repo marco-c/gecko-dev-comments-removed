@@ -4,14 +4,13 @@
 
 
 
-use super::FeatureType;
 use crate::derives::*;
-use crate::parser::ParserContext;
 use crate::values::{AtomString, computed};
+use crate::{parser::Parse, parser::ParserContext};
 use cssparser::Parser;
 use selectors::kleene_value::KleeneValue;
 use std::fmt::{self, Write};
-use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
+use style_traits::{CssWriter, ParseError, ToCss};
 
 
 #[derive(
@@ -65,23 +64,15 @@ type SpecifiedMozPrefFeatureValue = MozPrefFeatureValue<crate::values::specified
 pub type ComputedMozPrefFeatureValue = MozPrefFeatureValue<crate::values::computed::Integer>;
 
 
+
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
 pub struct MozPrefFeature {
     name: crate::values::AtomString,
     value: SpecifiedMozPrefFeatureValue,
 }
 
-impl MozPrefFeature {
-    
-    pub fn parse(
-        context: &ParserContext,
-        input: &mut Parser,
-        feature_type: FeatureType,
-    ) -> Result<Self, ParseError> {
-        use crate::parser::Parse;
-        if !context.chrome_rules_enabled() || feature_type != FeatureType::Media {
-            return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
-        }
+impl Parse for MozPrefFeature {
+    fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
         let name = AtomString::parse(context, input)?;
         let value = if input.try_parse(|i| i.expect_comma()).is_ok() {
             SpecifiedMozPrefFeatureValue::parse(context, input)?
@@ -90,7 +81,9 @@ impl MozPrefFeature {
         };
         Ok(Self { name, value })
     }
+}
 
+impl MozPrefFeature {
     
     #[cfg(feature = "gecko")]
     pub fn matches(&self, ctx: &computed::Context) -> KleeneValue {

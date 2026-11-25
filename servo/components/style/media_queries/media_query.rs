@@ -8,13 +8,20 @@
 
 use crate::Atom;
 use crate::derives::*;
-use crate::parser::ParserContext;
-use crate::queries::{FeatureFlags, FeatureType, QueryCondition};
+use crate::dom::AttributeTracker;
+use crate::error_reporting::ContextualParseError;
+use crate::parser::{Parse, ParserContext};
+use crate::queries::boolean_expression::{BooleanExpr, BooleanExprTest, Operator};
+use crate::queries::feature::FeatureFlagsInfo;
+use crate::queries::moz_pref::MozPrefFeature;
+use crate::queries::{FeatureFlags, FeatureType, QueryFeatureExpression};
 use crate::str::string_as_ascii_lowercase;
-use crate::values::CustomIdent;
-use cssparser::{Parser, match_ignore_ascii_case};
+use crate::stylesheets::CustomMediaEvaluator;
+use crate::values::{CustomIdent, DashedIdent, computed};
+use cssparser::{Parser, Token, match_ignore_ascii_case};
+use selectors::kleene_value::KleeneValue;
 use std::fmt::{self, Write};
-use style_traits::{CssWriter, ParseError, ToCss};
+use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
 
 
 #[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToCss, ToShmem)]
@@ -67,7 +74,7 @@ pub struct MediaQuery {
     pub media_type: MediaQueryType,
     
     
-    pub condition: Option<QueryCondition>,
+    pub condition: Option<MediaCondition>,
 }
 
 impl ToCss for MediaQuery {
@@ -120,10 +127,9 @@ impl MediaQuery {
 
     
     pub fn is_viewport_dependent(&self) -> bool {
-        self.condition.as_ref().is_some_and(|c| {
-            c.cumulative_flags()
-                .contains(FeatureFlags::VIEWPORT_DEPENDENT)
-        })
+        self.condition
+            .as_ref()
+            .is_some_and(|c| c.feature_flags().contains(FeatureFlags::VIEWPORT_DEPENDENT))
     }
 
     
@@ -140,13 +146,14 @@ impl MediaQuery {
             .unwrap_or_default();
 
         let condition = if explicit_media_type.is_none() {
-            Some(QueryCondition::parse(context, input, FeatureType::Media)?)
+            Some(MediaCondition::parse(context, input)?)
         } else if input.try_parse(|i| i.expect_ident_matching("and")).is_ok() {
-            Some(QueryCondition::parse_disallow_or(
-                context,
-                input,
-                FeatureType::Media,
-            )?)
+            
+            let condition = MediaCondition::parse(context, input)?;
+            if matches!(condition, BooleanExpr::Operation(_, Operator::Or)) {
+                return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
+            }
+            Some(condition)
         } else {
             None
         };
@@ -185,6 +192,113 @@ impl MediaQueryType {
         match *self {
             MediaQueryType::All => true,
             MediaQueryType::Concrete(ref known_type) => *known_type == other,
+        }
+    }
+}
+
+
+
+pub type MediaCondition = BooleanExpr<MediaConditionTest>;
+
+
+
+
+
+
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
+pub enum MediaConditionTest {
+    
+    Feature(QueryFeatureExpression),
+    
+    Custom(DashedIdent),
+    
+    MozPref(MozPrefFeature),
+}
+
+impl Parse for MediaConditionTest {
+    fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
+        match *input.next()? {
+            Token::ParenthesisBlock => input.parse_nested_block(|input| {
+                
+                let feature_error = match input.try_parse(|input| {
+                    QueryFeatureExpression::parse_in_parenthesis_block(
+                        context,
+                        input,
+                        FeatureType::Media,
+                    )
+                }) {
+                    Ok(expr) => return Ok(Self::Feature(expr)),
+                    Err(e) => e,
+                };
+                if crate::pref!("layout.css.custom-media.enabled")
+                    && let Ok(custom) = input.try_parse(|input| DashedIdent::parse(context, input))
+                {
+                    return Ok(Self::Custom(custom));
+                }
+                Err(feature_error)
+            }),
+            Token::Function(ref name)
+                if name.eq_ignore_ascii_case("-moz-pref") && context.chrome_rules_enabled() =>
+            {
+                Ok(Self::MozPref(input.parse_nested_block(|input| {
+                    MozPrefFeature::parse(context, input)
+                })?))
+            },
+            _ => Err(ParseError::unexpected_token()),
+        }
+    }
+}
+
+impl ToCss for MediaConditionTest {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        match self {
+            
+            
+            Self::Feature(feature) => feature.to_css(dest),
+            Self::Custom(name) => {
+                dest.write_char('(')?;
+                name.to_css(dest)?;
+                dest.write_char(')')
+            },
+            Self::MozPref(feature) => {
+                dest.write_str("-moz-pref(")?;
+                feature.to_css(dest)?;
+                dest.write_char(')')
+            },
+        }
+    }
+}
+
+impl BooleanExprTest for MediaConditionTest {
+    fn evaluate(
+        &self,
+        context: &computed::Context,
+        custom: &mut CustomMediaEvaluator,
+        _: &mut AttributeTracker,
+    ) -> KleeneValue {
+        match self {
+            Self::Feature(feature) => feature.matches(context),
+            Self::Custom(name) => custom.matches(name, context),
+            Self::MozPref(feature) => feature.matches(context),
+        }
+    }
+
+    fn new_reporting_error<'a>(
+        css: &'a str,
+        error: ParseError,
+    ) -> Option<ContextualParseError<'a>> {
+        Some(ContextualParseError::InvalidMediaRule(css, error))
+    }
+}
+
+impl FeatureFlagsInfo for MediaConditionTest {
+    fn feature_flags(&self) -> FeatureFlags {
+        match self {
+            Self::Feature(feature) => feature.feature_flags(),
+            Self::Custom(_) | Self::MozPref(_) => FeatureFlags::empty(),
         }
     }
 }
