@@ -1151,10 +1151,7 @@ static SetsLineClamp IsLineClampStyle(const nsStyleDisplay* aStyleDisplay) {
   return SetsLineClamp::YesLegacy;
 }
 
-static bool IsLineClampRoot(const nsBlockFrame* aFrame) {
-  if (!aFrame->HasAnyStateBits(NS_BLOCK_BFC)) {
-    return false;
-  }
+static bool IsLineClampStyleAndFrame(const nsBlockFrame* aFrame) {
   const auto setsLineClamp = IsLineClampStyle(aFrame->StyleDisplay());
   if (setsLineClamp != SetsLineClamp::YesLegacy) {
     return setsLineClamp == SetsLineClamp::Yes;
@@ -1181,6 +1178,11 @@ static bool IsLineClampRoot(const nsBlockFrame* aFrame) {
     return aFrame->StyleDisplay()->mOriginalDisplay;
   }();
   return origDisplay.Inside() == StyleDisplayInside::WebkitBox;
+}
+
+static bool IsLineClampRoot(const nsBlockFrame* aFrame) {
+  return aFrame->HasAnyStateBits(NS_BLOCK_BFC) &&
+         IsLineClampStyleAndFrame(aFrame);
 }
 
 const mozilla::StyleBlockEllipsis* nsBlockFrame::GetLineClampBlockEllipsis()
@@ -5596,7 +5598,13 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
               mLines.after_insert(aLine, line);
             }
 
-            PushTruncatedLine(aState, aLine.next(), aKeepReflowGoing);
+            
+            
+            
+            
+            PushLines(aState, aLine);
+            aState.mReflowStatus.SetIncomplete();
+            *aKeepReflowGoing = false;
 
             
             
@@ -7767,7 +7775,7 @@ static bool EstablishesBFC(const nsBlockFrame* aFrame) {
       return true;
     }
   }
-  return StyleEstablishesBFC(style);
+  return StyleEstablishesBFC(style) || IsLineClampStyleAndFrame(aFrame);
 }
 
 void nsBlockFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
@@ -7795,15 +7803,16 @@ void nsBlockFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
       MarkSameFloatManagerLinesDirty(this);
     }
     AddOrRemoveStateBits(NS_BLOCK_BFC, isBFC);
-    const bool wasLineClampRoot =
-        wasBFC &&
-        IsLineClampStyle(aOldStyle->StyleDisplay()) != SetsLineClamp::No;
-    
-    
-    const bool isLineClampRoot = isBFC && IsLineClampRoot(this);
-    if (wasLineClampRoot != isLineClampRoot) {
-      ClearLineClampEllipsis();
-    }
+  }
+
+  const bool wasLineClampRoot =
+      wasBFC &&
+      IsLineClampStyle(aOldStyle->StyleDisplay()) != SetsLineClamp::No;
+  
+  
+  const bool isLineClampRoot = isBFC && IsLineClampRoot(this);
+  if (wasLineClampRoot != isLineClampRoot) {
+    ClearLineClampEllipsis();
   }
 }
 
