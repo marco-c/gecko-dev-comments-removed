@@ -3451,7 +3451,7 @@ pref("browser.search.removeEngineInfobar.enabled", true);
 
 
 
-pref("browser.search.configV3.featureGate", false);
+pref("browser.search.configV3.featureGate", true);
 
 
 
