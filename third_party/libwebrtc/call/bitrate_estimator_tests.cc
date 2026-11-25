@@ -59,11 +59,8 @@ class LogObserver {
  private:
   class Callback : public LogSink {
    public:
-    void OnLogMessage(const std::string& message) override {
-      OnLogMessage(absl::string_view(message));
-    }
-
-    void OnLogMessage(absl::string_view message) override {
+    void OnLogMessage(const LogLineRef& line) override {
+      absl::string_view message = line.message();
       MutexLock lock(&mutex_);
       
       
