@@ -20,7 +20,11 @@ use percent_encoding::{percent_encode, utf8_percent_encode, AsciiSet, CONTROLS};
 const FRAGMENT: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'<').add(b'>').add(b'`');
 
 
-const PATH: &AsciiSet = &FRAGMENT.add(b'#').add(b'?').add(b'{').add(b'}');
+const QUERY: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'#').add(b'<').add(b'>');
+const SPECIAL_QUERY: &AsciiSet = &QUERY.add(b'\'');
+
+
+const PATH: &AsciiSet = &QUERY.add(b'?').add(b'^').add(b'`').add(b'{').add(b'}');
 
 
 pub(crate) const USERINFO: &AsciiSet = &PATH
@@ -32,7 +36,6 @@ pub(crate) const USERINFO: &AsciiSet = &PATH
     .add(b'[')
     .add(b'\\')
     .add(b']')
-    .add(b'^')
     .add(b'|');
 
 pub(crate) const PATH_SEGMENT: &AsciiSet = &PATH.add(b'/').add(b'%');
@@ -41,10 +44,6 @@ pub(crate) const PATH_SEGMENT: &AsciiSet = &PATH.add(b'/').add(b'%');
 
 pub(crate) const SPECIAL_PATH_SEGMENT: &AsciiSet = &PATH_SEGMENT.add(b'\\');
 
-
-const QUERY: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'#').add(b'<').add(b'>');
-const SPECIAL_QUERY: &AsciiSet = &QUERY.add(b'\'');
-
 pub type ParseResult<T> = Result<T, ParseError>;
 
 macro_rules! simple_enum_error {
@@ -52,7 +51,7 @@ macro_rules! simple_enum_error {
         /// Errors that can occur during parsing.
         ///
         /// This may be extended in the future so exhaustive matching is
-        /// discouraged with an unused variant.
+        /// forbidden.
         #[derive(PartialEq, Eq, Clone, Copy, Debug)]
         #[non_exhaustive]
         pub enum ParseError {
@@ -285,13 +284,9 @@ impl<'i> Input<'i> {
     fn next_utf8(&mut self) -> Option<(char, &'i str)> {
         loop {
             let utf8 = self.chars.as_str();
-            match self.chars.next() {
-                Some(c) => {
-                    if !ascii_tab_or_new_line(c) {
-                        return Some((c, &utf8[..c.len_utf8()]));
-                    }
-                }
-                None => return None,
+            let c = self.chars.next()?;
+            if !ascii_tab_or_new_line(c) {
+                return Some((c, &utf8[..c.len_utf8()]));
             }
         }
     }
@@ -435,13 +430,7 @@ impl Parser<'_> {
         match scheme_type {
             SchemeType::File => {
                 self.log_violation_if(ExpectedFileDoubleSlash, || !input.starts_with("//"));
-                let base_file_url = self.base_url.and_then(|base| {
-                    if base.scheme() == "file" {
-                        Some(base)
-                    } else {
-                        None
-                    }
-                });
+                let base_file_url = self.base_url.filter(|base| base.scheme() == "file");
                 self.serialization.clear();
                 self.parse_file(input, scheme_type, base_file_url)
             }
@@ -529,9 +518,8 @@ impl Parser<'_> {
                 self.serialization.push_str("file://");
                 let scheme_end = "file".len() as u32;
                 let host_start = "file://".len() as u32;
-                let (path_start, mut host, remaining) =
-                    self.parse_file_host(input_after_next_char)?;
-                let mut host_end = to_u32(self.serialization.len())?;
+                let (path_start, host, remaining) = self.parse_file_host(input_after_next_char)?;
+                let host_end = to_u32(self.serialization.len())?;
                 let mut has_host = !matches!(host, HostInternal::None);
                 let remaining = if path_start {
                     self.parse_path_start(SchemeType::File, &mut has_host, remaining)
@@ -541,14 +529,6 @@ impl Parser<'_> {
                     self.parse_path(SchemeType::File, &mut has_host, path_start, remaining)
                 };
 
-                
-                
-                if !has_host {
-                    self.serialization
-                        .drain(host_start as usize..host_end as usize);
-                    host_end = host_start;
-                    host = HostInternal::None;
-                }
                 let (query_start, fragment_start) =
                     self.parse_query_and_fragment(scheme_type, scheme_end, remaining)?;
                 return Ok(Url {
@@ -1128,7 +1108,10 @@ impl Parser<'_> {
                     return Err(ParseError::InvalidPort);
                 }
                 has_any_digit = true;
-            } else if context == Context::UrlParser && !matches!(c, '/' | '\\' | '?' | '#') {
+            } else if context == Context::UrlParser
+                && !matches!(c, '/' | '?' | '#')
+                && !(c == '\\' && default_port().is_some())
+            {
                 return Err(ParseError::InvalidPort);
             } else {
                 break;
@@ -1382,14 +1365,21 @@ impl Parser<'_> {
     }
 
     fn last_slash_can_be_removed(serialization: &str, path_start: usize) -> bool {
-        let url_before_segment = &serialization[..serialization.len() - 1];
-        if let Some(segment_before_start) = url_before_segment.rfind('/') {
+        let last_slash = serialization.len() - 1;
+        
+        
+        if last_slash <= path_start {
+            return false;
+        }
+        
+        
+        
+        match serialization[path_start..last_slash].rfind('/') {
             
-            segment_before_start >= path_start
-                
-                && !path_starts_with_windows_drive_letter(&serialization[segment_before_start..])
-        } else {
-            false
+            Some(slash) => {
+                !path_starts_with_windows_drive_letter(&serialization[path_start + slash..])
+            }
+            None => false,
         }
     }
 

@@ -20,8 +20,10 @@ pub fn url_origin(url: &Url) -> Origin {
         "blob" => {
             let result = Url::parse(url.path());
             match result {
-                Ok(ref url) => url_origin(url),
-                Err(_) => Origin::new_opaque(),
+                
+                
+                Ok(ref url) if matches!(url.scheme(), "http" | "https" | "file") => url_origin(url),
+                _ => Origin::new_opaque(),
             }
         }
         "ftp" | "http" | "https" | "ws" | "wss" => Origin::Tuple(

@@ -22,13 +22,6 @@ user-id = 3618
 user-login = "dtolnay"
 user-name = "David Tolnay"
 
-[[publisher.atomic]]
-version = "0.4.6"
-when = "2020-07-05"
-user-id = 2915
-user-login = "Amanieu"
-user-name = "Amanieu d'Antras"
-
 [[publisher.audio_thread_priority]]
 version = "0.38.0"
 when = "2026-09-17"
@@ -245,6 +238,13 @@ when = "2025-08-29"
 user-id = 539
 user-login = "cuviper"
 user-name = "Josh Stone"
+
+[[publisher.form_urlencoded]]
+version = "1.2.3"
+when = "2026-11-20"
+user-id = 1139
+user-login = "Manishearth"
+user-name = "Manish Goregaokar"
 
 [[publisher.framehop]]
 version = "0.15.0"
@@ -487,23 +487,9 @@ user-id = 4484
 user-login = "hsivonen"
 user-name = "Henri Sivonen"
 
-[[publisher.num]]
-version = "0.4.3"
-when = "2024-05-08"
-user-id = 539
-user-login = "cuviper"
-user-name = "Josh Stone"
-
 [[publisher.num-bigint]]
 version = "0.4.6"
 when = "2024-06-27"
-user-id = 539
-user-login = "cuviper"
-user-name = "Josh Stone"
-
-[[publisher.num-complex]]
-version = "0.4.6"
-when = "2024-05-07"
 user-id = 539
 user-login = "cuviper"
 user-name = "Josh Stone"
@@ -873,6 +859,13 @@ when = "2024-03-17"
 user-id = 3618
 user-login = "dtolnay"
 user-name = "David Tolnay"
+
+[[publisher.url]]
+version = "2.5.9"
+when = "2026-11-20"
+user-id = 1139
+user-login = "Manishearth"
+user-name = "Manish Goregaokar"
 
 [[publisher.utf16_iter]]
 version = "1.1.0"
