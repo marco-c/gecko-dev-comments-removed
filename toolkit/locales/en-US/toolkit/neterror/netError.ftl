@@ -13,6 +13,7 @@ neterror-dns-not-found-title = Server Not Found
 neterror-malformed-uri-page-title = Invalid URL
 general-body-title = Be careful. Something doesn’t look right.
 problem-with-this-site-title = Looks like there’s a problem with this site
+neterror-http-auth-scheme-disabled-title = This site’s sign-in method is turned off
 
 ## Error page actions
 
@@ -184,6 +185,8 @@ neterror-unsafe-content-type = Please contact the website owners to inform them 
 # $hostname (String) - Hostname of the website to which the user was trying to connect.
 neterror-basic-http-auth = { -brand-short-name } doesn’t trust { $hostname } because the connection isn’t secure. Try changing the URL to HTTPS.
 
+neterror-http-auth-scheme-disabled = If you need to sign in to this site, contact your system administrator.
+
 neterror-nss-failure-not-verified = The page you are trying to view cannot be shown because the authenticity of the received data could not be verified.
 neterror-nss-failure-contact-website = Please contact the website owners to inform them of this problem.
 
@@ -286,6 +289,9 @@ fp-neterror-coop-coep-intro = { -brand-short-name } didn’t load this page beca
 fp-neterror-blocked-by-policy-intro = Your organization has blocked access to this page or website.
 fp-neterror-http-auth-disabled-intro = Someone pretending to be the site could try to steal things like your username, password, or email.
 fp-neterror-http-auth-disabled-secure-connection = This site requires a secure connection, and you can’t add an exception to visit it.
+# Variables:
+#   $hostname (String) - Hostname of the website to which the user was trying to connect.
+fp-neterror-http-auth-scheme-disabled-intro = <strong>{ $hostname }</strong> asked you to sign in using a method that has been turned off in your connection settings.
 
 fp-neterror-why-did-this-happen = Why did this happen?
 
@@ -303,5 +309,7 @@ fp-learn-more-about-https-connections = Learn about HTTPS connections
 
 fp-neterror-vpn-error-title = Couldn’t connect to VPN
 fp-neterror-vpn-error-description = Try again in a few minutes.
+fp-neterror-vpn-error-continue-button = Continue without VPN
+    .accesskey = C
 
 fp-neterror-denied-port-access = This address uses a network port which is normally used for purposes other than Web browsing. { -brand-short-name } has canceled the request for your protection.

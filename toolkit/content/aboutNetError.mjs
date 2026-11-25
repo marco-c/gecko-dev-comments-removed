@@ -22,6 +22,7 @@ import {
   retryThis,
   handleNSSFailure,
   detectClockSkew,
+  isVPNError,
 } from "chrome://global/content/aboutNetErrorHelpers.mjs";
 import { initializeRegistry } from "chrome://global/content/errors/error-registry.mjs";
 import {
@@ -74,6 +75,7 @@ const KNOWN_ERROR_TITLE_IDS = new Set([
   "certerror-mitm-title",
   "general-body-title",
   "problem-with-this-site-title",
+  "neterror-http-auth-scheme-disabled-title",
 ]);
 
 /* The error message IDs from nsserror.ftl get processed into
@@ -310,6 +312,10 @@ function initTitleAndBodyIds(baseURL, isTRROnlyFailure) {
   switch (gErrorCode) {
     case "basicHttpAuthDisabled":
       bodyTitleId = "general-body-title";
+      tryAgain.hidden = true;
+      break;
+    case "httpAuthSchemeDisabled":
+      bodyTitleId = "neterror-http-auth-scheme-disabled-title";
       tryAgain.hidden = true;
       break;
     case "blockedByPolicy":
@@ -1333,7 +1339,9 @@ async function main() {
     customElements.define("net-error-card", NetErrorCard);
     document.body.classList.add("felt-privacy-body");
     const warning = document.getElementById("sslKeyLoggingWarning");
-    document.body.replaceChildren(document.createElement("net-error-card"));
+    const card = document.createElement("net-error-card");
+    card.vpnError = await isVPNError();
+    document.body.replaceChildren(card);
     if (warning) {
       document.body.prepend(warning);
     }
