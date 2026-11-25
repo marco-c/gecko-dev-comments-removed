@@ -1512,32 +1512,38 @@ bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot,
 
   bool insert = false;
 
-  
-  
-  nsIContent* shadowHost =
-      aRoot->GetShadowRoot() ? aRoot : aRoot->GetContainingShadowHost();
-  if (shadowHost) {
-    
-    
-    for (nsIContent* childNode = shadowHost->GetFirstChild(); childNode;
+  auto removeUnrenderedChildren = [this](nsIContent* aParent) {
+    for (nsIContent* childNode = aParent->GetFirstChild(); childNode;
          childNode = childNode->GetNextSibling()) {
       if (!childNode->GetPrimaryFrame() &&
           !nsCoreUtils::CanCreateAccessibleWithoutFrame(childNode)) {
         ContentRemoved(childNode);
       }
     }
+  };
+
+  
+  
+  
+  
+  
+  
+  nsIContent* containingShadowHost = aRoot->GetContainingShadowHost();
+  if (aRoot->GetShadowRoot()) {
+    removeUnrenderedChildren(aRoot);
+  } else if (aIsInsertRoot && containingShadowHost) {
+    removeUnrenderedChildren(containingShadowHost);
+  }
+
+  if (containingShadowHost && aRoot->IsHTMLElement(nsGkAtoms::slot)) {
+    if (nsIContent* assignedNodesHost =
+            containingShadowHost->GetContainingShadowHost()) {
+      removeUnrenderedChildren(assignedNodesHost);
+    }
 
     
     
-    if (aRoot->IsHTMLElement(nsGkAtoms::slot)) {
-      for (nsIContent* childNode = aRoot->GetFirstChild(); childNode;
-           childNode = childNode->GetNextSibling()) {
-        if (!childNode->GetPrimaryFrame() &&
-            !nsCoreUtils::CanCreateAccessibleWithoutFrame(childNode)) {
-          ContentRemoved(childNode);
-        }
-      }
-    }
+    removeUnrenderedChildren(aRoot);
   }
 
   
