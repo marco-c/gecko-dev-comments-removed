@@ -11,6 +11,9 @@ import {
 } from "chrome://global/content/elements/auto-accesskey.mjs";
 
 export class PanelList extends HTMLElement {
+  /** Whether addHideListeners() registered the keydown listeners. */
+  #listening = false;
+
   static get observedAttributes() {
     return ["open"];
   }
@@ -271,8 +274,15 @@ export class PanelList extends HTMLElement {
     // Set the showing attribute to hide the panel until its alignment is set.
     this.setAttribute("showing", "true");
     // Tell the host element to hide any overflow in case the panel extends off
-    // the page before the alignment is set.
-    hostElement.style.overflow = "hidden";
+    // the page before the alignment is set. A popover skips this, because the
+    // clip would also cut off the host's own overflowing descendants (e.g. a
+    // shadow drawn outside it). Until showPopover() moves it to the top layer,
+    // the hidden popover can still extend the page's overflow while it
+    // measures.
+    const hideHostOverflow = !this.supportsPopover();
+    if (hideHostOverflow) {
+      hostElement.style.overflow = "hidden";
+    }
 
     // Wait for a layout flush, then find the bounds.
     let {
@@ -393,7 +403,9 @@ export class PanelList extends HTMLElement {
       // Set the alignments and show the panel.
       this.setAttribute("align", align);
       this.setAttribute("valign", valign);
-      hostElement.style.overflow = "";
+      if (hideHostOverflow) {
+        hostElement.style.overflow = "";
+      }
       // Decide positioning based on where this panel will be rendered
       const offsetParentIsBody =
         this.supportsPopover() ||
@@ -447,6 +459,7 @@ export class PanelList extends HTMLElement {
       // This is intended for inspection in Storybook.
       return;
     }
+    this.#listening = true;
     // Hide when a panel-item is clicked in the list.
     this.addEventListener("click", this);
     // Prevent contextmenus when `suppress-contextmenu` is present.
@@ -477,6 +490,7 @@ export class PanelList extends HTMLElement {
   }
 
   removeHideListeners() {
+    this.#listening = false;
     this.removeEventListener("click", this);
     this.removeEventListener("contextmenu", this);
     this.removeEventListener("keydown", this);
@@ -658,11 +672,12 @@ export class PanelList extends HTMLElement {
     }
     let focused = chain.find(el => this.contains(el));
     // Both this list and its open submenu hear the keystroke through their
-    // document listeners.
+    // document listeners. A submenu still aligning before it shows doesn't
+    // listen yet, so this list keeps the key.
     if (
       !focused &&
       [...this.querySelectorAll("panel-item[submenu]")].some(
-        item => item.submenuPanel?.open
+        item => item.submenuPanel && item.submenuPanel.#listening
       )
     ) {
       return false;
