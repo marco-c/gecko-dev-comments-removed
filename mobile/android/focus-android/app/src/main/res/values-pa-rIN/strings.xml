@@ -382,14 +382,6 @@
   <string name="onboarding_second_screen_default_browser_button_text">ਮੂਲ ਬਰਾਊਜ਼ਰ ਬਣਾਓ</string>
   <!-- New Onboarding flow second screen skip onboarding button label -->
   <string name="onboarding_second_screen_skip_button_text">ਛੱਡੋ</string>
-  <!-- First run tour (Default browser): Title -->
-  <string name="firstrun_defaultbrowser_title">ਆਪਣੀ ਪਰਦੇਦਾਰੀ ਨੂੰ ਕੰਟਰੋਲ ਕਰੋ</string>
-  <!-- First run tour (Search): Title -->
-  <string name="firstrun_search_title">ਤੁਹਾਡੀ ਖੋਜ, ਤੁਹਾਡਾ ਢੰਗ</string>
-  <!-- First run tour (Shortcut): Title -->
-  <string name="firstrun_shortcut_title">ਆਪਣੀ ਮੁੱਖ ਸਕਰੀਨ ਲਈ ਸ਼ਾਰਟਕਟ ਜੋੜੋ</string>
-  <!-- First run tour (Privacy): Title -->
-  <string name="firstrun_privacy_title">ਪਰਦੇਦਾਰੀ ਨੂੰ ਆਦਤ ਬਣਾਓ</string>
   <!-- Label of the action that will add the current website to the home screen (shown in the confirmation dialog). -->
   <string name="dialog_addtohomescreen_action_add">ਜੋੜੋ</string>
   <!-- Label of the action that will close the dialog and not add anything to the home screen (shown in the confirmation dialog). -->
@@ -434,6 +426,8 @@
   -->
   <string name="qualified_identity">ਸਰਟੀਫਿਕੇਟ %1$s ਨੂੰ ਜਾਰੀ ਕੀਤਾ ਗਿਆ ਸੀ</string>
   <!--
+    Text shown in Security Information Popup
+
     The European Union eIDAS Regulation specifies a type of certificate
     called a "qualified website authentication certificate" (QWAC) and
     requires that browsers identify and indicate such certificates. This
@@ -441,6 +435,18 @@
     indicates that the website uses a QWAC.
   -->
   <string name="qualified_text">ਰੈਗੂਲੇਸ਼ਨ (EU) 2024/1183 ਦੇ ਮੁਤਾਬਕ ਯੋਗ ਹੈ।</string>
+  <!-- Link in the header of the tracking protection panel when the site is secure. Tapping it opens a page showing the website's certificate details. -->
+  <string name="connection_details_secure_connection_link">ਸੁਰੱਖਿਅਤ ਕਨੈਕਸ਼ਨ</string>
+  <!-- Action description (not visible, for screen readers etc.) for the “Secure connection” link in the tracking protection panel header, which opens a page showing the website's certificate details. Screen readers announce it after “Double tap to” -->
+  <string name="connection_details_view_certificate_details">ਸਰਟੀਫਿਕੇਟ ਵੇਰਵਿਆਂ ਨੂੰ ਵੇਖੋ</string>
+  <!-- Title of the section that contains the website's certificate information (issued to, verified by, etc.) as verified by the browser (thus guaranteeing the HTTPS connection is secure) -->
+  <string name="certificate_details_secure_connection_title">ਸੁਰੱਖਿਅਤ ਕਨੈਕਸ਼ਨ</string>
+  <!-- Label for the organization, locality and country the website's certificate was issued to -->
+  <string name="certificate_details_issued_to_label">ਸਰਟੀਫਿਕੇਟ ਇਸ ਨੂੰ ਜਾਰੀ ਕੀਤਾ:</string>
+  <!-- Label for the name of the certificate authority that verified and issued the website's certificate -->
+  <string name="certificate_details_verified_by_label">ਜਾਂਚ ਕਰਤਾ:</string>
+  <!-- Content description (not visible, for screen readers etc.) for the EU trust mark logo, shown when the website's certificate is a Qualified Website Authentication Certificate (QWAC) as specified in EU Regulation 2024/1183 -->
+  <string name="certificate_details_eu_trust_mark_content_description">EU ਟਰੱਸਟ ਮਾਰਕ</string>
   <string name="preference_autocomplete_duplicate_url_error">URL ਪਹਿਲਾਂ ਹੀ ਮੌਜੂਦ ਹੈ</string>
   <!-- Label for the Find in page button -->
   <string name="find_in_page">ਸਫ਼ੇ ਵਿੱਚ ਲੱਭੋ</string>
@@ -535,8 +541,6 @@
   <string name="preference_exceptions_menu_remove">ਹਟਾਓ</string>
   <!-- Button to remove all websites from the exception list -->
   <string name="preference_exceptions_remove_all_button_label">ਸਾਰੀਆਂ ਵੈੱਬਸਾਈਟਾਂ ਹਟਾਓ</string>
-  <!-- Title for Preference screen for cookie blocking for exceptions tracking protection -->
-  <string name="preference_block_cookies_title">ਕੂਕੀਜ਼ \'ਤੇ ਪਾਬੰਦੀ ਲਗਾਓ</string>
   <!-- Headline for the tab crash report screen -->
   <string name="tab_crash_report_headline">ਅਫ਼ਸੋਸ। ਸਾਨੂੰ ਇਸ ਟੈਬ ਨਾਲ ਸਮੱਸਿਆ ਆ ਰਹੀ ਹੈ।</string>
   <!-- Subtitle for the tab crash report screen -->
