@@ -409,7 +409,19 @@ async function withModelChoiceWindow(
   }
 }
 
+
+
+
+const gSharedWindows = new Set();
+
 add_setup(async function () {
+  registerCleanupFunction(async () => {
+    for (const win of gSharedWindows) {
+      await BrowserTestUtils.closeWindow(win);
+    }
+    gSharedWindows.clear();
+  });
+
   if (parseInt(Services.env.get("MOZ_CHAOSMODE"), 16)) {
     
     
@@ -571,10 +583,7 @@ function clearSmartWindowUsagePrefs() {
 
 async function openSharedAIWindow() {
   const win = await openAIWindow();
-  registerCleanupFunction(async () => {
-    await BrowserTestUtils.closeWindow(win);
-    clearSmartWindowUsagePrefs();
-  });
+  gSharedWindows.add(win);
   return win;
 }
 
