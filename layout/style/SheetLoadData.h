@@ -220,6 +220,9 @@ class SheetLoadData final
   bool mFinalURISameOrigin : 1 = false;
 
   
+  bool mLoadedAsImage : 1 = false;
+
+  
   
   
   
@@ -233,6 +236,10 @@ class SheetLoadData final
 
   
   const nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
+
+  
+  const nsCOMPtr<nsIPrincipal> mLoaderPrincipal;
+  const nsCOMPtr<nsIPrincipal> mPartitionPrincipal;
 
   
   const nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
