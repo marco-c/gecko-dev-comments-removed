@@ -82,7 +82,7 @@ TEST(TestAuthModuleInitAsync, SspiKerberosInitCompletesOffMainThread)
 
   MOZ_ALWAYS_TRUE(mozilla::SpinEventLoopUntil(
       "TestAuthModuleInitAsync:SspiKerberosInitCompletesOffMainThread"_ns,
-      [&]() { return (bool)callback->mDone; }));
+      [&]() { return callback->mDone.load(); }));
 
   
   

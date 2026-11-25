@@ -233,7 +233,13 @@ already_AddRefed<nsHttpConnectionInfo> TRRServiceBase::CreateConnInfoHelper(
                                OriginAttributes());
   }
 
-  return connInfo.forget();
+  return connInfo->Mutate()
+      .SetAnonymous(true)
+      .SetIsTrrServiceChannel(true)
+      .SetTRRMode(nsIRequest::TRR_DISABLED_MODE)
+      .SetHappyEyeballsEnabled(
+          StaticPrefs::network_http_happy_eyeballs_enabled() && !proxyInfo)
+      .Finalize();
 }
 
 void TRRServiceBase::InitTRRConnectionInfo(bool aForceReinit) {
@@ -258,7 +264,7 @@ void TRRServiceBase::AsyncCreateTRRConnectionInfo(const nsACString& aURI) {
   LOG(
       ("TRRServiceBase::AsyncCreateTRRConnectionInfo "
        "mTRRConnectionInfoInited=%d",
-       bool(mTRRConnectionInfoInited)));
+       mTRRConnectionInfoInited.load()));
   if (!mTRRConnectionInfoInited) {
     return;
   }

@@ -534,7 +534,7 @@ NS_IMETHODIMP CacheEntry::OnFileReady(nsresult aResult, bool aIsNew) {
     mPinned = mFile->IsPinned();
 
     mPinningKnown = true;
-    LOG(("  pinning=%d", (bool)mPinned));
+    LOG(("  pinning=%d", mPinned.load()));
 
     if (mState == READY) {
       mHasData = true;
@@ -1786,7 +1786,7 @@ bool CacheEntry::DeferOrBypassRemovalOnPinStatus(bool aPinned) {
 
   mozilla::MutexAutoLock lock(mLock);
   if (mPinningKnown) {
-    LOG(("  pinned=%d, caller=%d", (bool)mPinned, aPinned));
+    LOG(("  pinned=%d, caller=%d", mPinned.load(), aPinned));
     
     
     return mPinned != aPinned;

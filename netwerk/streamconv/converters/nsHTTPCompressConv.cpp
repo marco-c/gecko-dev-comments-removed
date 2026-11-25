@@ -290,7 +290,7 @@ nsHTTPCompressConv::AsyncConvertData(const char* aFromType, const char* aToType,
     mMode = HTTP_COMPRESS_ZSTD_DICTIONARY;
   }
   LOG(("nsHttpCompresssConv %p AsyncConvertData %s %s mode %d\n", this,
-       aFromType, aToType, (CompressMode)mMode));
+       aFromType, aToType, mMode.load()));
 
   MutexAutoLock lock(mMutex);
   
@@ -433,7 +433,7 @@ nsresult nsHTTPCompressConv::DoOnStopRequest(nsIRequest* request,
   
   
   LOG(("nsHttpCompresssConv %p onstop %" PRIx32 " mDispatchToMainThread %d\n",
-       this, static_cast<uint32_t>(aStatus), bool(mDispatchToMainThread)));
+       this, static_cast<uint32_t>(aStatus), mDispatchToMainThread.load()));
 
   
   
@@ -1019,7 +1019,7 @@ nsresult nsHTTPCompressConv::do_OnDataAvailable(nsIRequest* request,
   LOG(
       ("nsHttpCompressConv %p do_OnDataAvailable mDispatchToMainThread %d "
        "count %u",
-       this, bool(mDispatchToMainThread), count));
+       this, mDispatchToMainThread.load(), count));
   if (count == 0) {
     
     
