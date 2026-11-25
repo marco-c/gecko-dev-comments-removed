@@ -52,7 +52,7 @@ is_eager = true
 is_css2 = true
 is_eager = true
 [highlight]
-argument = "AtomIdent"
+argument = "HighlightNameSelector"
 [selection]
 [target-text]
 [view-transition]
@@ -97,6 +97,10 @@ supports_user_action_state = true
 enabled_in = "chrome"
 # The selected label of a <select>
 [-moz-select-content]
+enabled_in = "chrome"
+is_element_backed = true
+# The label of an <optgroup>
+[-moz-optgroup-label]
 enabled_in = "chrome"
 is_element_backed = true
 # The menulist button of a <select>
