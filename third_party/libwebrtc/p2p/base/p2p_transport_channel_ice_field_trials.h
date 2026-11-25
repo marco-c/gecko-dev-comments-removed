@@ -65,9 +65,6 @@ struct IceFieldTrials {
   
   bool stop_gather_on_strongly_connected = true;
 
-  
-  std::optional<int> override_dscp;
-
   bool piggyback_ice_check_acknowledgement = false;
   bool extra_ice_ping = false;
 
@@ -78,12 +75,5 @@ struct IceFieldTrials {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::IceFieldTrials;
-}  
-#endif  
 
 #endif  
