@@ -40,6 +40,7 @@
 #include "api/rtp_transceiver_direction.h"
 #include "api/sctp_transport_interface.h"
 #include "api/uma_metrics.h"
+#include "api/webrtc_sdp_planb.h"
 #include "media/base/codec.h"
 #include "media/base/media_constants.h"
 #include "media/base/rid_description.h"
@@ -106,13 +107,7 @@ constexpr absl::string_view kAttributeSsrc = "ssrc";
 constexpr absl::string_view kSsrcAttributeCname = "cname";
 constexpr absl::string_view kAttributeExtmapAllowMixed = "extmap-allow-mixed";
 constexpr absl::string_view kAttributeExtmap = "extmap";
-
-
-
-constexpr absl::string_view kAttributeMsidSemantics = "msid-semantic";
-constexpr absl::string_view kMediaStreamSemantic = "WMS";
 constexpr absl::string_view kSsrcAttributeMsid = "msid";
-constexpr absl::string_view kDefaultMsid = "default";
 constexpr absl::string_view kNoStreamMsid = "-";
 constexpr absl::string_view kAttributeSsrcGroup = "ssrc-group";
 constexpr absl::string_view kAttributeCandidate = "candidate";
@@ -226,14 +221,6 @@ void ReportSdpBandwidth(SdpBandwidthCategory category) {
                             kSdpBandwidthMax);
 }
 
-
-
-struct SsrcInfo {
-  uint32_t ssrc_id = 0;
-  absl::string_view cname;
-  absl::string_view stream_id;
-  absl::string_view track_id;
-};
 using SsrcInfoVec = std::vector<SsrcInfo>;
 using SsrcGroupVec = std::vector<SsrcGroup>;
 
@@ -551,7 +538,7 @@ void CreateTracksFromSsrcInfos(const SsrcInfoVec& ssrc_infos,
                                absl::string_view msid_track_id,
                                StreamParamsVec* tracks,
                                int msid_signaling) {
-  RTC_DCHECK(tracks);
+  RTC_DCHECK(tracks != nullptr);
   if (msid_signaling & kMsidSignalingMediaSection) {
     
     
@@ -573,57 +560,7 @@ void CreateTracksFromSsrcInfos(const SsrcInfoVec& ssrc_infos,
     return;
   }
 
-  for (const SsrcInfo& ssrc_info : ssrc_infos) {
-    
-    
-    if (ssrc_info.cname.empty()) {
-      RTC_LOG(LS_WARNING) << "CNAME attribute missing for SSRC "
-                          << ssrc_info.ssrc_id;
-    }
-    std::vector<std::string> stream_ids;
-    absl::string_view track_id;
-    if (msid_signaling & kMsidSignalingSsrcAttribute) {
-      
-      stream_ids.emplace_back(ssrc_info.stream_id);
-      track_id = ssrc_info.track_id;
-    } else if (msid_signaling == kMsidSignalingNotUsed) {
-      
-      
-      stream_ids.emplace_back(kDefaultMsid);
-    }
-
-    auto track_it = absl::c_find_if(
-        *tracks,
-        [track_id](const StreamParams& track) { return track.id == track_id; });
-    if (track_it == tracks->end()) {
-      
-      tracks->push_back(StreamParams());
-      track_it = tracks->end() - 1;
-    }
-    StreamParams& track = *track_it;
-    track.add_ssrc(ssrc_info.ssrc_id);
-    track.cname = ssrc_info.cname;
-    track.set_stream_ids(stream_ids);
-    track.id = track_id;
-  }
-  for (StreamParams& stream : *tracks) {
-    
-    
-    
-    if (stream.id.empty()) {
-      stream.id = CreateRandomString(8);
-    }
-  }
-}
-
-void GetMediaStreamIds(const ContentInfo* content,
-                       flat_set<std::string>* labels) {
-  for (const StreamParams& stream_params :
-       content->media_description()->streams()) {
-    for (const std::string& stream_id : stream_params.stream_ids()) {
-      labels->insert(stream_id);
-    }
-  }
+  CreatePlanBTracksFromSsrcInfos(ssrc_infos, msid_signaling, tracks);
 }
 
 
@@ -1447,24 +1384,7 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
       AddSsrcLine(ssrc, kSsrcAttributeCname, track.cname, os, message);
 
       if (msid_signaling & kMsidSignalingSsrcAttribute) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        absl::string_view first_stream_id = track.first_stream_id();
-        absl::string_view stream_id =
-            first_stream_id.empty() ? kNoStreamMsid : first_stream_id;
-        InitAttrLine(kAttributeSsrc, os);
-        *os << kSdpDelimiterColon << ssrc << kSdpDelimiterSpace
-            << kSsrcAttributeMsid << kSdpDelimiterColon << stream_id
-            << kSdpDelimiterSpace << track.id;
-        AddLine(os->str(), message);
+        AddPlanBSsrcMsidLine(ssrc, track, os, message);
       }
     }
 
@@ -1866,9 +1786,7 @@ bool ParseSessionDescription(absl::string_view message,
       if (!GetValue(*aline, kAttributeMsidSemantics, &semantics, error)) {
         return false;
       }
-      if (absl::StrContainsIgnoreCase(semantics, kMediaStreamSemantic)) {
-        desc->set_msid_signaling(kMsidSignalingSemantic);
-      }
+      ParsePlanBMsidSemantics(semantics, desc);
     } else if (attr == kAttributeExtmapAllowMixed) {
       desc->set_extmap_allow_mixed(true);
     } else if (attr == kAttributeExtmap) {
@@ -3315,28 +3233,6 @@ bool ParseMediaDescription(
   return true;
 }
 
-bool IsMediaType(const MediaContentDescription* description, MediaType type) {
-  return description && description->type() == type;
-}
-
-const ContentInfo* GetFirstMediaContent(const ContentInfos& contents,
-                                        MediaType type) {
-  for (const ContentInfo& content : contents) {
-    if (IsMediaType(content.media_description(), type)) {
-      return &content;
-    }
-  }
-  return nullptr;
-}
-
-const ContentInfo* LegacyGetFirstAudioContent(const SessionDescription& sdesc) {
-  return GetFirstMediaContent(sdesc.contents(), MediaType::AUDIO);
-}
-
-const ContentInfo* LegacyGetFirstVideoContent(const SessionDescription& sdesc) {
-  return GetFirstMediaContent(sdesc.contents(), MediaType::VIDEO);
-}
-
 }  
 
 std::string SdpSerialize(const SessionDescriptionInterface& jdesc) {
@@ -3398,30 +3294,7 @@ std::string SdpSerialize(const SessionDescriptionInterface& jdesc) {
   }
 
   
-  
-  
-  
-  if (desc->msid_signaling() != kMsidSignalingNotUsed) {
-    InitAttrLine(kAttributeMsidSemantics, &os);
-    os << kSdpDelimiterColon << " " << kMediaStreamSemantic;
-
-    
-    
-    
-    flat_set<std::string> media_stream_ids;
-    const ContentInfo* audio_content = LegacyGetFirstAudioContent(*desc);
-    if (audio_content)
-      GetMediaStreamIds(audio_content, &media_stream_ids);
-
-    const ContentInfo* video_content = LegacyGetFirstVideoContent(*desc);
-    if (video_content)
-      GetMediaStreamIds(video_content, &media_stream_ids);
-
-    for (const std::string& id : media_stream_ids) {
-      os << " " << id;
-    }
-    AddLine(os.str(), &message);
-  }
+  SerializePlanBMsidSemantics(*desc, &os, &message);
 
   
   
