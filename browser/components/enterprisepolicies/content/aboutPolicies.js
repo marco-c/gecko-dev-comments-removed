@@ -419,6 +419,7 @@ function generateDocumentation() {
   
   
   let string_mapping = {
+    Authentication: "Authentication2",
     BackgroundAppUpdate: "BackgroundAppUpdate2",
     BlockAboutConfig: "BlockAboutConfig2",
     BlockAboutProfiles: "BlockAboutProfiles2",
