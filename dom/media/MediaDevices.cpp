@@ -611,6 +611,10 @@ already_AddRefed<Promise> MediaDevices::GetDisplayMedia(
     return p.forget();
   }
   
+  if (aCallerType != CallerType::System) {
+    wc->ConsumeTransientUserGestureActivation();
+  }
+  
   
   
   
@@ -626,9 +630,16 @@ already_AddRefed<Promise> MediaDevices::GetDisplayMedia(
       ->GetUserMedia(owner, c, aCallerType)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [this, self, p](RefPtr<DOMMediaStream>&& aStream) {
-            if (!GetWindowIfCurrent()) {
+          [this, self, p, aCallerType](RefPtr<DOMMediaStream>&& aStream) {
+            nsPIDOMWindowInner* window = GetWindowIfCurrent();
+            if (!window) {
               return;  
+            }
+            
+
+            if (WindowContext* wc = window->GetWindowContext();
+                wc && aCallerType != CallerType::System) {
+              wc->NotifyUserGestureActivation();
             }
             p->MaybeResolve(std::move(aStream));
           },
