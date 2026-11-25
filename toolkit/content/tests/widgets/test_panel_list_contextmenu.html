@@ -32,7 +32,10 @@
         await customElements.whenDefined("panel-item");
         panelList = document.getElementById("panel-list");
         anchorButton = document.getElementById("anchor-button");
-        anchorButton.addEventListener("contextmenu", e => panelList.show(e));
+        anchorButton.addEventListener("contextmenu", e => {
+          e.preventDefault();
+          panelList.show(e);
+        });
       });
 
       // A contextmenu event is dispatched during the button press on most
@@ -87,8 +90,19 @@
           cancelable: true,
           composed: true,
         });
+        let defaultPrevented;
+        document.addEventListener(
+          "contextmenu",
+          e => {
+            defaultPrevented = e.defaultPrevented;
+            // Otherwise the browser's context menu opens and stays open,
+            // catching the mouse events of this test's next run.
+            e.preventDefault();
+          },
+          { once: true }
+        );
         panelList.querySelector("panel-item").dispatchEvent(event);
-        return event;
+        return defaultPrevented;
       }
 
       add_task(async function testContextMenuSuppressedWithTheAttribute() {
@@ -96,10 +110,8 @@
         // The listener is registered as the panel opens.
         await reopen();
 
-        let event = dispatchContextMenuInPanel();
-
         ok(
-          event.defaultPrevented,
+          dispatchContextMenuInPanel(),
           "A contextmenu event in the panel should be prevented"
         );
         ok(panelList.open, "Panel should stay open");
@@ -110,10 +122,8 @@
       add_task(async function testContextMenuPassesWithoutTheAttribute() {
         await reopen();
 
-        let event = dispatchContextMenuInPanel();
-
         ok(
-          !event.defaultPrevented,
+          !dispatchContextMenuInPanel(),
           "A contextmenu event in the panel should be left alone"
         );
         ok(panelList.open, "Panel should stay open");
