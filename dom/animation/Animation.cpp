@@ -480,12 +480,8 @@ void Animation::SetTimelineRangeNoUpdate(AnimationRange&& aRange,
     return;
   }
 
-  
-  
-  
-  
-  
-  
+  AutoMutationBatchForAnimation mb(*this);
+
   const auto overridden = PropertiesOverridenByJS();
   const auto startOverridden =
       aFromJS == FromJS::No &&
@@ -507,6 +503,10 @@ void Animation::SetTimelineRangeNoUpdate(AnimationRange&& aRange,
   if (mEffect) {
     mEffect->UpdateNormalizedTiming();
     MaybeUpdateKeyframeComputedOffsets();
+  }
+
+  if (IsRelevant()) {
+    MutationObservers::NotifyAnimationChanged(this);
   }
 }
 
