@@ -108,6 +108,11 @@ struct WeakMapTracer {
 
 extern JS_PUBLIC_API void TraceWeakMaps(WeakMapTracer* trc);
 
+
+
+
+extern JS_PUBLIC_API void FixWeakMappingGrayBits(JSRuntime* rt);
+
 extern JS_PUBLIC_API bool AreGCGrayBitsValid(JSRuntime* rt);
 
 extern JS_PUBLIC_API bool ZoneGlobalsAreAllGray(JS::Zone* zone);
@@ -131,6 +136,10 @@ extern JS_PUBLIC_API void IterateGrayObjects(
 
 
 extern JS_PUBLIC_API bool CheckGrayMarkingState(JSRuntime* rt);
+
+
+
+extern JS_PUBLIC_API bool CheckWeakMappingGrayBits(JSRuntime* rt);
 #endif
 
 }  
