@@ -24,6 +24,22 @@ inline constexpr int kMaxFrameSidePixels = 16384;
 inline constexpr int kMaxFrameSizePixels =
     kMaxFrameSidePixels * kMaxFrameSidePixels;
 
+
+
+
+
+
+
+
+
+enum class VideoCodecComplexity {
+  kComplexityLow = -1,    
+  kComplexityNormal = 0,  
+  kComplexityHigh = 1,    
+  kComplexityHigher = 2,  
+  kComplexityMax = 3      
+};
+
 }  
 
 #endif  

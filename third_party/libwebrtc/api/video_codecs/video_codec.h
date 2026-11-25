@@ -31,15 +31,6 @@ namespace webrtc {
 
 
 
-enum class VideoCodecComplexity {
-  kComplexityLow = -1,
-  kComplexityNormal = 0,
-  kComplexityHigh = 1,
-  kComplexityHigher = 2,
-  kComplexityMax = 3
-};
-
-
 struct VideoCodecVP8 {
   bool operator==(const VideoCodecVP8& other) const;
   bool operator!=(const VideoCodecVP8& other) const {
