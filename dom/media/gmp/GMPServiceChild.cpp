@@ -103,7 +103,7 @@ GeckoMediaPluginServiceChild::GetContentParent(
       thread, __func__,
       [nodeIdVariant = aNodeIdVariant, self, api = std::move(api),
        tags = aTags.Clone(), helper, rawHolder](GMPServiceChild* child) {
-        nsTArray<base::ProcessId> alreadyBridgedTo;
+        nsTArray<GeckoChildID> alreadyBridgedTo;
 
         
         
@@ -149,13 +149,13 @@ GeckoMediaPluginServiceChild::GetContentParent(
 
               
               
-              MOZ_ASSERT(aResult.pid() != base::kInvalidProcessId);
+              MOZ_ASSERT(aResult.childID() != kInvalidGeckoChildID);
 
               
               
               
               
-              bool contains = child->HasAlreadyBridgedTo(aResult.pid());
+              bool contains = child->HasAlreadyBridgedTo(aResult.childID());
               if (NS_WARN_IF(!contains && !aResult.endpoint().IsValid())) {
                 MediaResult error(
                     aResult.result(),
@@ -173,7 +173,7 @@ GeckoMediaPluginServiceChild::GetContentParent(
 
               RefPtr<GMPContentParent> parent =
                   child->GetBridgedGMPContentParent(
-                      aResult.pid(), std::move(aResult.endpoint()));
+                      aResult.childID(), std::move(aResult.endpoint()));
               if (!contains) {
                 parent->SetDisplayName(aResult.displayName());
                 parent->SetPluginId(aResult.pluginId());
@@ -555,9 +555,9 @@ void GeckoMediaPluginServiceChild::RemoveShutdownBlockerIfNeeded() {
 }
 
 already_AddRefed<GMPContentParent> GMPServiceChild::GetBridgedGMPContentParent(
-    ProcessId aOtherPid, ipc::Endpoint<PGMPContentParent>&& endpoint) {
-  return do_AddRef(mContentParents.LookupOrInsertWith(aOtherPid, [&] {
-    MOZ_ASSERT(aOtherPid == endpoint.OtherPid());
+    GeckoChildID aOtherChildID, ipc::Endpoint<PGMPContentParent>&& endpoint) {
+  return do_AddRef(mContentParents.LookupOrInsertWith(aOtherChildID, [&] {
+    MOZ_ASSERT(aOtherChildID == endpoint.OtherChildID());
 
     auto parent = MakeRefPtr<GMPContentParent>();
 
@@ -579,12 +579,12 @@ void GMPServiceChild::RemoveGMPContentParent(
   }
 }
 
-bool GMPServiceChild::HasAlreadyBridgedTo(base::ProcessId aPid) const {
-  return mContentParents.Contains(aPid);
+bool GMPServiceChild::HasAlreadyBridgedTo(GeckoChildID aChildID) const {
+  return mContentParents.Contains(aChildID);
 }
 
 void GMPServiceChild::GetAndBlockAlreadyBridgedTo(
-    nsTArray<base::ProcessId>& aAlreadyBridgedTo,
+    nsTArray<GeckoChildID>& aAlreadyBridgedTo,
     nsTArray<RefPtr<GMPContentParentCloseBlocker>>& aBlockers) {
   aAlreadyBridgedTo.SetCapacity(mContentParents.Count());
   aBlockers.SetCapacity(mContentParents.Count());
