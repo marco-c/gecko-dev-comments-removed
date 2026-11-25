@@ -484,8 +484,8 @@ class RtpTransceiver : public RtpTransceiverInterface {
 
   void SetMediaChannels(MediaSendChannelInterface* send,
                         MediaReceiveChannelInterface* receive)
-      RTC_RUN_ON(context()->worker_thread());
-  void ClearMediaChannelReferences() RTC_RUN_ON(context()->worker_thread());
+      RTC_RUN_ON(context()->network_thread());
+  void ClearMediaChannelReferences() RTC_RUN_ON(context()->network_thread());
 
   VideoMediaSendChannelInterface::EncoderSwitchRequestCallback
   GetEncoderSwitchRequestCallback();

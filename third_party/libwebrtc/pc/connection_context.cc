@@ -93,9 +93,9 @@ scoped_refptr<ConnectionContext> ConnectionContext::Create(
 
 MediaEngineInterface* ConnectionContext::MediaEngineReference::media_engine()
     const {
-  RTC_DCHECK_RUN_ON(c_->worker_thread());
-  RTC_DCHECK(c_->media_engine_w());
-  return c_->media_engine_w();
+  RTC_DCHECK_RUN_ON(c_->network_thread());
+  RTC_DCHECK(c_->media_engine_n());
+  return c_->media_engine_n();
 }
 
 ConnectionContext::ConnectionContext(
@@ -105,7 +105,6 @@ ConnectionContext::ConnectionContext(
       network_thread_(MaybeStartNetworkThread(dependencies->network_thread,
                                               owned_socket_factory_,
                                               owned_network_thread_)),
-      worker_thread_(network_thread_),
       signaling_thread_(MaybeWrapThread(dependencies->signaling_thread,
                                         wraps_current_thread_)),
       media_engine_(
@@ -123,26 +122,19 @@ ConnectionContext::ConnectionContext(
                                  network_thread())) {
   RTC_DCHECK_RUN_ON(signaling_thread_);
   RTC_DCHECK(network_thread_ != nullptr);
-  RTC_DCHECK(worker_thread_ != nullptr);
   RTC_DCHECK(!(default_network_manager_ && network_monitor_factory_))
       << "You can't set both network_manager and network_monitor_factory.";
 
-  signaling_thread_->AllowInvokesToThread(worker_thread());
   signaling_thread_->AllowInvokesToThread(network_thread_);
-  worker_thread_->AllowInvokesToThread(network_thread_);
   if (!network_thread_->IsCurrent()) {
     
     
     
-    network_thread_->PostTask(
-        [thread = network_thread_, worker_thread = worker_thread_] {
-          thread->DisallowBlockingCalls();
-          thread->DisallowAllInvokes();
-          if (worker_thread == thread) {
-            
-            thread->AllowInvokesToThread(thread);
-          }
-        });
+    network_thread_->PostTask([network_thread = network_thread_] {
+      network_thread->DisallowBlockingCalls();
+      network_thread->DisallowAllInvokes();
+      network_thread->AllowInvokesToThread(network_thread);
+    });
   }
 
   SocketFactory* socket_factory = dependencies->socket_factory;
@@ -174,7 +166,6 @@ ConnectionContext::ConnectionContext(
   
   
   signaling_thread_->SetDispatchWarningMs(100);
-  worker_thread_->SetDispatchWarningMs(30);
   network_thread_->SetDispatchWarningMs(10);
 
   blocking_media_engine_destruction_ =
@@ -201,9 +192,9 @@ ConnectionContext::~ConnectionContext() {
     
     
     
-    worker_thread_->BlockingCall([&] { media_engine_ = nullptr; });
+    network_thread_->BlockingCall([&] { media_engine_ = nullptr; });
   } else {
-    worker_thread_->PostTask([media_engine = std::move(media_engine_)] {});
+    network_thread_->PostTask([media_engine = std::move(media_engine_)] {});
   }
 
   
@@ -215,13 +206,13 @@ ConnectionContext::~ConnectionContext() {
     ThreadManager::Instance()->UnwrapCurrentThread();
 }
 
-MediaEngineInterface* ConnectionContext::media_engine_w() {
-  RTC_DCHECK_RUN_ON(worker_thread());
+MediaEngineInterface* ConnectionContext::media_engine_n() {
+  RTC_DCHECK_RUN_ON(network_thread());
   return media_engine_.get();
 }
 
 void ConnectionContext::ApplyGlobalAudioOptions(const AudioOptions& options) {
-  RTC_DCHECK_RUN_ON(worker_thread());
+  RTC_DCHECK_RUN_ON(network_thread());
   global_audio_options_.SetAll(options);
   if (media_engine_reference_count_ > 0) {
     media_engine_->voice().ApplyGlobalOptions(global_audio_options_);
@@ -229,7 +220,7 @@ void ConnectionContext::ApplyGlobalAudioOptions(const AudioOptions& options) {
 }
 
 void ConnectionContext::AddRefMediaEngine() {
-  RTC_DCHECK_RUN_ON(worker_thread());
+  RTC_DCHECK_RUN_ON(network_thread());
   RTC_DCHECK_GE(media_engine_reference_count_, 0);
   RTC_DCHECK(media_engine_);
   ++media_engine_reference_count_;
@@ -240,7 +231,7 @@ void ConnectionContext::AddRefMediaEngine() {
 }
 
 void ConnectionContext::ReleaseMediaEngine() {
-  RTC_DCHECK_RUN_ON(worker_thread());
+  RTC_DCHECK_RUN_ON(network_thread());
   RTC_DCHECK_GT(media_engine_reference_count_, 0);
   RTC_DCHECK(media_engine_);
   --media_engine_reference_count_;

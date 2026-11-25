@@ -92,8 +92,6 @@ class ConnectionContext final : public RefCountedNonVirtual<ConnectionContext> {
 
   Thread* signaling_thread() { return signaling_thread_; }
   const Thread* signaling_thread() const { return signaling_thread_; }
-  Thread* worker_thread() { return worker_thread_; }
-  const Thread* worker_thread() const { return worker_thread_; }
   Thread* network_thread() { return network_thread_; }
   const Thread* network_thread() const { return network_thread_; }
 
@@ -127,7 +125,7 @@ class ConnectionContext final : public RefCountedNonVirtual<ConnectionContext> {
 
   
   
-  MediaEngineInterface* media_engine_w();
+  MediaEngineInterface* media_engine_n();
 
   ConnectionContext(
       const Environment& env,
@@ -146,13 +144,12 @@ class ConnectionContext final : public RefCountedNonVirtual<ConnectionContext> {
       RTC_GUARDED_BY(signaling_thread_);
   bool blocking_media_engine_destruction_;
   Thread* const network_thread_;
-  Thread* const worker_thread_;
   Thread* const signaling_thread_;
 
   
   
   std::unique_ptr<MediaEngineInterface> media_engine_;
-  int media_engine_reference_count_ RTC_GUARDED_BY(worker_thread()) = 0;
+  int media_engine_reference_count_ RTC_GUARDED_BY(network_thread()) = 0;
 
   
   
@@ -172,7 +169,7 @@ class ConnectionContext final : public RefCountedNonVirtual<ConnectionContext> {
 
   
   
-  AudioOptions global_audio_options_ RTC_GUARDED_BY(worker_thread());
+  AudioOptions global_audio_options_ RTC_GUARDED_BY(network_thread());
 };
 
 }  

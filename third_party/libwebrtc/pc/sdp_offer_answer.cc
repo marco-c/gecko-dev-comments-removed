@@ -2457,7 +2457,7 @@ void SdpOfferAnswerHandler::UpdateSenderSsrcsFromLocalDescription() {
   if (!ConfiguredForMedia()) {
     return;
   }
-  ScopedOperationsBatcher worker_tasks(context_->worker_thread());
+  ScopedOperationsBatcher worker_tasks(context_->network_thread());
   
   
   for (const auto& transceiver_ext : transceivers()->List()) {
@@ -2716,7 +2716,7 @@ void SdpOfferAnswerHandler::ApplyRemoteDescriptionUpdateTransceiverState(
   std::vector<scoped_refptr<MediaStreamInterface>> added_streams;
   std::vector<scoped_refptr<MediaStreamInterface>> removed_streams;
   ScopedOperationsBatcher network_tasks(context_->network_thread());
-  ScopedOperationsBatcher worker_tasks(context_->worker_thread());
+  ScopedOperationsBatcher worker_tasks(context_->network_thread());
   flat_map<std::string, DtlsTransportAndName> dtls_transports_by_mid =
       GetDtlsTransports(*transceivers(), transport_controller_s());
 
@@ -3959,7 +3959,11 @@ RTCError SdpOfferAnswerHandler::Rollback(SdpType desc_type) {
       transceivers()->Remove(transceiver);
     }
   };
-  ScopedOperationsBatcher worker_tasks(context_->worker_thread());
+  
+  
+  
+  
+  ScopedOperationsBatcher worker_tasks(context_->network_thread());
   ScopedOperationsBatcher network_tasks(context_->network_thread());
 
   for (auto&& transceivers_stable_state_pair : transceivers()->StableStates()) {
@@ -4674,8 +4678,12 @@ RTCError SdpOfferAnswerHandler::UpdateTransceiversAndDataChannels(
   
   
   
+  
+  
+  
+  
   ScopedOperationsBatcher network_teardown_tasks(context_->network_thread());
-  ScopedOperationsBatcher worker_tasks(context_->worker_thread());
+  ScopedOperationsBatcher worker_tasks(context_->network_thread());
   ScopedOperationsBatcher network_init_tasks(context_->network_thread());
   const ContentInfos& new_contents = new_session.description()->contents();
   struct TransceiverUpdate {
@@ -5819,7 +5827,7 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
 
   if (ConfiguredForMedia()) {
     
-    ScopedOperationsBatcher batcher(context_->worker_thread());
+    ScopedOperationsBatcher batcher(context_->network_thread());
 
     
     
@@ -5929,7 +5937,8 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
         if (preferred_rtcp_cc_ack_type.has_value()) {
           if (preferred_rtcp_cc_ack_type == remote_preferred_rtcp_cc_ack_type) {
             
-            context_->worker_thread()->PostTask(
+            
+            context_->network_thread()->PostTask(
                 [call = pc_->call_ptr(),
                  preferred_rtcp_cc_ack_type = *preferred_rtcp_cc_ack_type] {
                   call->SetPreferredRtcpCcAckType(preferred_rtcp_cc_ack_type);
@@ -6018,7 +6027,11 @@ void SdpOfferAnswerHandler::RemoveStoppedTransceivers() {
   
   
   ScopedOperationsBatcher network_teardown_tasks(context_->network_thread());
-  ScopedOperationsBatcher worker_tasks(context_->worker_thread());
+  
+  
+  
+  
+  ScopedOperationsBatcher worker_tasks(context_->network_thread());
   for (const auto& transceiver : transceiver_list) {
     
     
@@ -6270,7 +6283,12 @@ RTCError SdpOfferAnswerHandler::CreateChannels(const SessionDescription& desc) {
   
   RTC_DCHECK_RUN_ON(signaling_thread());
 
-  ScopedOperationsBatcher worker_tasks(context_->worker_thread());
+  
+  
+  
+  
+  
+  ScopedOperationsBatcher worker_tasks(context_->network_thread());
   ScopedOperationsBatcher network_tasks(network_thread());
 
   const ContentInfo* voice = GetFirstAudioContent(&desc);
