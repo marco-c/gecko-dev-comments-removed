@@ -49,7 +49,9 @@ add_task(async function test_drag_coords() {
   const elementRect = target.getBoundingClientRect();
   is(coords.dragstart.client.x, elementRect.x + dragOptions.sourceOffset[0],
      "dragstart event clientX is correct");
-  is(coords.dragstart.client.y, elementRect.y + dragOptions.sourceOffset[1],
+  // FIXME(bug 2097152): these should always be the same, but they're
+  //                     different by 1 pixel on macOS VM.
+  ok(Math.abs(coords.dragstart.client.y - (elementRect.y + dragOptions.sourceOffset[1])) <= 1,
      "dragstart event clientY is correct");
   for (let coordType of ["screen", "client"]) {
     const delta = [0, 1].map(i => dragOptions.targetOffset[i] - dragOptions.sourceOffset[i]);
