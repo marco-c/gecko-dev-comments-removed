@@ -10,7 +10,6 @@ import android.util.Log
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ComposeTimeoutException
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertAny
 import androidx.compose.ui.test.assertCountEquals
@@ -59,6 +58,7 @@ import org.mozilla.fenix.helpers.Constants.RETRY_COUNT
 import org.mozilla.fenix.helpers.Constants.SPEECH_RECOGNITION
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.helpers.FeatureSettingsHelper.Companion.settings
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithDescription
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
@@ -68,7 +68,6 @@ import org.mozilla.fenix.helpers.TestHelper.appName
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.ext.waitNotNull
-import org.mozilla.fenix.nimbus.FxNimbus
 
 /** Implementation of Robot Pattern for the search fragment. */
 class SearchRobot(private val composeTestRule: ComposeTestRule) {
@@ -85,7 +84,6 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     fun verifyScanButton(isDisplayed: Boolean) {
         if (isDisplayed) {
             Log.i(TAG, "verifyScanButton: Waiting for $waitingTime until the scan QR button is exists")
@@ -152,7 +150,6 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "closeVoiceSearchDialog: Clicked device back button")
     }
 
-    @OptIn(ExperimentalTestApi::class)
     fun verifyTheSuggestionsHeader(headerText: String) {
         Log.i(TAG, "verifyTheFirefoxSuggestHeader: Trying to verify the Firefox Suggest header is displayed.")
         this@SearchRobot.composeTestRule.waitUntilExactlyOneExists(hasText(headerText), waitingTime)
@@ -164,7 +161,6 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
      * Verifies that the sponsored suggestions are displayed. For regular search suggestions, use
      * [verifySearchSuggestionsAreDisplayed].
      */
-    @OptIn(ExperimentalTestApi::class)
     fun verifySponsoredSuggestionsResults(
         vararg searchSuggestions: String,
         searchTerm: String,
@@ -227,7 +223,6 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
      * Verifies that the regular search suggestions are displayed. For sponsored suggestions, use
      * [verifySponsoredSuggestionsResults].
      */
-    @OptIn(ExperimentalTestApi::class)
     fun verifySearchSuggestionsAreDisplayed(vararg searchSuggestions: String) {
         composeTestRule.waitForIdle()
         for (searchSuggestion in searchSuggestions) {
@@ -249,7 +244,6 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     fun verifyBookmarkSearchSuggestionsAreDisplayed(vararg searchSuggestions: String) {
         composeTestRule.waitForIdle()
         for (searchSuggestion in searchSuggestions) {
@@ -308,7 +302,6 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     fun verifySearchSuggestionsCount(numberOfSuggestions: Int, searchTerm: String) {
         for (i in 1..RETRY_COUNT) {
             Log.i(TAG, "verifySearchSuggestionsCount: Started try #$i")
@@ -432,7 +425,6 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifySearchSelectorButton: Verified that the search selector button is displayed")
     }
 
-    @OptIn(ExperimentalTestApi::class)
     fun clickSearchSelectorButton() {
         Log.i(TAG, "clickSearchSelectorButton: Waiting for $waitingTime until the search selector button exists")
         composeTestRule.waitUntilAtLeastOneExists(hasTestTag(SEARCH_SELECTOR), waitingTime)
@@ -468,7 +460,6 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyBookmarkSearchBarPlaceholder: Verification successful")
     }
 
-    @OptIn(ExperimentalTestApi::class)
     fun verifySearchShortcutList(vararg searchEngineNames: String, isSearchEngineDisplayed: Boolean) {
         for (searchEngineName in searchEngineNames) {
             if (isSearchEngineDisplayed) {
@@ -498,7 +489,6 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     fun selectTemporarySearchMethod(searchEngineName: String) {
         Log.i(TAG, "verifySearchShortcutList: Waiting for $waitingTime until search shortcut: $searchEngineName exists")
         composeTestRule.waitUntilAtLeastOneExists(hasContentDescription(searchEngineName), waitingTime)
@@ -553,7 +543,11 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
         )
         assertTrue(
             "$TAG: Neither the device camera was opened nor the camera app error message was displayed",
-            mDevice.findObject(UiSelector().resourceId("$packageName:id/view_finder")).waitForExists(waitingTime) ||
+            // The Lens camera shows its title whether or not a camera is available.
+            mDevice
+                .findObject(UiSelector().text(getStringResource(R.string.lens_camera_title_qr)))
+                .waitForExists(waitingTime) ||
+                mDevice.findObject(UiSelector().resourceId("$packageName:id/view_finder")).exists() ||
                 // In case there is no camera available, an error will be shown.
                 mDevice.findObject(UiSelector().resourceId("$packageName:id/camera_error")).exists(),
         )
@@ -598,7 +592,6 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "typeBookmarkSearch: Compose is now idle")
     }
 
-    @OptIn(ExperimentalTestApi::class)
     fun clickClearButton() {
         Log.i(TAG, "openSearch: Waiting for $waitingTime until the clear toolbar button exists")
         composeTestRule.waitUntilAtLeastOneExists(
@@ -620,7 +613,6 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "tapOutsideToDismissSearchBar: Clicked outside the search bar")
     }
 
-    @OptIn(ExperimentalTestApi::class)
     fun longClickToolbar() {
         Log.i(TAG, "longClickToolbar: Trying to perform \"Close soft keyboard\" action")
         closeSoftKeyboard()
@@ -685,7 +677,6 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
         )
     }
 
-    @OptIn(ExperimentalTestApi::class)
     fun verifyTypedToolbarText(expectedText: String, exists: Boolean) {
         Log.i(TAG, "verifyTypedToolbarText: Waiting for $waitingTime until the edited URL exists")
         composeTestRule.waitUntilAtLeastOneExists(
@@ -696,13 +687,13 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyTypedToolbarText: Verifying that text '$expectedText' exists?: $exists")
         val normalizedExpectedText =
             normalizeWhitespace(expectedText).let {
-                when (FxNimbus.features.addressbarFocusMode.value().enabled) {
+                when (settings.showAddressBarInFocusMode) {
                     true -> URLStringUtils.toDisplayUrl(it).toString()
                     else -> it
                 }
             }
         val actualText =
-            when (FxNimbus.features.addressbarFocusMode.value().enabled) {
+            when (settings.showAddressBarInFocusMode) {
                 true ->
                     composeTestRule
                         .onNodeWithTag(CURRENT_URL_IN_SITE_DETAILS, true)
@@ -841,7 +832,6 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
             return BrowserRobot.Transition(composeTestRule)
         }
 
-        @OptIn(ExperimentalTestApi::class)
         fun clickSearchEngineSettings(
             interact: SettingsSubMenuSearchRobot.() -> Unit
         ): SettingsSubMenuSearchRobot.Transition {
