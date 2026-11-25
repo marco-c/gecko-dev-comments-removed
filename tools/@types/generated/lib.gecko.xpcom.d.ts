@@ -18442,7 +18442,7 @@ interface nsICaptivePortalCallback extends nsISupports {
   
   prepare(): void;
   
-  complete(success: boolean): void;
+  complete(success: boolean, unlockedPortal?: boolean): void;
 }
 
 
@@ -19125,14 +19125,6 @@ interface nsICredentialChooserService extends nsISupports {
   
   fetchDisconnect(uri: nsIURI, body: string, triggeringPrincipal: nsIPrincipal): Promise<any>;
 }
-
-
-
-
-type nsICredentialChosenCallback = Callable<{
-  
-  notify(aChosenID: string): void;
-}>
 
 
 
@@ -27484,7 +27476,6 @@ interface nsIXPCComponents_Interfaces {
   nsISiteContainerService: nsJSIID<nsISiteContainerService>;
   nsICrashService: nsJSIID<nsICrashService>;
   nsICredentialChooserService: nsJSIID<nsICredentialChooserService>;
-  nsICredentialChosenCallback: nsJSIID<nsICredentialChosenCallback>;
   nsIIdentityCredentialPromptService: nsJSIID<nsIIdentityCredentialPromptService>;
   nsIIdentityCredentialStorageService: nsJSIID<nsIIdentityCredentialStorageService>;
   nsIDAPTelemetry: nsJSIID<nsIDAPTelemetry>;
