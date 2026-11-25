@@ -9,7 +9,7 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   LanguageDetector:
-    "resource://gre/modules/translations/LanguageDetector.sys.mjs",
+    "moz-src:///toolkit/components/translations/LanguageDetector.sys.mjs",
   TranslationsPanelShared:
     "chrome://browser/content/translations/TranslationsPanelShared.sys.mjs",
   TranslationsUtils:
@@ -523,17 +523,11 @@ var SelectTranslationsPanel = new (class {
     const { panel, fromMenuList, toMenuList, tryAnotherSourceMenuList } =
       this.elements;
 
-    
-    
-    
-    if (AppConstants.platform === "macosx") {
-      panel.addEventListener("keypress", this);
-    }
+    panel.addEventListener("click", this);
     panel.addEventListener("popupshown", this);
     panel.addEventListener("popuphidden", this);
 
     panel.addEventListener("command", this);
-    panel.addEventListener("click", this);
     fromMenuList.addEventListener("command", this);
     toMenuList.addEventListener("command", this);
     tryAnotherSourceMenuList.addEventListener("command", this);
@@ -827,20 +821,16 @@ var SelectTranslationsPanel = new (class {
     const {
       fromMenuList,
       fromMenuPopup,
-      settingsButton,
       toMenuList,
       toMenuPopup,
       tryAnotherSourceMenuList,
       tryAnotherSourceMenuPopup,
     } = this.elements;
+
     switch (target.id) {
       case fromMenuList.id:
       case fromMenuPopup.id: {
         this.onChangeFromLanguage();
-        break;
-      }
-      case settingsButton.id: {
-        this.#openSettingsPopup();
         break;
       }
       case toMenuList.id:
@@ -867,6 +857,7 @@ var SelectTranslationsPanel = new (class {
       copyButton,
       doneButtonPrimary,
       doneButtonSecondary,
+      settingsButton,
       translateButton,
       translateFullPageButton,
       tryAgainButton,
@@ -885,6 +876,10 @@ var SelectTranslationsPanel = new (class {
         this.onClickDoneButton();
         break;
       }
+      case settingsButton.id: {
+        this.#openSettingsPopup();
+        break;
+      }
       case translateButton.id: {
         this.onClickTranslateButton();
         break;
@@ -895,22 +890,6 @@ var SelectTranslationsPanel = new (class {
       }
       case tryAgainButton.id: {
         this.onClickTryAgainButton();
-        break;
-      }
-    }
-  }
-
-  
-
-
-
-
-  #handleEnterKeyPressed(target) {
-    const { settingsButton } = this.elements;
-
-    switch (target.id) {
-      case settingsButton.id: {
-        this.#openSettingsPopup();
         break;
       }
     }
@@ -1188,12 +1167,6 @@ var SelectTranslationsPanel = new (class {
       }
       case "click": {
         this.#handleClickEvent(target);
-        break;
-      }
-      case "keypress": {
-        if (event.key === "Enter") {
-          this.#handleEnterKeyPressed(target);
-        }
         break;
       }
       case "popupshown": {
@@ -1815,7 +1788,7 @@ var SelectTranslationsPanel = new (class {
       
       this.#isFullPageTranslationsRestrictedForPage ||
       
-      !!this.#activeFullPageTranslationsTargetLanguage
+      Boolean(this.#activeFullPageTranslationsTargetLanguage)
     );
   }
 
@@ -2054,10 +2027,7 @@ var SelectTranslationsPanel = new (class {
       ],
       makeVisible: [initFailureContent, cancelButton, tryAgainButton],
     });
-    tryAgainButton.updateComplete.then(() => {
-      tryAgainButton.buttonEl.ariaDescribedByElements = [initFailureMessageBar];
-    });
-    tryAgainButton.focus({ focusVisible: false });
+    this.#focusTryAgainButton(initFailureMessageBar, "init-failure");
   }
 
   
@@ -2104,12 +2074,27 @@ var SelectTranslationsPanel = new (class {
         tryAgainButton,
       ],
     });
-    tryAgainButton.updateComplete.then(() => {
-      tryAgainButton.buttonEl.ariaDescribedByElements = [
-        translationFailureMessageBar,
-      ];
-    });
-    tryAgainButton.focus({ focusVisible: false });
+    this.#focusTryAgainButton(
+      translationFailureMessageBar,
+      "translation-failure"
+    );
+  }
+
+  
+
+
+
+
+
+
+
+  async #focusTryAgainButton(messageBar, phase) {
+    const { panel, tryAgainButton } = this.elements;
+    await tryAgainButton.updateComplete;
+    if (panel.state === "open" && this.phase() === phase) {
+      tryAgainButton.buttonEl.ariaDescribedByElements = [messageBar];
+      tryAgainButton.focus({ focusVisible: false });
+    }
   }
 
   
