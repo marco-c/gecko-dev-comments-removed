@@ -81,6 +81,7 @@ SMRegExpMacroAssembler::SMRegExpMacroAssembler(JSContext* cx,
   }
   savedRegisters_ = js::jit::SavedNonVolatileRegisters(regs);
 
+  masm_.indirectTarget(js::jit::TargetKind::Call);
   masm_.jump(&entry_label_);  
   masm_.bind(&start_label_);  
 }
@@ -106,6 +107,13 @@ void SMRegExpMacroAssembler::Backtrack() { masm_.jump(&backtrack_label_); }
 
 void SMRegExpMacroAssembler::Bind(Label* label) {
   masm_.bind(label->inner());
+  if (label->patchOffset_.bound()) {
+    AddLabelPatch(label->patchOffset_, label->pos());
+  }
+}
+
+void SMRegExpMacroAssembler::BindJumpTarget(Label* label) {
+  masm_.bindIndirectTarget(label->inner(), js::jit::TargetKind::Jump);
   if (label->patchOffset_.bound()) {
     AddLabelPatch(label->patchOffset_, label->pos());
   }
@@ -1203,28 +1211,25 @@ void SMRegExpMacroAssembler::createStackFrame() {
   size_t frameBytes = sizeof(FrameData) + num_registers_ * sizeof(void*);
   frameSize_ = js::jit::StackDecrementForCall(js::jit::ABIStackAlignment,
                                               masm_.framePushed(), frameBytes);
-  masm_.reserveStack(frameSize_);
-  masm_.checkStackAlignment();
 
   
   
   
-  js::jit::Label stack_ok;
   AbsoluteAddress limit_addr(cx_->addressOfJitStackLimitNoInterrupt());
-  masm_.branchStackPtrRhs(Assembler::Below, limit_addr, &stack_ok);
-
-  masm_.loadJSContext(temp0_);
-  masm_.store8(Imm32(1),
-               Address(temp0_, JSContext::offsetOfHasDelayedOverRecursed()));
-
-  
-  
-  
-  masm_.movePtr(ImmWord(int32_t(js::RegExpRunStatus::Error)),
-                js::jit::ReturnReg);
-  masm_.jump(&exit_overrecursed_label_);
-
-  masm_.bind(&stack_ok);
+  if (!needsUnderflowCheck()) {
+    masm_.reserveStack(frameSize_);
+    overrecursedFramePushed_ = masm_.framePushed();
+    masm_.branchStackPtrRhs(Assembler::AboveOrEqual, limit_addr,
+                            &overrecursed_label_);
+  } else {
+    masm_.loadPtr(limit_addr, temp1_);
+    masm_.addPtr(Imm32(frameSize_), temp1_);
+    overrecursedFramePushed_ = masm_.framePushed();
+    masm_.branchStackPtr(Assembler::BelowOrEqual, temp1_,
+                         &overrecursed_label_);
+    masm_.reserveStack(frameSize_);
+  }
+  masm_.checkStackAlignment();
 }
 
 void SMRegExpMacroAssembler::initFrameAndRegs() {
@@ -1415,9 +1420,10 @@ void SMRegExpMacroAssembler::exitHandler() {
       backtrack_stack_pointer_,
       AbsoluteAddress(ExternalReference::RegexpStackPointer(isolate())));
 
-  masm_.bind(&exit_overrecursed_label_);
-
   masm_.freeStack(frameSize_);
+
+  js::jit::Label exit_overrecursed;
+  masm_.bind(&exit_overrecursed);
 
   
   for (GeneralRegisterBackwardIterator iter(savedRegisters_); iter.more();
@@ -1451,6 +1457,23 @@ void SMRegExpMacroAssembler::exitHandler() {
     
     masm_.movePtr(ImmWord(int32_t(js::RegExpRunStatus::Error)), temp0_);
     masm_.jump(&exit_label_);
+  }
+
+  if (overrecursed_label_.used()) {
+    masm_.bind(&overrecursed_label_);
+    masm_.setFramePushed(overrecursedFramePushed_);
+    
+    
+    if (!needsUnderflowCheck()) {
+      masm_.freeStack(frameSize_);
+    }
+    
+    masm_.loadJSContext(temp0_);
+    masm_.store8(Imm32(1),
+                 Address(temp0_, JSContext::offsetOfHasDelayedOverRecursed()));
+    masm_.movePtr(ImmWord(int32_t(js::RegExpRunStatus::Error)),
+                  js::jit::ReturnReg);
+    masm_.jump(&exit_overrecursed);
   }
 }
 

@@ -123,6 +123,7 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
 
   virtual void Backtrack();
   virtual void Bind(Label* label);
+  virtual void BindJumpTarget(Label* label);
   virtual void GoTo(Label* label);
   virtual void PushBacktrack(Label* label);
 
@@ -186,6 +187,7 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
 
  private:
   size_t frameSize_ = 0;
+  uint32_t overrecursedFramePushed_ = 0;
 
   void createStackFrame();
   void initFrameAndRegs();
@@ -193,6 +195,10 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   void exitHandler();
   void backtrackHandler();
   void stackOverflowHandler();
+
+  bool needsUnderflowCheck() const {
+    return frameSize_ > js::jit::MAX_UNCHECKED_UNDERFLOW_SIZE;
+  }
 
   
   void Push(js::jit::Register value);
@@ -345,7 +351,7 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   js::jit::NonAssertingLabel exit_label_;
   js::jit::NonAssertingLabel stack_overflow_label_;
   js::jit::NonAssertingLabel exit_with_exception_label_;
-  js::jit::NonAssertingLabel exit_overrecursed_label_;
+  js::jit::NonAssertingLabel overrecursed_label_;
 
   
   
