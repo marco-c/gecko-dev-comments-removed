@@ -5,61 +5,7 @@
 
 #include <stdlib.h>
 #include <windows.h>
-#ifdef _MSC_VER
-#  include <strsafe.h>
-#endif
-#ifdef __MINGW32__
-
-
-
-#  include <shellapi.h>
-#  include <stdio.h>
-int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int);
-
-#  undef __argc
-#  undef __wargv
-
-static int __argc;
-static wchar_t** __wargv;
-
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-                   LPSTR lpszCommandLine, int nCmdShow) {
-  LPWSTR commandLine = GetCommandLineW();
-
-  
-
-
-  __wargv = CommandLineToArgvW(commandLine, &__argc);
-  if (!__wargv) return 127;
-
-  
-
-
-  while ((*commandLine <= L' ') && *commandLine) {
-    ++commandLine;
-  }
-  if (*commandLine == L'"') {
-    ++commandLine;
-    while ((*commandLine != L'"') && *commandLine) {
-      ++commandLine;
-    }
-    if (*commandLine) {
-      ++commandLine;
-    }
-  } else {
-    while (*commandLine > L' ') {
-      ++commandLine;
-    }
-  }
-  while ((*commandLine <= L' ') && *commandLine) {
-    ++commandLine;
-  }
-
-  int result = wWinMain(hInstance, hPrevInstance, commandLine, nCmdShow);
-  LocalFree(__wargv);
-  return result;
-}
-#endif 
+#include <strsafe.h>
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
                     LPWSTR lpszCmdLine, int nCmdShow) {
@@ -94,12 +40,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
   static const int size = 4096;
   static WCHAR msg[size];
 
-#ifdef _MSC_VER
-  StringCchPrintfW(msg,
-#else
-  snwprintf(msg,
-#endif
-                   size,
+  StringCchPrintfW(msg, size,
                    L"%s\n\nClick Abort to exit the Application.\n"
                    L"Click Retry to Debug the Application.\n"
                    L"Click Ignore to continue running the Application.",

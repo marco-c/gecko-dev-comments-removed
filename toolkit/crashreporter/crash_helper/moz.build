@@ -33,6 +33,8 @@ else:
             "ws2_32",
         ]
 
+        WIN32_WIDE_ENTRY = True
+
     UNIFIED_SOURCES += [
         "crashhelper.cpp",
     ]

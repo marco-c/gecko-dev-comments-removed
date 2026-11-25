@@ -210,6 +210,56 @@ class TestEmitterBasic(unittest.TestCase):
         self.assertEqual(wanted, variables)
         self.maxDiff = maxDiff
 
+    def test_winconsole(self):
+        substs = {
+            "TARGET_OS": "WINNT",
+            "WIN32_CONSOLE_EXE_LDFLAGS": ["-mconsole"],
+            "WIN32_GUI_EXE_LDFLAGS": ["-mwindows"],
+        }
+        for fixture, wanted, defines in (
+            ("winconsole-true", ["-mconsole"], {"MOZ_WINCONSOLE": True}),
+            ("winconsole-false", ["-ENTRY:wmainCRTStartup", "-mwindows"], {}),
+            ("winconsole-default", ["-mconsole"], {}),
+        ):
+            objs = self.read_topsrcdir(self.reader(fixture, extra_substs=substs))
+            passthru = [o for o in objs if isinstance(o, VariablePassthru)]
+            self.assertEqual(len(passthru), 1)
+            self.assertEqual(passthru[0].variables, {"WIN32_EXE_LDFLAGS": wanted})
+            self.assertEqual(
+                [dict(o.defines) for o in objs if isinstance(o, Defines)],
+                [defines] if defines else [],
+            )
+        substs["TARGET_OS"] = "Linux"
+        objs = self.read_topsrcdir(self.reader("winconsole-true", extra_substs=substs))
+        self.assertEqual(objs, [])
+
+    def test_win32_wide_entry(self):
+        mingw = {
+            "CC_TYPE": "clang",
+            "TARGET_OS": "WINNT",
+            "WIN32_CONSOLE_EXE_LDFLAGS": ["-mconsole"],
+            "WIN32_GUI_EXE_LDFLAGS": ["-mwindows"],
+        }
+        for fixture, wanted in (
+            ("win32-wide-entry", ["-municode", "-mconsole"]),
+            ("win32-wide-entry-gui", ["-municode", "-mwindows"]),
+        ):
+            objs = self.read_topsrcdir(self.reader(fixture, extra_substs=mingw))
+            self.assertEqual(len(objs), 1)
+            self.assertIsInstance(objs[0], VariablePassthru)
+            self.assertEqual(objs[0].variables, {"WIN32_EXE_LDFLAGS": wanted})
+
+        reader = self.reader(
+            "win32-wide-entry", extra_substs={"CC_TYPE": "clang", "TARGET_OS": "Linux"}
+        )
+        self.assertEqual(self.read_topsrcdir(reader), [])
+
+        reader = self.reader(
+            "win32-wide-entry",
+            extra_substs={"CC_TYPE": "clang-cl", "TARGET_OS": "WINNT"},
+        )
+        self.assertEqual(self.read_topsrcdir(reader), [])
+
     def test_compile_flags(self):
         reader = self.reader(
             "compile-flags", extra_substs={"WARNINGS_AS_ERRORS": "-Werror"}
@@ -1577,6 +1627,24 @@ class TestEmitterBasic(unittest.TestCase):
         self.assertEqual([str(d) for d in deps], ["!generated.rsp"])
         self.assertIsInstance(deps[0], ObjDirPath)
 
+    def test_compiler_plugin_no_library(self):
+        reader = self.reader("compiler-plugin-no-library")
+        with self.assertRaisesRegex(
+            SandboxValidationError,
+            "IS_COMPILER_PLUGIN is set but no host shared library",
+        ):
+            self.read_topsrcdir(reader)
+
+    def test_extra_link_deps_symbols_file(self):
+        reader = self.reader("extra-link-deps-symbols-file")
+        objs = self.read_topsrcdir(reader)
+        libs = [o for o in objs if isinstance(o, SharedLibrary)]
+        self.assertEqual(len(libs), 1)
+        self.assertEqual(
+            [str(d) for d in libs[0].extra_link_deps],
+            ["!foo.symbols", "!generated.rsp"],
+        )
+
     def test_extra_link_deps_no_linkable(self):
         """Test that EXTRA_LINK_DEPS without a linkable is an error."""
         reader = self.reader("extra-link-deps-no-linkable")
@@ -2223,6 +2291,7 @@ class TestEmitterBasic(unittest.TestCase):
         
         
         self.assertEqual(shlib.symbols_file, "libfoo.so.def")
+        self.assertEqual([str(d) for d in shlib.extra_link_deps], ["!libfoo.so.def"])
 
     def test_symbols_file_objdir(self):
         """Test that a SYMBOLS_FILE in the objdir works"""
@@ -2236,6 +2305,8 @@ class TestEmitterBasic(unittest.TestCase):
         self.assertIsInstance(ldflags, ComputedFlags)
         self.assertIsInstance(shlib, SharedLibrary)
         self.assertEqual(shlib.symbols_file, "foo.symbols")
+        self.assertEqual([str(d) for d in shlib.extra_link_deps], ["!foo.symbols"])
+        self.assertEqual(genfile.required_during_compile, ["foo.symbols"])
 
     def test_symbols_file_objdir_missing_generated(self):
         """Test that a SYMBOLS_FILE in the objdir that's missing

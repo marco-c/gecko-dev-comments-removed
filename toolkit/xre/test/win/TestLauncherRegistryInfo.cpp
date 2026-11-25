@@ -2,8 +2,6 @@
 
 
 
-
-
 #define MOZ_USE_LAUNCHER_ERROR
 
 #include "mozilla/LauncherRegistryInfo.h"
@@ -909,7 +907,7 @@ static mozilla::LauncherVoidResult TestCrashTimeoutInFuture() {
   return mozilla::Ok();
 }
 
-int main(int argc, char* argv[]) {
+int wmain(int argc, wchar_t* argv[]) {
   auto fullPath = mozilla::GetFullBinaryPath();
   if (!fullPath) {
     return 1;
