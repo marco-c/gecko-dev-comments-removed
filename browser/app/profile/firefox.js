@@ -2042,7 +2042,7 @@ pref("browser.newtabpage.activity-stream.images.smart", true);
 pref("browser.newtabpage.activity-stream.weather.locationSearchEnabled", true);
 
 
-pref("browser.newtabpage.activity-stream.discoverystream.region-weather-config", "AT,BE,BG,CA,CH,CY,CZ,DE,DK,EE,ES,FI,FR,GB,GL,GR,HK,HR,HU,IE,IQ,IS,IT,LI,LT,LV,MT,NL,NO,PL,PT,RO,RU,SE,SI,SK,US");
+pref("browser.newtabpage.activity-stream.discoverystream.region-weather-config", "AT,BE,BG,CA,CH,CY,CZ,DE,DK,EE,ES,FI,FR,GB,GL,GR,HK,HR,HU,IE,IQ,IS,IT,LI,LT,LV,MT,NL,NO,PL,PT,RO,RU,SE,SG,SI,SK,US");
 
 
 
@@ -2313,6 +2313,13 @@ pref("messaging-system.rsexperimentloader.collection_id", "nimbus-desktop-experi
 pref("nimbus.debug", false);
 pref("nimbus.validation.enabled", true);
 pref("nimbus.firstUpdateComplete", false);
+pref("app.normandy.run_interval_seconds", 21600); 
+pref("app.normandy.shieldLearnMoreUrl", "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/shield");
+#ifdef MOZ_DATA_REPORTING
+  pref("app.shield.optoutstudies.enabled", true);
+#else
+  pref("app.shield.optoutstudies.enabled", false);
+#endif
 
 
 
@@ -2461,6 +2468,7 @@ pref("browser.smartwindow.memories.generateFromHistory", true);
 pref("browser.smartwindow.memories.generateFromConversation", true);
 pref("browser.smartwindow.memories.hasSeenMemories", false);
 pref("browser.smartwindow.memories.logLevel", "Warn");
+pref("browser.smartwindow.newtab.focusSmartbar", true);
 
 pref("browser.smartwindow.resumeActivity.enabled", true);
 
@@ -3175,22 +3183,6 @@ pref("doh-rollout.clearModeOnShutdown", false);
 pref("network.trr_ui.fallback_was_checked", true);
 
 
-pref("app.normandy.api_url", "https://normandy.cdn.mozilla.net/api/v1");
-pref("app.normandy.dev_mode", false);
-pref("app.normandy.enabled", true);
-pref("app.normandy.first_run", true);
-pref("app.normandy.logging.level", 50); 
-pref("app.normandy.run_interval_seconds", 21600); 
-pref("app.normandy.shieldLearnMoreUrl", "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/shield");
-pref("app.normandy.last_seen_buildid", "");
-pref("app.normandy.onsync_skew_sec", 600);
-#ifdef MOZ_DATA_REPORTING
-  pref("app.shield.optoutstudies.enabled", true);
-#else
-  pref("app.shield.optoutstudies.enabled", false);
-#endif
-
-
 
 
 
@@ -3435,9 +3427,6 @@ pref("devtools.anti-tracking.enabled", false);
 
 
 pref("devtools.application.sessionHistory.enabled", false);
-
-
-pref("devtools.application.speculativeLoads", false);
 
 
 
