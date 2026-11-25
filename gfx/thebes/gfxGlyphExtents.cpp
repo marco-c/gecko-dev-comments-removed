@@ -36,7 +36,7 @@ gfxGlyphExtents::~gfxGlyphExtents() {
 bool gfxGlyphExtents::GetTightGlyphExtentsAppUnitsLocked(
     gfxFont* aFont, DrawTarget* aDrawTarget, uint32_t aGlyphID,
     gfxRect* aExtents) {
-  HashEntry* entry = mTightGlyphExtents.GetEntry(aGlyphID);
+  auto entry = mTightGlyphExtents.readonlyThreadsafeLookup(aGlyphID);
   if (!entry) {
     
     
@@ -57,14 +57,15 @@ bool gfxGlyphExtents::GetTightGlyphExtentsAppUnitsLocked(
     mLock.ReadLock();
     MOZ_POP_THREAD_SAFETY
 
-    entry = mTightGlyphExtents.GetEntry(aGlyphID);
+    entry = mTightGlyphExtents.readonlyThreadsafeLookup(aGlyphID);
     if (!entry) {
       NS_WARNING("Could not get glyph extents");
       return false;
     }
   }
 
-  *aExtents = gfxRect(entry->x, entry->y, entry->width, entry->height);
+  const gfx::Rect& extents = entry->value();
+  *aExtents = gfxRect(extents.x, extents.y, extents.width, extents.height);
   return true;
 }
 
@@ -129,20 +130,16 @@ void gfxGlyphExtents::GlyphWidths::Set(uint32_t aGlyphID, uint16_t aWidth) {
 void gfxGlyphExtents::SetTightGlyphExtents(uint32_t aGlyphID,
                                            const gfxRect& aExtentsAppUnits) {
   AutoWriteLock lock(mLock);
-  HashEntry* entry = mTightGlyphExtents.PutEntry(aGlyphID);
-  if (!entry) {
-    return;
-  }
-  entry->x = aExtentsAppUnits.X();
-  entry->y = aExtentsAppUnits.Y();
-  entry->width = aExtentsAppUnits.Width();
-  entry->height = aExtentsAppUnits.Height();
+  
+  (void)mTightGlyphExtents.put(
+      aGlyphID, gfx::Rect(aExtentsAppUnits.X(), aExtentsAppUnits.Y(),
+                          aExtentsAppUnits.Width(), aExtentsAppUnits.Height()));
 }
 
 size_t gfxGlyphExtents::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
   AutoReadLock lock(mLock);
   return mContainedGlyphWidths.SizeOfExcludingThis(aMallocSizeOf) +
-         mTightGlyphExtents.ShallowSizeOfExcludingThis(aMallocSizeOf);
+         mTightGlyphExtents.shallowSizeOfExcludingThis(aMallocSizeOf);
 }
 
 size_t gfxGlyphExtents::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
