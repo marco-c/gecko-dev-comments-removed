@@ -10,6 +10,7 @@
 #include "TLSClientAuthCertSelection.h"
 #include "mozilla/Casting.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/Span.h"
 #include "nsNSSIOLayer.h"
 #include "nsThreadUtils.h"
 
@@ -215,50 +216,51 @@ class NSSSocketControl final : public CommonSocketControl {
     mMACAlgorithmUsed = mac;
   }
 
-  void SetShortWritePending(int32_t amount, unsigned char data) {
+  void SetShortWritePending(const void* data, size_t amount) {
     COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
-    mIsShortWritePending = true;
-    mShortWriteOriginalAmount = amount;
-    mShortWritePendingByte = data;
+    MOZ_ASSERT(mMaybeShortWrite.isNothing());
+    nsTArray<uint8_t> shortWrite(amount);
+    shortWrite.AppendElements(
+        reinterpret_cast<uint8_t*>(const_cast<void*>(data)), amount);
+    mMaybeShortWrite.emplace(std::move(shortWrite));
   }
 
   bool IsShortWritePending() {
     COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
-    return mIsShortWritePending;
+    return mMaybeShortWrite.isSome();
   }
 
-  unsigned char const* GetShortWritePendingByteRef() {
+  size_t ResetShortWritePending() {
     COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
-    return &mShortWritePendingByte;
+    MOZ_ASSERT(mMaybeShortWrite.isSome());
+    size_t shortWriteLength = mMaybeShortWrite->Length();
+    mMaybeShortWrite.reset();
+    return shortWriteLength;
   }
 
-  int32_t ResetShortWritePending() {
-    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
-    mIsShortWritePending = false;
-    return mShortWriteOriginalAmount;
-  }
-
-#ifdef DEBUG
   
   
-  
-  void RememberShortWrittenBuffer(const unsigned char* data) {
+  const void* CheckShortWriteBuffer(const void* data, int32_t amount) {
     COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
-    mShortWriteBufferCheck =
-        mozilla::MakeUnique<char[]>(mShortWriteOriginalAmount);
-    memcpy(mShortWriteBufferCheck.get(), data, mShortWriteOriginalAmount);
+    MOZ_ASSERT(mMaybeShortWrite.isSome());
+    if (mMaybeShortWrite.isNothing()) {
+      return nullptr;
+    }
+    MOZ_ASSERT(amount > 0);
+    if (amount <= 0) {
+      return nullptr;
+    }
+    if (static_cast<size_t>(amount) < mMaybeShortWrite->Length()) {
+      return nullptr;
+    }
+    if (mozilla::Span(*mMaybeShortWrite) !=
+        mozilla::Span(reinterpret_cast<uint8_t*>(const_cast<void*>(data)),
+                      mMaybeShortWrite->Length())) {
+      return nullptr;
+    }
+    
+    return static_cast<const uint8_t*>(data) + mMaybeShortWrite->Length() - 1;
   }
-  void CheckShortWrittenBuffer(const unsigned char* data, int32_t amount) {
-    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
-    if (!mShortWriteBufferCheck) return;
-    MOZ_ASSERT(amount >= mShortWriteOriginalAmount,
-               "unexpected amount length after short write");
-    MOZ_ASSERT(
-        !memcmp(mShortWriteBufferCheck.get(), data, mShortWriteOriginalAmount),
-        "unexpected buffer content after short write");
-    mShortWriteBufferCheck = nullptr;
-  }
-#endif
 
   nsresult SetResumptionTokenFromExternalCache(PRFileDesc* fd);
 
@@ -302,6 +304,8 @@ class NSSSocketControl final : public CommonSocketControl {
   bool mPreliminaryHandshakeDone;  
 
   nsresult ActivateSSL();
+  void RecordTokenResumption(const nsACString& aOutcome);
+  bool HasResumptionOutcomeToRecord() const;
 
   nsCString mEsniTxt;
   nsCString mEchConfig;
@@ -310,27 +314,15 @@ class NSSSocketControl final : public CommonSocketControl {
   bool mFalseStartCallbackCalled;
   bool mFalseStarted;
   bool mIsFullHandshake;
-  bool mDrewResumptionToken;
+  bool mTriedResumptionToken;
+  bool mTokenRestored;  
   bool mNotedTimeUntilReady;
   EchExtensionStatus mEchExtensionStatus;  
 
   
   
-  bool mIsShortWritePending;
-
   
-  
-  
-  
-  unsigned char mShortWritePendingByte;
-
-  
-  
-  int32_t mShortWriteOriginalAmount;
-
-#ifdef DEBUG
-  mozilla::UniquePtr<char[]> mShortWriteBufferCheck;
-#endif
+  mozilla::Maybe<nsTArray<uint8_t>> mMaybeShortWrite;
 
   
   

@@ -651,3 +651,28 @@ function getCacheServices() {
     testCache: Cc[contractId].getService(Ci.nsISSLTokensCacheTest),
   };
 }
+
+
+async function resetTokensAndTelemetry() {
+  await getCacheServices().cache.asyncClearSSLExternalAndInternalSessionCache();
+  Services.fog.testResetFOG();
+}
+
+
+
+function assertTokenResumption(aExpected) {
+  for (let key of [
+    "tcp_session",
+    "tcp_restored",
+    "h3_session",
+    "h3_restored",
+  ]) {
+    for (let outcome of ["resumed", "not_resumed", "rejected"]) {
+      Assert.equal(
+        Glean.network.sslTokenResumption.get(key, outcome).testGetValue(),
+        aExpected[`${key}/${outcome}`] ?? null,
+        `ssl_token_resumption ${key}/${outcome}`
+      );
+    }
+  }
+}

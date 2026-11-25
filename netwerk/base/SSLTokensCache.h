@@ -76,7 +76,8 @@ class SSLTokensCache : public nsIMemoryReporter,
                       uint32_t aTokenLen, CommonSocketControl* aSocketControl,
                       PRTime aExpirationTime);
   static nsresult Get(const nsACString& aKey, nsTArray<uint8_t>& aToken,
-                      SessionCacheInfo& aResult, uint64_t* aTokenId = nullptr);
+                      SessionCacheInfo& aResult, uint64_t* aTokenId = nullptr,
+                      bool* aRestored = nullptr);
   static nsresult Remove(const nsACString& aKey, uint64_t aId);
   static nsresult RemoveAll(const nsACString& aKey);
   static void Clear();
