@@ -190,117 +190,10 @@ add_task(async function testExtensionControlledWebNotificationsPermission() {
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
-add_task(async function testExtensionControlledTrackingProtection() {
-  const TP_PREF = "privacy.trackingprotection.enabled";
-  const TP_DEFAULT = false;
-  const EXTENSION_ID = "@set_tp";
-  const CONTROLLED_LABEL_ID =
-    "contentBlockingTrackingProtectionExtensionContentLabel";
-  const CONTROLLED_BUTTON_ID =
-    "contentBlockingDisableTrackingProtectionExtension";
-
-  let tpEnabledPref = () => Services.prefs.getBoolPref(TP_PREF);
-
-  await SpecialPowers.pushPrefEnv({ set: [[TP_PREF, TP_DEFAULT]] });
-
-  function background() {
-    browser.privacy.websites.trackingProtectionMode.set({ value: "always" });
-  }
-
-  function verifyState(isControlled) {
-    is(tpEnabledPref(), isControlled, "TP pref is set to the expected value.");
-
-    let controlledLabel = doc.getElementById(CONTROLLED_LABEL_ID);
-    let controlledButton = doc.getElementById(CONTROLLED_BUTTON_ID);
-
-    is(
-      controlledLabel.hidden,
-      !isControlled,
-      "The extension controlled row's visibility is as expected."
-    );
-    is(
-      controlledButton.hidden,
-      !isControlled,
-      "The disable extension button's visibility is as expected."
-    );
-    if (isControlled) {
-      let controlledDesc = controlledLabel.querySelector("description");
-      Assert.deepEqual(
-        doc.l10n.getAttributes(controlledDesc),
-        {
-          id: "extension-controlling-websites-content-blocking-all-trackers",
-          args: {
-            name: "set_tp",
-          },
-        },
-        "The user is notified that an extension is controlling TP."
-      );
-    }
-
-    is(
-      doc.getElementById("trackingProtectionMenu").disabled,
-      isControlled,
-      "TP control is enabled."
-    );
-  }
-
-  await openPreferencesViaOpenPreferencesAPI("etp", {
-    leaveOpen: true,
-  });
-  let doc = gBrowser.contentDocument;
-
-  is(
-    gBrowser.currentURI.spec,
-    "about:preferences#etp",
-    "#etp should be in the URI for about:preferences"
-  );
-
-  verifyState(false);
-
-  
-  let extension = ExtensionTestUtils.loadExtension({
-    useAddonManager: "permanent",
-    manifest: {
-      name: "set_tp",
-      browser_specific_settings: { gecko: { id: EXTENSION_ID } },
-      permissions: ["privacy"],
-    },
-    background,
-  });
-
-  let messageShown = waitForMessageShown(CONTROLLED_LABEL_ID);
-  await extension.startup();
-  await messageShown;
-  let addon = await AddonManager.getAddonByID(EXTENSION_ID);
-
-  verifyState(true);
-
-  await disableExtensionViaClick(
-    CONTROLLED_LABEL_ID,
-    CONTROLLED_BUTTON_ID,
-    doc
-  );
-
-  verifyState(false);
-
-  
-  
-  
-  await reEnableExtension(addon, CONTROLLED_LABEL_ID);
-
-  await extension.unload();
-
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-}).skip();
-
 add_task(async function testExtensionControlledPasswordManager() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", false]],
-  });
   const PASSWORD_MANAGER_ENABLED_PREF = "signon.rememberSignons";
   const PASSWORD_MANAGER_ENABLED_DEFAULT = true;
-  const CONTROLLED_BUTTON_ID = "disablePasswordManagerExtension";
-  const CONTROLLED_LABEL_ID = "passwordManagerExtensionContent";
+  const SAVE_PASSWORDS_SETTING_ID = "savePasswords";
   const EXTENSION_ID = "@remember_signons";
   let manifest = {
     manifest_version: 2,
@@ -326,30 +219,40 @@ add_task(async function testExtensionControlledPasswordManager() {
     "Password manager is enabled by default."
   );
 
+  
+  
+  async function waitForControlledState(isControlled) {
+    let control = getSettingControl(SAVE_PASSWORDS_SETTING_ID);
+    while (!!control.setting.controllingExtensionInfo.id != isControlled) {
+      await waitForSettingChange(control.setting);
+    }
+    await control.updateComplete;
+  }
+
   function verifyState(isControlled) {
     is(
       passwordManagerEnabledPref(),
       !isControlled,
       "Password manager pref is set to the expected value."
     );
-    let controlledLabel =
-      gBrowser.contentDocument.getElementById(CONTROLLED_LABEL_ID);
-    let controlledButton =
-      gBrowser.contentDocument.getElementById(CONTROLLED_BUTTON_ID);
+    let control = getSettingControl(SAVE_PASSWORDS_SETTING_ID);
     is(
-      controlledLabel.hidden,
-      !isControlled,
-      "The extension's controlled row visibility is as expected."
+      control.controlEl.disabled,
+      isControlled,
+      "The save passwords checkbox disabled state is as expected."
     );
-    is(
-      controlledButton.hidden,
-      !isControlled,
-      "The extension's controlled button visibility is as expected."
-    );
+    let messageBar = control.controlledMessageBarRef.value;
     if (isControlled) {
-      let controlledDesc = controlledLabel.querySelector("description");
+      ok(messageBar, "The extension controlled message bar exists.");
+      ok(
+        BrowserTestUtils.isVisible(messageBar),
+        "The extension controlled message bar is visible."
+      );
       Assert.deepEqual(
-        gBrowser.contentDocument.l10n.getAttributes(controlledDesc),
+        {
+          id: messageBar.messageL10nId,
+          args: messageBar.messageL10nArgs,
+        },
         {
           id: "extension-controlling-password-saving",
           args: {
@@ -358,12 +261,16 @@ add_task(async function testExtensionControlledPasswordManager() {
         },
         "The user is notified that an extension is controlling the remember signons pref."
       );
+    } else {
+      ok(!messageBar, "The extension controlled message bar is not shown.");
     }
   }
 
-  await openPreferencesViaOpenPreferencesAPI("panePrivacy", {
-    leaveOpen: true,
-  });
+  let { win } = await openPreferencesViaOpenPreferencesAPI(
+    "passwordsAutofill",
+    { leaveOpen: true }
+  );
+  await settingControlRenders(SAVE_PASSWORDS_SETTING_ID, win);
 
   info("Verify that no extension is controlling the password manager pref.");
   verifyState(false);
@@ -375,9 +282,9 @@ add_task(async function testExtensionControlledPasswordManager() {
       browser.privacy.services.passwordSavingEnabled.set({ value: false });
     },
   });
-  let messageShown = waitForMessageShown(CONTROLLED_LABEL_ID);
+  let controlled = waitForControlledState(true);
   await extension.startup();
-  await messageShown;
+  await controlled;
 
   info(
     "Verify that the test extension is controlling the password manager pref."
@@ -386,21 +293,43 @@ add_task(async function testExtensionControlledPasswordManager() {
 
   info("Verify that the extension shows as controlled when loaded again.");
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  await openPreferencesViaOpenPreferencesAPI("panePrivacy", {
+  ({ win } = await openPreferencesViaOpenPreferencesAPI("passwordsAutofill", {
     leaveOpen: true,
-  });
+  }));
+  await settingControlRenders(SAVE_PASSWORDS_SETTING_ID, win);
+  await waitForControlledState(true);
   verifyState(true);
 
-  await disableExtensionViaClick(
-    CONTROLLED_LABEL_ID,
-    CONTROLLED_BUTTON_ID,
-    gBrowser.contentDocument
-  );
+  let control = getSettingControl(SAVE_PASSWORDS_SETTING_ID);
+  let uncontrolled = waitForControlledState(false);
+  control.controlledMessageBarRef.value
+    .querySelector("moz-button[slot='actions']")
+    .click();
+  await uncontrolled;
 
   info(
     "Verify that disabling the test extension removes the lock on the password manager pref."
   );
   verifyState(false);
+  let enableMessageBar = control.enableMessageBarRef.value;
+  ok(
+    BrowserTestUtils.isVisible(enableMessageBar),
+    "The enable instructions are visible."
+  );
+  is(
+    enableMessageBar
+      .querySelector("[slot='message']")
+      .getAttribute("data-l10n-id"),
+    "extension-controlled-enable-2",
+    "The user is notified of how to enable the extension again."
+  );
+
+  enableMessageBar.closeButton.click();
+  await control.updateComplete;
+  ok(
+    !control.enableMessageBarRef.value?.isConnected,
+    "The user can dismiss the enable instructions."
+  );
 
   await extension.unload();
 
@@ -571,15 +500,15 @@ add_task(async function testExtensionControlledProxyConfig() {
     ok(panelClosingEvent, "Proxy panel closed.");
   }
 
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI("connectionSecurity", {
     leaveOpen: true,
   });
   let mainDoc = gBrowser.contentDocument;
 
   is(
     gBrowser.currentURI.spec,
-    "about:preferences#general",
-    "#general should be in the URI for about:preferences"
+    "about:preferences#connectionSecurity",
+    "#connectionSecurity should be in the URI for about:preferences"
   );
 
   verifyProxyState(mainDoc, false);
