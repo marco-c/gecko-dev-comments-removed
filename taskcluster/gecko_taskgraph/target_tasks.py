@@ -924,10 +924,6 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
             return False
 
         
-        if "speedometer3-a11y" in try_name:
-            return False
-
-        
         if "live" in try_name and "sheriffed" not in try_name:
             return False
 
@@ -1085,12 +1081,6 @@ def target_tasks_speedometer_tests(full_task_graph, parameters, graph_config):
             return False
 
         try_name = attributes.get("raptor_try_name")
-        
-        if (
-            "firefox-speedometer3-a11y" in try_name
-            or "speedometer3-a11y-mobile-fenix" in try_name
-        ) and ("shippable" in platform or "nightlyasrelease" in platform):
-            return True
         if accept_raptor_desktop_build(platform):
             if (
                 "browsertime" in try_name
@@ -1554,10 +1544,6 @@ def target_tasks_daily_beta_perf(full_task_graph, parameters, graph_config):
             return False
 
         
-        if "speedometer3-a11y" in try_name:
-            return False
-
-        
         if "awsy" in try_name:
             if accept_awsy_task(try_name, platform):
                 return True
@@ -1634,10 +1620,6 @@ def target_tasks_weekly_release_perf(full_task_graph, parameters, graph_config):
 
         
         if "speedometer2" in try_name:
-            return False
-
-        
-        if "speedometer3-a11y" in try_name:
             return False
 
         
