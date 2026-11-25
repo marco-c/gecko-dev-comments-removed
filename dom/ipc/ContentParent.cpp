@@ -1467,8 +1467,7 @@ void ContentParent::BroadcastShmBlockAdded(uint32_t aGeneration,
                                            uint32_t aIndex) {
   auto* pfl = gfxPlatformFontList::PlatformFontList();
   for (auto* cp : AllProcesses(eLive)) {
-    ReadOnlySharedMemoryHandle handle =
-        pfl->ShareShmBlockToProcess(aIndex, cp->Pid());
+    ReadOnlySharedMemoryHandle handle = pfl->ShareShmBlockToProcess(aIndex);
     if (!handle.IsValid()) {
       
       
@@ -2804,7 +2803,7 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
   
   nsTArray<ReadOnlySharedMemoryHandle> sharedFontListBlocks;
   gfxPlatformFontList::PlatformFontList()->ShareFontListToProcess(
-      &sharedFontListBlocks, OtherPid());
+      &sharedFontListBlocks);
 
   
   
@@ -5717,7 +5716,7 @@ mozilla::ipc::IPCResult ContentParent::RecvGetFontListShmBlock(
     ReadOnlySharedMemoryHandle* aOut) {
   auto* fontList = gfxPlatformFontList::PlatformFontList();
   MOZ_RELEASE_ASSERT(fontList, "gfxPlatformFontList not initialized?");
-  fontList->ShareFontListShmBlockToProcess(aGeneration, aIndex, Pid(), aOut);
+  fontList->ShareFontListShmBlockToProcess(aGeneration, aIndex, aOut);
   return IPC_OK();
 }
 

@@ -395,20 +395,19 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   
   
   void ShareFontListShmBlockToProcess(
-      uint32_t aGeneration, uint32_t aIndex, base::ProcessId aPid,
+      uint32_t aGeneration, uint32_t aIndex,
       mozilla::ipc::ReadOnlySharedMemoryHandle* aOut);
 
   
   
   void ShareFontListToProcess(
-      nsTArray<mozilla::ipc::ReadOnlySharedMemoryHandle>* aBlocks,
-      base::ProcessId aPid);
+      nsTArray<mozilla::ipc::ReadOnlySharedMemoryHandle>* aBlocks);
 
   void ShmBlockAdded(uint32_t aGeneration, uint32_t aIndex,
                      mozilla::ipc::ReadOnlySharedMemoryHandle aHandle);
 
   mozilla::ipc::ReadOnlySharedMemoryHandle ShareShmBlockToProcess(
-      uint32_t aIndex, base::ProcessId aPid);
+      uint32_t aIndex);
 
   void SetCharacterMap(uint32_t aGeneration, uint32_t aFamilyIndex, bool aAlias,
                        uint32_t aFaceIndex, const gfxSparseBitSet& aMap);

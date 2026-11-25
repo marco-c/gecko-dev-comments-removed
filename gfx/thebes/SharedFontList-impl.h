@@ -238,7 +238,7 @@ class FontList {
 
 
 
-  void ShareShmBlockToProcess(uint32_t aIndex, base::ProcessId aPid,
+  void ShareShmBlockToProcess(uint32_t aIndex,
                               ipc::ReadOnlySharedMemoryHandle* aOut) {
     MOZ_RELEASE_ASSERT(mReadOnlyShmems.Length() == mBlocks.Length());
     if (aIndex >= mReadOnlyShmems.Length()) {
@@ -257,11 +257,9 @@ class FontList {
 
 
 
-  void ShareBlocksToProcess(nsTArray<ipc::ReadOnlySharedMemoryHandle>* aBlocks,
-                            base::ProcessId aPid);
+  void ShareBlocksToProcess(nsTArray<ipc::ReadOnlySharedMemoryHandle>* aBlocks);
 
-  ipc::ReadOnlySharedMemoryHandle ShareBlockToProcess(uint32_t aIndex,
-                                                      base::ProcessId aPid);
+  ipc::ReadOnlySharedMemoryHandle ShareBlockToProcess(uint32_t aIndex);
 
   void ShmBlockAdded(uint32_t aGeneration, uint32_t aIndex,
                      ipc::ReadOnlySharedMemoryHandle aHandle);
