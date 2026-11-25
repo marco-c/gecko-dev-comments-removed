@@ -54,6 +54,7 @@ MACH_COMMANDS = {
     "addstory": MachCommandReference("toolkit/content/widgets/mach_commands.py"),
     "addtest": MachCommandReference("testing/mach_commands.py"),
     "addwidget": MachCommandReference("toolkit/content/widgets/mach_commands.py"),
+    "ai": MachCommandReference("browser/components/ai/driver/mach_commands.py"),
     "android": MachCommandReference("mobile/android/mach_commands.py"),
     "android-emulator": MachCommandReference("mobile/android/mach_commands.py"),
     "android-test": MachCommandReference("testing/android-test/mach_commands.py"),
@@ -120,6 +121,7 @@ MACH_COMMANDS = {
         "python/mozbuild/mozbuild/frontend/mach_commands.py"
     ),
     "firefox-devtools-mcp": MachCommandReference("tools/mach_commands.py"),
+    "firefox-mcp": MachCommandReference("tools/mach_commands.py"),
     "firefox-ui-functional": MachCommandReference(
         "testing/firefox-ui/mach_commands.py"
     ),
