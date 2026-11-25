@@ -710,7 +710,8 @@ IncrementalProgress GCRuntime::markGrayRoots(SliceBudget& budget,
   gcstats::AutoPhase ap(stats(), phase);
 
   {
-    AutoSetMarkColor setColorGray(marker(), MarkColor::Gray);
+    AutoSetMarkColor setColorGray(marker(), MarkColor::Gray,
+                                  AllowGrayMarkingBeforeEndOfBlackMarking::Yes);
 
     AutoUpdateLiveCompartments updateLive(this);
     marker().setRootMarkingMode(true);
@@ -1108,13 +1109,9 @@ void GCRuntime::markIncomingGrayCrossCompartmentPointers() {
          src = NextIncomingCrossCompartmentPointer(src, true)) {
       JSObject* dst = CrossCompartmentPointerReferent(src);
       MOZ_ASSERT(dst->compartment() == c);
-      MOZ_ASSERT_IF(src->asTenured().isMarkedBlack(),
-                    dst->asTenured().isMarkedBlack());
 
-      if (src->asTenured().isMarkedGray()) {
-        TraceManuallyBarrieredEdge(marker().tracer(), &dst,
-                                   "cross-compartment gray pointer");
-      }
+      TraceManuallyBarrieredEdge(marker().tracer(), &dst,
+                                 "cross-compartment gray pointer");
     }
 
     c->gcIncomingGrayPointers = nullptr;
@@ -1257,7 +1254,8 @@ IncrementalProgress GCRuntime::beginMarkingSweepGroup(JS::GCContext* gcx,
                         Zone::MarkBlackAndGray);
   }
 
-  AutoSetMarkColor setColorGray(marker(), MarkColor::Gray);
+  AutoSetMarkColor setColorGray(marker(), MarkColor::Gray,
+                                AllowGrayMarkingBeforeEndOfBlackMarking::Yes);
 
   
   markIncomingGrayCrossCompartmentPointers();
