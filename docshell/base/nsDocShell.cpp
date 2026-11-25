@@ -1332,14 +1332,9 @@ static LoadingSessionHistoryInfo CreateLoadingEntryForJavascriptURL(
   loadingEntry.mTriggeringNavigationType = Some(NavigationType::Replace);
   loadingEntry.mReplacesActiveEntry = !!aActiveEntry;
 
-  
-  
-  
   loadingEntry.mPreviousEntry =
-      aOldDocument.IsInitialDocument() || !aActiveEntry
-          ? Some(PreviousSessionHistoryInfo{})
-          : PreviousSessionHistoryInfo::CreateValidatedPreviousEntry(
-                info, Some(*aActiveEntry), Some(NavigationType::Replace));
+      PreviousSessionHistoryInfo::CreateValidatedPreviousEntry(
+          aNewDocument, aOldDocument, aActiveEntry);
 
   
   
