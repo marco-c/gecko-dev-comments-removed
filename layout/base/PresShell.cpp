@@ -5694,27 +5694,49 @@ void PresShell::AddCanvasBackgroundColorItem(nsDisplayListBuilder* aBuilder,
   }
 
   const SingleCanvasBackground& canvasBg = mCanvasBackground.mViewport;
-  const nscolor bgcolor = NS_ComposeColors(aBackstopColor, canvasBg.mColor);
-  if (NS_GET_A(bgcolor) == 0) {
+  
+  
+  
+  nsIFrame* rootElementFrame = FrameConstructor()->GetRootElementFrame();
+  const bool maskedOrClipped =
+      rootElementFrame && SVGUtils::DetermineMaskUsage(rootElementFrame, false)
+                              .UsingMaskOrClipPath();
+
+  bool isCheckerboard = false;
+  const nscolor colorToPaint = [&]() -> nscolor {
+    if (maskedOrClipped) {
+      
+      
+      
+      return aBackstopColor;
+    }
+    const nscolor canvasColor =
+        NS_ComposeColors(aBackstopColor, canvasBg.mColor);
+    if (NS_GET_A(canvasColor) == 0 || !canvasBg.mCSSSpecified) {
+      
+      
+      return canvasColor;
+    }
+    if (NS_GET_A(canvasColor) == 255 &&
+        nsLayoutUtils::UsesAsyncScrolling(aFrame)) {
+      
+      
+      
+      
+      
+      isCheckerboard = true;
+      return canvasColor;
+    }
+    
+    
+    return NS_TRANSPARENT;
+  }();
+
+  if (NS_GET_A(colorToPaint) == 0) {
     return;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const bool forceUnscrolledItem =
-      nsLayoutUtils::UsesAsyncScrolling(aFrame) && NS_GET_A(bgcolor) == 255;
-  if (canvasBg.mCSSSpecified && !forceUnscrolledItem) {
-    return;
-  }
-
-  MOZ_ASSERT(NS_GET_A(bgcolor) == 255);
+  MOZ_ASSERT(NS_GET_A(colorToPaint) == 255);
   const bool isRootContentDocumentCrossProcess =
       mPresContext->IsRootContentDocumentCrossProcess();
   MOZ_ASSERT_IF(
@@ -5725,12 +5747,12 @@ void PresShell::AddCanvasBackgroundColorItem(nsDisplayListBuilder* aBuilder,
           nsLayoutUtils::ExpandHeightForDynamicToolbar(
               mPresContext, aFrame->InkOverflowRectRelativeToSelf().Size()));
 
-  nsDisplaySolidColor* item =
-      MakeDisplayItem<nsDisplaySolidColor>(aBuilder, aFrame, aBounds, bgcolor);
+  nsDisplaySolidColor* item = MakeDisplayItem<nsDisplaySolidColor>(
+      aBuilder, aFrame, aBounds, colorToPaint);
   if (!item) {
     return;
   }
-  if (canvasBg.mCSSSpecified && isRootContentDocumentCrossProcess) {
+  if (isCheckerboard && isRootContentDocumentCrossProcess) {
     item->SetIsCheckerboardBackground();
   }
   AddDisplayItemToBottom(aBuilder, aList, item);

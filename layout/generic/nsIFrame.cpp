@@ -3508,10 +3508,15 @@ void nsIFrame::BuildDisplayListForStackingContext(
     }
   }
 
+  
+  
+  
+  
   const bool usingFilter = effects->HasFilters() && !style.IsRootElementStyle();
   const SVGUtils::MaskUsage maskUsage =
       SVGUtils::DetermineMaskUsage(this, false);
-  const bool usingMask = maskUsage.UsingMaskOrClipPath();
+  const bool usingMask =
+      maskUsage.UsingMaskOrClipPath() && !style.IsRootElementStyle();
   const bool usingSVGEffects = usingFilter || usingMask;
 
   const nsRect visibleRectOutsideSVGEffects = visibleRect;
@@ -9842,6 +9847,13 @@ static nsresult GetNextPrevLineFromBlockFrame(PeekOffsetStruct* aPos,
   const bool forceInEditableRegion =
       aPos->mOptions.contains(PeekOffsetOption::ForceEditableRegion);
   while (!found) {
+    
+    
+    it = aBlockFrame->GetLineIterator();
+    if (!it) {
+      return NS_ERROR_FAILURE;
+    }
+    countLines = it->GetNumLines();
     if (aPos->mDirection == eDirPrevious) {
       searchingLine--;
     } else {
