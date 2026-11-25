@@ -2617,28 +2617,13 @@ ImgDrawResult nsCSSRendering::PaintStyleImageLayerWithSC(
   
   
   
-  StyleAppearance appearance =
-      aParams.frame->StyleDisplay()->EffectiveAppearance();
-  if (appearance != StyleAppearance::None) {
-    nsITheme* theme = aParams.presCtx.Theme();
-    if (theme->ThemeSupportsWidget(&aParams.presCtx, aParams.frame,
-                                   appearance)) {
-      nsRect drawing(aParams.borderArea);
-      theme->GetWidgetOverflow(aParams.presCtx.DeviceContext(), aParams.frame,
-                               appearance, &drawing);
-      drawing.IntersectRect(drawing, aParams.dirtyRect);
-      theme->DrawWidgetBackground(&aRenderingCtx, aParams.frame, appearance,
-                                  aParams.borderArea, drawing);
-      return ImgDrawResult::SUCCESS;
-    }
-  }
-
-  
-  
-  
   
   bool isCanvasFrame = aParams.frame->IsCanvasFrame();
   const bool paintMask = aParams.paintFlags & PAINTBG_MASK_IMAGE;
+  
+  
+  MOZ_ASSERT(paintMask || !aParams.frame->IsThemed(),
+             "Shouldn't paint background layers of themed frames");
 
   
   
