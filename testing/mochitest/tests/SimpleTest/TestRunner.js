@@ -576,11 +576,6 @@ async function _runNextTest() {
         set: [["dom.security.https_first", false]],
       });
     }
-    
-    
-    SpecialPowers.wrap(
-      $("testframe")
-    ).browsingContext.resetNavigationRateLimit();
     TestRunner._makeIframe(url, 0);
   } else {
     $("current-test").innerHTML = "<b>Finished</b>";
