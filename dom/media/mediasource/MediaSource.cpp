@@ -191,8 +191,15 @@ void MediaSource::IsTypeSupported(const nsAString& aType,
   }
   
   
+  
+  
+  
   if (mimeType == MEDIAMIMETYPE(AUDIO_MP3) &&
       StaticPrefs::media_mediasource_mp3_enabled() && codecs.IsEmpty()) {
+    return;
+  }
+  if (mimeType == MEDIAMIMETYPE(AUDIO_AAC) &&
+      StaticPrefs::media_mediasource_aac_enabled() && codecs.IsEmpty()) {
     return;
   }
 
