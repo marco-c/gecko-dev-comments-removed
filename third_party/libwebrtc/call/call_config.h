@@ -33,11 +33,10 @@ namespace webrtc {
 class AudioProcessing;
 
 struct CallConfig {
-  [[deprecated(
-      "Use CreateSingleThreaded or the multi-argument constructor instead.")]]
   explicit CallConfig(const Environment& env,
                       TaskQueueBase* network_task_queue = nullptr);
 
+  [[deprecated("Use CallConfig(env, network_task_queue) instead.")]]
   CallConfig(const Environment& env,
              TaskQueueBase* absl_nonnull worker_task_queue,
              TaskQueueBase* absl_nonnull network_task_queue);
@@ -54,8 +53,8 @@ struct CallConfig {
   static CallConfig CreateSingleThreaded(const Environment& env);
 
   
-  CallConfig(CallConfig&&) = default;
-  CallConfig& operator=(CallConfig&& other) = default;
+  CallConfig(CallConfig&&);
+  CallConfig& operator=(CallConfig&& other);
 
   ~CallConfig();
 
@@ -94,6 +93,8 @@ struct CallConfig {
   VideoJitterTimingFactory* video_jitter_timing_factory = nullptr;
 
   TaskQueueBase* network_task_queue_ = nullptr;
+  [[deprecated(
+      "worker_task_queue is deprecated; use network_task_queue_ instead.")]]
   TaskQueueBase* worker_task_queue = nullptr;
 
   Metronome* decode_metronome = nullptr;
