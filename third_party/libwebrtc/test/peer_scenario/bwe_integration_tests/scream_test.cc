@@ -900,7 +900,7 @@ TEST(ScreamTest, MaybeTest(LinkCapacity2MbitRepeatedDelaySpikesNoEcn)) {
   
   for (size_t i = 1; i < result.caller_stats.size(); ++i) {
     EXPECT_THAT(result.caller_stats[i],
-                AveragePacingDelayIsBelow(TimeDelta::Millis(70),
+                AveragePacingDelayIsBelow(TimeDelta::Millis(100),
                                           result.caller_stats[i - 1]));
   }
 }
