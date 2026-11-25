@@ -86,7 +86,7 @@ function runRenderSizeHintTests(contextType) {
   });
 
   
-  invalidNumericCases.forEach(({ sampleRate, hint }) => {
+  invalidNumericCases.forEach(({sampleRate, hint}) => {
     test(function() {
       assert_throws_dom('NotSupportedError', () => {
         if (isOffline) {
@@ -105,6 +105,35 @@ function runRenderSizeHintTests(contextType) {
   });
 
   if (!isOffline) {
+    
+    
+    
+    test(
+        t => {
+          const defaultContext = new AudioContext();
+          t.add_cleanup(() => {
+            defaultContext.close();
+          });
+          const maxDefaultHint = Math.floor(6 * defaultContext.sampleRate);
+
+          for (const invalidHint of [0, -1, maxDefaultHint + 1]) {
+            assert_throws_dom('NotSupportedError', () => {
+              new AudioContext({renderSizeHint: invalidHint});
+            }, `renderSizeHint ${invalidHint} without sampleRate should throw`);
+          }
+
+          assert_throws_dom(
+              'NotSupportedError',
+              () => {
+                new AudioContext(
+                    {latencyHint: 'playback', renderSizeHint: -1, sinkId: ''});
+              },
+              'Negative renderSizeHint with playback latencyHint and default ' +
+                  'sinkId should throw');
+        },
+        'AudioContext [Throws Exception]: omitted sampleRate with invalid ' +
+            'renderSizeHint');
+
     
     test(t => {
       const audioContext = new AudioContext();
