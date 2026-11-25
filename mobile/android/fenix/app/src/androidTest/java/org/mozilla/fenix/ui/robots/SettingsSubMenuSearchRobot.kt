@@ -71,6 +71,7 @@ import org.mozilla.fenix.helpers.click
 import org.mozilla.fenix.helpers.isChecked
 import org.mozilla.fenix.helpers.isEnabled
 import org.mozilla.fenix.settings.search.SearchEngineShortcutsTestTag
+import org.mozilla.fenix.settings.search.ui.SearchEngineDropdownMenuTestTag
 
 /** Implementation of Robot Pattern for the settings search sub menu. */
 class SettingsSubMenuSearchRobot {
@@ -565,20 +566,12 @@ class SettingsSubMenuSearchRobot {
         Log.i(TAG, "openCustomShortcutOverflowMenu: Clicked $searchEngineName's three dot button")
     }
 
-    fun clickEdit() {
+    fun clickEdit(testRule: ComposeTestRule) {
         Log.i(TAG, "clickEdit: Trying to click the \"Edit\" button")
-        onView(withText("Edit")).click()
+        testRule.onNodeWithTag(SearchEngineDropdownMenuTestTag.EDIT).performClick()
         Log.i(TAG, "clickEdit: Clicked the \"Edit\" button")
     }
 
-    // Used in the Default search engine menu
-    fun clickDeleteSearchEngine() {
-        Log.i(TAG, "clickDeleteSearchEngine: Trying to click the \"Delete\" button")
-        mDevice.findObject(UiSelector().textContains(getStringResource(R.string.search_engine_delete))).click()
-        Log.i(TAG, "clickDeleteSearchEngine: Clicked the \"Delete\" button")
-    }
-
-    // Used in the composable Manage search shortcuts menu, otherwise the overflow menu is not visible
     fun clickDeleteSearchEngine(testRule: ComposeTestRule) {
         Log.i(TAG, "clickDeleteSearchEngine: Trying to click the \"Delete\" button")
         testRule.onNodeWithText("Delete").performClick()
@@ -627,28 +620,25 @@ class SettingsSubMenuSearchRobot {
     fun verifyTheHomeScreenWidgetOption() {
         Log.i(
             TAG,
-            "verifyTheHomeScreenWidgetOption: Trying to verify that the \"Home screen widget\" option is visible",
+            "verifyTheHomeScreenWidgetOption: Trying to verify that the \"Add search widget to Home screen\" option is visible",
         )
         homeScreenWidgetOption().check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
-        Log.i(TAG, "verifyTheHomeScreenWidgetOption: Verified that the \"Home screen widget\" option is visible")
-    }
-
-    fun verifyTheHomeScreenWidgetToggle(enabled: Boolean) {
         Log.i(
             TAG,
-            "verifyTheHomeScreenWidgetToggle: Trying to verify that the \"Home screen widget\" toggle is checked: $enabled",
-        )
-        homeScreenWidgetOption().check(matches(hasCousin(allOf(withClassName(endsWith("Switch")), isChecked(enabled)))))
-        Log.i(
-            TAG,
-            "verifyTheHomeScreenWidgetToggle: Verified that the \"Home screen widget\" toggle is checked: $enabled",
+            "verifyTheHomeScreenWidgetOption: Verified that the \"Add search widget to Home screen\" option is visible",
         )
     }
 
-    fun clickTheHomeScreenWidgetToggle() {
-        Log.i(TAG, "clickTheHomeScreenWidgetToggle: Trying to click the \"Home screen widget\" toggle")
+    fun clickAddSearchWidgetToHomeScreenMenuItem() {
+        Log.i(
+            TAG,
+            "clickAddSearchWidgetToHomeScreenMenuItem: Trying to click the \"Add search widget to Home screen\" menu item",
+        )
         homeScreenWidgetOption().click()
-        Log.i(TAG, "clickTheHomeScreenWidgetToggle: Clicked the \"Home screen widget\" toggle")
+        Log.i(
+            TAG,
+            "clickAddSearchWidgetToHomeScreenMenuItem: Clicked the \"Add search widget to Home screen\" menu item",
+        )
         mDevice.waitForIdle()
     }
 
@@ -877,4 +867,4 @@ private fun overflowMenuWithSiblingText(text: String): SemanticsMatcher =
     hasAnySibling(hasText(text)) and hasContentDescription("More options")
 
 private fun homeScreenWidgetOption() =
-    onView(CoreMatchers.allOf(withText(R.string.preferences_add_search_widget_from_settings)))
+    onView(CoreMatchers.allOf(withText(R.string.preferences_search_widget_in_home_screen)))
