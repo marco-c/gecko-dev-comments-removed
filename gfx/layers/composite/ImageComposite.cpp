@@ -16,7 +16,7 @@ using namespace gfx;
 
 namespace layers {
 
- const float ImageComposite::BIAS_TIME_MS = 1.0f;
+ const int32_t ImageComposite::BIAS_TIME_MS = 1;
 
 ImageComposite::ImageComposite() = default;
 
@@ -56,7 +56,7 @@ void ImageComposite::UpdateBias(size_t aImageIndex, bool aFrameChanged) {
     mBias = ImageComposite::BIAS_NONE;
     return;
   }
-  TimeDuration threshold = TimeDuration::FromMilliseconds(1.5);
+  TimeDuration threshold = TimeDuration::FromMicroseconds(1500);
   if (compositionTime - compositedImageTime < threshold &&
       compositionTime - compositedImageTime > -threshold) {
     
@@ -270,7 +270,7 @@ bool ImageComposite::UpdateCompositedFrame(
 
 void ImageComposite::OnFinishRendering(int aImageIndex,
                                        const TimedImage* aImage,
-                                       base::ProcessId aProcessId,
+                                       GeckoChildID aChildID,
                                        const CompositableHandle& aHandle) {
   if (mLastFrameUpdateComposition != GetCompositionOpportunityId()) {
     
@@ -279,7 +279,7 @@ void ImageComposite::OnFinishRendering(int aImageIndex,
 
   if (aHandle) {
     ImageCompositeNotificationInfo info;
-    info.mImageBridgeProcessId = aProcessId;
+    info.mImageBridgeChildID = aChildID;
     info.mNotification = ImageCompositeNotification(
         aHandle, aImage->mTimeStamp, GetCompositionTime(), mLastFrameID,
         mLastProducerID);

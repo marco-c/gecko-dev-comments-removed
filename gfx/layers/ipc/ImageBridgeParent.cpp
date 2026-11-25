@@ -86,8 +86,8 @@ ImageBridgeParent* ImageBridgeParent::CreateSameProcess(uint32_t aNamespace) {
 
   {
     MonitorAutoLock lock(*sImageBridgesLock);
-    MOZ_RELEASE_ASSERT(sImageBridges.count(procInfo.mPid) == 0);
-    sImageBridges[procInfo.mPid] = parent;
+    MOZ_RELEASE_ASSERT(sImageBridges.count(procInfo.mChildID) == 0);
+    sImageBridges[procInfo.mChildID] = parent;
   }
 
   sImageBridgeParentSingleton = parent;
@@ -158,7 +158,7 @@ void ImageBridgeParent::ActorDestroy(ActorDestroyReason aWhy) {
   mCompositables.clear();
   {
     MonitorAutoLock lock(*sImageBridgesLock);
-    sImageBridges.erase(OtherPid());
+    sImageBridges.erase(OtherChildID());
   }
   if (auto* remoteTextureMap = RemoteTextureMap::Get()) {
     remoteTextureMap->ClearDestroyedProcess(OtherPid());
@@ -261,7 +261,7 @@ void ImageBridgeParent::Bind(Endpoint<PImageBridgeParent>&& aEndpoint) {
   RefPtr<ImageBridgeParent> oldActor;
   {
     MonitorAutoLock lock(*sImageBridgesLock);
-    ImageBridgeMap::const_iterator i = sImageBridges.find(OtherPid());
+    ImageBridgeMap::const_iterator i = sImageBridges.find(OtherChildID());
     if (i != sImageBridges.end()) {
       oldActor = i->second;
     }
@@ -275,10 +275,10 @@ void ImageBridgeParent::Bind(Endpoint<PImageBridgeParent>&& aEndpoint) {
 
   {
     MonitorAutoLock lock(*sImageBridgesLock);
-    sImageBridges[OtherPid()] = this;
+    sImageBridges[OtherChildID()] = this;
   }
-  LAYERTREE_LOG("Image bridge bound, namespace {}, content {}, pid {}",
-                mNamespace, mContentId, OtherPid());
+  LAYERTREE_LOG("Image bridge bound, namespace {}, content {}, child {}",
+                mNamespace, mContentId, OtherChildID());
 }
 
 mozilla::ipc::IPCResult ImageBridgeParent::RecvWillClose() {
@@ -302,7 +302,7 @@ mozilla::ipc::IPCResult ImageBridgeParent::RecvNewCompositable(
     return IPC_FAIL_NO_REASON(this);
   }
 
-  host->SetAsyncRef(AsyncCompositableRef(OtherPid(), aHandle));
+  host->SetAsyncRef(AsyncCompositableRef(OtherChildID(), aHandle));
   return IPC_OK();
 }
 
@@ -367,15 +367,15 @@ void ImageBridgeParent::SendAsyncMessage(
   (void)SendParentAsyncMessages(aMessage);
 }
 
-class ProcessIdComparator {
+class ChildIDComparator {
  public:
   bool Equals(const ImageCompositeNotificationInfo& aA,
               const ImageCompositeNotificationInfo& aB) const {
-    return aA.mImageBridgeProcessId == aB.mImageBridgeProcessId;
+    return aA.mImageBridgeChildID == aB.mImageBridgeChildID;
   }
   bool LessThan(const ImageCompositeNotificationInfo& aA,
                 const ImageCompositeNotificationInfo& aB) const {
-    return aA.mImageBridgeProcessId < aB.mImageBridgeProcessId;
+    return aA.mImageBridgeChildID < aB.mImageBridgeChildID;
   }
 };
 
@@ -384,7 +384,7 @@ bool ImageBridgeParent::NotifyImageComposites(
     nsTArray<ImageCompositeNotificationInfo>& aNotifications) {
   
   
-  aNotifications.Sort(ProcessIdComparator());
+  aNotifications.Sort(ChildIDComparator());
   uint32_t i = 0;
   bool ok = true;
   while (i < aNotifications.Length()) {
@@ -392,13 +392,13 @@ bool ImageBridgeParent::NotifyImageComposites(
     notifications.AppendElement(aNotifications[i].mNotification);
     uint32_t end = i + 1;
     MOZ_RELEASE_ASSERT(aNotifications[i].mNotification.compositable());
-    ProcessId pid = aNotifications[i].mImageBridgeProcessId;
+    GeckoChildID childID = aNotifications[i].mImageBridgeChildID;
     while (end < aNotifications.Length() &&
-           aNotifications[end].mImageBridgeProcessId == pid) {
+           aNotifications[end].mImageBridgeChildID == childID) {
       notifications.AppendElement(aNotifications[end].mNotification);
       ++end;
     }
-    RefPtr<ImageBridgeParent> bridge = GetInstance(pid);
+    RefPtr<ImageBridgeParent> bridge = GetInstance(childID);
     if (!bridge || bridge->mClosed) {
       i = end;
       continue;
@@ -415,7 +415,7 @@ bool ImageBridgeParent::NotifyImageComposites(
 void ImageBridgeParent::DeferredDestroy() { mCompositorThreadHolder = nullptr; }
 
 already_AddRefed<ImageBridgeParent> ImageBridgeParent::GetInstance(
-    ProcessId aId) {
+    GeckoChildID aId) {
   MOZ_RELEASE_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   MonitorAutoLock lock(*sImageBridgesLock);
   ImageBridgeMap::const_iterator i = sImageBridges.find(aId);
