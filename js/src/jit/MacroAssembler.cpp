@@ -6337,15 +6337,20 @@ FaultingCodeRange MacroAssembler::wasmTrap(
   MOZ_ASSERT_IF(!oom(),
                 currentOffset() - fcr.get() == WasmTrapInstructionLength);
 
-#if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86)
-  
-  
-  
-  
   if (wasm::TrapMightResume(trap)) {
+    
+    
+    
+    mozilla::DebugOnly<uint32_t> resumeOffset =
+        indirectTarget(TargetKind::Jump).offset();
+    MOZ_ASSERT_IF(!oom(), resumeOffset == fcr.resumeOffset());
+
+#if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86)
+    
+    
     addToStackPtr(Imm32(sizeof(uintptr_t)));
-  }
 #endif
+  }
 
   appendAndVerify(trap, wasm::TrapMachineInsn::OfficialUD, fcr, trapSiteDesc);
   return fcr;
@@ -6419,82 +6424,6 @@ static void MoveDataBlock(MacroAssembler& masm, Register base, int32_t from,
 #if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_X86)
   masm.pop(scratch);
 #endif
-}
-
-struct ReturnCallTrampolineData {
-#ifdef JS_CODEGEN_ARM
-  uint32_t trampolineOffset;
-#else
-  CodeLabel trampoline;
-#endif
-};
-
-static ReturnCallTrampolineData MakeReturnCallTrampoline(MacroAssembler& masm) {
-  uint32_t savedPushed = masm.framePushed();
-
-  ReturnCallTrampolineData data;
-
-  {
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || \
-    defined(JS_CODEGEN_RISCV64)
-    AutoForbidPoolsAndNops afp(&masm, 1);
-#endif
-
-    
-    
-#ifdef JS_CODEGEN_ARM
-    data.trampolineOffset = masm.currentOffset();
-#else
-    masm.bind(&data.trampoline);
-#endif
-
-    masm.setFramePushed(AlignBytes(
-        wasm::FrameWithInstances::sizeOfInstanceFieldsAndShadowStack(),
-        WasmStackAlignment));
-
-    masm.wasmMarkCallAsSlow();
-  }
-
-  masm.loadPtr(
-      Address(masm.getStackPointer(), WasmCallerInstanceOffsetBeforeCall),
-      InstanceReg);
-  masm.loadWasmPinnedRegsFromInstance();
-  masm.switchToWasmInstanceRealm(ABINonArgReturnReg0, ABINonArgReturnReg1);
-  masm.moveToStackPtr(FramePointer);
-#ifdef JS_CODEGEN_ARM64
-  masm.pop(FramePointer, lr);
-  masm.append(wasm::CodeRangeUnwindInfo::UseFpLr, masm.currentOffset());
-  masm.Mov(PseudoStackPointer64, vixl::sp);
-  masm.abiret();
-#elif defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64)
-  masm.loadPtr(Address(FramePointer, wasm::Frame::returnAddressOffset()), ra);
-  masm.loadPtr(Address(FramePointer, wasm::Frame::callerFPOffset()),
-               FramePointer);
-  masm.append(wasm::CodeRangeUnwindInfo::UseFpLr, masm.currentOffset());
-  masm.addToStackPtr(Imm32(sizeof(wasm::Frame)));
-  masm.abiret();
-#elif defined(JS_CODEGEN_RISCV64)
-  {
-    
-    
-    AutoForbidPoolsAndNops afp(&masm, 5);
-
-    masm.loadPtr(Address(FramePointer, wasm::Frame::returnAddressOffset()), ra);
-    masm.loadPtr(Address(FramePointer, wasm::Frame::callerFPOffset()),
-                 FramePointer);
-    masm.append(wasm::CodeRangeUnwindInfo::UseFpLr, masm.currentOffset());
-    masm.addToStackPtr(Imm32(sizeof(wasm::Frame)));
-    masm.abiret();
-  }
-#else
-  masm.pop(FramePointer);
-  masm.append(wasm::CodeRangeUnwindInfo::UseFp, masm.currentOffset());
-  masm.ret();
-#endif
-
-  masm.append(wasm::CodeRangeUnwindInfo::Normal, masm.currentOffset());
-  masm.setFramePushed(savedPushed);
-  return data;
 }
 
 
@@ -6617,183 +6546,43 @@ static void CollapseWasmFrameFast(MacroAssembler& masm,
   masm.setFramePushed(framePushedAtStart);
 }
 
-static void CollapseWasmFrameSlow(MacroAssembler& masm,
-                                  const ReturnCallAdjustmentInfo& retCallInfo,
-                                  wasm::CallSiteDesc desc,
-                                  ReturnCallTrampolineData data) {
-  uint32_t framePushedAtStart = masm.framePushed();
-  static constexpr Register tempForCaller = WasmTailCallInstanceScratchReg;
-  static constexpr Register tempForFP = WasmTailCallFPScratchReg;
-  static constexpr Register tempForRA = WasmTailCallRAScratchReg;
-
-  static_assert(sizeof(wasm::Frame) == 2 * sizeof(void*));
-
-  
-  
-  
-  const uint32_t HiddenFrameAfterSize =
-      AlignBytes(wasm::FrameWithInstances::sizeOfInstanceFieldsAndShadowStack(),
-                 WasmStackAlignment);
-  const uint32_t HiddenFrameSize =
-      AlignBytes(sizeof(wasm::Frame), WasmStackAlignment) +
-      HiddenFrameAfterSize;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  uint32_t newSlotsAndStackArgBytes =
-      AlignBytes(retCallInfo.newSlotsAndStackArgBytes, WasmStackAlignment);
-  uint32_t oldSlotsAndStackArgBytes =
-      AlignBytes(retCallInfo.oldSlotsAndStackArgBytes, WasmStackAlignment);
-
-  
-  int32_t newArgSrc = -framePushedAtStart;
-  int32_t newArgDest = sizeof(wasm::Frame) + oldSlotsAndStackArgBytes -
-                       HiddenFrameSize - newSlotsAndStackArgBytes;
-  int32_t hiddenFrameArgsDest =
-      sizeof(wasm::Frame) + oldSlotsAndStackArgBytes - HiddenFrameAfterSize;
-
-  
-  
-  uint32_t reserved = newArgDest - int32_t(sizeof(void*)) < newArgSrc
-                          ? newArgSrc - newArgDest + sizeof(void*)
-                          : 0;
-  masm.reserveStack(reserved);
-
-#ifndef JS_USE_LINK_REGISTER
-  masm.push(tempForRA);
-#endif
-
-  
-  masm.loadPtr(Address(FramePointer, wasm::Frame::callerFPOffset()), tempForFP);
-  masm.loadPtr(Address(FramePointer, wasm::Frame::returnAddressOffset()),
-               tempForRA);
-  masm.append(wasm::CodeRangeUnwindInfo::RestoreFpRa, masm.currentOffset());
-  masm.loadPtr(
-      Address(FramePointer, newArgSrc + WasmCallerInstanceOffsetBeforeCall),
-      tempForCaller);
-
-  
-  const uint32_t SlotsSize =
-      wasm::FrameWithInstances::sizeOfInstanceFieldsAndShadowStack();
-  MoveDataBlock(masm, FramePointer, newArgSrc + SlotsSize,
-                newArgDest + SlotsSize,
-                retCallInfo.newSlotsAndStackArgBytes - SlotsSize);
-
-  
-  int32_t newFPOffset = hiddenFrameArgsDest - sizeof(wasm::Frame);
-  masm.storePtr(
-      tempForRA,
-      Address(FramePointer, newFPOffset + wasm::Frame::returnAddressOffset()));
-
-  
-  masm.storePtr(
-      tempForFP,
-      Address(FramePointer, newFPOffset + wasm::Frame::callerFPOffset()));
-
-  
-  masm.storePtr(
-      tempForCaller,
-      Address(FramePointer,
-              newFPOffset + wasm::FrameWithInstances::calleeInstanceOffset()));
-  masm.storePtr(
-      tempForCaller,
-      Address(FramePointer, newArgDest + WasmCallerInstanceOffsetBeforeCall));
-  masm.storePtr(
-      InstanceReg,
-      Address(FramePointer, newArgDest + WasmCalleeInstanceOffsetBeforeCall));
-
-#ifdef JS_CODEGEN_ARM
-  
-  masm.mov(pc, tempForRA);
-  masm.computeEffectiveAddress(
-      Address(tempForRA,
-              int32_t(data.trampolineOffset - masm.currentOffset() - 4)),
-      tempForRA);
-  masm.append(desc, CodeOffset(data.trampolineOffset));
-#else
-
-#  if defined(JS_CODEGEN_MIPS64)
-  
-  masm.mov(&data.trampoline, ScratchRegister);
-  
-  masm.mov(ScratchRegister, tempForRA);
-#  elif defined(JS_CODEGEN_LOONG64) || defined(JS_CODEGEN_RISCV64)
-  
-  masm.mov(&data.trampoline, SavedScratchRegister);
-  
-  masm.mov(SavedScratchRegister, tempForRA);
-#  else
-  masm.mov(&data.trampoline, tempForRA);
-#  endif
-
-  masm.addCodeLabel(data.trampoline);
-  
-  
-  masm.append(desc, *data.trampoline.target());
-#endif
-
-#ifdef JS_USE_LINK_REGISTER
-  masm.freeStack(reserved);
-  
-  masm.addToStackPtr(Imm32(framePushedAtStart + newArgDest));
-#else
-  
-  int32_t newFrameOffset = newArgDest - sizeof(wasm::Frame);
-  masm.storePtr(tempForRA,
-                Address(FramePointer,
-                        newFrameOffset + wasm::Frame::returnAddressOffset()));
-  
-  
-  
-  masm.loadPtr(Address(masm.getStackPointer(), 0), tempForCaller);
-  masm.storePtr(tempForRA, Address(masm.getStackPointer(), 0));
-  masm.mov(tempForCaller, tempForRA);
-  masm.append(wasm::CodeRangeUnwindInfo::RestoreFp, masm.currentOffset());
-  masm.addToStackPtr(Imm32(framePushedAtStart + newFrameOffset +
-                           wasm::Frame::returnAddressOffset() + reserved +
-                           sizeof(void*)));
-#endif
-
-  
-  masm.computeEffectiveAddress(Address(FramePointer, newFPOffset),
-                               FramePointer);
-  
-  
-  masm.setFramePushed(framePushedAtStart);
-}
-
 void MacroAssembler::wasmCollapseFrameFast(
     const ReturnCallAdjustmentInfo& retCallInfo) {
   CollapseWasmFrameFast(*this, retCallInfo);
 }
 
-void MacroAssembler::wasmCollapseFrameSlow(
-    const ReturnCallAdjustmentInfo& retCallInfo, wasm::CallSiteDesc desc) {
+void MacroAssembler::wasmCrossInstanceReturnCall(
+    const wasm::CallSiteDesc& desc, Register callee,
+    const ReturnCallAdjustmentInfo& retCallInfo,
+    const ReturnCallFallback& retCallFallback) {
   static constexpr Register temp1 = ABINonArgReg1;
   static constexpr Register temp2 = ABINonArgReg3;
+  MOZ_ASSERT(callee != temp1 && callee != temp2);
 
   
   
-
-  Label slow, done;
+  Label callerNotSlow;
   loadPtr(Address(FramePointer, wasm::Frame::returnAddressOffset()), temp1);
-  wasmCheckSlowCallsite(temp1, &slow, temp1, temp2);
+  wasmCheckSlowCallsite(temp1, &callerNotSlow, temp1, temp2);
   CollapseWasmFrameFast(*this, retCallInfo);
-  jump(&done);
+  tailJump(callee);
   append(wasm::CodeRangeUnwindInfo::Normal, currentOffset());
 
-  ReturnCallTrampolineData data = MakeReturnCallTrampoline(*this);
-
-  bind(&slow);
-  CollapseWasmFrameSlow(*this, retCallInfo, desc, data);
-
-  bind(&done);
+  
+  
+  
+  bind(&callerNotSlow);
+  uint32_t framePushedAtCall = framePushed();
+  wasmMarkedSlowCall(wasm::CallSiteDesc(desc.bytecodeOffset(),
+                                        wasm::CallSiteKind::ReturnCallFallback),
+                     callee);
+  loadPtr(Address(getStackPointer(), WasmCallerInstanceOffsetBeforeCall),
+          InstanceReg);
+  loadWasmPinnedRegsFromInstance();
+  switchToWasmInstanceRealm(ABINonArgReturnReg0, ABINonArgReturnReg1);
+  freeStackTo(retCallFallback.epilogueFramePushed);
+  jump(retCallFallback.epilogue);
+  setFramePushed(framePushedAtCall);
 }
 
 CodeOffset MacroAssembler::wasmCallImport(const wasm::CallSiteDesc& desc,
@@ -6836,9 +6625,10 @@ CodeOffset MacroAssembler::wasmCallImport(const wasm::CallSiteDesc& desc,
   return wasmMarkedSlowCall(desc, ABINonArgReg0);
 }
 
-CodeOffset MacroAssembler::wasmReturnCallImport(
+void MacroAssembler::wasmReturnCallImport(
     const wasm::CallSiteDesc& desc, const wasm::CalleeDesc& callee,
-    const ReturnCallAdjustmentInfo& retCallInfo) {
+    const ReturnCallAdjustmentInfo& retCallInfo,
+    const ReturnCallFallback& retCallFallback) {
   storePtr(InstanceReg,
            Address(getStackPointer(), WasmCallerInstanceOffsetBeforeCall));
 
@@ -6874,12 +6664,8 @@ CodeOffset MacroAssembler::wasmReturnCallImport(
            Address(getStackPointer(), WasmCalleeInstanceOffsetBeforeCall));
   loadWasmPinnedRegsFromInstance();
 
-  wasm::CallSiteDesc stubDesc(desc.bytecodeOffset(),
-                              wasm::CallSiteKind::ReturnStub);
-  wasmCollapseFrameSlow(retCallInfo, stubDesc);
-  tailJump(ABINonArgReg0);
-  append(wasm::CodeRangeUnwindInfo::Normal, currentOffset());
-  return CodeOffset(currentOffset());
+  wasmCrossInstanceReturnCall(desc, ABINonArgReg0, retCallInfo,
+                              retCallFallback);
 }
 
 CodeOffset MacroAssembler::wasmReturnCall(
@@ -7101,7 +6887,8 @@ FaultingCodeRange MacroAssembler::wasmCallIndirect(
 [[nodiscard]]
 FaultingCodeRange MacroAssembler::wasmReturnCallIndirect(
     const wasm::CallSiteDesc& desc, const wasm::CalleeDesc& callee,
-    Label* nullCheckFailedLabel, const ReturnCallAdjustmentInfo& retCallInfo) {
+    Label* nullCheckFailedLabel, const ReturnCallAdjustmentInfo& retCallInfo,
+    const ReturnCallFallback& retCallFallback) {
   static_assert(sizeof(wasm::FunctionTableElem) == 2 * sizeof(void*),
                 "Exactly two pointers or index scaling won't work correctly");
   MOZ_ASSERT(callee.which() == wasm::CalleeDesc::WasmTable);
@@ -7152,6 +6939,8 @@ FaultingCodeRange MacroAssembler::wasmReturnCallIndirect(
   storePtr(InstanceReg,
            Address(getStackPointer(), WasmCallerInstanceOffsetBeforeCall));
   movePtr(newInstanceTemp, InstanceReg);
+  storePtr(InstanceReg,
+           Address(getStackPointer(), WasmCalleeInstanceOffsetBeforeCall));
 
   FaultingCodeRange fcr;
 #ifdef WASM_HAS_HEAPREG
@@ -7171,11 +6960,8 @@ FaultingCodeRange MacroAssembler::wasmReturnCallIndirect(
   loadPtr(Address(calleeScratch, offsetof(wasm::FunctionTableElem, code)),
           calleeScratch);
 
-  wasm::CallSiteDesc stubDesc(desc.bytecodeOffset(),
-                              wasm::CallSiteKind::ReturnStub);
-  wasmCollapseFrameSlow(retCallInfo, stubDesc);
-  tailJump(calleeScratch);
-  append(wasm::CodeRangeUnwindInfo::Normal, currentOffset());
+  wasmCrossInstanceReturnCall(desc, calleeScratch, retCallInfo,
+                              retCallFallback);
 
   
 
@@ -7268,7 +7054,7 @@ void MacroAssembler::wasmCallRef(const wasm::CallSiteDesc& desc,
 void MacroAssembler::wasmReturnCallRef(
     const wasm::CallSiteDesc& desc, const wasm::CalleeDesc& callee,
     const ReturnCallAdjustmentInfo& retCallInfo,
-    wasm::StackMap* stackMapForTraps,
+    const ReturnCallFallback& retCallFallback, wasm::StackMap* stackMapForTraps,
     wasm::StackMapRegistry* stackMapRegistry) {
   MOZ_ASSERT_IF(stackMapForTraps, stackMapRegistry);
   MOZ_ASSERT(callee.which() == wasm::CalleeDesc::FuncRef);
@@ -7312,11 +7098,8 @@ void MacroAssembler::wasmReturnCallRef(
       FunctionExtended::WASM_FUNC_UNCHECKED_ENTRY_SLOT);
   loadPtr(Address(calleeFnObj, uncheckedEntrySlotOffset), calleeScratch);
 
-  wasm::CallSiteDesc stubDesc(desc.bytecodeOffset(),
-                              wasm::CallSiteKind::ReturnStub);
-  wasmCollapseFrameSlow(retCallInfo, stubDesc);
-  tailJump(calleeScratch);
-  append(wasm::CodeRangeUnwindInfo::Normal, currentOffset());
+  wasmCrossInstanceReturnCall(desc, calleeScratch, retCallInfo,
+                              retCallFallback);
 
   
   

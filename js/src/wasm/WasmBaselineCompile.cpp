@@ -835,6 +835,8 @@ bool BaseCompiler::endFunction() {
     restoreRegisterReturnValues(resultType);
   }
 
+  masm.bind(&returnCallFallbackLabel_);
+
 #ifndef RABALDR_PIN_INSTANCE
   
   
@@ -2210,8 +2212,10 @@ bool BaseCompiler::callIndirect(uint32_t funcTypeIndex, uint32_t tableIndex,
   } else {
     ReturnCallAdjustmentInfo retCallInfo = BuildReturnCallAdjustmentInfo(
         this->funcType(), (*codeMeta_.types)[funcTypeIndex].funcType());
-    fcr =
-        masm.wasmReturnCallIndirect(desc, callee, nullCheckFailed, retCallInfo);
+    ReturnCallFallback retCallFallback(&returnCallFallbackLabel_,
+                                       fr.fixedAllocSize());
+    fcr = masm.wasmReturnCallIndirect(desc, callee, nullCheckFailed,
+                                      retCallInfo, retCallFallback);
   }
   if (compilerEnv_.debugEnabled() && fcr.isValid() &&
       !createStackMap(Some(Trap::IndirectCallToNull), fcr,
@@ -2360,7 +2364,10 @@ bool BaseCompiler::returnCallRef(const Stk& calleeRef, const FunctionCall& call,
   }
   BaselineStackMapRegistry stackMapRegistry(stackMaps_);
 
-  masm.wasmReturnCallRef(desc, callee, retCallInfo, debugStackMap,
+  ReturnCallFallback retCallFallback(&returnCallFallbackLabel_,
+                                     fr.fixedAllocSize());
+  masm.wasmReturnCallRef(desc, callee, retCallInfo, retCallFallback,
+                         debugStackMap,
                          debugStackMap ? &stackMapRegistry : nullptr);
   return true;
 }
@@ -4762,7 +4769,7 @@ bool BaseCompiler::emitBrTable() {
 
   for (uint32_t depth : depths) {
     stubs.infallibleEmplaceBack(NonAssertingLabel());
-    masm.bind(&stubs.back());
+    masm.bindIndirectTarget(&stubs.back(), TargetKind::Jump);
     shuffleStackResultsBeforeBranch(resultsBase, controlItem(depth).stackHeight,
                                     branchParams);
     controlItem(depth).bceSafeOnExit &= bceSafe_;
@@ -4858,7 +4865,7 @@ bool BaseCompiler::emitTryTable() {
   masm.jump(&skipLandingPad);
 
   StackHeight prePadHeight = fr.stackHeight();
-  uint32_t padOffset = masm.currentOffset();
+  uint32_t padOffset = masm.indirectTarget(TargetKind::Jump).offset();
   uint32_t padStackHeight = masm.framePushed();
 
   
@@ -5354,7 +5361,8 @@ bool BaseCompiler::endTryCatch(ResultType type) {
   
   TryNoteVector& tryNotes = masm.tryNotes();
   TryNote& tryNote = tryNotes[controlItem().tryNoteIndex];
-  tryNote.setLandingPad(masm.currentOffset(), masm.framePushed());
+  tryNote.setLandingPad(masm.indirectTarget(TargetKind::Jump).offset(),
+                        masm.framePushed());
 
   
   
@@ -5733,7 +5741,9 @@ bool BaseCompiler::emitReturnCall() {
     CallSiteDesc desc(bytecodeOffset(), CallSiteKind::Import);
     CalleeDesc callee =
         CalleeDesc::import(codeMeta_.offsetOfFuncImportInstanceData(funcIndex));
-    masm.wasmReturnCallImport(desc, callee, retCallInfo);
+    ReturnCallFallback retCallFallback(&returnCallFallbackLabel_,
+                                       fr.fixedAllocSize());
+    masm.wasmReturnCallImport(desc, callee, retCallInfo, retCallFallback);
   } else {
     CallSiteDesc desc(bytecodeOffset(), CallSiteKind::ReturnFunc);
     masm.wasmReturnCall(desc, funcIndex, retCallInfo);

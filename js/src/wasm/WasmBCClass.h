@@ -254,6 +254,12 @@ struct BaseCompiler final {
 
   
   
+  
+  
+  NonAssertingLabel returnCallFallbackLabel_;
+
+  
+  
   FuncOffsets offsets_;
 
   

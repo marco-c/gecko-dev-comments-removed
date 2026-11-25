@@ -10840,6 +10840,7 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
 
   const wasm::CallSiteDesc& desc = callBase->desc();
   const wasm::CalleeDesc& callee = callBase->callee();
+  ReturnCallFallback retCallFallback(&returnLabel_, frameSize());
   CodeOffset retOffset;
   CodeOffset secondRetOffset;
   switch (callee.which()) {
@@ -10861,7 +10862,7 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
       if (isReturnCall) {
         ReturnCallAdjustmentInfo retCallInfo(
             callBase->stackArgAreaSizeUnaligned(), inboundStackArgBytes_);
-        masm.wasmReturnCallImport(desc, callee, retCallInfo);
+        masm.wasmReturnCallImport(desc, callee, retCallInfo, retCallFallback);
         
         return;
       }
@@ -10892,7 +10893,7 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
         
         
         (void)masm.wasmReturnCallIndirect(desc, callee, nullCheckFailed,
-                                          retCallInfo);
+                                          retCallInfo, retCallFallback);
         
         return;
       }
@@ -10934,7 +10935,8 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
       if (isReturnCall) {
         ReturnCallAdjustmentInfo retCallInfo(
             callBase->stackArgAreaSizeUnaligned(), inboundStackArgBytes_);
-        masm.wasmReturnCallRef(desc, callee, retCallInfo, nullptr, nullptr);
+        masm.wasmReturnCallRef(desc, callee, retCallInfo, retCallFallback,
+                               nullptr, nullptr);
         
         return;
       }

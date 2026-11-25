@@ -3405,14 +3405,14 @@ uintptr_t Instance::traceFrame(JSTracer* trc, const wasm::WasmFrameIter& wfi,
     
     
     
-    
     const CodeRange* range = code().lookupFuncRange(nextPC);
     CallSite site;
-    bool atReturnStub = code().lookupCallSite(nextPC, &site) &&
-                        site.kind() == CallSiteKind::ReturnStub;
-    MOZ_ASSERT_IF(
-        range && !codeMeta().funcIsImport(range->funcIndex()) && !atReturnStub,
-        map);
+    bool atReturnCallFallback =
+        code().lookupCallSite(nextPC, &site) &&
+        site.kind() == CallSiteKind::ReturnCallFallback;
+    MOZ_ASSERT_IF(range && !codeMeta().funcIsImport(range->funcIndex()) &&
+                      !atReturnCallFallback,
+                  map);
   }
 #endif
   if (!map) {
