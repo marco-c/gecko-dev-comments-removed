@@ -169,10 +169,6 @@ class Vp8FrameBufferController {
 
   
   virtual void OnRttUpdate(int64_t rtt_ms) = 0;
-
-  
-  virtual void OnLossNotification(
-      const VideoEncoder::LossNotification& loss_notification) = 0;
 };
 
 

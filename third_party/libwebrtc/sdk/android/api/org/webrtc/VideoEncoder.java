@@ -35,7 +35,7 @@ public interface VideoEncoder {
     public Settings(int numberOfCores, int width, int height, int startBitrate, int maxFramerate,
         int numberOfSimulcastStreams, boolean automaticResizeOn) {
       this(numberOfCores, width, height, startBitrate, maxFramerate, numberOfSimulcastStreams,
-          automaticResizeOn, new VideoEncoder.Capabilities(false ));
+          automaticResizeOn, new VideoEncoder.Capabilities());
     }
 
     @CalledByNative
@@ -57,10 +57,14 @@ public interface VideoEncoder {
     
 
 
-
-    public final boolean lossNotification;
+    @Deprecated public final boolean lossNotification;
 
     @CalledByNative
+    public Capabilities() {
+      this.lossNotification = false;
+    }
+
+    @Deprecated
     public Capabilities(boolean lossNotification) {
       this.lossNotification = lossNotification;
     }

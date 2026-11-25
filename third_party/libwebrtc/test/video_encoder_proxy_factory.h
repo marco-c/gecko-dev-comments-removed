@@ -33,10 +33,6 @@
 namespace webrtc {
 namespace test {
 
-namespace {
-const VideoEncoder::Capabilities kCapabilities(false);
-}  
-
 
 
 

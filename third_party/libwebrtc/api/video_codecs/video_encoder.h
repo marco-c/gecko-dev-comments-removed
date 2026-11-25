@@ -319,6 +319,9 @@ class RTC_EXPORT VideoEncoder {
     bool operator!=(const RateControlParameters& rhs) const;
   };
 
+  
+  
+  
   struct LossNotification {
     
     
@@ -342,16 +345,24 @@ class RTC_EXPORT VideoEncoder {
 
   
   
+  
   struct Capabilities {
-    explicit Capabilities(bool loss_notification)
+    constexpr explicit Capabilities(bool loss_notification)
         : loss_notification(loss_notification) {}
     bool loss_notification;
   };
 
   struct Settings {
-    Settings(const Capabilities& capabilities,
-             int number_of_cores,
-             size_t max_payload_size)
+    constexpr Settings(int number_of_cores, size_t max_payload_size)
+        : capabilities(false),
+          number_of_cores(number_of_cores),
+          max_payload_size(max_payload_size) {}
+    
+    
+    
+    constexpr Settings(const Capabilities& capabilities,
+                       int number_of_cores,
+                       size_t max_payload_size)
         : capabilities(capabilities),
           number_of_cores(number_of_cores),
           max_payload_size(max_payload_size) {}
@@ -471,6 +482,9 @@ class RTC_EXPORT VideoEncoder {
   
   virtual void OnRttUpdate(int64_t rtt_ms);
 
+  
+  
+  
   
   virtual void OnLossNotification(const LossNotification& loss_notification);
 

@@ -83,9 +83,8 @@ VideoCodec DefaultCodecSettings() {
   return codec_settings;
 }
 VideoEncoder::Settings DefaultEncoderSettings() {
-  return VideoEncoder::Settings(
-      VideoEncoder::Capabilities(false),
-      1, 1200);
+  return VideoEncoder::Settings(1,
+                                1200);
 }
 
 class TestAv1Decoder {

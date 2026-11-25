@@ -260,8 +260,7 @@ VideoCodec CodecSettings(FuzzDataHelper& rng) {
 }
 
 VideoEncoder::Settings EncoderSettings() {
-  return VideoEncoder::Settings(VideoEncoder::Capabilities(false),
-                                1,
+  return VideoEncoder::Settings(1,
                                 0);
 }
 

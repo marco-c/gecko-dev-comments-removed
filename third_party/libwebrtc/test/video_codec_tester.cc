@@ -1278,10 +1278,8 @@ class Encoder : public EncodedImageCallback {
       }
     }
 
-    VideoEncoder::Settings ves(
-        VideoEncoder::Capabilities(false),
-        encoder_settings_.num_cores,
-        1440);
+    VideoEncoder::Settings ves(encoder_settings_.num_cores,
+                               1440);
 
     int result = encoder_->InitEncode(&vc, ves);
     RTC_CHECK(result == WEBRTC_VIDEO_CODEC_OK);

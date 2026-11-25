@@ -95,9 +95,8 @@ VideoCodec HDCodecSettings() {
 }
 
 VideoEncoder::Settings DefaultEncoderSettings() {
-  return VideoEncoder::Settings(
-      VideoEncoder::Capabilities(false),
-      1, 1200);
+  return VideoEncoder::Settings(1,
+                                1200);
 }
 
 class LibaomAv1EncoderTest : public ::testing::TestWithParam<bool> {

@@ -99,8 +99,6 @@ inline constexpr int kPreferredUseInbandFec = 0;
 inline constexpr absl::string_view kPacketizationParamRaw = "raw";
 
 
-inline constexpr absl::string_view kRtcpFbParamLntf = "goog-lntf";
-
 inline constexpr absl::string_view kRtcpFbParamNack = "nack";
 inline constexpr absl::string_view kRtcpFbNackParamPli = "pli";
 

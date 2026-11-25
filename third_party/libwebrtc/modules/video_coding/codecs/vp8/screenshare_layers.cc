@@ -429,9 +429,6 @@ void ScreenshareLayers::OnPacketLossRateUpdate(float ) {}
 
 void ScreenshareLayers::OnRttUpdate(int64_t ) {}
 
-void ScreenshareLayers::OnLossNotification(
-    const VideoEncoder::LossNotification& ) {}
-
 FrameDependencyStructure ScreenshareLayers::GetTemplateStructure(
     int num_layers) const {
   RTC_CHECK_LT(num_layers, 3);

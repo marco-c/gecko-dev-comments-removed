@@ -254,16 +254,12 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
       } rtcp_xr;
 
       
-      
       KeyFrameReqMethod keyframe_method = KeyFrameReqMethod::kPliRtcp;
 
       
       bool remb = false;
 
       bool tmmbr = false;
-
-      
-      LntfConfig lntf;
 
       
       int ulpfec_payload_type = -1;
@@ -364,10 +360,6 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
   
   
   virtual void SetFlexFecProtection(RtpPacketSinkInterface* flexfec_sink) = 0;
-
-  
-  
-  virtual void SetLossNotificationEnabled(bool enabled) = 0;
 
   
   

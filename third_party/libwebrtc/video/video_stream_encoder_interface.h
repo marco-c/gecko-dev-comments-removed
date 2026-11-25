@@ -101,10 +101,6 @@ class VideoStreamEncoderInterface {
   virtual void SendKeyFrame(const std::vector<VideoFrameType>& layers = {}) = 0;
 
   
-  virtual void OnLossNotification(
-      const VideoEncoder::LossNotification& loss_notification) = 0;
-
-  
   
   
   

@@ -32,13 +32,6 @@ struct RtpPayloadState {
 };
 
 
-struct LntfConfig {
-  std::string ToString() const;
-
-  bool enabled{false};
-};
-
-
 struct NackConfig {
   NackConfig() : rtp_history_ms(0) {}
   std::string ToString() const;
@@ -144,9 +137,6 @@ struct RtpConfig {
 
   
   std::vector<RtpStreamConfig> stream_configs;
-
-  
-  LntfConfig lntf;
 
   
   NackConfig nack;

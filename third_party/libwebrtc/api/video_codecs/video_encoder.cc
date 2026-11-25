@@ -330,9 +330,7 @@ void VideoEncoder::SetFecControllerOverride(
 int32_t VideoEncoder::InitEncode(const VideoCodec* codec_settings,
                                  int32_t number_of_cores,
                                  size_t max_payload_size) {
-  const VideoEncoder::Capabilities capabilities( false);
-  const VideoEncoder::Settings settings(capabilities, number_of_cores,
-                                        max_payload_size);
+  const VideoEncoder::Settings settings(number_of_cores, max_payload_size);
   
   
   

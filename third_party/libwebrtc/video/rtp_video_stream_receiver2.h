@@ -59,7 +59,6 @@
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer.h"
 #include "modules/video_coding/h264_sps_pps_tracker.h"
 #include "modules/video_coding/h26x_packet_buffer.h"
-#include "modules/video_coding/loss_notification_controller.h"
 #include "modules/video_coding/nack_requester.h"
 #include "modules/video_coding/packet_buffer.h"
 #include "modules/video_coding/rtp_frame_reference_finder.h"
@@ -82,8 +81,7 @@ class RtpPacketReceived;
 class Transport;
 class UlpfecReceiver;
 
-class RtpVideoStreamReceiver2 : public LossNotificationSender,
-                                public RecoveredPacketReceiver,
+class RtpVideoStreamReceiver2 : public RecoveredPacketReceiver,
                                 public RtpPacketSinkInterface,
                                 public KeyFrameRequestSender,
                                 public NackSender,
@@ -190,12 +188,6 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
                 bool buffering_allowed) override;
 
   
-  void SendLossNotification(uint16_t last_decoded_seq_num,
-                            uint16_t last_received_seq_num,
-                            bool decodability_flag,
-                            bool buffering_allowed) override;
-
-  
   
   
   bool IsDecryptable() const;
@@ -234,10 +226,6 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   
   
   void SetPacketSink(RtpPacketSinkInterface* packet_sink);
-
-  
-  
-  void SetLossNotificationEnabled(bool enabled);
 
   void SetNackHistory(TimeDelta history);
   void SetMaxWaitForKeyframe(TimeDelta max_wait_for_keyframe);
@@ -278,16 +266,10 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   
   
   
-  
-  
-  
-  class RtcpFeedbackBuffer : public KeyFrameRequestSender,
-                             public NackSender,
-                             public LossNotificationSender {
+  class RtcpFeedbackBuffer : public KeyFrameRequestSender, public NackSender {
    public:
     RtcpFeedbackBuffer(KeyFrameRequestSender* key_frame_request_sender,
                        NackSender* nack_sender,
-                       LossNotificationSender* loss_notification_sender,
                        TaskQueueBase* worker_queue);
 
     ~RtcpFeedbackBuffer() override = default;
@@ -300,44 +282,18 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
                   bool buffering_allowed) override;
 
     
-    void SendLossNotification(uint16_t last_decoded_seq_num,
-                              uint16_t last_received_seq_num,
-                              bool decodability_flag,
-                              bool buffering_allowed) override;
-
-    
     void SendBufferedRtcpFeedback();
 
-    void ClearLossNotificationState();
-
    private:
-    
-    struct LossNotificationState {
-      LossNotificationState(uint16_t last_decoded_seq_num,
-                            uint16_t last_received_seq_num,
-                            bool decodability_flag)
-          : last_decoded_seq_num(last_decoded_seq_num),
-            last_received_seq_num(last_received_seq_num),
-            decodability_flag(decodability_flag) {}
-
-      uint16_t last_decoded_seq_num;
-      uint16_t last_received_seq_num;
-      bool decodability_flag;
-    };
-
     RTC_NO_UNIQUE_ADDRESS SequenceChecker worker_task_checker_;
     KeyFrameRequestSender* const key_frame_request_sender_;
     NackSender* const nack_sender_;
-    LossNotificationSender* const loss_notification_sender_;
 
     
     bool request_key_frame_ RTC_GUARDED_BY(worker_task_checker_);
 
     
     std::vector<uint16_t> nack_sequence_numbers_
-        RTC_GUARDED_BY(worker_task_checker_);
-
-    std::optional<LossNotificationState> lntf_state_
         RTC_GUARDED_BY(worker_task_checker_);
   };
   enum ParseGenericDependenciesResult {
@@ -434,8 +390,6 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   
   
   std::unique_ptr<NackRequester> nack_module_ RTC_GUARDED_BY(worker_queue_);
-  std::unique_ptr<LossNotificationController> loss_notification_controller_
-      RTC_GUARDED_BY(worker_queue_);
 
   VideoStreamBufferControllerStatsObserver* const vcm_receive_statistics_;
   video_coding::PacketBuffer packet_buffer_ RTC_GUARDED_BY(worker_queue_);

@@ -39,8 +39,6 @@ namespace {
 
 using ::testing::NotNull;
 
-const VideoEncoder::Capabilities kCapabilities(false);
-
 int32_t InitEncoder(VideoCodecType codec_type, VideoEncoder* encoder) {
   VideoCodec codec;
   CodecSettings(codec_type, &codec);
@@ -49,7 +47,7 @@ int32_t InitEncoder(VideoCodecType codec_type, VideoEncoder* encoder) {
   codec.maxFramerate = 30;
   RTC_CHECK(encoder);
   return encoder->InitEncode(
-      &codec, VideoEncoder::Settings(kCapabilities, 1 ,
+      &codec, VideoEncoder::Settings(1 ,
                                      1200 ));
 }
 

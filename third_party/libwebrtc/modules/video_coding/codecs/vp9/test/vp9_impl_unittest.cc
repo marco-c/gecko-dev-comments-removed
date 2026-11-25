@@ -106,10 +106,8 @@ constexpr size_t kWidth = 1280;
 constexpr size_t kHeight = 720;
 constexpr int kBitrateKbps = 2048;
 
-const VideoEncoder::Capabilities kCapabilities(false);
-const VideoEncoder::Settings kSettings(kCapabilities,
-                                       1,
-                                       0);
+constexpr VideoEncoder::Settings kSettings(1,
+                                           0);
 
 VideoCodec DefaultCodecSettings() {
   VideoCodec codec_settings;

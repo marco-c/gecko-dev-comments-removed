@@ -46,9 +46,6 @@ static const int kHeight = 144;
 static const int kMaxFramerate = 30;  
 
 namespace webrtc {
-namespace {
-const VideoEncoder::Capabilities kCapabilities(false);
-}  
 
 EncodedImageCallback::Result
 VideoCodecUnitTest::FakeEncodeCompleteCallback::OnEncodedImage(
@@ -106,7 +103,7 @@ void VideoCodecUnitTest::SetUp() {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder_->InitEncode(
                 &codec_settings_,
-                VideoEncoder::Settings(kCapabilities, 1 ,
+                VideoEncoder::Settings(1 ,
                                        0 )));
 
   VideoDecoder::Settings decoder_settings;
