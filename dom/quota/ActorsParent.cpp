@@ -438,6 +438,7 @@ OkOrErr MarkCacheForRescan(mozIStorageConnection& aConnection) {
   return Ok{};
 }
 
+
 OkOrErr InvalidateCache(mozIStorageConnection& aConnection) {
   AssertIsOnIOThread();
 
@@ -4390,6 +4391,20 @@ Result<OriginCacheMap, nsresult> LoadOriginCacheIntoMap(
   return map;
 }
 
+Result<Ok, nsresult> DeleteOriginRowsForRepository(
+    mozIStorageConnection& aConnection, PersistenceType aPersistenceType) {
+  QM_TRY_INSPECT(
+      const auto& stmt,
+      MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
+          nsCOMPtr<mozIStorageStatement>, aConnection, CreateStatement,
+          "DELETE FROM origin WHERE repository_id = :repository_id"_ns));
+  QM_TRY(MOZ_TO_RESULT(
+      stmt->BindInt32ByName("repository_id"_ns, aPersistenceType)));
+  QM_TRY(MOZ_TO_RESULT(stmt->Execute()));
+
+  return Ok{};
+}
+
 
 
 
@@ -4762,10 +4777,25 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType,
   QM_TRY_UNWRAP(
       auto cacheMap,
       ([this, aPersistenceType]() -> Result<OriginCacheMap, nsresult> {
-        if (mCacheUsable) {
-          return LoadOriginCacheIntoMap(*mStorageConnection, aPersistenceType);
+        if (!mCacheUsable) {
+          return OriginCacheMap{};
         }
-        return OriginCacheMap{};
+
+        QM_TRY_RETURN(QM_OR_ELSE_WARN(
+            
+            LoadOriginCacheIntoMap(*mStorageConnection, aPersistenceType),
+            
+            
+            
+            
+            
+            ([&](const nsresult) -> Result<OriginCacheMap, nsresult> {
+              QM_TRY(DeleteOriginRowsForRepository(*mStorageConnection,
+                                                   aPersistenceType));
+              OriginCacheMap map;
+              map.Activate();
+              return map;
+            })));
       }()));
 
   QM_TRY_INSPECT(const auto& directory,
@@ -6367,8 +6397,10 @@ nsresult QuotaManager::EnsureStorageIsInitializedInternal() {
         (invalidationLevel == QuotaManager::CacheInvalidationLevel::Soft &&
          StaticPrefs::dom_quotaManager_caching_checkBuildId());
 
+    
+    
     if (mCacheUsable && shouldInvalidateCache) {
-      QM_TRY(InvalidateCache(*connection));
+      QM_TRY(MarkCacheForRescan(*connection));
       mCacheRequiresFullScan = true;
     }
 
