@@ -336,7 +336,6 @@ void RtpSenderBase::SetCachedParameters(
     UpdateCache(std::move(*parameters));
   } else {
     InvalidateCache();
-    last_transaction_id_.reset();
   }
 }
 
@@ -363,8 +362,11 @@ void RtpSenderBase::SetMediaChannel(MediaSendChannelInterface* media_channel) {
 
 void RtpSenderBase::OnParametersChanged() {
   RTC_DCHECK_RUN_ON(signaling_thread_);
+  
+  
+  
+  
   InvalidateCache();
-  last_transaction_id_.reset();
   RTC_LOG(LS_INFO) << "RtpSender: OnParametersChanged cache cleared.";
 }
 
