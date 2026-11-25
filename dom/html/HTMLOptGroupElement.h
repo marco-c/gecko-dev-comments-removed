@@ -46,6 +46,10 @@ class HTMLOptGroupElement final : public nsGenericHTMLElement {
   }
 
   
+  
+  void GetRenderedLabel(nsAString& aLabel) const;
+
+  
   HTMLSelectElement* GetSelect() const;
 
  protected:
