@@ -468,6 +468,28 @@ class TextEventDispatcher final {
   
 
 
+
+
+
+  Maybe<QueryContentResult> QueryTextContent(uint32_t aOffset,
+                                             uint32_t aLength) const;
+
+  
+
+
+
+
+
+
+
+
+  Maybe<QueryContentResult> QueryTextContent(
+      int64_t aOffset, uint32_t aLength,
+      const QueryContentOptions& aOptions) const;
+
+  
+
+
   [[nodiscard]] bool IsBatching() const { return !!mBatching; }
 
   

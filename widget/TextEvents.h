@@ -1113,8 +1113,11 @@ struct QueryContentResult {
 
   
   QueryContentResult(const QueryContentResult& aOther) = delete;
-  QueryContentResult(QueryContentResult&& aOther) = delete;
   QueryContentResult& operator=(const QueryContentResult& aOther) = delete;
+
+  
+  
+  QueryContentResult(QueryContentResult&& aOther) = default;
   QueryContentResult& operator=(QueryContentResult&& aOther) = delete;
 
   MOZ_NEVER_INLINE_DEBUG uint32_t StartOffset() const {
