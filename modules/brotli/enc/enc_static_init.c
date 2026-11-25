@@ -4,13 +4,13 @@
 
 
 
-#include "static_init.h"
+#include "enc_static_init.h"
 
-#include "../common/platform.h"
-#include "../common/static_init.h"
+#include "common/platform.h"
+#include "common/static_init.h"
 
 #if (BROTLI_STATIC_INIT != BROTLI_STATIC_INIT_NONE)
-#include "../common/dictionary.h"
+#include "common/dictionary.h"
 #include "dictionary_hash.h"
 #include "static_dict_lut.h"
 #endif
