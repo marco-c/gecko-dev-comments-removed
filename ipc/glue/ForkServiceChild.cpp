@@ -294,7 +294,7 @@ ForkServerLauncher::Observe(nsISupports* , const char* aTopic,
 
 void ForkServerLauncher::RestartForkServer() {
   
-  NS_SUCCEEDED(NS_DispatchToMainThreadQueue(
+  (void)NS_DispatchToMainThreadQueue(
       NS_NewRunnableFunction("OnForkServerError",
                              [] {
                                if (sSingleton) {
@@ -302,7 +302,7 @@ void ForkServerLauncher::RestartForkServer() {
                                  ForkServiceChild::StartForkServer();
                                }
                              }),
-      EventQueuePriority::Idle));
+      EventQueuePriority::Idle);
 }
 
 }  
