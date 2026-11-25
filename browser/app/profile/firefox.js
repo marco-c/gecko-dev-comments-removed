@@ -2469,8 +2469,6 @@ pref("browser.smartwindow.memories.logLevel", "Warn");
 pref("browser.smartwindow.newtab.focusSmartbar", true);
 
 pref("browser.smartwindow.resumeActivity.enabled", true);
-
-pref("browser.smartwindow.resumeCards.enabled", true);
 pref("browser.smartwindow.firstrun.autoAdvanceMS", 3000);
 pref("browser.smartwindow.firstrun.hasCompleted", false);
 pref("browser.smartwindow.firstrun.modelChoice", "");
