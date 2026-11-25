@@ -11,10 +11,13 @@
 #ifndef AUDIO_AUDIO_TRANSPORT_IMPL_H_
 #define AUDIO_AUDIO_TRANSPORT_IMPL_H_
 
+#include <cstddef>
+#include <cstdint>
 #include <memory>
+#include <optional>
 #include <vector>
 
-#include "api/audio/audio_device.h"
+#include "api/audio/audio_device_defines.h"
 #include "api/audio/audio_mixer.h"
 #include "api/audio/audio_processing.h"
 #include "api/scoped_refptr.h"
@@ -39,18 +42,6 @@ class AudioTransportImpl : public AudioTransport {
   AudioTransportImpl& operator=(const AudioTransportImpl&) = delete;
 
   ~AudioTransportImpl() override;
-
-  
-  int32_t RecordedDataIsAvailable(const void* audioSamples,
-                                  size_t nSamples,
-                                  size_t nBytesPerSample,
-                                  size_t nChannels,
-                                  uint32_t samplesPerSec,
-                                  uint32_t totalDelayMS,
-                                  int32_t clockDrift,
-                                  uint32_t currentMicLevel,
-                                  bool keyPressed,
-                                  uint32_t& newMicLevel) override;
 
   int32_t RecordedDataIsAvailable(
       const void* audioSamples,

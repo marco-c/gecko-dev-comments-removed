@@ -103,19 +103,6 @@ class TestAudioTransport : public AudioTransport {
     return 0;
   }
 
-  int32_t RecordedDataIsAvailable(const void* ,
-                                  size_t ,
-                                  size_t ,
-                                  size_t ,
-                                  uint32_t ,
-                                  uint32_t ,
-                                  int32_t ,
-                                  uint32_t ,
-                                  bool ,
-                                  uint32_t& ) override {
-    RTC_CHECK(false) << "This methods should be never executed";
-  }
-
   void PullRenderData(int ,
                       int ,
                       size_t ,

@@ -356,7 +356,7 @@ class MockAudioTransport : public test::MockAudioTransport {
               &MockAudioTransport::RealNeedMorePlayData, this));
     }
     if (rec_mode()) {
-      ON_CALL(*this, RecordedDataIsAvailable(_, _, _, _, _, _, _, _, _, _))
+      ON_CALL(*this, RecordedDataIsAvailable(_, _, _, _, _, _, _, _, _, _, _))
           .WillByDefault(absl::bind_front(
               &MockAudioTransport::RealRecordedDataIsAvailable, this));
     }
@@ -370,16 +370,18 @@ class MockAudioTransport : public test::MockAudioTransport {
     HandleCallbacks(nullptr, audio_stream, 0);
   }
 
-  int32_t RealRecordedDataIsAvailable(const void* audio_buffer,
-                                      const size_t samples_per_channel,
-                                      const size_t bytes_per_frame,
-                                      const size_t channels,
-                                      const uint32_t sample_rate,
-                                      const uint32_t ,
-                                      const int32_t ,
-                                      const uint32_t ,
-                                      const bool ,
-                                      uint32_t& ) {
+  int32_t RealRecordedDataIsAvailable(
+      const void* audio_buffer,
+      const size_t samples_per_channel,
+      const size_t bytes_per_frame,
+      const size_t channels,
+      const uint32_t sample_rate,
+      const uint32_t ,
+      const int32_t ,
+      const uint32_t ,
+      const bool ,
+      uint32_t& ,
+      std::optional<int64_t> ) {
     EXPECT_TRUE(rec_mode()) << "No test is expecting these callbacks.";
     
     
