@@ -328,9 +328,6 @@ newtab-custom-widget-privacy-toggle =
 # Crossword is a widget on New Tab that shows a daily crossword puzzle.
 newtab-custom-widget-crossword-toggle =
   .label = Crossword
-# Finance is a widget on New Tab that shows stock ticker prices.
-newtab-custom-widget-stocks-toggle2 =
-  .label = Finance
 newtab-custom-widget-picture-toggle =
   .label = Picture of the day
 newtab-custom-widget-search-toggle =
@@ -579,7 +576,7 @@ newtab-weather-sponsored = { $provider } ∙ Sponsored
 newtab-weather-widget-open-menu-button =
     .title = Open weather menu
     .aria-label = Open weather menu
-newtab-weather-menu-change-location = Change location
+newtab-weather-menu-change-location = Change Location
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Search location
     .aria-label = Search location
@@ -594,23 +591,23 @@ newtab-weather-location-search-results =
 # "Current" refers to the user's physical/geographic location detected via geolocation.
 newtab-weather-change-location-search-use-current =
     .label = Use current location
-newtab-weather-menu-weather-display = Weather display
+newtab-weather-menu-weather-display = Weather Display
 newtab-weather-todays-forecast = Today’s forecast
 newtab-weather-see-full-forecast = See full forecast
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
 # - Detailed: Include simple information plus a short text summary: e.g. "Mostly cloudy"
 newtab-weather-menu-weather-display-option-simple = Simple
-newtab-weather-menu-change-weather-display-simple = Switch to simple view
+newtab-weather-menu-change-weather-display-simple = Switch to Simple View
 newtab-weather-menu-weather-display-option-detailed = Detailed
-newtab-weather-menu-change-weather-display-detailed = Switch to detailed view
-newtab-weather-menu-temperature-units = Temperature units
+newtab-weather-menu-change-weather-display-detailed = Switch to Detailed View
+newtab-weather-menu-temperature-units = Temperature Units
 newtab-weather-menu-temperature-option-fahrenheit = Fahrenheit
 newtab-weather-menu-temperature-option-celsius = Celsius
 newtab-weather-menu-change-temperature-units-fahrenheit = Switch to Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Switch to Celsius
-newtab-weather-menu-learn-more = Learn more
-newtab-weather-menu-detect-my-location = Detect my location
+newtab-weather-menu-learn-more = Learn More
+newtab-weather-menu-detect-my-location = Detect My Location
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Weather data is not available right now.
 newtab-weather-opt-in-see-weather = Do you want to see the weather for your location?
@@ -822,8 +819,8 @@ newtab-section-toast-block =
 ## Strings for task / to-do list productivity widget
 
 newtab-widget-section-title = Widgets
-newtab-widget-menu-hide = Hide widget
-newtab-widget-menu-change-size = Change size
+newtab-widget-menu-hide = Hide Widget
+newtab-widget-menu-change-size = Change Size
 # Parent label for a submenu in the widget menu that reorders the widget
 # among its siblings. "Left" and "Right" appear as items inside this submenu.
 newtab-widget-menu-move = Move
@@ -863,9 +860,9 @@ newtab-widget-section-menu-button =
 newtab-widget-add-widgets-button =
     .aria-label = Add widget
     .title = Add widget
-newtab-widget-section-menu-manage = Manage widgets
-newtab-widget-section-menu-hide-all = Hide widgets
-newtab-widget-section-menu-learn-more = Learn more
+newtab-widget-section-menu-manage = Manage Widgets
+newtab-widget-section-menu-hide-all = Hide Widgets
+newtab-widget-section-menu-learn-more = Learn More
 newtab-widget-section-feedback = Tell us what you think
 # Button shown when additional widgets are hidden beyond the
 # first row, allowing users to show them.
@@ -908,21 +905,21 @@ newtab-widget-lists-completed-list = Completed ({ $number })
 newtab-widget-lists-celebration-headline = Good work
 newtab-widget-lists-celebration-subhead = All clear
 newtab-widget-task-list-menu-copy = Copy
-newtab-widget-lists-menu-edit = Edit list name
+newtab-widget-lists-menu-edit = Edit List Name
 newtab-widget-lists-menu-edit2 =
     .aria-label = Edit list name
-newtab-widget-lists-menu-create = Create a new list
-newtab-widget-lists-menu-delete = Delete this list
-newtab-widget-lists-menu-copy = Copy list to clipboard
-newtab-widget-lists-menu-learn-more = Learn more
+newtab-widget-lists-menu-create = Create a New List
+newtab-widget-lists-menu-delete = Delete This List
+newtab-widget-lists-menu-copy = Copy List to Clipboard
+newtab-widget-lists-menu-learn-more = Learn More
 newtab-widget-lists-button-add-item = Add an item
 newtab-widget-lists-input-add-an-item2 =
     .placeholder = Add an item
     .aria-label = Add an item
 newtab-widget-lists-input-error = Please include text to add an item.
 newtab-widget-lists-input-menu-open-link = Open link
-newtab-widget-lists-input-menu-move-up = Move up
-newtab-widget-lists-input-menu-move-down = Move down
+newtab-widget-lists-input-menu-move-up = Move Up
+newtab-widget-lists-input-menu-move-down = Move Down
 newtab-widget-lists-input-menu-delete = Delete
 newtab-widget-lists-input-menu-edit = Edit
 newtab-widget-lists-input-menu-edit2 =
@@ -958,9 +955,9 @@ newtab-widget-timer-label-pause =
     .label = Pause
 newtab-widget-timer-reset =
     .title = Reset
-newtab-widget-timer-menu-notifications = Turn off notifications
-newtab-widget-timer-menu-notifications-on = Turn on notifications
-newtab-widget-timer-menu-learn-more = Learn more
+newtab-widget-timer-menu-notifications = Turn Off Notifications
+newtab-widget-timer-menu-notifications-on = Turn On Notifications
+newtab-widget-timer-menu-learn-more = Learn More
 # Tooltip and screen reader label for the icon-only button that opens the
 # widget's menu.
 newtab-widget-timer-open-menu-button =
@@ -1072,10 +1069,10 @@ newtab-nova-customization-callout-primary-button =
 
 ## Strings for the Clock widget
 
-newtab-clock-widget-menu-learn-more = Learn more
-newtab-clock-widget-menu-edit = Edit clocks
-newtab-clock-widget-menu-switch-to-12h = Switch to 12-hour format
-newtab-clock-widget-menu-switch-to-24h = Switch to 24-hour format
+newtab-clock-widget-menu-learn-more = Learn More
+newtab-clock-widget-menu-edit = Edit Clocks
+newtab-clock-widget-menu-switch-to-12h = Switch to 12-Hour Format
+newtab-clock-widget-menu-switch-to-24h = Switch to 24-Hour Format
 newtab-clock-widget-label-your-clocks = Your clocks
 # "Back" is an icon-only button next to the city search field form that returns to the list of clocks.
 newtab-clock-widget-search-back-button =
@@ -1364,7 +1361,7 @@ newtab-privacy-widget-label =
     .aria-label = Privacy
 
 # Context menu item linking to more information about the Privacy widget.
-newtab-privacy-menu-learn-more = Learn more
+newtab-privacy-menu-learn-more = Learn More
 
 # Tooltip and screen reader label for the icon-only button that opens the
 # widget's menu.
@@ -1534,148 +1531,6 @@ newtab-privacy-message-streak-cta = View protections
 newtab-privacy-message-first-protection = Keep browsing, { -brand-short-name } will keep blocking.
 newtab-privacy-message-first-protection-cta = View protections
 
-## Strings for the Finance widget
-
-# Accessible name for the Finance widget. It is usually not shown, since the
-# list dropdown or the chosen ticker symbol takes the title's place.
-newtab-stocks-widget-title2 = Finance
-
-# "Markets" is the default list of market ETFs. The value is shown in the menu,
-# and .label is shown on the button that opens it.
-newtab-stocks-list-markets = Markets
-    .label = Markets
-# "Watchlist" is the user's list of stocks to follow. The value is shown in the
-# menu, and .label is shown on the button that opens it.
-newtab-stocks-list-watchlist = Watchlist
-    .label = Watchlist
-
-# Context menu item that opens the stock search (by company name or ticker symbol).
-newtab-stocks-menu-search-stocks = Search by name or symbol
-
-# Context menu item linking to more information about the Finance widget.
-newtab-stocks-menu-learn-more = Learn more
-
-# Shown in the Finance widget when its data could not be loaded.
-newtab-stocks-error-not-available = Stock data is not available.
-
-# Tooltip and screen reader label for the icon-only button that opens the
-# widget's menu.
-newtab-stocks-widget-open-menu-button2 =
-    .title = Open finance menu
-    .aria-label = Open finance menu
-
-# Toolbar button that opens the stock search. It shows only the icon until it is
-# hovered or focused, then the .label as well; "Search" is a verb. .title and
-# .aria-label name it for tooltips and screen readers.
-newtab-stocks-search-button =
-    .label = Search
-    .title = Search by name or symbol
-    .aria-label = Search by name or symbol
-
-# Shown on the Watchlist while the user has no stocks in it, above a button that
-# opens the stock search.
-newtab-stocks-watchlist-empty = Start watching stocks that matter to you
-
-# Button under the empty-watchlist message that opens the stock search. Shown
-# with a magnifying-glass icon and the .label, where "Search" is a verb; .title
-# and .aria-label name it the same way as the toolbar search button.
-newtab-stocks-watchlist-empty-search =
-    .label = Search
-    .title = Search by name or symbol
-    .aria-label = Search by name or symbol
-
-## Screen-reader summary of a stock ticker.
-## Variables:
-##   $name (String) - the full fund/ETF name, e.g. "SPDR S&P 500 ETF Trust".
-##   $change (String) - the day's percentage change, e.g. "+2.1%".
-##   $price (String) - the last price, e.g. "$559.44".
-
-# Stock increased (went up) during the day
-newtab-stocks-ticker-status-up = { $name }, up { $change }, { $price }
-
-# Stock decreased (went down) during the day
-newtab-stocks-ticker-status-down = { $name }, down { $change }, { $price }
-
-# Stock didn't change during the day
-newtab-stocks-ticker-status-flat = { $name }, no change, { $change }, { $price }
-
-## Finance widget watchlist add and remove controls
-
-# Tooltip and screen-reader label for the button that adds a stock to the watchlist.
-# The button shows only an icon and never renders visible text.
-# Variables:
-#   $name (String) - the fund/ETF name, e.g. "SPDR S&P 500 ETF Trust".
-newtab-stocks-add-to-watchlist =
-    .title = Add { $name } to watchlist
-    .aria-label = Add { $name } to watchlist
-
-# Tooltip and screen-reader label for the button that removes a stock from the watchlist.
-# The button shows only an icon and never renders visible text.
-# Variables:
-#   $name (String) - the fund/ETF name.
-newtab-stocks-remove-from-watchlist =
-    .title = Remove { $name } from watchlist
-    .aria-label = Remove { $name } from watchlist
-
-# Visually hidden text on a Markets row whose stock is already in the watchlist, so
-# screen readers announce that it is saved. Removal happens on the Watchlist tab.
-# Variables:
-#   $name (String) - the fund/ETF name.
-newtab-stocks-in-watchlist = { $name } is in your watchlist
-
-# Announced to screen readers after a stock is added to the watchlist.
-# Variables:
-#   $name (String) - the fund/ETF name.
-newtab-stocks-added-to-watchlist = Added { $name } to watchlist
-
-# Announced to screen readers after a stock is removed from the watchlist.
-# Variables:
-#   $name (String) - the fund/ETF name.
-newtab-stocks-removed-from-watchlist = Removed { $name } from watchlist
-
-## Finance widget ticker search
-
-# Placeholder and screen-reader label for the ticker search input.
-newtab-stocks-search-input =
-    .placeholder = Search by name or symbol
-    .aria-label = Search by name or symbol
-
-# "Search results" is the accessible label for the list of tickers matching the
-# search. It means "results of the search", not "search within the results".
-newtab-stocks-search-results =
-    .aria-label = Search results
-
-# Shown in the search panel, where the results will appear, until the user
-# has searched.
-newtab-stocks-search-hint = Search for symbols or companies to add to your watchlist
-
-# "Back" is an icon-only button in the search panel header that returns to the
-# widget — the attributes are consumed as tooltip/screen-reader label only. The
-# button never renders visible text.
-newtab-stocks-search-back-button =
-    .title = Back
-    .aria-label = Back
-
-# Shown when a ticker search returns no matching symbols.
-# Variables:
-#   $query (String) - the text the user searched for.
-newtab-stocks-search-no-results = No results for “{ $query }”
-
-# Shown while a ticker search is running; also announced to screen readers.
-newtab-stocks-search-loading = Loading…
-
-# Shown when a ticker search fails to reach the service.
-newtab-stocks-search-error = Couldn’t search right now. Try again later.
-
-# Shown below successful search results when the watchlist is already full.
-# Variables:
-#   $limit (Number) - the maximum number of stocks the watchlist can hold.
-newtab-stocks-watchlist-full =
-    { $limit ->
-        [one] You can add up to { $limit } stock. Remove one to add another.
-        *[other] You can add up to { $limit } stocks. Remove one to add another.
-    }
-
 ## Strings for the Picture of the Day widget
 
 # Title shown at the top of the widget, with the source name appended.
@@ -1721,16 +1576,16 @@ newtab-picture-set-wallpaper2 =
     .aria-label = Set this picture as your wallpaper
 
 # Context menu item that opens the New Tab customization panel.
-newtab-picture-menu-manage-wallpaper = Manage wallpaper
+newtab-picture-menu-manage-wallpaper = Manage Wallpaper
 
 # Context menu item that hides the picture shown in the widget.
-newtab-picture-menu-hide-photo2 = Hide this picture
+newtab-picture-menu-hide-photo2 = Hide This Picture
 
 # Context menu item that restores the picture after it has been hidden.
-newtab-picture-menu-show-photo2 = Show picture
+newtab-picture-menu-show-photo2 = Show Picture
 
 # Context menu item linking to more information about the widget.
-newtab-picture-menu-learn-more = Learn more
+newtab-picture-menu-learn-more = Learn More
 
 # Icon button shown on the widget once the picture is hidden; restores it.
 newtab-picture-show-button2 =
@@ -1756,7 +1611,7 @@ newtab-search-widget-open-menu-button =
     .aria-label = Open search menu
 
 # Context menu item linking to more information about the widget.
-newtab-recent-searches-menu-learn-more = Learn more
+newtab-recent-searches-menu-learn-more = Learn More
 
 # Tab listing the searches the user has made recently.
 newtab-recent-searches-tab-recent = Recent searches
@@ -1798,7 +1653,7 @@ newtab-horoscopes-widget-open-menu-button =
     .aria-label = Open horoscopes menu
 
 # Context menu item linking to more information about the widget.
-newtab-horoscopes-menu-learn-more = Learn more
+newtab-horoscopes-menu-learn-more = Learn More
 
 # Context menu item linking to the Yahoo website, the provider of the
 # horoscopes. “Yahoo” is a brand name and should not be translated.
@@ -1817,7 +1672,7 @@ newtab-travel-widget-open-menu-button =
     .aria-label = Open travel menu
 
 # Context menu item linking to more information about the widget.
-newtab-travel-menu-learn-more = Learn more
+newtab-travel-menu-learn-more = Learn More
 
 # Context menu item linking to the Kayak website, the provider of the
 # travel search. “Kayak” is a brand name and should not be translated.
@@ -1837,7 +1692,7 @@ newtab-solitaire-widget-open-menu-button =
     .aria-label = Open solitaire menu
 
 # Context menu item linking to more information about the widget.
-newtab-solitaire-menu-learn-more = Learn more
+newtab-solitaire-menu-learn-more = Learn More
 
 ## Strings for the Wrexham AFC widget. Wrexham AFC is a football club from
 ## Wrexham, Wales. For now, the widget is only expected to be shown in Welsh
