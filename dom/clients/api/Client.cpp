@@ -15,6 +15,8 @@
 #include "mozilla/dom/WorkerScope.h"
 #include "nsIDUtils.h"
 #include "nsIGlobalObject.h"
+#include "nsNetUtil.h"
+#include "nsURLHelper.h"
 
 namespace mozilla::dom {
 
@@ -172,19 +174,45 @@ already_AddRefed<Promise> Client::Navigate(const nsAString& aURL,
   MOZ_DIAGNOSTIC_ASSERT(workerPrivate->IsServiceWorker());
   workerPrivate->AssertIsOnWorkerThread();
 
+  NS_ConvertUTF16toUTF8 spec(aURL);
+  nsIURI* baseURI = workerPrivate->GetBaseURI();
+
+  
+  
+  
+  
+  
+  
+  
+  bool shouldUseBaseURL = true;
+  nsAutoCString scheme;
+  if (NS_SUCCEEDED(net_ExtractURLScheme(spec, scheme)) &&
+      scheme.LowerCaseEqualsLiteral("view-source")) {
+    shouldUseBaseURL = false;
+  }
+
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = NS_NewURI(getter_AddRefs(uri), spec, nullptr,
+                          shouldUseBaseURL ? baseURI : nullptr);
+  if (NS_FAILED(rv)) {
+    
+    
+    aRv.ThrowTypeError<MSG_INVALID_URL>(spec);
+    return nullptr;
+  }
+
+  if (NS_IsAboutBlankAllowQueryAndFragment(uri)) {
+    aRv.ThrowTypeError("Navigation to \"about:blank\" is not allowed");
+    return nullptr;
+  }
+
   RefPtr<Promise> outerPromise = Promise::Create(mGlobal, aRv);
   if (aRv.Failed()) {
     return outerPromise.forget();
   }
 
-  nsCString baseURL;
-  nsresult rv = workerPrivate->GetBaseURI()->GetSpec(baseURL);
-  if (NS_FAILED(rv)) {
-    outerPromise->MaybeReject(rv);
-    return outerPromise.forget();
-  }
-
-  ClientNavigateArgs args(mData->info(), NS_ConvertUTF16toUTF8(aURL), baseURL,
+  ClientNavigateArgs args(mData->info(), WrapNotNull(uri.get()),
+                          WrapNotNull(baseURI),
                           workerPrivate->GetServiceWorkerDescriptor().ToIPC());
   RefPtr<Client> self = this;
 

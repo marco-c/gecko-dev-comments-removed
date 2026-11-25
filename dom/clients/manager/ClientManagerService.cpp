@@ -434,8 +434,9 @@ RefPtr<ClientOpPromise> ClientManagerService::Navigate(
   
   
   
-  ClientNavigateOpConstructorArgs args(WrapNotNull(source), aArgs.url(),
-                                       aArgs.baseURL());
+  ClientNavigateOpConstructorArgs args(
+      WrapNotNull(source), NotNull<RefPtr<nsIURI>>(aArgs.uri()),
+      NotNull<RefPtr<nsIURI>>(aArgs.baseURI()));
 
   RefPtr<ClientOpPromise::Private> promise =
       new ClientOpPromise::Private(__func__);

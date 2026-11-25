@@ -18,7 +18,6 @@
 #include "nsNetUtil.h"
 #include "nsPIDOMWindow.h"
 #include "nsPIDOMWindowInlines.h"
-#include "nsURLHelper.h"
 
 namespace mozilla::dom {
 
@@ -184,51 +183,8 @@ RefPtr<ClientOpPromise> ClientNavigateOpChild::DoNavigate(
 
   mSerialEventTarget = GetMainThreadSerialEventTarget();
 
-  
-  
-  
-  
-  nsCOMPtr<nsIURI> baseURL;
-  nsresult rv = NS_NewURI(getter_AddRefs(baseURL), aArgs.baseURL());
-  if (NS_FAILED(rv)) {
-    
-    
-    CopyableErrorResult result;
-    result.ThrowInvalidStateError("Invalid worker URL");
-    return ClientOpPromise::CreateAndReject(result, __func__);
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  bool shouldUseBaseURL = true;
-  nsAutoCString scheme;
-  if (NS_SUCCEEDED(net_ExtractURLScheme(aArgs.url(), scheme)) &&
-      scheme.LowerCaseEqualsLiteral("view-source")) {
-    shouldUseBaseURL = false;
-  }
-
-  nsCOMPtr<nsIURI> url;
-  rv = NS_NewURI(getter_AddRefs(url), aArgs.url(), nullptr,
-                 shouldUseBaseURL ? baseURL.get() : nullptr);
-  if (NS_FAILED(rv)) {
-    
-    
-    nsPrintfCString err("Invalid URL \"%s\"", aArgs.url().get());
-    CopyableErrorResult result;
-    result.ThrowTypeError(err);
-    return ClientOpPromise::CreateAndReject(result, __func__);
-  }
-
-  if (NS_IsAboutBlankAllowQueryAndFragment(url)) {
-    CopyableErrorResult result;
-    result.ThrowTypeError("Navigation to \"about:blank\" is not allowed");
-    return ClientOpPromise::CreateAndReject(result, __func__);
-  }
+  nsCOMPtr<nsIURI> url = aArgs.uri().get();
+  nsCOMPtr<nsIURI> baseURL = aArgs.baseURI().get();
 
   RefPtr<Document> doc = window->GetExtantDoc();
   if (!doc || !doc->IsActive()) {
@@ -239,11 +195,11 @@ RefPtr<ClientOpPromise> ClientNavigateOpChild::DoNavigate(
 
   nsCOMPtr<nsIPrincipal> principal = doc->NodePrincipal();
 
-  rv = nsContentUtils::GetSecurityManager()->CheckLoadURIWithPrincipal(
+  nsresult rv = nsContentUtils::GetSecurityManager()->CheckLoadURIWithPrincipal(
       principal, url, nsIScriptSecurityManager::STANDARD, doc->InnerWindowID());
   if (NS_FAILED(rv)) {
     nsPrintfCString err("Navigation to \"%s\" is not allowed",
-                        aArgs.url().get());
+                        url->GetSpecOrDefault().get());
     CopyableErrorResult result;
     result.ThrowTypeError(err);
     return ClientOpPromise::CreateAndReject(result, __func__);
@@ -282,7 +238,7 @@ RefPtr<ClientOpPromise> ClientNavigateOpChild::DoNavigate(
     
     
     
-    nsPrintfCString err("Invalid URL \"%s\"", aArgs.url().get());
+    nsPrintfCString err("Invalid URL \"%s\"", url->GetSpecOrDefault().get());
     CopyableErrorResult result;
     result.ThrowTypeError(err);
     return ClientOpPromise::CreateAndReject(result, __func__);
