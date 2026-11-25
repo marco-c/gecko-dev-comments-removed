@@ -21,6 +21,10 @@ const { ExtensionTestUtils } = ChromeUtils.importESModule(
 
 do_get_profile();
 
+const fxAccounts = ChromeUtils.importESModule(
+  "resource://gre/modules/FxAccounts.sys.mjs"
+).getFxAccountsSingleton();
+
 AddonTestUtils.init(this);
 AddonTestUtils.createAppInfo(
   "xpcshell@tests.mozilla.org",
@@ -32,6 +36,7 @@ AddonTestUtils.createAppInfo(
 ExtensionTestUtils.init(this);
 
 add_setup(async function () {
+  Services.fog.initializeFOG();
   IPProtectionActivator.setAuthProvider(IPPFxaActivateAuthProvider);
   await putServerInRemoteSettings();
   IPProtectionService.uninit();
@@ -81,40 +86,27 @@ function useFxaAuthProvider(
 
 function makeProvider(sandbox) {
   const provider = new IPPFxaActivateAuthProviderSingleton();
-  const removeToken = sandbox.spy();
-  sandbox.stub(provider, "getToken").resolves({
-    token: "fake-token",
-    [Symbol.dispose]: removeToken,
-  });
-  return { provider, removeToken };
+  const onTokenRejected = sandbox.spy();
+  sandbox
+    .stub(provider, "getToken")
+    .resolves({ token: "fake-token", onTokenRejected });
+  return { provider, onTokenRejected };
 }
 
 
+
 for (const method of ["fetchProxyPass", "fetchProxyUsage"]) {
-  add_task(async function test_removes_token_after_guardian_resolves() {
+  add_task(async function test_keeps_token_after_guardian_resolves() {
     const sandbox = sinon.createSandbox();
-    const { provider, removeToken } = makeProvider(sandbox);
+    const { provider, onTokenRejected } = makeProvider(sandbox);
 
-    let resolveGuardian;
-    sandbox
-      .stub(provider.guardian, method)
-      .returns(new Promise(r => (resolveGuardian = r)));
+    sandbox.stub(provider.guardian, method).resolves({ status: 200 });
 
-    const fetchPromise = provider[method]();
-    await Promise.resolve();
-    await Promise.resolve();
+    await provider[method]();
 
     Assert.ok(
-      !removeToken.called,
-      `${method}: token not removed while guardian is pending`
-    );
-
-    resolveGuardian({ status: 200 });
-    await fetchPromise;
-
-    Assert.ok(
-      removeToken.calledOnce,
-      `${method}: token removed after guardian resolves`
+      !onTokenRejected.called,
+      `${method}: a successful request should keep the token`
     );
 
     sandbox.restore();
@@ -240,10 +232,9 @@ add_task(
     await IPProtectionService.init();
     IPPFxaActivateAuthProvider._setEntitlement(null);
 
-    sandbox.stub(IPPFxaActivateAuthProvider, "getToken").resolves({
-      token: "fake-token",
-      [Symbol.dispose]() {},
-    });
+    sandbox
+      .stub(IPPFxaActivateAuthProvider, "getToken")
+      .resolves({ token: "fake-token" });
     sandbox
       .stub(IPPFxaActivateAuthProvider.guardian, "fetchUserInfo")
       .resolves({
@@ -283,10 +274,9 @@ add_task(
     await IPProtectionService.init();
     IPPFxaActivateAuthProvider._setEntitlement(null);
 
-    sandbox.stub(IPPFxaActivateAuthProvider, "getToken").resolves({
-      token: "fake-token",
-      [Symbol.dispose]() {},
-    });
+    sandbox
+      .stub(IPPFxaActivateAuthProvider, "getToken")
+      .resolves({ token: "fake-token" });
     sandbox
       .stub(IPPFxaActivateAuthProvider.guardian, "fetchUserInfo")
       .resolves({ status: 200, error: "invalid_response" });
@@ -319,10 +309,9 @@ add_task(async function test_enroll_success() {
   await IPProtectionService.init();
   IPPFxaActivateAuthProvider._setEntitlement(null);
 
-  sandbox.stub(IPPFxaActivateAuthProvider, "getToken").resolves({
-    token: "fake-token",
-    [Symbol.dispose]() {},
-  });
+  sandbox
+    .stub(IPPFxaActivateAuthProvider, "getToken")
+    .resolves({ token: "fake-token" });
   const entitlement = createTestEntitlement({ subscribed: true });
   sandbox
     .stub(IPPFxaActivateAuthProvider.guardian, "activate")
@@ -345,6 +334,83 @@ add_task(async function test_enroll_success() {
 
 
 
+add_task(async function test_enroll_resyncs_stale_signin_watcher() {
+  const sandbox = sinon.createSandbox();
+  sandbox
+    .stub(IPPFxaActivateAuthProvider, "getEntitlement")
+    .resolves({ error: "parse_error" });
+  const getSignedInUser = sandbox
+    .stub(fxAccounts, "getSignedInUser")
+    .resolves(null);
+
+  await IPProtectionService.init();
+  
+  await new Promise(resolve => executeSoon(resolve));
+  IPPFxaActivateAuthProvider._setEntitlement(null);
+  IPPSignInWatcher.isSignedIn = false;
+
+  getSignedInUser.resolves({ verified: true });
+  sandbox
+    .stub(IPPFxaActivateAuthProvider, "getToken")
+    .resolves({ token: "fake-token" });
+  sandbox
+    .stub(IPPFxaActivateAuthProvider.guardian, "activate")
+    .resolves({ ok: true, entitlement: createTestEntitlement() });
+  Services.fog.testResetFOG();
+
+  await IPPFxaActivateAuthProvider.enroll();
+
+  Assert.equal(
+    IPProtectionService.state,
+    IPProtectionStates.READY,
+    "The service should be ready after enrolling"
+  );
+  Assert.deepEqual(
+    Glean.ipprotection.error.testGetValue()?.map(e => e.extra.source),
+    ["AuthProvider:SignInDesync"],
+    "Only the desync should be reported"
+  );
+
+  IPProtectionService.uninit();
+  IPPSignInWatcher.isSignedIn = false;
+  sandbox.restore();
+});
+
+
+
+
+
+add_task(async function test_enroll_reports_enrolled_but_unauthenticated() {
+  const sandbox = sinon.createSandbox();
+  useFxaAuthProvider(sandbox, { ...defaultStubOptions, signedIn: false });
+
+  await IPProtectionService.init();
+  IPPFxaActivateAuthProvider._setEntitlement(null);
+
+  sandbox
+    .stub(IPPFxaActivateAuthProvider, "getToken")
+    .resolves({ token: "fake-token" });
+  sandbox
+    .stub(IPPFxaActivateAuthProvider.guardian, "activate")
+    .resolves({ ok: true, entitlement: createTestEntitlement() });
+  Services.fog.testResetFOG();
+
+  await IPPFxaActivateAuthProvider.enroll();
+
+  Assert.deepEqual(
+    Glean.ipprotection.error.testGetValue()?.map(e => e.extra.source),
+    ["AuthProvider:SignInDesync", "AuthProvider:EnrolledButUnauthenticated"],
+    "Both the desync and the outcome should be reported"
+  );
+
+  IPProtectionService.uninit();
+  sandbox.restore();
+});
+
+
+
+
+
 add_task(async function test_enroll_failure() {
   const sandbox = sinon.createSandbox();
   useFxaAuthProvider(sandbox);
@@ -352,10 +418,9 @@ add_task(async function test_enroll_failure() {
   await IPProtectionService.init();
   IPPFxaActivateAuthProvider._setEntitlement(null);
 
-  sandbox.stub(IPPFxaActivateAuthProvider, "getToken").resolves({
-    token: "fake-token",
-    [Symbol.dispose]() {},
-  });
+  sandbox
+    .stub(IPPFxaActivateAuthProvider, "getToken")
+    .resolves({ token: "fake-token" });
   sandbox
     .stub(IPPFxaActivateAuthProvider.guardian, "activate")
     .resolves({ ok: false, error: "login_needed" });
@@ -388,10 +453,9 @@ add_task(async function test_isEnrolling_during_enroll() {
   await IPProtectionService.init();
   IPPFxaActivateAuthProvider._setEntitlement(null);
 
-  sandbox.stub(IPPFxaActivateAuthProvider, "getToken").resolves({
-    token: "fake-token",
-    [Symbol.dispose]() {},
-  });
+  sandbox
+    .stub(IPPFxaActivateAuthProvider, "getToken")
+    .resolves({ token: "fake-token" });
 
   let resolveActivate;
   
