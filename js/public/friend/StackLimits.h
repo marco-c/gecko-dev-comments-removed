@@ -5,11 +5,13 @@
 #ifndef js_friend_StackLimits_h
 #define js_friend_StackLimits_h
 
-#include "mozilla/Attributes.h"  
-#include "mozilla/Likely.h"      
-#include "mozilla/Variant.h"     
+#include "mozilla/Attributes.h"         
+#include "mozilla/CheckedArithmetic.h"  
+#include "mozilla/Likely.h"             
+#include "mozilla/Variant.h"            
 
 #include <stddef.h>  
+#include <stdint.h>  
 
 #include "jstypes.h"  
 
@@ -167,6 +169,10 @@ class MOZ_RAII AutoCheckRecursionLimit {
       JSContext* cx, void* sp) const;
   [[nodiscard]] MOZ_ALWAYS_INLINE bool checkWithStackPointerDontReport(
       FrontendContext* fc, void* sp) const;
+  
+  
+  [[nodiscard]] MOZ_ALWAYS_INLINE bool checkWithStackPointerAndExtraDontReport(
+      JSContext* cx, void* sp, size_t extra) const;
 
   [[nodiscard]] MOZ_ALWAYS_INLINE bool checkConservative(JSContext* cx) const;
   [[nodiscard]] MOZ_ALWAYS_INLINE bool checkConservativeDontReport(
@@ -254,15 +260,26 @@ MOZ_ALWAYS_INLINE bool AutoCheckRecursionLimit::checkWithExtra(
   return true;
 }
 
+MOZ_ALWAYS_INLINE bool
+AutoCheckRecursionLimit::checkWithStackPointerAndExtraDontReport(
+    JSContext* cx, void* sp, size_t extra) const {
+  uintptr_t newsp = reinterpret_cast<uintptr_t>(sp);
+#if JS_STACK_GROWTH_DIRECTION > 0
+  if (MOZ_UNLIKELY(!mozilla::SafeAdd(newsp, uintptr_t(extra), &newsp))) {
+    return false;
+  }
+#else
+  if (MOZ_UNLIKELY(!mozilla::SafeSub(newsp, uintptr_t(extra), &newsp))) {
+    return false;
+  }
+#endif
+  return checkWithStackPointerDontReport(cx, reinterpret_cast<void*>(newsp));
+}
+
 MOZ_ALWAYS_INLINE bool AutoCheckRecursionLimit::checkWithExtraDontReport(
     JSContext* cx, size_t extra) const {
-  char* sp = reinterpret_cast<char*>(__builtin_frame_address(0));
-#if JS_STACK_GROWTH_DIRECTION > 0
-  sp += extra;
-#else
-  sp -= extra;
-#endif
-  return checkWithStackPointerDontReport(cx, sp);
+  return checkWithStackPointerAndExtraDontReport(cx, __builtin_frame_address(0),
+                                                 extra);
 }
 
 MOZ_ALWAYS_INLINE bool AutoCheckRecursionLimit::checkSystem(
