@@ -7,8 +7,9 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/ChaosMode.h"
 
-#if defined(XP_WIN)
-#  include <windows.h>
+#if defined(XP_WIN) || defined(XP_MACOSX)
+#  include <thread>
+#  include "mozilla/TimeStamp.h"
 #else
 #  include <unistd.h>
 #endif
@@ -22,14 +23,18 @@ void DelayForChaosMode(ChaosFeature aFeature,
   }
 
   MOZ_ASSERT(aMicrosecondLimit <= 1000);
-#if defined(XP_WIN)
-  
-  
-  
-  
-  
-#else
   const uint32_t duration = ChaosMode::randomUint32LessThan(aMicrosecondLimit);
+#if defined(XP_WIN) || defined(XP_MACOSX)
+  
+  
+  
+  
+  const TimeStamp deadline =
+      TimeStamp::Now() + TimeDuration::FromMicroseconds(duration);
+  while (TimeStamp::Now() < deadline) {
+    std::this_thread::yield();
+  }
+#else
   ::usleep(duration);
 #endif
 }
