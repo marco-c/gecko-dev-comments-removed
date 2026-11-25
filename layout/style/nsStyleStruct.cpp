@@ -2647,6 +2647,13 @@ nsChangeHint nsStyleDisplay::CalcDifference(
   }
 
   
+  
+  if ((mOffsetPath.IsUrl() || aNewData.mOffsetPath.IsUrl()) &&
+      mOffsetPath != aNewData.mOffsetPath) {
+    hint |= nsChangeHint_UpdateEffects;
+  }
+
+  
 
 
 
