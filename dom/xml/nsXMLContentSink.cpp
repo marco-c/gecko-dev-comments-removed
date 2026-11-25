@@ -273,7 +273,7 @@ nsXMLContentSink::DidBuildModel(bool aTerminated) {
       
       
       css::Loader* cssLoader = mDocument->GetExistingCSSLoader();
-      if (cssLoader && cssLoader->HasPendingLoads()) {
+      if (cssLoader && cssLoader->HasPendingNonDeferredLoads()) {
         cssLoader->AddObserver(this);
         
         startLayout = false;
@@ -423,7 +423,7 @@ nsXMLContentSink::StyleSheetLoaded(StyleSheet* aSheet, bool aWasDeferred,
   }
 
   if (mDocument->GetExistingCSSLoader() &&
-      !mDocument->GetExistingCSSLoader()->HasPendingLoads()) {
+      !mDocument->GetExistingCSSLoader()->HasPendingNonDeferredLoads()) {
     mDocument->GetExistingCSSLoader()->RemoveObserver(this);
     StartLayout(false);
     ScrollToRef();
@@ -719,8 +719,8 @@ nsresult nsXMLContentSink::LoadXSLStyleSheet(nsIURI* aUrl) {
 nsresult nsXMLContentSink::ProcessStyleLinkFromHeader(
     const nsAString& aHref, bool aAlternate, const nsAString& aTitle,
     const nsAString& aIntegrity, const nsAString& aType,
-    const nsAString& aMedia, const nsAString& aReferrerPolicy,
-    const nsAString& aFetchPriority) {
+    const nsAString& aMedia, const nsAString& aCrossOrigin,
+    const nsAString& aReferrerPolicy, const nsAString& aFetchPriority) {
   mPrettyPrintXML = false;
 
   nsAutoCString cmd;
@@ -729,8 +729,8 @@ nsresult nsXMLContentSink::ProcessStyleLinkFromHeader(
     return NS_OK;  
 
   return nsContentSink::ProcessStyleLinkFromHeader(
-      aHref, aAlternate, aTitle, aIntegrity, aType, aMedia, aReferrerPolicy,
-      aFetchPriority);
+      aHref, aAlternate, aTitle, aIntegrity, aType, aMedia, aCrossOrigin,
+      aReferrerPolicy, aFetchPriority);
 }
 
 nsresult nsXMLContentSink::MaybeProcessXSLTLink(
