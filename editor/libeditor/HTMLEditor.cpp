@@ -5250,6 +5250,13 @@ Result<SplitNodeResult, nsresult> HTMLEditor::SplitNodeDeepWithTransaction(
       EditorUtils::IsDescendantOf(*aDeepestStartOfRightNode.GetContainer(),
                                   aMostAncestorToSplit));
 
+  
+  
+  if (NS_WARN_IF(!HTMLEditUtils::IsSplittableNode(aMostAncestorToSplit)))
+      [[unlikely]] {
+    return Err(NS_ERROR_FAILURE);
+  }
+
   if (NS_WARN_IF(!aDeepestStartOfRightNode.IsInComposedDoc())) {
     return Err(NS_ERROR_INVALID_ARG);
   }
@@ -5281,9 +5288,11 @@ Result<SplitNodeResult, nsresult> HTMLEditor::SplitNodeDeepWithTransaction(
     }
     
     
-    if (!HTMLEditUtils::IsSplittableNode(*splittingContent)) {
-      if (splittingContent == &aMostAncestorToSplit) {
-        return lastResult;
+    if (!HTMLEditUtils::IsSplittableNode(*splittingContent)) [[unlikely]] {
+      if (splittingContent == &aMostAncestorToSplit) [[unlikely]] {
+        NS_WARNING("aMostAncestorToSplit is changed to non-splittable");
+        lastResult.IgnoreCaretPointSuggestion();
+        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
       }
       atStartOfRightNode.Set(splittingContent);
       continue;
