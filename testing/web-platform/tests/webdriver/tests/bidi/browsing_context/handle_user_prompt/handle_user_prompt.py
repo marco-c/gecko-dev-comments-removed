@@ -112,6 +112,40 @@ async def test_prompt(
         assert result == {"type": "null"}
 
 
+@pytest.mark.capabilities({"unhandledPromptBehavior": {'default': 'ignore'}})
+async def test_prompt_without_user_text(
+    bidi_session,
+    wait_for_event,
+    wait_for_future_safe,
+    new_tab,
+    subscribe_events,
+):
+    await subscribe_events([USER_PROMPT_OPENED_EVENT])
+    on_entry = wait_for_event(USER_PROMPT_OPENED_EVENT)
+
+    
+    task = asyncio.create_task(
+        bidi_session.script.evaluate(
+            expression="window.prompt('Enter Your Name: ', 'Default')",
+            target=ContextTarget(new_tab["context"]),
+            await_promise=False,
+        )
+    )
+
+    
+    await wait_for_future_safe(on_entry)
+
+    
+    
+    await bidi_session.browsing_context.handle_user_prompt(
+        context=new_tab["context"], accept=True
+    )
+
+    result = await task
+
+    assert result == {"type": "string", "value": ""}
+
+
 @pytest.mark.capabilities({"unhandledPromptBehavior": {'beforeUnload': 'ignore'}})
 @pytest.mark.parametrize("accept", [True, False])
 async def test_beforeunload(
