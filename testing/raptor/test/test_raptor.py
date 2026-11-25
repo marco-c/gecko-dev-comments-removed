@@ -24,11 +24,10 @@ DEFAULT_TIMEOUT = 125
 
 
 class TestBrowserThread(threading.Thread):
-    def __init__(self, raptor_instance, tests, names):
+    def __init__(self, raptor_instance, tests):
         super().__init__()
         self.raptor_instance = raptor_instance
         self.tests = tests
-        self.names = names
         self.exc = None
 
     def print_error(self):
@@ -39,7 +38,7 @@ class TestBrowserThread(threading.Thread):
 
     def run(self):
         try:
-            self.raptor_instance.run_tests(self.tests, self.names)
+            self.raptor_instance.run_tests(self.tests)
         except BaseException:
             self.exc = sys.exc_info()
 
@@ -400,6 +399,30 @@ def test_per_test_chrome_arguments(
     cmd = browsertime._compose_cmd(mock_test, DEFAULT_TIMEOUT)
 
     assert expected_args.intersection(cmd) == (expected_args if expected else set())
+
+
+@pytest.mark.parametrize(
+    "chrome_args, expected_args",
+    [
+        (
+            "--force-renderer-accessibility\n--use-fake-ui-for-media-stream",
+            [
+                "--chrome.args=--force-renderer-accessibility",
+                "--chrome.args=--use-fake-ui-for-media-stream",
+            ],
+        ),
+        (None, []),
+    ],
+)
+def test_android_per_test_chrome_arguments(chrome_args, expected_args):
+    perftest = object.__new__(BrowsertimeAndroid)
+    perftest.debug_mode = False
+    default_args = perftest.setup_chrome_args({"name": "speedometer3-a11y"})
+    test = {"name": "speedometer3-a11y"}
+    if chrome_args is not None:
+        test["chrome_args"] = chrome_args
+
+    assert perftest.setup_chrome_args(test) == default_args + expected_args
 
 
 def extract_arg_value(cmd, arg):

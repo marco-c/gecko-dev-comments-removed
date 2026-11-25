@@ -214,6 +214,12 @@ class BrowsertimeAndroid(PerftestAndroid, Browsertime):
         if self.debug_mode:
             chrome_args.extend(["--auto-open-devtools-for-tabs"])
 
+        chrome_args.extend(
+            arg.strip()
+            for arg in test.get("chrome_args", "").splitlines()
+            if arg.strip()
+        )
+
         args_list = []
         for arg in chrome_args:
             args_list.extend(["--chrome.args=" + str(arg.replace("'", '"'))])
@@ -286,15 +292,14 @@ class BrowsertimeAndroid(PerftestAndroid, Browsertime):
                 self.turn_on_android_app_proxy()
             self.remove_mozprofile_delimiters_from_profile()
 
-    def run_tests(self, tests, test_names):
-        self._test_names = test_names
+    def run_tests(self, tests):
         self.setup_adb_device()
 
         if self.config["app"] in CHROME_ANDROID_APPS:
             
             self.device.shell_output("pm enable com.android.chrome")
 
-        return super().run_tests(tests, test_names)
+        return super().run_tests(tests)
 
     def run_test_teardown(self, test):
         LOG.info("removing reverse socket connections")
