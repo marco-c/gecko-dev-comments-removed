@@ -861,12 +861,20 @@ var FullPageTranslationsPanel = new (class {
 
 
 
-  async #showRevisitView({ sourceLanguage, targetLanguage, sourceVariant }) {
+
+  async #showRevisitView({
+    sourceLanguage,
+    targetLanguage,
+    sourceVariant,
+    targetVariant,
+  }) {
     const { fromMenuList, toMenuList, intro } = this.elements;
+    const actor = TranslationsParent.getTranslationsActor(
+      gBrowser.selectedBrowser
+    );
+
     if (!this.#isShowingDefaultView()) {
-      await this.#showDefaultView(
-        TranslationsParent.getTranslationsActor(gBrowser.selectedBrowser)
-      );
+      await this.#showDefaultView(actor);
     }
     intro.hidden = true;
     if (sourceVariant) {
@@ -874,14 +882,23 @@ var FullPageTranslationsPanel = new (class {
     } else {
       fromMenuList.value = sourceLanguage;
     }
-    toMenuList.value = await TranslationsParent.getTopPreferredSupportedToLang({
-      excludeLangTags: [
-        
-        sourceLanguage,
-        
-        targetLanguage,
-      ],
-    });
+
+    if (actor.languageState.isEngineReady) {
+      toMenuList.value =
+        await TranslationsParent.getTopPreferredSupportedToLang({
+          excludeLangTags: [
+            
+            sourceLanguage,
+            
+            targetLanguage,
+          ],
+        });
+    } else {
+      toMenuList.value = targetVariant
+        ? `${targetLanguage},${targetVariant}`
+        : targetLanguage;
+    }
+
     this.onChangeLanguages();
   }
 

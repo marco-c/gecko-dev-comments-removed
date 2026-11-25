@@ -9,8 +9,23 @@ Services.scriptloader.loadSubScript(
 );
 
 const { LanguageDetector: PageLanguageDetector } = ChromeUtils.importESModule(
-  "resource://gre/modules/translations/LanguageDetector.sys.mjs"
+  "moz-src:///toolkit/components/translations/LanguageDetector.sys.mjs"
 );
+
+add_setup(async function () {
+  
+  
+  
+  
+  
+  
+  
+  if (parseInt(Services.env.get("MOZ_CHAOSMODE"), 16)) {
+    await SpecialPowers.pushPrefEnv({
+      set: [["ui.prefersReducedMotion", 1]],
+    });
+  }
+});
 
 
 

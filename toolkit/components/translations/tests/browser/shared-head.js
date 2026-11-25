@@ -2650,6 +2650,7 @@ async function closeAllOpenPanelsAndMenus(win) {
   await closeSelectPanelSettingsMenuIfOpen(win);
   await closeSelectTranslationsPanelIfOpen(win);
   await closeContextMenuIfOpen(win);
+  await closePopupIfOpen("appMenu-popup", win);
 }
 
 
@@ -5033,14 +5034,27 @@ class TranslationsEngineTestUtils {
 
 
 
-  static async waitForIdleTimeout(languagePair) {
-    const engineParent = await EngineProcess.getTranslationsEngineParent();
-    const processShutdown = TestUtils.topicObserved(
+  static async waitForProcessShutdown(engineParent) {
+    const childID = engineParent.childID;
+
+    await TestUtils.topicObserved(
       "ipc:content-shutdown",
       subject =>
         subject instanceof Ci.nsIPropertyBag2 &&
-        subject.get("childID") === engineParent.childID
+        subject.get("childID") === childID
     );
+  }
+
+  
+
+
+
+
+
+  static async waitForIdleTimeout(languagePair) {
+    const engineParent = await EngineProcess.getTranslationsEngineParent();
+    const processShutdown =
+      TranslationsEngineTestUtils.waitForProcessShutdown(engineParent);
 
     await engineParent.waitForEngineIdleTimeoutForTests(
       languagePair,

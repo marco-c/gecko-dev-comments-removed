@@ -6,6 +6,7 @@
 
 
 
+
 add_task(async function test_translations_panel_basics() {
   const { cleanup, resolveDownloads, runInPage } = await loadTestPage({
     page: SPANISH_PAGE_URL,
