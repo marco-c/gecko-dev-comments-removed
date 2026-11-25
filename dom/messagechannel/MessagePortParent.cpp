@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MessagePortParent.h"
 
 #include "MessagePortService.h"
@@ -163,8 +161,7 @@ bool MessagePortParent::ForceClose(const nsID& aUUID,
                                    const uint32_t& aSequenceID) {
   MessagePortService* service = MessagePortService::Get();
   if (!service) {
-    NS_WARNING(
-        "The service must exist if we want to close an existing MessagePort.");
+    
     
     return true;
   }
