@@ -191,6 +191,12 @@ class nsUserIdleService : public nsIUserIdleServiceInternal {
   
 
 
+
+  bool mShutdown = false;
+
+  
+
+
   mozilla::TimeStamp mLastUserInteraction;
 
   
