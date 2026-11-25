@@ -114,7 +114,8 @@ RefPtr<WindowSurface> WindowSurfaceProvider::CreateWindowSurface() {
     if (!mWidget) {
       return nullptr;
     }
-    if (mWidget->IsDragPopup()) {
+    if (mWidget->IsDragPopup() &&
+        !StaticPrefs::widget_wayland_native_dnd_popups_AtStartup()) {
       return MakeRefPtr<WindowSurfaceCairo>(mWidget);
     }
     return MakeRefPtr<WindowSurfaceWaylandMB>(mWidget, mCompositorWidget);
@@ -131,13 +132,13 @@ RefPtr<WindowSurface> WindowSurfaceProvider::CreateWindowSurface() {
     
 #  ifdef MOZ_HAVE_SHMIMAGE
     if (nsShmImage::UseShm()) {
-      LOG(("Drawing to Window 0x%lx will use MIT-SHM\n", (Window)mXWindow));
+      LOG(("Drawing to Window 0x%lx will use MIT-SHM\n", mXWindow.load()));
       return MakeRefPtr<WindowSurfaceX11SHM>(DefaultXDisplay(), mXWindow,
                                              mXVisual, mXDepth);
     }
 #  endif  
 
-    LOG(("Drawing to Window 0x%lx will use XPutImage\n", (Window)mXWindow));
+    LOG(("Drawing to Window 0x%lx will use XPutImage\n", mXWindow.load()));
     return MakeRefPtr<WindowSurfaceX11Image>(DefaultXDisplay(), mXWindow,
                                              mXVisual, mXDepth);
   }
