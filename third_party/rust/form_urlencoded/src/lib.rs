@@ -219,9 +219,14 @@ impl<'a, T: Target> Serializer<'a, T> {
     
     
     
-    
     pub fn for_suffix(mut target: T, start_position: usize) -> Self {
-        let start_position = start_position.min(target.as_mut_string().len());
+        if target.as_mut_string().len() < start_position {
+            panic!(
+                "invalid length {} for target of length {}",
+                start_position,
+                target.as_mut_string().len()
+            );
+        }
 
         Serializer {
             target: Some(target),

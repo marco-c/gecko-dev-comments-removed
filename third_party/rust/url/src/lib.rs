@@ -141,8 +141,9 @@
 
 
 
+
 #![no_std]
-#![doc(html_root_url = "https://docs.rs/url/2.5.9")]
+#![doc(html_root_url = "https://docs.rs/url/2.5.7")]
 #![cfg_attr(
     feature = "debugger_visualizer",
     debugger_visualizer(natvis_file = "../../debug_metadata/url.natvis")
