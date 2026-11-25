@@ -271,6 +271,11 @@ class QuotaManager final : public BackgroundThreadObject {
 
   void UnloadQuota();
 
+  
+  
+  
+  Result<Ok, nsresult> PopulateCacheAfterScan();
+
   void RemoveOriginFromCache(const OriginMetadata& aOriginMetadata);
 
   void RemoveOriginFromCacheForEviction(const OriginMetadata& aOriginMetadata);
@@ -680,7 +685,7 @@ class QuotaManager final : public BackgroundThreadObject {
     }
   }
 
-  void AssertCurrentThreadOwnsQuotaMutex() {
+  void AssertCurrentThreadOwnsQuotaMutex() const {
     mQuotaMutex.AssertCurrentThreadOwns();
   }
 
@@ -863,6 +868,18 @@ class QuotaManager final : public BackgroundThreadObject {
   already_AddRefed<OriginInfo> LockedGetOriginInfo(
       PersistenceType aPersistenceType,
       const OriginMetadata& aOriginMetadata) const;
+
+  
+  
+  bool LockedIsCacheComplete() const;
+
+  Result<Ok, nsresult> StartCacheTransaction();
+
+  Result<Ok, nsresult> CommitCacheTransaction();
+
+  void RollbackCacheTransactionIfInProgress();
+
+  Result<Ok, nsresult> MarkCacheComplete();
 
   nsresult UpgradeFromIndexedDBDirectoryToPersistentStorageDirectory(
       nsIFile* aIndexedDBDir);
@@ -1329,6 +1346,9 @@ class QuotaManager final : public BackgroundThreadObject {
   bool mAllTemporaryOriginsInitialized;
   bool mCacheUsable;
   bool mCacheRequiresFullScan;
+  
+  
+  bool mFullScanInProgress = false;
   std::atomic<bool> mUsageModificationDisabled{false};
   bool mStorageEncryptionEnabled = false;
 

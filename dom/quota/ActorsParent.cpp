@@ -303,7 +303,10 @@ const char kContextualIdentityServiceLoadFinishedTopic[] =
     "contextual-identity-service-load-finished";
 const char kPrivateBrowsingObserverTopic[] = "last-pb-context-exited";
 
-const int32_t kCacheVersion = 4;
+const int32_t kCacheVersion = 5;
+
+
+const int32_t kCacheTransactionBatchSize = 50;
 
 
 
@@ -426,9 +429,20 @@ nsresult CreateCacheTables(mozIStorageConnection& aConnection) {
   return NS_OK;
 }
 
+OkOrErr MarkCacheForRescan(mozIStorageConnection& aConnection) {
+  AssertIsOnIOThread();
+
+  QM_TRY(QM_TO_RESULT(aConnection.ExecuteSimpleSQL(
+      "UPDATE cache SET valid = 0 WHERE valid != 0;"_ns)));
+
+  return Ok{};
+}
+
 OkOrErr InvalidateCache(mozIStorageConnection& aConnection) {
   AssertIsOnIOThread();
 
+  
+  QM_TRY(MarkCacheForRescan(aConnection));
   QM_TRY(QM_TO_RESULT(aConnection.ExecuteSimpleSQL("DELETE FROM origin;"_ns)));
 
   return Ok{};
@@ -476,8 +490,7 @@ nsresult UpgradeCacheFrom2To3(mozIStorageConnection& aConnection) {
   return NS_OK;
 }
 
-Result<bool, nsresult> DidLatestShutdownFail(
-    mozIStorageConnection& aConnection);
+Result<bool, nsresult> IsCacheIncomplete(mozIStorageConnection& aConnection);
 
 Result<bool, nsresult> UpgradeCacheFrom3To4(
     mozIStorageConnection& aConnection) {
@@ -491,10 +504,7 @@ Result<bool, nsresult> UpgradeCacheFrom3To4(
   }
 #endif
 
-  
-  
-  QM_TRY_UNWRAP(const bool lastShutdownFailed,
-                DidLatestShutdownFail(aConnection));
+  QM_TRY_UNWRAP(const bool lastShutdownFailed, IsCacheIncomplete(aConnection));
 
   QM_TRY(MOZ_TO_RESULT(aConnection.ExecuteSimpleSQL(nsLiteralCString(
       "ALTER TABLE origin RENAME COLUMN accessed TO metadata_flags;"))));
@@ -518,6 +528,16 @@ Result<bool, nsresult> UpgradeCacheFrom3To4(
   return lastShutdownFailed;
 }
 
+nsresult UpgradeCacheFrom4To5(mozIStorageConnection& aConnection) {
+  AssertIsOnIOThread();
+
+  
+  QM_TRY(MarkCacheForRescan(aConnection));
+  QM_TRY(MOZ_TO_RESULT(SaveCacheVersion(aConnection, 5)));
+
+  return NS_OK;
+}
+
 class CacheSetupInfo {
  public:
   CacheSetupInfo() = default;
@@ -526,16 +546,21 @@ class CacheSetupInfo {
   void NoteUnsupportedVersion() { mUnsupportedVersion = true; }
   void NoteExistingRowsUnusable() { mExistingRowsUnusable = true; }
 
+  void NoteOriginTableIncomplete() { mOriginTableIncomplete = true; }
+
   bool CanUseExistingRows() const {
     return !mCacheCreated && !mUnsupportedVersion && !mExistingRowsUnusable;
   }
 
-  bool RequiresRebuild() const { return mCacheCreated; }
+  bool RequiresRescan() const {
+    return mCacheCreated || mOriginTableIncomplete;
+  }
 
  private:
   bool mCacheCreated = false;
   bool mUnsupportedVersion = false;
   bool mExistingRowsUnusable = false;
+  bool mOriginTableIncomplete = false;
 };
 
 Result<CacheSetupInfo, nsresult> MaybeCreateOrUpgradeCache(
@@ -600,7 +625,7 @@ Result<CacheSetupInfo, nsresult> MaybeCreateOrUpgradeCache(
       cacheInfo.NoteCacheCreated();
     } else {
       
-      static_assert(kCacheVersion == 4,
+      static_assert(kCacheVersion == 5,
                     "Upgrade function needed due to cache version increase.");
 
       while (cacheVersion != kCacheVersion) {
@@ -616,6 +641,8 @@ Result<CacheSetupInfo, nsresult> MaybeCreateOrUpgradeCache(
           if (lastShutdownFailed) {
             cacheInfo.NoteExistingRowsUnusable();
           }
+        } else if (cacheVersion == 4) {
+          QM_TRY(MOZ_TO_RESULT(UpgradeCacheFrom4To5(aConnection)));
         } else {
           QM_FAIL(Err(NS_ERROR_FAILURE), []() {
             QM_WARNING(
@@ -631,6 +658,14 @@ Result<CacheSetupInfo, nsresult> MaybeCreateOrUpgradeCache(
     }
 
     QM_TRY(MOZ_TO_RESULT(transaction.Commit()));
+  }
+
+  
+  if (!newCache) {
+    QM_TRY_INSPECT(const bool& isIncomplete, IsCacheIncomplete(aConnection));
+    if (isIncomplete) {
+      cacheInfo.NoteOriginTableIncomplete();
+    }
   }
 
   return cacheInfo;
@@ -2818,6 +2853,11 @@ void QuotaManager::InitQuotaForOrigin(
   
   
   
+  const bool needsCacheRow =
+      !aFullOriginMetadata.mIsPrivate && !cacheRowMatches;
+  MOZ_ASSERT_IF(aFullOriginMetadata.mIsPrivate, !cacheRowMatches);
+  originInfo->mCacheRowStale = needsCacheRow;
+
   
   
   
@@ -2847,7 +2887,16 @@ void QuotaManager::InitQuotaForOrigin(
   
   
   
-  if (!aFullOriginMetadata.mIsPrivate && !cacheRowMatches &&
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (needsCacheRow && !mFullScanInProgress &&
       (fullOriginMetadata.mDirty || !aCacheMap.IsActive()) &&
       aDirectoryExists && !mUsageModificationDisabled.load()) {
     originInfo->mLastModifiedTime = TimeStamp::Now();
@@ -3303,6 +3352,11 @@ nsresult QuotaManager::LoadQuota() {
   }
 
   if (!isCacheUseAllowed) {
+    
+    
+    QM_TRY(MarkCacheForRescan(*mStorageConnection));
+    mCacheRequiresFullScan = true;
+
     RemoveQuota();
     RemoveTemporaryOrigins();
     unaccessedOrigins.Clear();
@@ -3311,6 +3365,10 @@ nsresult QuotaManager::LoadQuota() {
     
     
     mUsageModificationDisabled.store(false);
+
+    mFullScanInProgress = true;
+    auto resetFullScanInProgress =
+        MakeScopeExit([&fullScan = mFullScanInProgress] { fullScan = false; });
 
     
     
@@ -3352,6 +3410,10 @@ nsresult QuotaManager::LoadQuota() {
       return statusKeeper;
     }
 #endif
+
+    
+    
+    QM_WARNONLY_TRY(PopulateCacheAfterScan());
   }
 
   const auto endTime = recordTimeDeltaHelper->End();
@@ -3383,17 +3445,10 @@ void QuotaManager::UnloadQuota() {
   
   
   
-  const auto createTransaction =
-      [this](Maybe<mozStorageTransaction>& transaction) {
-        transaction.reset();
-        transaction.emplace(mStorageConnection,  false,
-                            mozIStorageConnection::TRANSACTION_IMMEDIATE);
-        QM_WARNONLY_TRY(MOZ_TO_RESULT(transaction->Start()));
-      };
-  Maybe<mozStorageTransaction> transaction;
-  createTransaction(transaction);
+  QM_TRY(StartCacheTransaction(), QM_VOID);
+  auto rollback =
+      MakeScopeExit([&] { RollbackCacheTransactionIfInProgress(); });
 
-  static const int32_t kTransactionBatchSize = 50;
   int32_t transactionCount = 0;
 
   {
@@ -3429,49 +3484,221 @@ void QuotaManager::UnloadQuota() {
             
             QM_WARNONLY_TRY_UNWRAP(auto originDirectory,
                                    GetOriginDirectory(metadata));
-            MOZ_ASSERT(originDirectory);
             if (originDirectory) {
-              DebugOnly<nsresult> rv =
+              const nsresult rv =
                   SettleDirectoryMetadata2(*originDirectory.ref(), metadata);
               MOZ_ASSERT(NS_FAILED(rv) == metadata.mDirty);
+              if (NS_SUCCEEDED(rv)) {
+                originInfo->LockedSetClean();
+                ++transactionCount;
+              }
+            }
+          } else if (originInfo->LockedCacheRowStale()) {
+            
+            QM_WARNONLY_TRY_UNWRAP(const auto refreshed,
+                                   mOriginUpserter->Refresh(metadata));
+            if (refreshed) {
+              originInfo->LockedClearCacheRowStale();
               ++transactionCount;
             }
-          } else if (mCacheRequiresFullScan) {
-            
-            
-            
-            
-            MOZ_ASSERT(mOriginUpserter, "We must have an origin upserter here");
-            QM_WARNONLY_TRY(mOriginUpserter->Refresh(metadata));
-            ++transactionCount;
           }
 
-          if (transactionCount >= kTransactionBatchSize) {
-            QM_WARNONLY_TRY(MOZ_TO_RESULT(transaction->Commit()));
-            createTransaction(transaction);
+          if (transactionCount >= kCacheTransactionBatchSize) {
+            QM_TRY(CommitCacheTransaction(), QM_VOID);
+            QM_TRY(StartCacheTransaction(), QM_VOID);
             transactionCount = 0;
           }
         }
+      }
+    }
 
-        groupInfo->LockedRemoveOriginInfos();
+    
+    
+    if (mCacheRequiresFullScan && LockedIsCacheComplete()) {
+      QM_TRY(MarkCacheComplete(), QM_VOID);
+    }
+
+    for (auto iter = mGroupInfoPairs.Iter(); !iter.Done(); iter.Next()) {
+      GroupInfoPair* const pair = iter.UserData();
+
+      for (const PersistenceType type : kBestEffortPersistenceTypes) {
+        if (RefPtr<GroupInfo> groupInfo = pair->LockedGetGroupInfo(type)) {
+          groupInfo->LockedRemoveOriginInfos();
+        }
       }
 
       iter.Remove();
     }
   }
 
+  QM_TRY(CommitCacheTransaction(), QM_VOID);
+}
+
+Result<Ok, nsresult> QuotaManager::PopulateCacheAfterScan() {
+  AssertIsOnIOThread();
+  MOZ_ASSERT(mStorageConnection);
+  MOZ_ASSERT(mOriginUpserter);
+  MOZ_ASSERT(mCacheRequiresFullScan);
+  
+  
+  MOZ_ASSERT(!mTemporaryStorageInitializedInternal);
+
+  struct StaleEntry {
+    FullOriginMetadata mMetadata;
+    RefPtr<OriginInfo> mOriginInfo;
+    bool mRefreshed = false;
+  };
+  nsTArray<StaleEntry> staleEntries;
+
+  
+  {
+    MutexAutoLock lock(mQuotaMutex);
+
+    for (auto iter = mGroupInfoPairs.ConstIter(); !iter.Done(); iter.Next()) {
+      GroupInfoPair* const pair = iter.UserData();
+
+      for (const PersistenceType type : kBestEffortPersistenceTypes) {
+        RefPtr<GroupInfo> groupInfo = pair->LockedGetGroupInfo(type);
+        if (!groupInfo) {
+          continue;
+        }
+
+        for (const auto& originInfo : groupInfo->mOriginInfos) {
+          if (originInfo->mIsPrivate || !originInfo->LockedDirectoryExists() ||
+              !originInfo->LockedCacheRowStale()) {
+            continue;
+          }
+
+          staleEntries.AppendElement(
+              StaleEntry{originInfo->LockedFlattenToFullOriginMetadata(),
+                         RefPtr<OriginInfo>(originInfo.get())});
+        }
+      }
+    }
+  }
+
+  
+  
+  auto rollback =
+      MakeScopeExit([&] { RollbackCacheTransactionIfInProgress(); });
+
+  const uint32_t totalEntries = staleEntries.Length();
+  const uint32_t batchSize = static_cast<uint32_t>(kCacheTransactionBatchSize);
+
+  for (uint32_t batchStart = 0; batchStart < totalEntries;
+       batchStart += batchSize) {
+    const uint32_t batchEnd = std::min(batchStart + batchSize, totalEntries);
+
+    QM_TRY(StartCacheTransaction());
+
+    for (uint32_t i = batchStart; i < batchEnd; ++i) {
+      QM_WARNONLY_TRY_UNWRAP(
+          const auto refreshed,
+          mOriginUpserter->Refresh(staleEntries[i].mMetadata));
+      if (refreshed) {
+        staleEntries[i].mRefreshed = true;
+      }
+    }
+
+    QM_TRY(CommitCacheTransaction());
+
+    {
+      MutexAutoLock lock(mQuotaMutex);
+      for (uint32_t i = batchStart; i < batchEnd; ++i) {
+        if (staleEntries[i].mRefreshed) {
+          staleEntries[i].mOriginInfo->LockedClearCacheRowStale();
+        }
+      }
+    }
+  }
+
+  bool cacheComplete;
+  {
+    MutexAutoLock lock(mQuotaMutex);
+    cacheComplete = LockedIsCacheComplete();
+  }
+
+  if (cacheComplete) {
+    QM_TRY(StartCacheTransaction());
+    QM_TRY(MarkCacheComplete());
+    QM_TRY(CommitCacheTransaction());
+  }
+
+  rollback.release();
+
+  return Ok{};
+}
+
+bool QuotaManager::LockedIsCacheComplete() const {
+  AssertIsOnIOThread();
+  AssertCurrentThreadOwnsQuotaMutex();
+
+  for (const auto& origins :
+       mIOThreadAccessible.Access()->mAllTemporaryOrigins.Values()) {
+    for (const auto& metadata : origins) {
+      if (metadata.mIsPrivate) {
+        continue;
+      }
+
+      RefPtr<OriginInfo> originInfo =
+          LockedGetOriginInfo(metadata.mPersistenceType, metadata);
+      if (!originInfo || !originInfo->LockedDirectoryExists() ||
+          originInfo->LockedCacheRowStale()) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+Result<Ok, nsresult> QuotaManager::StartCacheTransaction() {
+  AssertIsOnIOThread();
+
+  QM_TRY(ArtificialFailure(
+      nsIQuotaArtificialFailure::CATEGORY_START_CACHE_TRANSACTION));
+  QM_TRY(MOZ_TO_RESULT(
+      mStorageConnection->ExecuteSimpleSQL("BEGIN IMMEDIATE;"_ns)));
+
+  return Ok{};
+}
+
+Result<Ok, nsresult> QuotaManager::CommitCacheTransaction() {
+  AssertIsOnIOThread();
+
+  QM_TRY(ArtificialFailure(
+      nsIQuotaArtificialFailure::CATEGORY_COMMIT_CACHE_TRANSACTION));
+  QM_TRY(MOZ_TO_RESULT(mStorageConnection->ExecuteSimpleSQL("COMMIT;"_ns)));
+
+  return Ok{};
+}
+
+
+void QuotaManager::RollbackCacheTransactionIfInProgress() {
+  AssertIsOnIOThread();
+
+  bool inProgress = false;
+  QM_WARNONLY_TRY(
+      MOZ_TO_RESULT(mStorageConnection->GetTransactionInProgress(&inProgress)));
+  if (inProgress) {
+    QM_WARNONLY_TRY(
+        MOZ_TO_RESULT(mStorageConnection->ExecuteSimpleSQL("ROLLBACK;"_ns)));
+  }
+}
+
+Result<Ok, nsresult> QuotaManager::MarkCacheComplete() {
+  AssertIsOnIOThread();
+
   QM_TRY_INSPECT(
       const auto& stmt,
       MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
           nsCOMPtr<mozIStorageStatement>, mStorageConnection, CreateStatement,
-          "UPDATE cache SET build_id = :buildId;"_ns),
-      QM_VOID);
+          "UPDATE cache SET valid = 1, build_id = :buildId;"_ns));
 
-  QM_TRY(MOZ_TO_RESULT(stmt->BindUTF8StringByName("buildId"_ns, *gBuildId)),
-         QM_VOID);
-  QM_TRY(MOZ_TO_RESULT(stmt->Execute()), QM_VOID);
+  QM_TRY(MOZ_TO_RESULT(stmt->BindUTF8StringByName("buildId"_ns, *gBuildId)));
+  QM_TRY(MOZ_TO_RESULT(stmt->Execute()));
 
-  QM_TRY(MOZ_TO_RESULT(transaction->Commit()), QM_VOID);
+  return Ok{};
 }
 
 void QuotaManager::RemoveOriginFromCacheForEviction(
@@ -3828,6 +4055,10 @@ QuotaManager::GetOrCreateTemporaryOriginDirectory(
 
     QM_TRY(MOZ_TO_RESULT(
         CreateDirectoryMetadata2(*directory, fullOriginMetadata)));
+
+    WithOriginInfo(aOriginMetadata, [](const auto& originInfo) {
+      originInfo->LockedClearCacheRowStale();
+    });
   }
 
   return std::move(directory);
@@ -4060,10 +4291,7 @@ Result<Ok, nsresult> UpdateFullOriginMetadataPrincipalProperties(
 
 namespace {
 
-Result<bool, nsresult> DidLatestShutdownFail(
-    mozIStorageConnection& aConnection) {
-  
-  
+Result<bool, nsresult> IsCacheIncomplete(mozIStorageConnection& aConnection) {
   
   
   QM_TRY_INSPECT(const auto& stmt,
@@ -4871,6 +5099,7 @@ nsresult QuotaManager::InitializeOrigin(
     fullOriginMetadata.mOriginUsage = usage.value();
     fullOriginMetadata.mClientUsages = clientUsages;
 
+    
     
     
     if (!fullOriginMetadata.Equals(aFullOriginMetadata)) {
@@ -6121,7 +6350,7 @@ nsresult QuotaManager::EnsureStorageIsInitializedInternal() {
     QM_TRY_INSPECT(const auto& cacheInfo,
                    MaybeCreateOrUpgradeCache(*connection));
     mCacheUsable = cacheInfo.CanUseExistingRows();
-    mCacheRequiresFullScan = cacheInfo.RequiresRebuild();
+    mCacheRequiresFullScan = cacheInfo.RequiresRescan();
 
     if (storageFileWasCorrupted) {
       mCacheUsable = false;
@@ -7325,6 +7554,11 @@ QuotaManager::EnsureTemporaryOriginIsInitializedInternal(
 
       
       InitQuotaForOrigin(fullOriginMetadata);
+
+      
+      WithOriginInfo(fullOriginMetadata, [](const auto& originInfo) {
+        originInfo->LockedClearCacheRowStale();
+      });
     } else {
       QM_TRY_INSPECT(const auto& metadata,
                      LoadFullOriginMetadataWithRestore(directory));
