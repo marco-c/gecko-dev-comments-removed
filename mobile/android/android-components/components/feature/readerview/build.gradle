@@ -23,7 +23,6 @@ tasks.matching { it.name.startsWith("explodeAssetSource") }.configureEach { t ->
 }
 
 dependencies {
-    implementation project(':components:browser-menu')
     implementation project(':components:browser-state')
     implementation project(':components:concept-engine')
     implementation project(':components:support-base')
@@ -33,7 +32,7 @@ dependencies {
     implementation project(':components:ui-icons')
 
     implementation libs.androidx.constraintlayout
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation libs.kotlinx.coroutines
 
     testImplementation project(':components:support-test')
