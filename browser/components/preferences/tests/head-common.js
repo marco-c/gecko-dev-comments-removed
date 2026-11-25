@@ -438,7 +438,7 @@ async function waitForAndAssertPrefState(pref, expectedValue, message) {
 
 async function selectHistoryMode(win, value) {
   let historyMode = win.document.querySelector(
-    "setting-group[groupid='history2'] #historyMode"
+    "setting-group[groupid='history'] #historyMode"
   );
   let updated = waitForSettingControlChange(historyMode);
 
@@ -474,24 +474,13 @@ async function updateCheckBoxElement(checkbox, value) {
   checkbox.scrollIntoView();
 
   
-  EventUtils.synthesizeMouseAtCenter(checkbox, {}, checkbox.documentGlobal);
-}
-
-async function updateCheckBox(win, id, value) {
-  let checkbox = win.document.getElementById(id);
-  ok(checkbox, "the " + id + " checkbox should exist");
-  is_element_visible(checkbox, "the " + id + " checkbox should be visible");
-
   
-  if (checkbox.checked === value) {
-    return;
-  }
-
-  
-  checkbox.scrollIntoView();
-
-  
-  EventUtils.synthesizeMouseAtCenter(checkbox, {}, checkbox.documentGlobal);
+  EventUtils.synthesizeMouseAtCenter(
+    checkbox.inputEl,
+    {},
+    checkbox.documentGlobal
+  );
+  is(checkbox.checked, value, "the " + checkbox.id + " checkbox was toggled");
 }
 
 
