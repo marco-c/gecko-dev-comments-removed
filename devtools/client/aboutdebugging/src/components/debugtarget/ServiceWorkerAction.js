@@ -53,10 +53,21 @@ class ServiceWorkerAction extends PureComponent {
       return null;
     }
 
-    return InspectAction({
-      dispatch: this.props.dispatch,
-      target: this.props.target,
-    });
+    const { canDebugServiceWorkers } = this.props.runtimeDetails;
+    return Localized(
+      {
+        id: "about-debugging-worker-inspect-action-disabled",
+        attrs: {
+          
+          title: !canDebugServiceWorkers,
+        },
+      },
+      InspectAction({
+        disabled: !canDebugServiceWorkers,
+        dispatch: this.props.dispatch,
+        target: this.props.target,
+      })
+    );
   }
 
   _getStatusLocalizationId(status) {

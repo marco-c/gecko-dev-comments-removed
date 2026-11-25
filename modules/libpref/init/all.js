@@ -3973,6 +3973,9 @@ pref("devtools.errorconsole.deprecation_warnings", true);
 #endif
 
 
+pref("devtools.debugger.features.windowless-service-workers", true);
+
+
 pref("devtools.debugger.log", false);
 
 pref("devtools.debugger.remote-port", 6000);
