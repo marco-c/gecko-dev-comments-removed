@@ -219,8 +219,12 @@ class DynamicLogSinks {
 };
 
 void ApplyConfigToLogMessage(const LoggingConfig& config) {
+  
+  
+  RTC_PUSH_IGNORING_WDEPRECATED_DECLARATIONS()
   LogMessage::LogTimestamps(config.log_timestamp());
   LogMessage::SetLogToStderr(config.log_to_stderr());
+  RTC_POP_IGNORING_WDEPRECATED_DECLARATIONS()
   DynamicLogSinks::Get().SetDebugSeverity(config.debug_severity());
 }
 
