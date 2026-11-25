@@ -142,6 +142,13 @@ class FakePeripheral {
   }
 
   
+  
+  async simulateGATTMtuChange(mtu) {
+    await test_driver.bidi.bluetooth.simulate_gatt_mtu_change(
+        {address: this.address, mtu});
+  }
+
+  
   async simulateGATTDisconnection() {
     await test_driver.bidi.bluetooth.simulate_gatt_disconnection(
         {address: this.address});
