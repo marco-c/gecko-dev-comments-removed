@@ -10,6 +10,8 @@
 ChromeUtils.defineESModuleGetters(this, {
   AIWindow:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
+  AIWindowToolbarButtons:
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowToolbarButtons.sys.mjs",
   AIWindowUI:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs",
   AIWindowTestUtils: "resource://testing-common/AIWindowTestUtils.sys.mjs",
@@ -464,6 +466,7 @@ add_setup(async function () {
   registerCleanupFunction(() => {
     _setLoadPromptForTesting(null);
   });
+  registerCleanupFunction(clearSmartWindowUsagePrefs);
 });
 
 
@@ -549,6 +552,54 @@ async function openAIWindowSidebar(win, url = "about:blank") {
   }
   const sidebarBrowser = await waitForSidebarReady(win);
   return { win, sidebarBrowser };
+}
+
+
+
+
+
+function clearSmartWindowUsagePrefs() {
+  Services.prefs.clearUserPref("browser.smartwindow.lastSmartWindowUsageTime");
+  Services.prefs.clearUserPref("browser.smartwindow.lastLLMTelemetryRunTime");
+  Services.prefs.clearUserPref("places.semanticHistory.initialized");
+}
+
+
+
+
+
+
+async function openSharedAIWindow() {
+  const win = await openAIWindow();
+  registerCleanupFunction(async () => {
+    await BrowserTestUtils.closeWindow(win);
+    clearSmartWindowUsagePrefs();
+  });
+  return win;
+}
+
+
+
+
+
+
+
+
+
+
+
+async function openOnlyAIWindowTab(win) {
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    win.gBrowser,
+    AIWINDOW_URL
+  );
+  for (const other of win.gBrowser.tabs.filter(t => t != tab)) {
+    BrowserTestUtils.removeTab(other, { skipSessionStore: true });
+  }
+  return TestUtils.waitForCondition(
+    () => tab.linkedBrowser.contentDocument?.querySelector("ai-window"),
+    "Wait for ai-window element"
+  );
 }
 
 
@@ -645,6 +696,9 @@ async function _stubResumeActivityGenerationCore(
 
   const originalAvailableLocales = Services.locale.availableLocales;
   const originalRequestedLocales = Services.locale.requestedLocales;
+  const hadRequestedPref = Services.prefs.prefHasUserValue(
+    "intl.locale.requested"
+  );
   Services.locale.availableLocales = ["en-US"];
   Services.locale.requestedLocales = ["en-US"];
 
@@ -661,6 +715,10 @@ async function _stubResumeActivityGenerationCore(
       }
       Services.locale.availableLocales = originalAvailableLocales;
       Services.locale.requestedLocales = originalRequestedLocales;
+      
+      if (!hadRequestedPref) {
+        Services.prefs.clearUserPref("intl.locale.requested");
+      }
     },
   };
 }
@@ -727,9 +785,17 @@ async function stubResumeActivityGenerationPool(sb, memoryCount) {
     url: `https://example.com/pool-${i}`,
     title: `Example ${i}`,
   }));
+  
+  
   const memories = urls.map((page, i) => ({
     id: `pool-memory-${i}`,
     memory_summary: `Research topic ${i}`,
+    strength: i * 4.25,
+    created_at: Date.now() - i * 24 * 60 * 60 * 1000,
+    component_summaries: Array.from({ length: i }, () => ({
+      memory_summary: "Merged topic",
+      reasoning: "Merged",
+    })),
     sensitivity_category: MEMORY_SENSITIVITY_CATEGORY_NOT_SENSITIVE,
     source_ids: {
       history_source_ids: [PlacesUtils.history.hashURL(page.url)],
@@ -784,129 +850,6 @@ async function testResumeActivityClick(sb, run, { token } = {}) {
     await resumeActivityStubs.cleanup();
     await SpecialPowers.popPrefEnv();
   }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function stubEngineNetworkBoundaries({
-  passthroughFeatures = new Set(["chat"]),
-  token = "mock-fxa-token",
-  engineRunResponse = { finalOutput: "Mock" },
-  serverOptions = {},
-} = {}) {
-  
-  
-  
-  const originalBuild = openAIEngine.build.bind(openAIEngine);
-  const buildStub = sinon
-    .stub(openAIEngine, "build")
-    .callsFake(async (featureOrConfig, ...rest) => {
-      const feature =
-        typeof featureOrConfig === "object" && featureOrConfig !== null
-          ? featureOrConfig.feature
-          : featureOrConfig;
-      if (passthroughFeatures.has(feature)) {
-        return originalBuild(featureOrConfig, ...rest);
-      }
-      
-      
-      return {
-        feature,
-        model:
-          typeof featureOrConfig === "object"
-            ? featureOrConfig.model
-            : "test-model",
-        async run() {
-          return engineRunResponse;
-        },
-        runWithGenerator() {},
-      };
-    });
-
-  const tokenStub = sinon.stub(AuthProvider, "getToken").resolves(token);
-
-  const capturedRequests = [];
-  let server = null;
-  let port = null;
-  if (serverOptions) {
-    const callerOnRequest = serverOptions.onRequest;
-    ({ server, port } = startMockOpenAI({
-      ...serverOptions,
-      onRequest(body) {
-        capturedRequests.push(body);
-        callerOnRequest?.(body);
-      },
-    }));
-    await SpecialPowers.pushPrefEnv({
-      set: [["browser.smartwindow.endpoint", `http://localhost:${port}/v1`]],
-    });
-  }
-
-  async function restore() {
-    buildStub.restore();
-    tokenStub.restore();
-    if (server) {
-      await SpecialPowers.popPrefEnv();
-      await stopMockOpenAI(server);
-    }
-  }
-
-  return { restore, port, capturedRequests };
 }
 
 

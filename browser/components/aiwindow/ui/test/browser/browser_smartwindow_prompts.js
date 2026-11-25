@@ -12,6 +12,9 @@
 
 "use strict";
 
+
+requestLongerTimeout(6);
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AIWindowUI:
@@ -20,8 +23,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/models/Conversation.sys.mjs",
 });
 
-const { HttpServer } = ChromeUtils.importESModule(
-  "resource://testing-common/httpd.sys.mjs"
+const { MockEngineManager } = ChromeUtils.importESModule(
+  "resource://testing-common/AIWindowTestUtils.sys.mjs"
 );
 
 const PROMPTS_PAGE =
@@ -35,6 +38,7 @@ add_setup(async function () {
       ["browser.smartwindow.memories.generateFromConversation", false],
       ["browser.smartwindow.memories.generateFromHistory", false],
       ["browser.smartwindow.resumeCards.enabled", false],
+      ["places.semanticHistory.smartwindow.featureGate", false],
     ],
   });
 });
@@ -90,98 +94,49 @@ async function openBackgroundTab(url, window) {
   return tab;
 }
 
-function startMockNonStreamingServer(responseContent) {
-  const mockServer = new HttpServer();
-  mockServer.delay = 1;
-  let reqCount = 0;
-  const pendingResponses = [];
-
-  mockServer.registerPathHandler("/v1/chat/completions", (_req, res) => {
-    reqCount++;
-    res.processAsync();
-
-    const body = JSON.stringify({
-      id: "chatcmpl-mock",
-      object: "chat.completion",
-      created: Math.floor(Date.now() / 1000),
-      model: "mock",
-      choices: [
-        {
-          index: 0,
-          message: { role: "assistant", content: responseContent[0] },
-          finish_reason: "stop",
-        },
-      ],
-    });
-
-    const entry = { timerId: null, res };
-    pendingResponses.push(entry);
-
-    
-    entry.timerId = setTimeout(() => {
-      const idx = pendingResponses.indexOf(entry);
-      if (idx !== -1) {
-        pendingResponses.splice(idx, 1);
-      }
-      try {
-        res.setStatusLine(_req.httpVersion, 200, "OK");
-        res.setHeader("Content-Type", "application/json", false);
-        res.write(body);
-        res.finish();
-      } catch (e) {
-        
-        
-      }
-    }, mockServer.delay);
-  });
-
-  mockServer.start(-1);
-  return {
-    pendingResponses,
-    server: mockServer,
-    port: mockServer.identity.primaryPort,
-    get requestCount() {
-      return reqCount;
-    },
-    cleanup() {
-      for (const { timerId, res } of pendingResponses) {
-        clearTimeout(timerId);
-        try {
-          res.finish();
-        } catch (e) {
-          
-        }
-      }
-      pendingResponses.length = 0;
-    },
-  };
-}
-
 describe("sidebar conversation starter prompts", () => {
-  let responseContent, mock, gAiWindow, backgroundTab;
+  let responseContent,
+    gMockEngineManager,
+    gStarterRequestCount,
+    gStartersReleased,
+    gAiWindow,
+    backgroundTab;
+
+  
+
+
+
+
+
+  async function answerStarterRequests(mockEngineManager) {
+    for (;;) {
+      const { respond } = await mockEngineManager.captureRequest({
+        purpose: "convo-starters-sidebar",
+      });
+      gStarterRequestCount++;
+      await gStartersReleased;
+      respond(responseContent[0]);
+    }
+  }
 
   beforeEach(async () => {
     responseContent = ["prompt 1\nprompt 2"];
-    mock = startMockNonStreamingServer(responseContent);
-
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        ["browser.smartwindow.endpoint", `http://localhost:${mock.port}/v1`],
-      ],
-    });
+    gStarterRequestCount = 0;
+    gStartersReleased = null;
+    gMockEngineManager = new MockEngineManager();
+    answerStarterRequests(gMockEngineManager).catch(() => {});
 
     gAiWindow = await openAIWindow();
   });
 
   afterEach(async () => {
-    mock.cleanup();
     if (backgroundTab) {
       BrowserTestUtils.removeTab(backgroundTab);
     }
 
     await BrowserTestUtils.closeWindow(gAiWindow);
-    await SpecialPowers.popPrefEnv();
-    await stopMockOpenAI(mock.server);
+    await gMockEngineManager.rejectAllRequests();
+    gMockEngineManager.cleanupMocks();
 
     gAiWindow = null;
   });
@@ -230,6 +185,7 @@ describe("sidebar conversation starter prompts", () => {
         gAiWindow.document.getElementById("ai-window-browser");
       await typeInSmartbar(sidebarBrowser, "Hello world");
       await submitSmartbar(sidebarBrowser);
+      await gMockEngineManager.respondTo({ purpose: "chat", response: "Hi" });
       await TestUtils.waitForCondition(
         () => !getSidebarPromptButtons(gAiWindow).length,
         "Starter prompts should be hidden after starting a conversation on tab 2"
@@ -243,7 +199,7 @@ describe("sidebar conversation starter prompts", () => {
       );
       BrowserTestUtils.startLoadingURIString(
         firstTab.linkedBrowser,
-        "https://example.com"
+        "https://example.org"
       );
       await firstTabLoaded;
 
@@ -254,20 +210,23 @@ describe("sidebar conversation starter prompts", () => {
       }, "Tab 2's conversation should have messages after submit");
 
       
-      mock.server.delay = 200;
+      const { promise: startersReleased, resolve: releaseStarters } =
+        Promise.withResolvers();
+      gStartersReleased = startersReleased;
+      const requestCountBeforeSwitch = gStarterRequestCount;
 
       
       
       
       await BrowserTestUtils.switchTab(gAiWindow.gBrowser, firstTab);
-      
-      await new Promise(resolve => gAiWindow.setTimeout(resolve, 10));
+      await TestUtils.waitForCondition(
+        () => gStarterRequestCount > requestCountBeforeSwitch,
+        "Switching to tab 1 should request starter prompts"
+      );
       await BrowserTestUtils.switchTab(gAiWindow.gBrowser, secondTab);
 
-      await TestUtils.waitForCondition(
-        () => mock.pendingResponses.length === 0,
-        "Waiting for all starter prompt requests/etc to resolve"
-      );
+      gStartersReleased = null;
+      releaseStarters();
 
       
       const sidebarBrowser2 =
@@ -289,6 +248,110 @@ describe("sidebar conversation starter prompts", () => {
         "Starter prompts from tab 1 should not appear on tab 2"
       );
     });
+  });
+
+  it("should cancel the latest starter load after an older load finishes", async () => {
+    await navigateTo("https://example.com", gAiWindow);
+    await TestUtils.waitForCondition(
+      () => getSidebarPromptButtons(gAiWindow).includes("prompt 1"),
+      "Initial starter prompts should be rendered"
+    );
+
+    const sidebarBrowser =
+      gAiWindow.document.getElementById("ai-window-browser");
+    const aiWindow = sidebarBrowser.contentDocument.querySelector("ai-window");
+    const tab = gAiWindow.gBrowser.selectedTab;
+    const sandbox = sinon.createSandbox();
+    const loads = Array.from({ length: 3 }, () => ({
+      entered: Promise.withResolvers(),
+      release: Promise.withResolvers(),
+    }));
+    const generationStarted = Promise.withResolvers();
+    const releaseGeneration = Promise.withResolvers();
+    const formatValues = aiWindow.ownerDocument.l10n.formatValues.bind(
+      aiWindow.ownerDocument.l10n
+    );
+    const loadSystemPrompt = aiWindow.conversation.loadSystemPrompt.bind(
+      aiWindow.conversation
+    );
+    let loadIndex = 0;
+    let olderLoad, newerLoad;
+
+    sandbox
+      .stub(aiWindow.ownerDocument.l10n, "formatValues")
+      .callsFake(async (...args) => {
+        const load = loads[loadIndex++];
+        const values = await formatValues(...args);
+        load.entered.resolve();
+        await load.release.promise;
+        return values;
+      });
+    sandbox
+      .stub(aiWindow.conversation, "loadSystemPrompt")
+      .callsFake(async (...args) => {
+        generationStarted.resolve();
+        await releaseGeneration.promise;
+        return loadSystemPrompt(...args);
+      });
+
+    try {
+      aiWindow.conversation.transientStarterUrl = null;
+      olderLoad = aiWindow.loadStarterPrompts(true, tab);
+      await loads[0].entered.promise;
+
+      aiWindow.conversation.transientStarterUrl = null;
+      newerLoad = aiWindow.loadStarterPrompts(true, tab);
+      await loads[1].entered.promise;
+
+      loads[0].release.resolve();
+      await olderLoad;
+
+      await typeInSmartbar(sidebarBrowser, "Hello world");
+      await submitSmartbar(sidebarBrowser);
+      await generationStarted.promise;
+      Assert.equal(
+        aiWindow.conversationMessageCount,
+        0,
+        "Chat initialization should still be waiting for its system prompt"
+      );
+
+      Assert.ok(aiWindow.isGenerating, "Chat generation is in progress");
+      loads[2].release.resolve();
+      aiWindow.conversation.transientStarterUrl = null;
+      await aiWindow.loadStarterPrompts(true, tab);
+      Assert.equal(
+        loadIndex,
+        2,
+        "No new starter load begins while chat initialization is in progress"
+      );
+
+      loads[1].release.resolve();
+      await newerLoad;
+      await aiWindow.updateComplete;
+      Assert.ok(
+        !aiWindow.showStarters,
+        "The latest starter load should remain canceled after chat submission"
+      );
+      Assert.deepEqual(
+        getSidebarPromptButtons(gAiWindow),
+        [],
+        "Canceled starter prompts should not reappear before messages arrive"
+      );
+
+      releaseGeneration.resolve();
+      await gMockEngineManager.respondTo({ purpose: "chat", response: "Hi" });
+    } finally {
+      for (const load of loads) {
+        load.release.resolve();
+      }
+      releaseGeneration.resolve();
+      await Promise.allSettled([olderLoad, newerLoad]);
+      sandbox.restore();
+      await TestUtils.waitForCondition(
+        () => !aiWindow.isGenerating,
+        "Chat generation should finish before closing the window"
+      );
+    }
   });
 
   describe("when the conversation is empty", () => {
@@ -383,7 +446,7 @@ describe("sidebar conversation starter prompts", () => {
         "First set of prompts should be rendered"
       );
 
-      const requestCountAfterFirstLoad = mock.requestCount;
+      const requestCountAfterFirstLoad = gStarterRequestCount;
 
       responseContent[0] = "prompt 3\nprompt 4";
       await navigateTo("https://example.org", gAiWindow);
@@ -392,7 +455,7 @@ describe("sidebar conversation starter prompts", () => {
         "Second set of prompts should be rendered"
       );
       Assert.equal(
-        mock.requestCount,
+        gStarterRequestCount,
         requestCountAfterFirstLoad + 1,
         "Navigating to a new URI should generate a new starter request"
       );
@@ -409,7 +472,7 @@ describe("sidebar conversation starter prompts", () => {
         "Should display newly generated prompts when navigating back"
       );
       Assert.equal(
-        mock.requestCount,
+        gStarterRequestCount,
         requestCountAfterFirstLoad + 2,
         "Navigating back to a previously visited URI should generate a new starter request"
       );
@@ -425,7 +488,7 @@ describe("sidebar conversation starter prompts", () => {
         );
       }
 
-      const requestCountAfterFillingCache = mock.requestCount;
+      const requestCountAfterFillingCache = gStarterRequestCount;
 
       responseContent[0] = "prompt evicted a\nprompt evicted b";
       await navigateTo("https://example.com/0", gAiWindow);
@@ -435,7 +498,7 @@ describe("sidebar conversation starter prompts", () => {
       );
 
       Assert.equal(
-        mock.requestCount,
+        gStarterRequestCount,
         requestCountAfterFillingCache + 1,
         "Revisiting the oldest URI after the cache limit should generate a new starter request"
       );
@@ -876,67 +939,58 @@ add_task(async function test_resume_prompt_click_injects_context() {
 
 add_task(async function test_resume_prompt_click_marks_memory_applied() {
   const sb = sinon.createSandbox();
-  const { server, port } = startMockOpenAI({
-    streamChunks: ["Sure, here's an update."],
-  });
+  let mockEngineManager;
   try {
-    await SpecialPowers.pushPrefEnv({
-      set: [["browser.smartwindow.endpoint", `http://localhost:${port}/v1`]],
+    await testResumeActivityClick(sb, async ({ browser, buttons }) => {
+      
+      AuthProvider.getToken.restore();
+      mockEngineManager = new MockEngineManager();
+      buttons[0].click();
+      await mockEngineManager.respondTo({
+        purpose: "chat",
+        response: "Sure, here's an update.",
+      });
+
+      const aichatBrowser = await getAichatBrowser(browser);
+
+      await SpecialPowers.spawn(aichatBrowser, [], async () => {
+        const chatRoot = await ContentTaskUtils.waitForCondition(
+          () => content.document.querySelector("ai-chat-content")?.shadowRoot,
+          "Wait for chat content shadow root"
+        );
+
+        await ContentTaskUtils.waitForMutationCondition(
+          chatRoot,
+          { childList: true, subtree: true },
+          () => chatRoot.querySelector("assistant-message-footer")
+        );
+        let appliedButton;
+        await ContentTaskUtils.waitForCondition(() => {
+          const button = chatRoot
+            .querySelector("assistant-message-footer")
+            ?.shadowRoot?.querySelector("applied-memories-button");
+          
+          
+          appliedButton = button?.wrappedJSObject ?? button;
+          return appliedButton?.appliedMemories?.length;
+        }, "Wait for the resume-activity memory to be marked applied");
+
+        Assert.equal(
+          appliedButton.appliedMemories.length,
+          1,
+          "Resume-activity response should have exactly one applied memory"
+        );
+        Assert.equal(
+          appliedButton.appliedMemories[0].memory_summary,
+          "Research project",
+          "Applied memory should be the one that drove the resume-activity conversation"
+        );
+      });
     });
-
-    try {
-      await testResumeActivityClick(
-        sb,
-        async ({ browser, buttons }) => {
-          buttons[0].click();
-
-          const aiWindowEl = browser.contentDocument.querySelector("ai-window");
-          const aichatBrowser = await TestUtils.waitForCondition(
-            () => aiWindowEl.shadowRoot?.querySelector("#aichat-browser"),
-            "Wait for aichat-browser"
-          );
-
-          await SpecialPowers.spawn(aichatBrowser, [], async () => {
-            const chatContent =
-              content.document.querySelector("ai-chat-content");
-
-            await ContentTaskUtils.waitForMutationCondition(
-              chatContent.shadowRoot,
-              { childList: true, subtree: true },
-              () =>
-                chatContent.shadowRoot.querySelector("assistant-message-footer")
-            );
-            let appliedButton;
-            await ContentTaskUtils.waitForCondition(() => {
-              const button = chatContent.shadowRoot
-                .querySelector("assistant-message-footer")
-                ?.shadowRoot?.querySelector("applied-memories-button");
-              
-              
-              appliedButton = button?.wrappedJSObject ?? button;
-              return appliedButton?.appliedMemories?.length;
-            }, "Wait for the resume-activity memory to be marked applied");
-
-            Assert.equal(
-              appliedButton.appliedMemories.length,
-              1,
-              "Resume-activity response should have exactly one applied memory"
-            );
-            Assert.equal(
-              appliedButton.appliedMemories[0].memory_summary,
-              "Research project",
-              "Applied memory should be the one that drove the resume-activity conversation"
-            );
-          });
-        },
-        { token: "mock-fxa-token" }
-      );
-    } finally {
-      await SpecialPowers.popPrefEnv();
-    }
   } finally {
+    await mockEngineManager?.rejectAllRequests();
+    mockEngineManager?.cleanupMocks();
     sb.restore();
-    await stopMockOpenAI(server);
   }
 });
 

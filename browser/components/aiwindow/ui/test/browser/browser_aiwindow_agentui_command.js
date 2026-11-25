@@ -19,6 +19,10 @@ const { Region } = ChromeUtils.importESModule(
   "resource://gre/modules/Region.sys.mjs"
 );
 
+const { MockEngineManager } = ChromeUtils.importESModule(
+  "resource://testing-common/AIWindowTestUtils.sys.mjs"
+);
+
 const PREF_AGENT_ENABLED = "browser.smartwindow.agent.enabled";
 const SUPPORTED_REGIONS_PREF = "browser.smartwindow.agent.supportedRegions";
 const TEST_REGION = "US";
@@ -351,18 +355,17 @@ async function openWatchableChat() {
   await SpecialPowers.pushPrefEnv({ set: [[PREF_AGENT_ENABLED, true]] });
   await MonitorAgent._resetForTesting();
   const restoreSignIn = skipSignIn();
-  const { restore, capturedRequests } = await stubEngineNetworkBoundaries({
-    serverOptions: { streamChunks: ["Mock reply."] },
-  });
+  const mockEngineManager = new MockEngineManager();
   const { win, sidebarBrowser } = await openAIWindowWithSidebar(WATCHABLE_PAGE);
   const aichatBrowser = await getAichatBrowser(sidebarBrowser);
   return {
     sidebarBrowser,
     aichatBrowser,
-    capturedRequests,
+    mockEngineManager,
     async cleanup() {
       await BrowserTestUtils.closeWindow(win);
-      await restore();
+      await mockEngineManager.rejectAllRequests();
+      mockEngineManager.cleanupMocks();
       restoreSignIn();
       await MonitorAgent._resetForTesting();
       await SpecialPowers.popPrefEnv();
@@ -439,17 +442,15 @@ async function waitForModelText(chat, text) {
 
 
 async function sendFollowUp(chat) {
-  const { sidebarBrowser, capturedRequests } = chat;
-  const before = capturedRequests.length;
+  const { sidebarBrowser, mockEngineManager } = chat;
   await typeInSmartbar(sidebarBrowser, "What did I just do?");
   await submitSmartbar(sidebarBrowser);
-  await TestUtils.waitForCondition(
-    () => capturedRequests.length > before,
-    "Waiting for the follow-up to reach the model"
-  );
-  return capturedRequests
-    .at(-1)
-    .messages.filter(m => m.role === "assistant")
+  const { request, respond } = await mockEngineManager.captureRequest({
+    purpose: "chat",
+  });
+  respond("Mock reply.");
+  return request.args
+    .filter(m => m.role === "assistant")
     .map(m => m.content)
     .join("\n");
 }

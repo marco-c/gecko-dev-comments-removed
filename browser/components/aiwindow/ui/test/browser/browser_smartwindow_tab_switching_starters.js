@@ -7,6 +7,9 @@
 const { AIWindowUI } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs"
 );
+const { MockEngineManager } = ChromeUtils.importESModule(
+  "resource://testing-common/AIWindowTestUtils.sys.mjs"
+);
 
 add_setup(async function setup() {
   await SpecialPowers.pushPrefEnv({
@@ -22,13 +25,7 @@ add_setup(async function setup() {
 
 add_task(
   async function test_tab_switch_shows_starters_for_empty_conversation() {
-    let resolveFirstRequest;
-    const firstRequestReceived = new Promise(r => {
-      resolveFirstRequest = r;
-    });
-    const { restore } = await stubEngineNetworkBoundaries({
-      serverOptions: { onRequest: () => resolveFirstRequest() },
-    });
+    const mockEngineManager = new MockEngineManager();
     const sb = sinon.createSandbox();
 
     let tabA, tabB, win;
@@ -41,7 +38,7 @@ add_task(
       await submitSmartbar(browserA);
 
       
-      await firstRequestReceived;
+      await mockEngineManager.respondTo({ purpose: "chat", response: "Mock" });
 
       
       
@@ -103,7 +100,8 @@ add_task(
       }
 
       await BrowserTestUtils.closeWindow(win);
-      await restore();
+      await mockEngineManager.rejectAllRequests();
+      mockEngineManager.cleanupMocks();
       sb.restore();
     }
   }
@@ -112,14 +110,7 @@ add_task(
 add_task(
   async function test_tab_switch_does_not_refresh_starters_for_existing_conversation() {
     const sb = sinon.createSandbox();
-
-    let resolveFirstRequest;
-    const firstRequestReceived = new Promise(r => {
-      resolveFirstRequest = r;
-    });
-    const { restore } = await stubEngineNetworkBoundaries({
-      serverOptions: { onRequest: () => resolveFirstRequest() },
-    });
+    const mockEngineManager = new MockEngineManager();
 
     let win, newTab, originalTab;
     try {
@@ -131,7 +122,7 @@ add_task(
       await submitSmartbar(browser);
 
       
-      await firstRequestReceived;
+      await mockEngineManager.respondTo({ purpose: "chat", response: "Mock" });
 
       await promiseNavigateAndLoad(browser, "https://example.com/");
 
@@ -174,7 +165,8 @@ add_task(
       }
 
       await BrowserTestUtils.closeWindow(win);
-      await restore();
+      await mockEngineManager.rejectAllRequests();
+      mockEngineManager.cleanupMocks();
       sb.restore();
     }
   }
