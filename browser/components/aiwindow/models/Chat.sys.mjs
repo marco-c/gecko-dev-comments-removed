@@ -20,6 +20,7 @@ import {
   MANAGE_TABS,
   AITAB_PREF,
   AITAB_TOOLS,
+  INCLUDE_CHAT_TAB_PREF,
   GENERATE_AITAB,
   ADD_MEMORY,
   SEARCH_THE_WEB,
@@ -35,6 +36,21 @@ import { runLLMaJTelemetry } from "moz-src:///browser/components/aiwindow/models
 import { getSmartPageName } from "chrome://browser/content/aiwindow/modules/TrustedInternalURLs.mjs";
 
 /**
+ * Why a search was handed off to the default search engine, recorded as the
+ * `reason` extra of smart_window.search_handoff.
+ *
+ * @type {object}
+ */
+export const SEARCH_HANDOFF_REASON = Object.freeze({
+  // The search provider behind search_the_web failed.
+  SEARCH_FAILED: "search_failed",
+  // The model called search_the_web again in the same turn.
+  REPEAT_SEARCH: "repeat_search",
+  // The model asked for run_search directly.
+  MODEL_REQUEST: "model_request",
+});
+
+/**
  * Execute a specific tool and return the result
  * Exported for testing purposes
  *
@@ -44,7 +60,12 @@ import { getSmartPageName } from "chrome://browser/content/aiwindow/modules/Trus
  * @param {ChatConversation} conversation - The conversation context
  * @param {BrowsingContext} browsingContext - The browsing context (can be null for some tools)
  * @param {string} mode - The mode of operation (e.g., "fullpage", "sidebar", "urlbar")
- * @returns {Promise<object>} The result of the tool execution
+ * @param {AbortSignal} [signal] - Stops a search handoff before it navigates.
+ * @param {string} [handoffReason] - One of SEARCH_HANDOFF_REASON, when
+ *   search_the_web is handing off. A run_search call without one was requested
+ *   by the model directly.
+ * @returns {Promise<object>} The result of the tool execution, or
+ *   `{ toolResult, cardShown }` for manage_tabs
  * @private
  */
 export async function executeToolByName(
@@ -53,7 +74,9 @@ export async function executeToolByName(
   toolCallId,
   conversation,
   browsingContext,
-  mode
+  mode,
+  signal,
+  handoffReason
 ) {
   let result;
   switch (toolName) {
@@ -73,18 +96,29 @@ export async function executeToolByName(
       break;
     }
     case RUN_SEARCH: {
+      // Looked up before the search starts so a handoff never begins without
+      // an engine, and reused for telemetry so nothing is looked up after the
+      // navigation. Stopping during the lookup cancels the handoff before the
+      // tab is touched.
+      const engine = await lazy.SearchService.getDefault();
+      signal?.throwIfAborted();
+      if (!engine) {
+        throw new Error("No default search engine to hand off to");
+      }
       result = await RunSearch.runSearch(
         toolParams,
         browsingContext,
-        conversation
+        conversation,
+        engine,
+        signal
       );
-      const engine = await lazy.SearchService.getDefault();
       Glean.smartWindow.searchHandoff.record({
         location: mode,
         chat_id: conversation.id,
         message_seq: conversation.messageCount,
         provider: engine.name ?? "unknown",
         model: conversation.engine?.model,
+        reason: handoffReason ?? SEARCH_HANDOFF_REASON.MODEL_REQUEST,
       });
       break;
     }
@@ -117,7 +151,7 @@ export async function executeToolByName(
       if (uiData) {
         conversation.addUIToolToCurrentMessage(toolCallId, uiData);
       }
-      result = toolResult;
+      result = { toolResult, cardShown: !!uiData };
       break;
     }
     case ADD_MEMORY: {
@@ -295,6 +329,22 @@ function filterFeatureGatedTools(tools, conversation) {
   if (!Services.prefs.getBoolPref(AITAB_PREF, false)) {
     filtered = filtered.filter(t => !AITAB_TOOLS.has(t.function?.name));
   }
+  if (!Services.prefs.getBoolPref(INCLUDE_CHAT_TAB_PREF, false)) {
+    filtered = filtered.map(t => {
+      if (t.function.name !== MANAGE_TABS) {
+        return t;
+      }
+      const properties = { ...t.function.parameters.properties };
+      delete properties.include_chat_tab;
+      return {
+        ...t,
+        function: {
+          ...t.function,
+          parameters: { ...t.function.parameters, properties },
+        },
+      };
+    });
+  }
   return filtered;
 }
 
@@ -307,7 +357,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 ChromeUtils.defineLazyGetter(lazy, "console", () =>
   console.createInstance({
-    prefix: "Conversation",
+    logModule: "Conversation",
     maxLogLevelPref: "browser.smartwindow.conversation.logLevel",
   })
 );
@@ -350,6 +400,17 @@ function recordToolCallEvent({ toolName, mode, conversation, error }) {
     error,
   });
 }
+
+/**
+ * Work performed by a successfully completed chat turn.
+ *
+ * @typedef {object} ChatTurnResult
+ * @property {number | null} outputTokens - Backend completion tokens across chat
+ *   model responses, excluding direct tool answer streams, or null if any chat
+ *   model response omitted usage.
+ * @property {number} toolCallCount - Model-requested tool executions attempted,
+ *   including execution failures but excluding calls rejected before execution.
+ */
 
 /**
  * Chat
@@ -447,6 +508,8 @@ Object.assign(Chat, {
    * @param {Promise<string|null>} [options.tokenPromise] - A token
    *   fetch the caller already started, so a cold or expired token resolves
    *   alongside prompt construction rather than after it. Omit to fetch here.
+   * @returns {Promise<ChatTurnResult | null>} Completed-turn work counts, or null
+   *   if the turn was stopped early or handed off to another surface.
    */
   async fetchWithHistory({
     conversation,
@@ -481,6 +544,8 @@ Object.assign(Chat, {
     const chatToolsConfig = filterFeatureGatedTools(toolsConfig, conversation);
 
     let fullResponseText = "";
+    /** @type {ChatTurnResult} */
+    const turnResult = { outputTokens: 0, toolCallCount: 0 };
 
     // A search handoff sets `_searchExecutedTurn` (in executeToolByName). If a
     // later re-entry on the same turn (openSidebarAndContinue -> fetchWithHistory)
@@ -533,6 +598,11 @@ Object.assign(Chat, {
         );
         fullResponseText = response.fullResponseText;
         pendingToolCalls = response.pendingToolCalls;
+        turnResult.outputTokens =
+          turnResult.outputTokens !== null &&
+          response.usage?.completion_tokens != null
+            ? turnResult.outputTokens + response.usage.completion_tokens
+            : null;
 
         // Debug logging: Record the raw text and requested tool calls from the model
         logConversationStream(currentTurn, "CHAT RECV", {
@@ -563,12 +633,14 @@ Object.assign(Chat, {
           // We only run telemetry on our own endpoints
           runLLMaJTelemetry(conversation);
         }
-        return;
+
+        return signal?.aborted ? null : turnResult;
       }
 
       if (signal?.aborted) {
         logConversationStream(currentTurn, "STREAM END", null, "aborted");
-        return;
+
+        return null;
       }
 
       // Ensure all serialized tool calls have arguments and expand URL tokens.
@@ -691,7 +763,8 @@ Object.assign(Chat, {
         if (signal?.aborted) {
           abortToolCalls();
           logConversationStream(currentTurn, "STREAM END", null, "aborted");
-          return;
+
+          return null;
         }
 
         activeToolCall = null;
@@ -777,19 +850,22 @@ Object.assign(Chat, {
         // try/catch so the conversation can be updated for failed calls.
         let result;
         let aiTabEndsTurn = false;
+        let tabCardShown = false;
         let toolCallError = "";
         // Set when the tool is writing the user-facing reply itself, in which
         // case it is delivered below and the model gets no follow-up turn.
         let directAnswerStream = null;
         const featureGatedHandler = FEATURE_GATED_HANDLERS.get(toolName);
-        const dispatchTool = name =>
+        const dispatchTool = (name, handoffReason) =>
           executeToolByName(
             name,
             toolParams,
             id,
             conversation,
             browsingContext,
-            mode
+            mode,
+            signal,
+            handoffReason
           );
 
         // Emit the tool message up front with a `pending`-marked placeholder
@@ -808,6 +884,8 @@ Object.assign(Chat, {
           });
         }
 
+        turnResult.toolCallCount++;
+
         try {
           if (featureGatedHandler) {
             result = await featureGatedHandler(
@@ -824,22 +902,33 @@ Object.assign(Chat, {
             }
             /**
              * On the first invocation of search_the_web, SearchProvider-powered
-             * web search is done. On the second invocation, search handoff (previously
-             * run_search tool) is called. The logic for run_search is maintained, including
-             * the instruction to use the user's original query if this is the first turn
+             * web search is done. If that search fails, or on the second invocation,
+             * search handoff (previously run_search tool) is called. The logic for
+             * run_search is maintained, including the instruction to use the user's
+             * original query if this is the first turn
              */
             if (!signal?.aborted && result.requiresSearchHandoff) {
               isSearchHandoff = true;
+              let handoffReason = SEARCH_HANDOFF_REASON.REPEAT_SEARCH;
+              // A failed search that hands off is still a failed tool call.
+              if (result.error) {
+                toolCallError = "execution_failed";
+                handoffReason = SEARCH_HANDOFF_REASON.SEARCH_FAILED;
+              }
               // Mark the turn as having handed off, so a re-entry on the same
               // turn (via openSidebarAndContinue) blocks a repeat search.
               conversation._searchExecutedTurn = currentTurn;
               if (isVerbatimQuery) {
                 delete toolParams.query;
               }
-              result = await dispatchTool(RUN_SEARCH);
+              result = await dispatchTool(RUN_SEARCH, handoffReason);
             }
           } else {
             result = await dispatchTool(toolName);
+            if (toolName === MANAGE_TABS) {
+              tabCardShown = result.cardShown;
+              result = result.toolResult;
+            }
           }
 
           // Debug logging: Record the data returned by the tool before feeding it to the model
@@ -866,6 +955,11 @@ Object.assign(Chat, {
           };
           resolveToolCall(toolCall, content);
         } catch (error) {
+          if (isSearchHandoff) {
+            // The handoff did not complete, so it must not block a retry of
+            // this turn.
+            delete conversation._searchExecutedTurn;
+          }
           isSearchHandoff = false;
           console.error(error);
           toolCallError = "execution_failed";
@@ -916,11 +1010,12 @@ Object.assign(Chat, {
         if (signal?.aborted && !isSearchHandoff) {
           abortToolCalls();
           logConversationStream(currentTurn, "STREAM END", null, "aborted");
-          return;
+
+          return null;
         }
 
         const endsTurn =
-          toolName === MANAGE_TABS ||
+          tabCardShown ||
           aiTabEndsTurn ||
           directAnswerStream ||
           isSearchHandoff;
@@ -937,13 +1032,14 @@ Object.assign(Chat, {
           .catch(() => {});
 
         // These successful tools finish their turns in the UI.
-        if (toolName === MANAGE_TABS || aiTabEndsTurn) {
+        if (tabCardShown || aiTabEndsTurn) {
           // These tool calls need to return early so any staged
           // security flags that have accumulated up to this point
           // need to be committed before returning since the commit
           // at the end of the loop will not be reached.
           conversation.securityProperties.commit();
-          return;
+
+          return signal?.aborted ? null : turnResult;
         }
 
         // Also terminal: the tool is writing the reply itself (the answers path
@@ -954,7 +1050,8 @@ Object.assign(Chat, {
         if (directAnswerStream) {
           await conversation.receiveResponse(directAnswerStream);
           logConversationStream(currentTurn, "STREAM END", null, toolName);
-          return;
+
+          return signal?.aborted ? null : turnResult;
         }
 
         // Perform the search handoff if the RUN_SEARCH tool was run.
@@ -964,16 +1061,19 @@ Object.assign(Chat, {
             console.error(
               "search_the_web: Associated window not available or closed, aborting search handoff"
             );
-            return;
+
+            return null;
           }
 
           lazy.AIWindow.openSidebarAndContinue(win, conversation);
-          return;
+
+          return null;
         }
       }
       if (signal?.aborted) {
         logConversationStream(currentTurn, "STREAM END", null, "aborted");
-        return;
+
+        return null;
       }
     }
   },

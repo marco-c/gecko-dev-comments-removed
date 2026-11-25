@@ -10,6 +10,7 @@ const { SEARCH_ANSWER_SCHEMA, runSearchTheWeb } = ChromeUtils.importESModule(
 const {
   GetPageContent,
   GET_PAGE_CONTENT,
+  RunSearch,
   SEARCH_QUERY_ENDPOINT_PREF,
   SEARCH_QUERY_APIKEY_PREF,
   SEARCH_THE_WEB_FAST_PREF,
@@ -481,7 +482,7 @@ add_task(async function test_search_the_web_invalid_answer_is_not_answered() {
   }
 });
 
-add_task(async function test_search_the_web_retrieval_error_returns_failure() {
+add_task(async function test_search_the_web_retrieval_error_hands_off() {
   
   
   await pushSearchPrefs();
@@ -500,19 +501,11 @@ add_task(async function test_search_the_web_retrieval_error_returns_failure() {
     });
     const result = await runPromise;
     Assert.equal(
-      result.could_answer,
-      false,
-      "A retrieval error yields a not-answered result"
+      result.requiresSearchHandoff,
+      true,
+      "A retrieval error routes the turn to the search handoff"
     );
-    Assert.deepEqual(
-      result.searched_urls,
-      [],
-      "No URLs are searched when retrieval fails"
-    );
-    Assert.ok(
-      result.error,
-      "An error message is returned so the assistant can fall back"
-    );
+    Assert.ok(result.error, "The provider failure is reported");
     mockSearchManager.assertAllRequestsHandled();
   } finally {
     mockSearchManager.rejectAllRequests();
@@ -541,6 +534,11 @@ add_task(async function test_search_the_web_no_results_returns_failure() {
       "No results yields a not-answered result"
     );
     Assert.deepEqual(result.searched_urls, [], "No URLs are searched");
+    Assert.equal(
+      result.requiresSearchHandoff,
+      false,
+      "A search that finds nothing returns to the assistant"
+    );
     mockSearchManager.assertAllRequestsHandled();
   } finally {
     mockSearchManager.rejectAllRequests();
@@ -1223,6 +1221,7 @@ const ERROR_CASES = [
     mock: { response: { results: [] } },
     error: "no_results",
     status: "200",
+    handoff: false,
     retrieved: "0",
     returned: "0",
   },
@@ -1241,6 +1240,7 @@ const ERROR_CASES = [
     },
     error: "no_results",
     status: "200",
+    handoff: false,
     retrieved: "1",
     returned: "0",
   },
@@ -1249,6 +1249,7 @@ const ERROR_CASES = [
     mock: { response: "upstream exploded", status: 503 },
     error: "http_error",
     status: "503",
+    handoff: true,
     retrieved: "0",
     processingZero: true,
   },
@@ -1261,18 +1262,23 @@ const ERROR_CASES = [
     },
     error: "network_error",
     status: "0",
+    handoff: true,
   },
   {
+    
+    
     name: "timeout",
     mock: { rejectWith: abortError() },
     error: "timeout",
     status: "0",
+    handoff: true,
   },
   {
     name: "unparseable_body",
     mock: { response: "<html>gateway error</html>", jsonThrows: true },
     error: "retrieval_failed",
     status: "200",
+    handoff: true,
   },
 ];
 
@@ -1283,6 +1289,11 @@ add_task(async function test_fast_search_telemetry_error_categories() {
 
     const { result } = await runFastSearchWithMock(testCase.mock);
     Assert.ok(result.error, `${testCase.name}: the flow reports a failure`);
+    Assert.equal(
+      result.requiresSearchHandoff,
+      testCase.handoff,
+      `${testCase.name}: whether the turn hands off`
+    );
 
     const extra = getSearchTheWebExtra();
     Assert.equal(
@@ -1338,6 +1349,7 @@ const PREREQUEST_FAILURE_CASES = [
     query: "   ",
     endpoint: SEARCH_ENDPOINT,
     error: "invalid_query",
+    handoff: false,
     retrievalZero: true,
   },
   {
@@ -1345,6 +1357,7 @@ const PREREQUEST_FAILURE_CASES = [
     query: "widgets",
     endpoint: "",
     error: "config_error",
+    handoff: true,
   },
 ];
 
@@ -1364,6 +1377,11 @@ add_task(async function test_fast_search_telemetry_prerequest_failures() {
         conversation
       );
       Assert.ok(result.error, `${testCase.name}: the flow reports a failure`);
+      Assert.equal(
+        result.requiresSearchHandoff,
+        testCase.handoff,
+        `${testCase.name}: whether the turn hands off`
+      );
 
       const extra = getSearchTheWebExtra();
       Assert.equal(
@@ -1473,12 +1491,14 @@ add_task(async function test_fast_search_failure_marks_tool_call_error() {
 
   const query = "how much are widgets?";
   const mockSearchManager = new MockSearchManager();
+  const runSearchStub = sinon
+    .stub(RunSearch, "runSearch")
+    .resolves("Search handoff results");
 
   try {
     await withServer(
       {
         toolCall: { name: SEARCH_THE_WEB, args: JSON.stringify({ query }) },
-        followupChunks: ["I could not search just now."],
       },
       async () => {
         const conversation = new ChatConversation({
@@ -1517,6 +1537,14 @@ add_task(async function test_fast_search_failure_marks_tool_call_error() {
           "execution_failed",
           "A failed search is not counted as a successful tool call"
         );
+        Assert.ok(runSearchStub.calledOnce, "The failed search hands off");
+        const handoffEvents = Glean.smartWindow.searchHandoff.testGetValue();
+        Assert.equal(handoffEvents?.length, 1, "The handoff is recorded");
+        Assert.equal(
+          handoffEvents?.[0]?.extra.reason,
+          "search_failed",
+          "The handoff is recorded as caused by the failed search"
+        );
 
         const extra = getSearchTheWebExtra();
         Assert.equal(
@@ -1532,6 +1560,7 @@ add_task(async function test_fast_search_failure_marks_tool_call_error() {
       }
     );
   } finally {
+    runSearchStub.restore();
     mockSearchManager.rejectAllRequests();
     mockSearchManager.cleanupMocks();
     await SpecialPowers.popPrefEnv();
@@ -1953,6 +1982,90 @@ add_task(async function test_answers_failure_returns_turn_then_escalates() {
 
     mockEngineManager.assertAllRequestsHandled();
   } finally {
+    await mockEngineManager.rejectAllRequests();
+    mockEngineManager.cleanupMocks();
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+add_task(async function test_answers_request_failure_hands_off() {
+  
+  
+  
+  await pushSearchPrefs(false, true);
+
+  const mockEngineManager = new MockEngineManager();
+
+  try {
+    for (const reason of [new Error("Answer request failed"), abortError()]) {
+      info(`answers request rejected with ${reason.name}`);
+      const conversation = makeAnswersConversation();
+      const runPromise = runSearchTheWeb({ query: "weather" }, conversation);
+      (
+        await mockEngineManager.captureRequest({ purpose: ANSWERS_ENGINE_KEY })
+      ).reject(reason);
+
+      const result = await runPromise;
+      Assert.equal(
+        result.requiresSearchHandoff,
+        true,
+        `A ${reason.name} routes the turn to the search handoff`
+      );
+      Assert.ok(result.error, "The provider failure is reported");
+      Assert.ok(
+        !result.directAnswerStream,
+        "A failed request delivers no reply to the user"
+      );
+      Assert.deepEqual(
+        conversation.getCitationsSnapshot(),
+        [],
+        "A failed request leaves no citations behind"
+      );
+    }
+
+    mockEngineManager.assertAllRequestsHandled();
+  } finally {
+    await mockEngineManager.rejectAllRequests();
+    mockEngineManager.cleanupMocks();
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+add_task(async function test_answers_citation_error_does_not_hand_off() {
+  
+  
+  await pushSearchPrefs(false, true);
+
+  const mockEngineManager = new MockEngineManager();
+  const conversation = makeAnswersConversation();
+  const addCitationsStub = sinon
+    .stub(conversation, "addCitations")
+    .throws(new Error("citation bookkeeping failed"));
+
+  try {
+    const runPromise = runSearchTheWeb({ query: "weather" }, conversation);
+    (
+      await mockEngineManager.captureRequest({ purpose: ANSWERS_ENGINE_KEY })
+    ).respond({
+      finalOutput: "It is sunny today.",
+      providerSpecificFields: {
+        citations: [{ url: "https://weather.example/", title: "Weather" }],
+      },
+    });
+
+    await Assert.rejects(
+      runPromise,
+      /citation bookkeeping failed/,
+      "The local error surfaces as a tool error instead of a handoff result"
+    );
+    Assert.ok(
+      addCitationsStub.calledOnce,
+      "The error came from recording the citations"
+    );
+
+    mockEngineManager.assertAllRequestsHandled();
+  } finally {
+    addCitationsStub.restore();
     await mockEngineManager.rejectAllRequests();
     mockEngineManager.cleanupMocks();
     await SpecialPowers.popPrefEnv();
