@@ -17,6 +17,8 @@
 #include <span>
 #include <variant>
 
+#include "api/ref_count.h"
+#include "api/rtc_error.h"
 #include "api/sframe/sframe_decryptor_interface.h"
 
 namespace webrtc {
@@ -51,9 +53,13 @@ using SframeDecryptResult =
     std::variant<SframeDecryptSuccess, SframeDecryptFailure>;
 
 
-
-class SframeMediaDecryptorInterface : public SframeDecryptorInterface {
+class SframeMediaDecryptorInterface : public RefCountInterface {
  public:
+  virtual RTCError AddDecryptionKey(uint64_t key_id,
+                                    std::span<const uint8_t> key_material) = 0;
+
+  virtual RTCError RemoveDecryptionKey(uint64_t key_id) = 0;
+
   
   
   

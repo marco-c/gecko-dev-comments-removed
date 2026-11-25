@@ -43,8 +43,6 @@ class SframeDecryptor : public SframeMediaDecryptorInterface {
   RTCError AddDecryptionKey(uint64_t key_id,
                             std::span<const uint8_t> key_material) override;
   RTCError RemoveDecryptionKey(uint64_t key_id) override;
-
-  
   SframeDecryptResult Decrypt(std::span<const uint8_t> encrypted_frame,
                               std::span<const uint8_t> additional_data,
                               std::span<uint8_t> frame) override;

@@ -16,10 +16,11 @@
 #include <optional>
 #include <span>
 
+#include "absl/base/nullability.h"
 #include "absl/functional/any_invocable.h"
 #include "api/frame_transformer_interface.h"
 #include "api/ref_count.h"
-#include "api/rtc_error.h"
+#include "api/sframe/sframe_types.h"
 
 namespace webrtc {
 
@@ -55,12 +56,19 @@ struct SframeDecryptError {
 using SframeDecryptErrorCallback = absl::AnyInvocable<void(SframeDecryptError)>;
 
 
+
+
+
 class SframeDecryptorInterface : public RefCountInterface {
  public:
-  virtual RTCError AddDecryptionKey(uint64_t key_id,
-                                    std::span<const uint8_t> key_material) = 0;
+  virtual void AddDecryptionKey(uint64_t key_id,
+                                std::span<const uint8_t> key_material,
+                                absl_nonnull SframeKeyUpdateCallback
+                                    callback) = 0;
 
-  virtual RTCError RemoveDecryptionKey(uint64_t key_id) = 0;
+  virtual void RemoveDecryptionKey(uint64_t key_id,
+                                   absl_nonnull SframeKeyUpdateCallback
+                                       callback) = 0;
 
  protected:
   ~SframeDecryptorInterface() override = default;
