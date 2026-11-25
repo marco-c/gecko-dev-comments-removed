@@ -354,7 +354,6 @@ toolkit/components/passwordmgr/LoginCSVImport.sys.mjs
 toolkit/components/passwordmgr/LoginExport.sys.mjs
 toolkit/components/passwordmgr/LoginHelper.sys.mjs
 toolkit/components/passwordmgr/LoginInfo.sys.mjs
-toolkit/components/passwordmgr/LoginManager.shared.sys.mjs
 toolkit/components/passwordmgr/LoginManager.sys.mjs
 toolkit/components/passwordmgr/LoginManagerAuthPrompter.sys.mjs
 toolkit/components/passwordmgr/LoginManagerChild.sys.mjs
@@ -452,10 +451,6 @@ toolkit/components/thumbnails/PageThumbs.sys.mjs
 toolkit/components/thumbnails/PageThumbs.worker.js
 toolkit/components/thumbnails/PageThumbsStorageService.sys.mjs
 toolkit/components/timermanager/UpdateTimerManager.sys.mjs
-toolkit/components/tooltiptext/TooltipTextProvider.sys.mjs
-toolkit/components/translations/LanguageDetector.sys.mjs
-toolkit/components/translations/cld2/cld-worker.js
-toolkit/components/translations/cld2/cld-worker.js.mem
 toolkit/components/url-classifier/SafeBrowsing.sys.mjs
 toolkit/components/url-classifier/UrlClassifierHashCompleter.sys.mjs
 toolkit/components/url-classifier/UrlClassifierLib.sys.mjs

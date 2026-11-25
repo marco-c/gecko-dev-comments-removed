@@ -4,6 +4,10 @@
 
 "use strict";
 
+const { LoginHelperDOM } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/passwordmgr/shared/LoginHelperDOM.sys.mjs"
+);
+
 const attributeTestData = [
   {
     testValues: ["", "form", "search", "signup", "sign-up", "sign/up"],
@@ -92,7 +96,7 @@ for (let testcase of TESTCASES) {
         for (let value of subtest.testValues) {
           testcase.update(document, value);
           const ele = document.querySelector("form");
-          const ret = LoginHelper.isInferredLoginForm(ele);
+          const ret = LoginHelperDOM.isInferredLoginForm(ele);
           Assert.strictEqual(
             ret,
             subtest.expectation,

@@ -7,9 +7,6 @@
       "chrome://browser/content/aboutlogins/components/login-message-popup.mjs": [
         "../../../browser/components/aboutlogins/content/components/login-message-popup.mjs"
       ],
-      "chrome://browser/content/aiwindow/components/SmartwindowOverflowRow.mjs": [
-        "../../../browser/components/aiwindow/ui/components/smartwindow-overflow-row/SmartwindowOverflowRow.mjs"
-      ],
       "chrome://browser/content/aiwindow/components/agent-monitor-item.mjs": [
         "../../../browser/components/aiwindow/ui/components/agent-monitor-item/agent-monitor-item.mjs"
       ],
@@ -58,7 +55,7 @@
       "chrome://browser/content/aiwindow/components/ai-website-select.mjs": [
         "../../../browser/components/aiwindow/ui/components/ai-website-select/ai-website-select.mjs"
       ],
-      "chrome://browser/content/aiwindow/components/ai-window/ai-window.mjs": [
+      "chrome://browser/content/aiwindow/components/ai-window.mjs": [
         "../../../browser/components/aiwindow/ui/components/ai-window/ai-window.mjs"
       ],
       "chrome://browser/content/aiwindow/components/aitab-error.mjs": [
@@ -154,6 +151,9 @@
       "chrome://browser/content/aiwindow/components/smartwindow-option-select.mjs": [
         "../../../browser/components/aiwindow/ui/components/smartwindow-option-select/smartwindow-option-select.mjs"
       ],
+      "chrome://browser/content/aiwindow/components/smartwindow-overflow-row.mjs": [
+        "../../../browser/components/aiwindow/ui/components/smartwindow-overflow-row/smartwindow-overflow-row.mjs"
+      ],
       "chrome://browser/content/aiwindow/components/smartwindow-panel-list.mjs": [
         "../../../browser/components/aiwindow/ui/components/smartwindow-panel-list/smartwindow-panel-list.mjs"
       ],
@@ -182,25 +182,25 @@
         "../../../browser/components/aiwindow/ui/components/website-chip-container/website-chip-container.mjs"
       ],
       "chrome://browser/content/aiwindow/modules/AITabUtils.mjs": [
-        "../../../browser/components/aiwindow/ui/modules/AITabUtils.mjs"
+        "../../../browser/components/aiwindow/ui/content/modules/AITabUtils.mjs"
       ],
       "chrome://browser/content/aiwindow/modules/AgentCommands.mjs": [
-        "../../../browser/components/aiwindow/ui/modules/AgentCommands.mjs"
+        "../../../browser/components/aiwindow/ui/content/modules/AgentCommands.mjs"
       ],
       "chrome://browser/content/aiwindow/modules/ChatMarkdownParser.mjs": [
-        "../../../browser/components/aiwindow/ui/modules/ChatMarkdownParser.mjs"
+        "../../../browser/components/aiwindow/ui/content/modules/ChatMarkdownParser.mjs"
       ],
       "chrome://browser/content/aiwindow/modules/ClientErrorTelemetry.mjs": [
-        "../../../browser/components/aiwindow/ui/modules/ClientErrorTelemetry.mjs"
+        "../../../browser/components/aiwindow/ui/content/modules/ClientErrorTelemetry.mjs"
       ],
       "chrome://browser/content/aiwindow/modules/ModelIcons.mjs": [
-        "../../../browser/components/aiwindow/ui/modules/ModelIcons.mjs"
+        "../../../browser/components/aiwindow/ui/content/modules/ModelIcons.mjs"
       ],
       "chrome://browser/content/aiwindow/modules/SmartFormFillConstants.mjs": [
-        "../../../browser/components/aiwindow/ui/modules/SmartFormFillConstants.mjs"
+        "../../../browser/components/aiwindow/ui/content/modules/SmartFormFillConstants.mjs"
       ],
       "chrome://browser/content/aiwindow/modules/TrustedInternalURLs.mjs": [
-        "../../../browser/components/aiwindow/ui/modules/TrustedInternalURLs.mjs"
+        "../../../browser/components/aiwindow/ui/content/modules/TrustedInternalURLs.mjs"
       ],
       "chrome://browser/content/asrouter/components/menu-message.mjs": [
         "../../../browser/components/asrouter/content/components/menu-message/menu-message.mjs"
@@ -448,6 +448,12 @@
       "chrome://browser/content/tabbrowser/address-footer.mjs": [
         "../../../browser/components/tabbrowser/content/address-footer.mjs"
       ],
+      "chrome://browser/content/tabbrowser/all-tabs-menu.mjs": [
+        "../../../browser/components/tabbrowser/content/all-tabs-menu.mjs"
+      ],
+      "chrome://browser/content/tabbrowser/browser-ctrlTab.mjs": [
+        "../../../browser/components/tabbrowser/content/browser-ctrlTab.mjs"
+      ],
       "chrome://browser/content/tabbrowser/drag-and-drop.mjs": [
         "../../../browser/components/tabbrowser/content/drag-and-drop.mjs"
       ],
@@ -456,6 +462,9 @@
       ],
       "chrome://browser/content/tabbrowser/tab-bar-visibility.mjs": [
         "../../../browser/components/tabbrowser/content/tab-bar-visibility.mjs"
+      ],
+      "chrome://browser/content/tabbrowser/tab-context-menu.mjs": [
+        "../../../browser/components/tabbrowser/content/tab-context-menu.mjs"
       ],
       "chrome://browser/content/tabbrowser/tab-groups-list.mjs": [
         "../../../browser/components/tabbrowser/content/tab-groups-list.mjs"
@@ -6214,9 +6223,6 @@
       "resource://gre/modules/LoginHelper.sys.mjs": [
         "../../../toolkit/components/passwordmgr/LoginHelper.sys.mjs"
       ],
-      "resource://gre/modules/LoginManager.shared.sys.mjs": [
-        "../../../toolkit/components/passwordmgr/LoginManager.shared.sys.mjs"
-      ],
       "resource://gre/modules/LoginManager.sys.mjs": [
         "../../../toolkit/components/passwordmgr/LoginManager.sys.mjs"
       ],
@@ -6804,9 +6810,6 @@
       ],
       "resource://gre/modules/third_party/jsesc/jsesc.mjs": [
         "../../../toolkit/modules/third_party/jsesc/jsesc.mjs"
-      ],
-      "resource://gre/modules/translations/LanguageDetector.sys.mjs": [
-        "../../../toolkit/components/translations/LanguageDetector.sys.mjs"
       ],
       "resource://gre/modules/workers/PromiseWorker.js": [
         "../../../tools/@types/subs/PromiseWorker.d.ts"
