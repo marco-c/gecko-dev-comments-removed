@@ -38,6 +38,13 @@ const TOPIC_APP_LOCALES_CHANGED = "intl:app-locales-changed";
 const USE_LEXICAL_SHORTLIST_PREF = "browser.translations.useLexicalShortlist";
 
 /**
+ * The companion's initial share of the Split View content width.
+ *
+ * @type {number}
+ */
+const ABOUT_TRANSLATIONS_SPLIT_VIEW_WIDTH_PERCENT = 33;
+
+/**
  * The decision table for Translations offer behavior after resolving the HTML lang
  * attribute and the identified page language.
  *
@@ -423,7 +430,7 @@ XPCOMUtils.defineLazyServiceGetters(lazy, {
 
 ChromeUtils.defineESModuleGetters(lazy, {
   LanguageDetector:
-    "resource://gre/modules/translations/LanguageDetector.sys.mjs",
+    "moz-src:///toolkit/components/translations/LanguageDetector.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
   TranslationsFeature:
@@ -508,6 +515,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "automaticallyPopupPref",
   "browser.translations.automaticallyPopup"
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "splitViewEnabledPref",
+  "browser.tabs.splitView.enabled",
+  /* aDefaultValue */ false
 );
 
 /**
@@ -1455,6 +1469,14 @@ export class TranslationsParent extends JSWindowActorParent {
    * @type {null | Promise<Map<string, TranslationModelRecord>>}
    */
   static #translationModelRecords = null;
+
+  /**
+   * The records from #translationModelRecords, grouped by their exact source
+   * language tag and then by their exact target language tag.
+   *
+   * @type {WeakMap<Map<string, TranslationModelRecord>, Map<string, Map<string, TranslationModelRecord[]>>>}
+   */
+  static #translationModelRecordsByLanguage = new WeakMap();
 
   /**
    * The RemoteSettingsClient that downloads the translation models.
@@ -4159,6 +4181,41 @@ export class TranslationsParent extends JSWindowActorParent {
   }
 
   /**
+   * Groups the records by their exact source and target language tags, so that
+   * language matching only needs to run once per distinct tag. The result is
+   * cached for the lifetime of the records map.
+   *
+   * @param {Map<string, TranslationModelRecord>} records
+   * @returns {Map<string, Map<string, TranslationModelRecord[]>>}
+   */
+  static #getTranslationModelRecordsByLanguage(records) {
+    let bySource =
+      TranslationsParent.#translationModelRecordsByLanguage.get(records);
+    if (bySource) {
+      return bySource;
+    }
+    bySource = new Map();
+    for (const record of records.values()) {
+      let byTarget = bySource.get(record.sourceLanguage);
+      if (!byTarget) {
+        byTarget = new Map();
+        bySource.set(record.sourceLanguage, byTarget);
+      }
+      let pairRecords = byTarget.get(record.targetLanguage);
+      if (!pairRecords) {
+        pairRecords = [];
+        byTarget.set(record.targetLanguage, pairRecords);
+      }
+      pairRecords.push(record);
+    }
+    TranslationsParent.#translationModelRecordsByLanguage.set(
+      records,
+      bySource
+    );
+    return bySource;
+  }
+
+  /**
    * Get the necessary files for translating between two given languages.
    * This may require the files for a pivot language translation
    * if there is no language model for a direct translation.
@@ -4179,6 +4236,8 @@ export class TranslationsParent extends JSWindowActorParent {
     includePivotRecords
   ) {
     const records = await TranslationsParent.#getTranslationModelRecords();
+    const recordsByLanguage =
+      TranslationsParent.#getTranslationModelRecordsByLanguage(records);
 
     let matchedRecords = new Set();
 
@@ -4189,19 +4248,27 @@ export class TranslationsParent extends JSWindowActorParent {
 
     const addLanguagePair = (sourceLanguage, targetLanguage) => {
       let matchFound = false;
-      for (const record of records.values()) {
+      for (const [recordSourceLanguage, byTarget] of recordsByLanguage) {
         if (
-          lazy.TranslationsUtils.langTagsMatch(
-            record.sourceLanguage,
+          !lazy.TranslationsUtils.langTagsMatch(
+            recordSourceLanguage,
             sourceLanguage
-          ) &&
-          lazy.TranslationsUtils.langTagsMatch(
-            record.targetLanguage,
-            targetLanguage
           )
         ) {
-          matchedRecords.add(record);
-          matchFound = true;
+          continue;
+        }
+        for (const [recordTargetLanguage, pairRecords] of byTarget) {
+          if (
+            lazy.TranslationsUtils.langTagsMatch(
+              recordTargetLanguage,
+              targetLanguage
+            )
+          ) {
+            for (const record of pairRecords) {
+              matchedRecords.add(record);
+            }
+            matchFound = true;
+          }
         }
       }
       return matchFound;
@@ -4973,6 +5040,18 @@ export class TranslationsParent extends JSWindowActorParent {
   }
 
   /**
+   * Whether Split View is enabled and the tab can host a new companion.
+   *
+   * @param {MozTabbrowserTab} sourceTab
+   * @returns {boolean}
+   */
+  static canOpenAboutTranslationsInSplitView(sourceTab) {
+    return (
+      lazy.splitViewEnabledPref && !sourceTab.splitview && !sourceTab.pinned
+    );
+  }
+
+  /**
    * Opens the about:translations page with the provided hash parameters.
    *
    * @param {object} options
@@ -4980,17 +5059,41 @@ export class TranslationsParent extends JSWindowActorParent {
    * @param {string} [options.sourceLanguage="detect"]
    *   The pre-populated source language.
    * @param {string} [options.targetLanguage=""]
-   *   The pre-populated target language. Callers may pass "derive" to populate this value with the user's
-   *   top preferred supported target language {@link TranslationsParent.getTopPreferredSupportedToLang}.
+   *   The pre-populated target language. Standalone callers may pass "derive"
+   *   to use the user's top preferred supported target language.
    * @param {string} [options.text=""]
    *   The pre-populated text to translate.
+   * @param {MozTabbrowserTab} [options.splitViewSourceTab]
+   *   The selected tab in browserWindow to open beside. If Split View is
+   *   unavailable for this tab, the page opens standalone. The caller provides
+   *   the language choices for this tab.
+   * @returns {Promise<void>}
+   * @throws {TypeError} If a Split View request supplies an invalid source tab
+   *   or asks to derive the target.
    */
   static async openAboutTranslationsPage({
     browserWindow,
+    splitViewSourceTab,
     sourceLanguage = "detect",
     targetLanguage = "",
     text = "",
   }) {
+    if (splitViewSourceTab !== undefined) {
+      if (
+        !splitViewSourceTab ||
+        splitViewSourceTab !== browserWindow?.gBrowser?.selectedTab ||
+        splitViewSourceTab.closing
+      ) {
+        throw new TypeError(
+          "Split View requires the selected tab in browserWindow"
+        );
+      }
+
+      if (targetLanguage === "derive") {
+        throw new TypeError("Split View requires a resolved target language");
+      }
+    }
+
     const url = new URL("about:translations");
     const searchParameters = new URLSearchParams();
 
@@ -5012,13 +5115,76 @@ export class TranslationsParent extends JSWindowActorParent {
     }
 
     url.hash = searchParameters.toString();
+
+    if (
+      splitViewSourceTab &&
+      TranslationsParent.#openAboutTranslationsPageInSplitView(
+        browserWindow.gBrowser,
+        splitViewSourceTab,
+        url
+      )
+    ) {
+      return;
+    }
+
     browserWindow.switchToTabHavingURI(
       Services.io.newURI(url.href),
       /* aOpenNew */ true,
       {
         ignoreFragment: "whenComparing",
+        tabFilter: tab => !tab.splitview,
       }
     );
+  }
+
+  /**
+   * Opens a new companion tab, preferring Split View.
+   *
+   * @param {MozTabbrowser} gBrowser
+   * @param {MozTabbrowserTab} sourceTab
+   * @param {URL} url
+   * @returns {boolean} Whether a new translation tab was opened.
+   */
+  static #openAboutTranslationsPageInSplitView(gBrowser, sourceTab, url) {
+    if (!TranslationsParent.canOpenAboutTranslationsInSplitView(sourceTab)) {
+      if (sourceTab.splitview) {
+        // The panel hides the companion button for tabs already in Split View.
+        lazy.console.warn(
+          "Attempt to open about:translations in Split View for an already split tab."
+        );
+      }
+
+      return false;
+    }
+
+    const aboutTranslationsTab = gBrowser.addTrustedTab(url.href, {
+      inBackground: true,
+      tabIndex: sourceTab._tPos + 1,
+    });
+    if (!aboutTranslationsTab) {
+      return false;
+    }
+
+    const splitview = gBrowser.addTabSplitView(
+      [aboutTranslationsTab, sourceTab],
+      {
+        firstPanelInitialWidthPercent:
+          ABOUT_TRANSLATIONS_SPLIT_VIEW_WIDTH_PERCENT,
+        insertBefore: sourceTab,
+        trigger: "translations_companion",
+      }
+    );
+
+    if (splitview === null) {
+      lazy.console.error(
+        "Failed to create a Split View for the translations companion. Opening standalone."
+      );
+    }
+
+    gBrowser.selectedTab = aboutTranslationsTab;
+    aboutTranslationsTab.linkedBrowser.focus();
+
+    return true;
   }
 
   /**
