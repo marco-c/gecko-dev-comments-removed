@@ -281,6 +281,7 @@ enum class PropertiesFile : uint8_t {
 
 namespace mozilla::dom {
 enum JSONBehavior { UndefinedIsNullStringLiteral, UndefinedIsVoidString };
+enum class AltText : bool { Exclude, Include };
 }  
 
 
@@ -2210,6 +2211,14 @@ class nsContentUtils {
   static bool AppendNodeTextContent(const nsINode* aNode, bool aDeep,
                                     nsACString& aResult,
                                     const mozilla::fallible_t&);
+
+  
+
+
+
+  static void GetHTMLAwareTextContent(const mozilla::dom::Element& aElement,
+                                      mozilla::dom::AltText aAltText,
+                                      nsAString& aResult);
 
   
 
