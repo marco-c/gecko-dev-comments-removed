@@ -98,11 +98,11 @@ const char* AVCodecToString(const AVCodecID& aCodec);
 
 
 
-inline int32_t GetBuffer2StrideAlign(int32_t aStride) {
-  
-  static constexpr int32_t kStrideAlign = 64;
-  static constexpr int32_t kPlaneTrailingPadding = 16 + kStrideAlign - 1;
 
+constexpr int32_t kStrideAlign = 64;
+constexpr int32_t kPlaneTrailingPadding = 16 + kStrideAlign - 1;
+
+constexpr int32_t GetBuffer2StrideAlign(int32_t aStride) {
   return (kPlaneTrailingPadding + aStride - 1) / aStride;
 }
 
