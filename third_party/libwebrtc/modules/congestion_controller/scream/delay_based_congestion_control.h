@@ -34,9 +34,11 @@ class DelayBasedCongestionControl {
   void Update(const ScreamFeedback& feedback, bool alr);
 
   
+  
   bool IsQueueDelayDetected() const {
     return queue_delay_avg_.IsFinite() &&
-           queue_delay_avg_ > params_.queue_delay_target.Get() / 2;
+           queue_delay_avg_ > params_.queue_delay_target.Get() *
+                                  params_.queue_delay_detected_factor.Get();
   }
 
   
@@ -56,6 +58,8 @@ class DelayBasedCongestionControl {
 
   TimeDelta queue_delay_min_avg() const { return queue_delay_min_avg_; }
   TimeDelta latency_difference_avg() const { return latency_difference_avg_; }
+  TimeDelta qdelay_short_avg() const { return qdelay_short_avg_; }
+  TimeDelta qdelay_long_avg() const { return qdelay_long_avg_; }
 
   
   
@@ -82,6 +86,7 @@ class DelayBasedCongestionControl {
   void UpdateQueueDelayAverage(TimeDelta one_way_delay);
   void UpdateQueueDelayMinAverage(TimeDelta packet_qdelay);
   void UpdateLatencyDifferenceAverage(TimeDelta packet_latency_diff);
+  void CalculateQueueDelayTrend(TimeDelta max_queue_delay);
 
   const ScreamV2Parameters params_;
 
@@ -94,11 +99,15 @@ class DelayBasedCongestionControl {
   Timestamp min_queue_delay_above_threshold_start_ = Timestamp::MinusInfinity();
   TimeDelta last_smoothed_rtt_ = TimeDelta::Zero();
 
-  Timestamp last_update_qdelay_avg_time_ = Timestamp::MinusInfinity();
   TimeDelta last_queue_delay_sample_ = TimeDelta::PlusInfinity();
   TimeDelta queue_delay_avg_ = TimeDelta::PlusInfinity();
   TimeDelta queue_delay_min_avg_ = TimeDelta::Zero();
   TimeDelta latency_difference_avg_ = TimeDelta::Zero();
+  TimeDelta qdelay_short_avg_ = TimeDelta::Zero();
+  TimeDelta qdelay_long_avg_ = TimeDelta::Zero();
+  
+  
+  double queue_delay_trend_ = 0.0;
 };
 
 }  

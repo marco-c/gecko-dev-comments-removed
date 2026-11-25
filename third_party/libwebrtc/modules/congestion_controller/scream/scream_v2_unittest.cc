@@ -423,7 +423,7 @@ TEST(ScreamV2Test, AdaptsToDelayLinkCapacity2MbpsWithReorderedPackets) {
   EXPECT_LT(result.data_rate, DataRate::KilobitsPerSec(2500));
   EXPECT_GT(result.data_rate, DataRate::KilobitsPerSec(1500));
   EXPECT_LT(result.max_rate_after_adaption, DataRate::KilobitsPerSec(2500));
-  EXPECT_GT(result.min_rate_after_adaption, DataRate::KilobitsPerSec(1500));
+  EXPECT_GT(result.min_rate_after_adaption, DataRate::KilobitsPerSec(900));
 
   EXPECT_LT(result.max_smoothed_rtt_after_adaptation,
             TimeDelta::Millis(10 * 2 + 50 + 10));

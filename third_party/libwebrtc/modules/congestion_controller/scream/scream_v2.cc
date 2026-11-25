@@ -174,13 +174,13 @@ void ScreamV2::UpdateRefWindow(const ScreamFeedback& parsed) {
   bool is_virtual_ce = false;
   if (params_.use_spec_backoff.Get()) {
     if (time_since_last_reaction >= min_reaction_interval && !is_loss &&
-        !is_ce && delay_based_congestion_control_.IsQueueDelayDetected() &&
+        !is_ce && delay_based_congestion_control_.l4s_alpha_v() > 0.0 &&
         delay_based_congestion_control_.queue_delay() >=
             queue_delay_avg_prev_) {
       is_virtual_ce = true;
     }
   } else {
-    is_virtual_ce = delay_based_congestion_control_.IsQueueDelayDetected();
+    is_virtual_ce = delay_based_congestion_control_.l4s_alpha_v() > 0.0;
   }
 
   DataSize previous_ref_window = ref_window_;
@@ -198,14 +198,15 @@ void ScreamV2::UpdateRefWindow(const ScreamFeedback& parsed) {
         
         
         
-        backoff *=
-            std::max(0.25, ref_window_scale_factor_close_to_ref_window_i());
-        
-        
-        
-        backoff *=
-            std::max(0.1, delay_based_congestion_control_
-                              .ref_window_scale_factor_due_to_avg_min_delay());
+        backoff *= ref_window_scale_factor_close_to_ref_window_i();
+        if (!params_.reduce_jitter.Get()) {
+          
+          
+          
+          backoff *= std::max(
+              0.1, delay_based_congestion_control_
+                       .ref_window_scale_factor_due_to_avg_min_delay());
+        }
       }
 
       if (time_since_last_reaction.IsFinite() &&
@@ -271,31 +272,6 @@ void ScreamV2::UpdateRefWindow(const ScreamFeedback& parsed) {
     }
 
     
-    increase_scale_factor =
-        increase_scale_factor *
-        std::max(0.25, ref_window_scale_factor_close_to_ref_window_i());
-
-    
-    
-    
-    
-    if (params_.use_min_delay_scale_on_increase.Get()) {
-      increase_scale_factor =
-          increase_scale_factor *
-          std::min(delay_based_congestion_control_
-                       .ref_window_scale_factor_due_to_avg_min_delay(),
-                   delay_based_congestion_control_
-                       .ref_window_scale_factor_due_to_latency_difference());
-    } else {
-      increase_scale_factor =
-          increase_scale_factor *
-          (delay_based_congestion_control_
-               .ref_window_scale_factor_due_to_avg_min_delay() *
-           delay_based_congestion_control_
-               .ref_window_scale_factor_due_to_latency_difference());
-    }
-
-    
     
     const TimeDelta max_of_virtual_and_smothed_rtt = std::max(
         params_.virtual_rtt.Get(), delay_based_congestion_control_.rtt());
@@ -304,6 +280,43 @@ void ScreamV2::UpdateRefWindow(const ScreamFeedback& parsed) {
                        (params_.post_congestion_delay_rtts.Get() *
                         max_of_virtual_and_smothed_rtt),
                    0.0, 1.0);
+    
+    increase_scale_factor *= ref_window_scale_factor_close_to_ref_window_i();
+    if (params_.reduce_jitter.Get()) {
+      
+      
+      
+      
+      post_congestion_scale *=
+          delay_based_congestion_control_
+              .ref_window_scale_factor_due_to_latency_difference();
+      
+      increase_scale_factor *=
+          1.0 /
+          (4.0 -
+           3.0 * delay_based_congestion_control_
+                     .ref_window_scale_factor_due_to_latency_difference());
+    } else {
+      
+      
+      
+      
+      if (params_.use_min_delay_scale_on_increase.Get()) {
+        increase_scale_factor =
+            increase_scale_factor *
+            std::min(delay_based_congestion_control_
+                         .ref_window_scale_factor_due_to_avg_min_delay(),
+                     delay_based_congestion_control_
+                         .ref_window_scale_factor_due_to_latency_difference());
+      } else {
+        increase_scale_factor =
+            increase_scale_factor *
+            (delay_based_congestion_control_
+                 .ref_window_scale_factor_due_to_avg_min_delay() *
+             delay_based_congestion_control_
+                 .ref_window_scale_factor_due_to_latency_difference());
+      }
+    }
     double multiplicative_scale =
         1.0 + (ref_window_multiplicative_scale_factor() - 1.0) *
                   post_congestion_scale;
@@ -327,7 +340,12 @@ void ScreamV2::UpdateRefWindow(const ScreamFeedback& parsed) {
     
     const TimeDelta max_of_virtual_and_smoothed_rtt = std::max(
         params_.virtual_rtt.Get(), delay_based_congestion_control_.rtt());
-    if (previous_ref_window > ref_window_lowest_ * 1.05 ||
+    DataSize min_ref_window_for_update =
+        params_.reduce_jitter.Get()
+            ? std::max(ref_window_lowest_ + params_.max_segment_size.Get(),
+                       ref_window_lowest_ * 1.05)
+            : ref_window_lowest_ * 1.05;
+    if (previous_ref_window > min_ref_window_for_update ||
         parsed.feedback_time - last_ref_window_i_update_time_ >
             params_.ref_window_i_update_max_hold_rtts.Get() *
                 max_of_virtual_and_smoothed_rtt) {
@@ -339,7 +357,8 @@ void ScreamV2::UpdateRefWindow(const ScreamFeedback& parsed) {
 
   RTC_LOG_IF(LS_VERBOSE, previous_ref_window != ref_window_)
       << "ScreamV2: "
-      << ", ref_window = " << ref_window_ << " ref_window_i_=" << ref_window_i_
+      << ", ref_window = " << ref_window_
+      << " ref_window_i_=" << ref_window_i_.value_or(DataSize::Zero())
       << ", change=" << ref_window_.bytes() - previous_ref_window.bytes()
       << " bytes "
       << ", l4s_alpha=" << l4s_alpha_ << ", is_ce=" << is_ce
@@ -352,13 +371,17 @@ void ScreamV2::UpdateRefWindow(const ScreamFeedback& parsed) {
 
 DataSize ScreamV2::max_data_in_flight() const {
   
-  double ref_window_overhead =
-      params_.ref_window_overhead_min.Get() +
-      (params_.ref_window_overhead_max.Get() -
-       params_.ref_window_overhead_min.Get()) *
-          delay_based_congestion_control_
-              .ref_window_scale_factor_due_to_avg_min_delay(
-                  true);
+  double delay_scale =
+      params_.reduce_jitter.Get()
+          ? delay_based_congestion_control_
+                .ref_window_scale_factor_due_to_latency_difference()
+          : delay_based_congestion_control_
+                .ref_window_scale_factor_due_to_avg_min_delay(
+                    true);
+  double ref_window_overhead = params_.ref_window_overhead_min.Get() +
+                               (params_.ref_window_overhead_max.Get() -
+                                params_.ref_window_overhead_min.Get()) *
+                                   delay_scale;
 
   return std::max(ref_window_ * ref_window_overhead,
                   params_.max_segment_size.Get() *

@@ -112,6 +112,37 @@ struct ScreamV2Parameters {
   FieldTrialParameter<bool> use_min_delay_scale_on_increase;
   
   
+  
+  FieldTrialParameter<bool> reduce_jitter;
+  
+  
+  
+  FieldTrialParameter<double> queue_delay_short_avg_g;
+  
+  
+  
+  
+  FieldTrialParameter<double> queue_delay_long_avg_g;
+  
+  
+  
+  
+  FieldTrialParameter<TimeDelta> latency_diff_margin_1;
+  
+  
+  
+  
+  FieldTrialParameter<TimeDelta> latency_diff_margin_2;
+  
+  
+  
+  FieldTrialParameter<double> latency_diff_up_gain;
+  
+  
+  
+  FieldTrialParameter<double> latency_diff_down_gain;
+  
+  
   FieldTrialParameter<TimeDelta> burst_window_min;
   
   
@@ -131,6 +162,9 @@ struct ScreamV2Parameters {
   
   
   FieldTrialParameter<TimeDelta> queue_delay_target;
+  
+  
+  FieldTrialParameter<double> queue_delay_detected_factor;
 
   
   

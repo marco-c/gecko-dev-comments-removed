@@ -12,6 +12,7 @@
 #define MODULES_CONGESTION_CONTROLLER_SCREAM_SCREAM_V2_H_
 
 #include <algorithm>
+#include <optional>
 
 #include "api/environment/environment.h"
 #include "api/transport/network_types.h"
@@ -66,7 +67,7 @@ class ScreamV2 {
   DataSize ref_window() const { return ref_window_; }
 
   
-  DataSize ref_window_i() const { return ref_window_i_; }
+  std::optional<DataSize> ref_window_i() const { return ref_window_i_; }
 
   
   
@@ -110,13 +111,29 @@ class ScreamV2 {
   
   
   double ref_window_scale_factor_close_to_ref_window_i() const {
+    if (!ref_window_i_.has_value()) {
+      return 1.0;
+    }
     const double scale_factor =
         params_.backoff_scale_factor_close_to_ref_window_i.Get();
     double scl =
-        ref_window_ > ref_window_i_
-            ? scale_factor * (ref_window_ - ref_window_i_) / ref_window_i_
-            : scale_factor * (ref_window_i_ - ref_window_) / ref_window_i_;
-    return std::clamp(scl * scl, 0.1, 1.0);
+        ref_window_ > *ref_window_i_
+            ? scale_factor * (ref_window_ - *ref_window_i_) / *ref_window_i_
+            : scale_factor * (*ref_window_i_ - ref_window_) / *ref_window_i_;
+    if (params_.reduce_jitter.Get()) {
+      scl = std::clamp(scl * scl, 0.2, 1.0);
+      
+      
+      
+      if (ref_window_ > *ref_window_i_ && scl < 1.0) {
+        scl = std::max(
+            0.2,
+            scl * delay_based_congestion_control_
+                      .ref_window_scale_factor_due_to_latency_difference());
+      }
+      return scl;
+    }
+    return std::clamp(scl * scl, 0.25, 1.0);
   }
 
   
@@ -155,7 +172,7 @@ class ScreamV2 {
   
   
   
-  DataSize ref_window_i_ = DataSize::Bytes(1);
+  std::optional<DataSize> ref_window_i_;
   
   
   
