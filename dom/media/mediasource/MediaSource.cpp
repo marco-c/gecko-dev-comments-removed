@@ -634,9 +634,8 @@ void MediaSource::DurationChangeOnEndOfStream() {
   
   
   if (!newDuration.IsValid()) {
-    MSE_DEBUG(
-        "DurationChangeOnEndOfStream: duration overflow (highestEndTime=%s)",
-        highestEndTime.ToString().get());
+    MSE_DEBUG("duration overflow (highestEndTime={})",
+              highestEndTime.ToString().get());
     return;
   }
   MSE_DEBUG("DurationChangeOnEndOfStream(newDuration={})",
