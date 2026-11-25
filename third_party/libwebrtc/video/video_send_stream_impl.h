@@ -218,7 +218,7 @@ class VideoSendStreamImpl : public webrtc::VideoSendStream,
   const bool has_alr_probing_;
   const PacingConfig pacing_config_;
 
-  TaskQueueBase* const worker_queue_;
+  TaskQueueBase* const network_queue_;
 
   RepeatingTaskHandle check_encoder_activity_task_
       RTC_GUARDED_BY(thread_checker_);
@@ -246,7 +246,7 @@ class VideoSendStreamImpl : public webrtc::VideoSendStream,
   std::vector<scoped_refptr<Resource>> adaptation_resources_
       RTC_GUARDED_BY(thread_checker_);
 
-  ScopedTaskSafety worker_queue_safety_;
+  ScopedTaskSafety network_queue_safety_;
 };
 }  
 }  
