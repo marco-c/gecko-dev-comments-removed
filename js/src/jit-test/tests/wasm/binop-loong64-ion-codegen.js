@@ -516,13 +516,13 @@ for ( [imm, expect] of
         
         ['0x87654321',
          `lu12i.w         \\$t6, -493996
-          bstrins.d       \\$t6, \\$zero, 0x3f, 0x20
-          ori             \\$t6, \\$t6, 0x321`],
+          ori             \\$t6, \\$t6, 0x321
+          lu32i.d         \\$t6, 0`],
         
         ['0x187654321',
          `lu12i.w         \\$t6, -493996
-          lu32i.d         \\$t6, 1
-          ori             \\$t6, \\$t6, 0x321`]] ) {
+          ori             \\$t6, \\$t6, 0x321
+          lu32i.d         \\$t6, 1`]] ) {
   codegenTestLOONG64_adhoc(
       andEq0Const(imm),
       "f",
