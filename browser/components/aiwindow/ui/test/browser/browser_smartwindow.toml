@@ -128,8 +128,6 @@ skip-if = [
 
 ["browser_smartwindow_content.js"]
 
-["browser_smartwindow_context_url.js"]
-
 ["browser_smartwindow_conversation_state.js"]
 
 ["browser_smartwindow_default_cmd_n.js"]
@@ -207,8 +205,6 @@ skip-if = [
 ["browser_smartwindow_request_response_stream_errors_telemetry.js"]
 
 ["browser_smartwindow_request_response_telemetry.js"]
-
-["browser_smartwindow_resume_card.js"]
 
 ["browser_smartwindow_resume_section.js"]
 
