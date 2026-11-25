@@ -9,8 +9,6 @@ prefs = [
   "media.seamless-looping-video=false",
   # Bug 2021606
   "privacy.baselineFingerprintingProtection=false",
-  # Bug 2077709
-  "dom.navigation.navigationRateLimit.count=0",
 ]
 
 support-files = [
@@ -110,9 +108,6 @@ fail-if = [
 ["test_2_conformance2__glsl3__short-circuiting-in-loop-condition.html"]
 
 ["test_2_conformance2__glsl3__switch-case.html"]
-fail-if = [
-  "os == 'win' && os_version == '11.26200'",
-]
 
 ["test_2_conformance2__glsl3__texture-bias.html"]
 fail-if = [
