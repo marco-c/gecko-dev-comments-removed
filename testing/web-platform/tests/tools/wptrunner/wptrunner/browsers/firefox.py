@@ -874,6 +874,10 @@ class ProfileCreator:
         else:
             
             
+            prefs["marionette.navigate-after-click.enabled"] = False
+
+            
+            
             prefs["remote.events.async.wheel.enabled"] = True
 
         if self.debug_test:

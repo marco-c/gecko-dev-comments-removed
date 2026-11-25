@@ -227,6 +227,10 @@ class ProfileCreator(FirefoxProfileCreator):
         else:
             
             
+            prefs["marionette.navigate-after-click.enabled"] = False
+
+            
+            
             prefs["remote.events.async.wheel.enabled"] = True
 
         return prefs
