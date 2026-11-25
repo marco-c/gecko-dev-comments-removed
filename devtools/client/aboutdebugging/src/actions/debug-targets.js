@@ -150,7 +150,6 @@ function pushServiceWorker(id, registrationFront) {
     try {
       
       
-      
       await registrationFront.push();
     } catch (e) {
       console.error(e);

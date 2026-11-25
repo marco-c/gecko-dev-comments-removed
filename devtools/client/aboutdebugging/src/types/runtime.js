@@ -56,10 +56,6 @@ exports.compatibilityReport = PropTypes.shape(compatibilityReport);
 
 const runtimeDetails = {
   
-  
-  canDebugServiceWorkers: PropTypes.bool,
-
-  
   clientWrapper: PropTypes.instanceOf(ClientWrapper).isRequired,
 
   

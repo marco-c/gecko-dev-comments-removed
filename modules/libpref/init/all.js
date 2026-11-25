@@ -3271,6 +3271,10 @@ pref("captivedetect.pollingTime", 3000);
 pref("captivedetect.maxRetryCount", 5);
 
 
+pref("captivedetect.httpsCheck.enabled", true);
+pref("captivedetect.httpsCheck.url", "https://firefox-portal-detection.com/generate_204");
+
+
 pref("urlclassifier.malwareTable", "goog-malware-proto,goog-unwanted-proto,moztest-harmful-simple,moztest-malware-simple,moztest-unwanted-simple");
 #ifdef MOZILLA_OFFICIAL
   
@@ -3967,9 +3971,6 @@ pref("devtools.errorconsole.deprecation_warnings", true);
   pref("devtools.chrome.enabled", true, sticky);
   pref("devtools.debugger.remote-enabled", true, sticky);
 #endif
-
-
-pref("devtools.debugger.features.windowless-service-workers", true);
 
 
 pref("devtools.debugger.log", false);
