@@ -46,8 +46,8 @@ std::mutex g_backend_mutex;
 
 constexpr int kDefaultThreads = 8;
 
-Backend& global_backend() {
-    
+
+static Backend& global_backend_locked() {
     
     
     if (!g_backend) {
@@ -66,6 +66,14 @@ Backend& global_backend() {
     return *g_backend;
 }
 
+
+
+
+Backend& global_backend() {
+    std::lock_guard<std::mutex> lock(g_backend_mutex);
+    return global_backend_locked();
+}
+
 void shutdown_backend() {
     
     
@@ -82,7 +90,7 @@ bool run_graph(size_t , int n_threads,
                const std::function<ggml_tensor*(ggml_context*)>& build,
                std::vector<float>& out) {
     std::lock_guard<std::mutex> lock(g_backend_mutex);
-    Backend& be = global_backend();
+    Backend& be = global_backend_locked();
     
     
     

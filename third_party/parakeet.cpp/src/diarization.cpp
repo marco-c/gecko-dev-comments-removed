@@ -30,7 +30,7 @@ std::unique_ptr<DiarizationModel> DiarizationModel::load(const std::string& path
 
     
     
-    ensure_weights_realized(m->loader_);
+    if (!ensure_weights_realized(m->loader_)) return nullptr;
 
     
     m->mel_     = std::make_unique<MelFrontend>(m->loader_);

@@ -348,14 +348,14 @@ void capture_graph_output(ggml_tensor* t, std::vector<float>* dst) {
     t_active->register_capture(t, dst);
 }
 
-void ensure_weights_realized(const ModelLoader& ml) {
-    if (ml.weights_realized()) return;
+bool ensure_weights_realized(const ModelLoader& ml) {
+    if (ml.weights_realized()) return true;
     
     
     
     
     ModelLoader& mut = const_cast<ModelLoader&>(ml);
-    mut.realize_weights(global_backend().handle());
+    return mut.realize_weights(global_backend().handle());
 }
 
 ggml_tensor* clone_weight(ggml_context* , const ModelLoader& ml,

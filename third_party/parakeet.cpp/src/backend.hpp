@@ -142,7 +142,10 @@ ggml_tensor* clone_weight_opt(ggml_context* ctx, const ModelLoader& ml,
 
 
 
-void ensure_weights_realized(const ModelLoader& ml);
+
+
+
+bool ensure_weights_realized(const ModelLoader& ml);
 
 
 
