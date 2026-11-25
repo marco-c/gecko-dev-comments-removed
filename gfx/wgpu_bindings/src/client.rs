@@ -6,8 +6,8 @@ use crate::error::GPUError;
 use crate::{
     cow_label, raw_string_to_string, wgpu_string, AdapterInformation, ByteBuf, DeviceAction,
     FfiDeviceLostReason, FfiErrorFilter, FfiPopErrorScopeResultType, FfiRequestDeviceError,
-    FfiSlice, FfiTexelCopyBufferLayout, FfiTextureDescriptor, QueueWriteAction, RawString,
-    ShaderModuleCompilationMessage, TextureAction,
+    FfiSlice, FfiTexelCopyBufferLayout, FfiTextureDescriptor, FfiTextureViewDescriptor,
+    QueueWriteAction, RawString, ShaderModuleCompilationMessage, TextureAction,
 };
 
 use crate::{BufferMapResult, Message, QueueWriteDataSource, ServerMessage, SwapChainId};
@@ -427,7 +427,7 @@ pub extern "C" fn wgpu_client_new(
 #[no_mangle]
 pub unsafe extern "C" fn wgpu_client_delete(client: *mut Client) {
     log::info!("Terminating WGPU client");
-    let _client = Box::from_raw(client);
+    let _client = unsafe { Box::from_raw(client) };
 }
 
 #[no_mangle]
@@ -1083,32 +1083,53 @@ pub extern "C" fn wgpu_client_free_texture_id(client: &Client, id: id::TextureId
     client.identities.lock().textures.free(id)
 }
 
+impl FfiTextureViewDescriptor<'_> {
+    fn to_wgpu(&'_ self) -> TextureViewDescriptor<'_> {
+        let s = self.swizzle.map(|c| {
+            match c {
+                b'0' => wgt::ComponentSwizzle::Zero,
+                b'1' => wgt::ComponentSwizzle::One,
+                b'r' => wgt::ComponentSwizzle::R,
+                b'g' => wgt::ComponentSwizzle::G,
+                b'b' => wgt::ComponentSwizzle::B,
+                b'a' => wgt::ComponentSwizzle::A,
+                
+                _ => unreachable!(),
+            }
+        });
+        let swizzle = wgt::TextureComponentSwizzle {
+            r: s[0],
+            g: s[1],
+            b: s[2],
+            a: s[3],
+        };
+
+        TextureViewDescriptor {
+            label: wgpu_string(self.label),
+            format: self.format.cloned(),
+            dimension: self.dimension.cloned(),
+            range: wgt::ImageSubresourceRange {
+                aspect: self.aspect,
+                base_mip_level: self.base_mip_level,
+                mip_level_count: self.mip_level_count.map(|ptr| *ptr),
+                base_array_layer: self.base_array_layer,
+                array_layer_count: self.array_layer_count.map(|ptr| *ptr),
+            },
+            usage: Some(self.usage),
+            swizzle,
+        }
+    }
+}
+
 #[no_mangle]
 pub extern "C" fn wgpu_client_create_texture_view(
     client: &Client,
     texture_id: id::TextureId,
     desc: &crate::FfiTextureViewDescriptor,
 ) -> id::TextureViewId {
-    let label = wgpu_string(desc.label);
-
     let id = client.identities.lock().texture_views.process();
 
-    let wgpu_desc = TextureViewDescriptor {
-        label,
-        format: desc.format.cloned(),
-        dimension: desc.dimension.cloned(),
-        range: wgt::ImageSubresourceRange {
-            aspect: desc.aspect,
-            base_mip_level: desc.base_mip_level,
-            mip_level_count: desc.mip_level_count.map(|ptr| *ptr),
-            base_array_layer: desc.base_array_layer,
-            array_layer_count: desc.array_layer_count.map(|ptr| *ptr),
-        },
-        usage: Some(desc.usage),
-        swizzle: Default::default(),
-    };
-
-    let action = TextureAction::CreateView(id, wgpu_desc);
+    let action = TextureAction::CreateView(id, desc.to_wgpu());
     let message = Message::Texture(texture_id, action);
     client.queue_message(&message);
     id
@@ -1260,7 +1281,7 @@ pub unsafe extern "C" fn wgpu_client_render_bundle_encoder_set_bind_group(
     let command = RenderBundleEncoderCommand::BindingCommand(BindingCommand::SetBindGroup {
         index,
         bind_group,
-        dynamic_offsets: dynamic_offsets.as_slice().to_vec(),
+        dynamic_offsets: unsafe { dynamic_offsets.as_slice() }.to_vec(),
     });
     let message = Message::RenderBundleEncoder(encoder_id, command);
     client.queue_message(&message);
@@ -1546,8 +1567,7 @@ pub unsafe extern "C" fn wgpu_client_command_encoder_begin_render_pass(
 
     let label = wgpu_string(label);
 
-    let color_attachments: Vec<_> = color_attachments
-        .as_slice()
+    let color_attachments: Vec<_> = unsafe { color_attachments.as_slice() }
         .iter()
         .map(|att_opt| att_opt.as_ref().map(|att| att.clone()))
         .collect();
@@ -1582,9 +1602,7 @@ pub unsafe extern "C" fn wgpu_client_create_bind_group_layout(
 
     let id = client.identities.lock().bind_group_layouts.process();
 
-    let entries = desc
-        .entries
-        .as_slice()
+    let entries = unsafe { desc.entries.as_slice() }
         .iter()
         .enumerate()
         .map(|(idx, entry)| {
@@ -1746,7 +1764,7 @@ pub unsafe extern "C" fn wgpu_client_create_pipeline_layout(
 
     let wgpu_desc = PipelineLayoutDescriptor {
         label,
-        bind_group_layouts: Cow::Borrowed(desc.bind_group_layouts.as_slice()),
+        bind_group_layouts: Cow::Borrowed(unsafe { desc.bind_group_layouts.as_slice() }),
         immediate_size: 0,
     };
 
@@ -1766,9 +1784,7 @@ pub unsafe extern "C" fn wgpu_client_create_bind_group(
 
     let id = client.identities.lock().bind_groups.process();
 
-    let entries = desc
-        .entries
-        .as_slice()
+    let entries = unsafe { desc.entries.as_slice() }
         .iter()
         .map(|entry| BindGroupEntry {
             binding: entry.binding,
@@ -2047,7 +2063,10 @@ pub unsafe extern "C" fn wgpu_report_validation_error(
     message: *const core::ffi::c_char,
 ) {
     let action = DeviceAction::Error(GPUError {
-        message: core::ffi::CStr::from_ptr(message).to_str().unwrap().into(),
+        message: unsafe { core::ffi::CStr::from_ptr(message) }
+            .to_str()
+            .unwrap()
+            .into(),
         r#type: wgt::error::ErrorType::Validation,
     });
     let message = Message::Device(device_id, action);

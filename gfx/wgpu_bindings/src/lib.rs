@@ -159,6 +159,9 @@ pub struct FfiTextureViewDescriptor<'a> {
     base_array_layer: u32,
     array_layer_count: Option<&'a u32>,
     usage: wgt::TextureUsages,
+
+    
+    swizzle: [u8; 4],
 }
 
 
