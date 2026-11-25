@@ -115,6 +115,20 @@ async function ensurePlaceholder(tab, expectedId, expectedEngine) {
         ".search-handoff-button"
       );
       let expectedAttributes = { id, args: engine ? { engine } : null };
+      
+      
+      await ContentTaskUtils.waitForMutationCondition(
+        buttonNode,
+        { attributeFilter: ["data-l10n-id", "data-l10n-args"] },
+        () => {
+          let { id: l10nId, args } =
+            content.document.l10n.getAttributes(buttonNode);
+          return (
+            l10nId == expectedAttributes.id &&
+            JSON.stringify(args) == JSON.stringify(expectedAttributes.args)
+          );
+        }
+      );
       Assert.deepEqual(
         content.document.l10n.getAttributes(buttonNode),
         expectedAttributes,
