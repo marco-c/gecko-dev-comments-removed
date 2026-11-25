@@ -574,6 +574,10 @@ class BaseResourceMonitor:
 
         self._pipe, child_pipe = multiprocessing.Pipe(True)
 
+        
+        
+        
+        
         self._process = multiprocessing.Process(
             target=_collect, args=(child_pipe, poll_interval)
         )
