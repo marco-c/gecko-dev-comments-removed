@@ -6501,7 +6501,11 @@ void MacroAssemblerLOONG64Compat::boxValue(Register type, Register src,
   bind(&done);
 #endif
 
-  ma_or(dest, type, Imm32(JSVAL_TAG_MAX_DOUBLE));
+  
+  
+  static_assert(JSVAL_TAG_MAX_DOUBLE == 0x1FFF0,
+                "Type must fit the lowest nybble of JSVAL_TAG_MAX_DOUBLE");
+  ma_add_d(dest, type, ImmTagSignExt(JSVAL_TAG_MAX_DOUBLE));
   as_slli_d(dest, dest, JSVAL_TAG_SHIFT);
   as_bstrins_d(dest, src, 31, 0);
 }
