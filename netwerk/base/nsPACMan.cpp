@@ -884,9 +884,9 @@ bool nsPACMan::ProcessPending() {
         
         
         
-        NS_SUCCEEDED(mSystemProxySettings->GetProxyForURI(
+        (void)mSystemProxySettings->GetProxyForURI(
             query->mSpec, nsDependentCString(kProxyType_HTTPS), query->mHost,
-            query->mPort, pacString));
+            query->mPort, pacString);
       }
     }
     LOG(("Use proxy from system settings: %s\n", pacString.get()));
