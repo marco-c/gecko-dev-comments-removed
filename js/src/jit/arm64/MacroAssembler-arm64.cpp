@@ -378,7 +378,7 @@ void MacroAssemblerCompat::handleFailureWithHandlerTail(
   asMasm().branch32(Assembler::Equal, r0, Imm32(ExceptionResumeKind::WasmCatch),
                     &wasmCatch);
 
-  breakpoint();  
+  crash();  
 
   
   
@@ -546,6 +546,13 @@ void MacroAssemblerCompat::breakpoint() {
   
   
   Brk(0xf000);
+}
+
+void MacroAssemblerCompat::crash() {
+#ifdef DEBUG
+  breakpoint();
+#endif
+  Unreachable();
 }
 
 void MacroAssemblerCompat::minMax32(Register lhs, Register rhs, Register dest,

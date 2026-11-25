@@ -78,6 +78,7 @@ class MacroAssemblerNone : public Assembler {
   void bind(T) {
     MOZ_CRASH();
   }
+  void bind(Label*, BufferOffset) { MOZ_CRASH(); }
   template <typename T>
   void j(Condition, T) {
     MOZ_CRASH();
@@ -95,6 +96,7 @@ class MacroAssemblerNone : public Assembler {
 
   void nop() { MOZ_CRASH(); }
   void breakpoint() { MOZ_CRASH(); }
+  void crash() { MOZ_CRASH(); }
   void abiret() { MOZ_CRASH(); }
   BufferOffset ret() { MOZ_CRASH(); }
 

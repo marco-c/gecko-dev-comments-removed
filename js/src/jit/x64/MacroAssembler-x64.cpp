@@ -784,7 +784,7 @@ void MacroAssemblerX64::handleFailureWithHandlerTail(
   asMasm().branch32(Assembler::Equal, rax,
                     Imm32(ExceptionResumeKind::WasmCatch), &wasmCatch);
 
-  breakpoint();  
+  crash();  
 
   
   

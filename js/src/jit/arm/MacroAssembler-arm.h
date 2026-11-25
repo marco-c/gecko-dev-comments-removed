@@ -1343,6 +1343,8 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM {
   
   void breakpoint(Condition cc);
 
+  void crash();
+
   
   
   

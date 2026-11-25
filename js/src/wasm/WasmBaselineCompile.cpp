@@ -791,7 +791,7 @@ bool BaseCompiler::endFunction() {
   JitSpew(JitSpew_Codegen, "# endFunction: start of function epilogue");
 
   
-  masm.breakpoint();
+  masm.crash();
 
   
   

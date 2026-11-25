@@ -5,6 +5,7 @@
 #ifndef jit_wasm32_MacroAssembler_wasm32_h
 #define jit_wasm32_MacroAssembler_wasm32_h
 
+#include "jit/shared/IonAssemblerBuffer.h"
 #include "jit/wasm32/Assembler-wasm32.h"
 
 namespace js::jit {
@@ -72,6 +73,8 @@ class MacroAssemblerWasm32 : public Assembler {
 
   void bind(Label* label) { MOZ_CRASH(); }
 
+  void bind(Label* label, BufferOffset) { MOZ_CRASH(); }
+
   void bind(CodeLabel* label) { MOZ_CRASH(); }
 
   template <typename T>
@@ -103,6 +106,7 @@ class MacroAssemblerWasm32 : public Assembler {
   void nop();
 
   void breakpoint();
+  void crash();
 
   void abiret();
   void ret();

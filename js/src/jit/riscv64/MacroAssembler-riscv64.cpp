@@ -2559,6 +2559,8 @@ void MacroAssemblerRiscv64Compat::popValue(ValueOperand val) {
 
 void MacroAssemblerRiscv64Compat::breakpoint(uint32_t value) { break_(value); }
 
+void MacroAssemblerRiscv64Compat::crash() { break_(0); }
+
 void MacroAssemblerRiscv64Compat::handleFailureWithHandlerTail(
     Label* profilerExitTail, Label* bailoutTail,
     uint32_t* returnValueCheckOffset) {
@@ -2607,7 +2609,7 @@ void MacroAssemblerRiscv64Compat::handleFailureWithHandlerTail(
   asMasm().branch32(Assembler::Equal, a0, Imm32(ExceptionResumeKind::WasmCatch),
                     &wasmCatch);
 
-  breakpoint();  
+  crash();  
 
   
   
@@ -3499,11 +3501,7 @@ void MacroAssembler::atomicFetchOp(Scalar::Type type, Synchronization sync,
 
 
 
-void MacroAssembler::atomicPause() {
-  
-  
-  fence(0b0001, 0b0000);
-}
+void MacroAssembler::atomicPause() { pause(); }
 
 
 

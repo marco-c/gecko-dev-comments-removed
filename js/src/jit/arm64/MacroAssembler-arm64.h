@@ -2306,6 +2306,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   }
 
   void breakpoint();
+  void crash();
 
   
   void simulatorMarkSP() {

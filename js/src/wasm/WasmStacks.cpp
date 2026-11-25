@@ -1465,7 +1465,7 @@ void EmitFindHandler(MacroAssembler& masm, Register instance, Register tag,
 
   Label isNotNull1;
   masm.branchTestPtr(Assembler::NonZero, scratch1, scratch1, &isNotNull1);
-  masm.breakpoint();
+  masm.crash();
   masm.bind(&isNotNull1);
 
   
@@ -1704,7 +1704,7 @@ void EmitSuspend(jit::MacroAssembler& masm, jit::Register instance,
   MOZ_ASSERT(*suspendFramePushed == masm.framePushed());
 
   masm.wasmTrapInstruction();
-  masm.bind(&resumeLabel);
+  masm.bindIndirectTarget(&resumeLabel, TargetKind::Jump);
   *suspendCodeOffset = *resumeLabel.target();
   masm.addCodeLabel(resumeLabel);
   masm.append(callSiteDesc, *resumeLabel.target());
@@ -2160,7 +2160,7 @@ void EmitResume(MacroAssembler& masm, Register instance, Register cont,
   MOZ_ASSERT(*resumeFramePushed == handlersFramePushed);
 
   for (uint32_t i = 0; i < numHandlers; i++) {
-    masm.bind(&handlerCodeLabels[i]);
+    masm.bindIndirectTarget(&handlerCodeLabels[i], TargetKind::Jump);
     masm.addCodeLabel(handlerCodeLabels[i]);
     
     
@@ -2168,7 +2168,7 @@ void EmitResume(MacroAssembler& masm, Register instance, Register cont,
   }
 
   masm.wasmTrapInstruction();
-  masm.bind(&returnLabel);
+  masm.bindIndirectTarget(&returnLabel, TargetKind::Jump);
   masm.addCodeLabel(returnLabel);
 
   *resumeCodeOffset = *returnLabel.target();
