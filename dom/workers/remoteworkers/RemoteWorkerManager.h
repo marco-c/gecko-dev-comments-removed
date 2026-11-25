@@ -5,7 +5,7 @@
 #ifndef mozilla_dom_RemoteWorkerManager_h
 #define mozilla_dom_RemoteWorkerManager_h
 
-#include "base/process.h"
+#include "mozilla/ProcessType.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/RemoteWorkerTypes.h"
@@ -36,7 +36,7 @@ class RemoteWorkerManager final {
   void UnregisterActor(RemoteWorkerServiceParent* aActor);
 
   void Launch(RemoteWorkerController* aController,
-              const RemoteWorkerData& aData, base::ProcessId aProcessId);
+              const RemoteWorkerData& aData, GeckoChildID aChildID);
 
   static bool MatchRemoteType(const RemoteType& processRemoteType,
                               const RemoteType& workerRemoteType);
@@ -61,10 +61,10 @@ class RemoteWorkerManager final {
   };
 
   TargetActorAndKeepAlive SelectTargetActor(const RemoteWorkerData& aData,
-                                            base::ProcessId aProcessId);
+                                            GeckoChildID aChildID);
 
   TargetActorAndKeepAlive SelectTargetActorInternal(
-      const RemoteWorkerData& aData, base::ProcessId aProcessId) const;
+      const RemoteWorkerData& aData, GeckoChildID aChildID) const;
 
   void LaunchInternal(RemoteWorkerController* aController,
                       RemoteWorkerServiceParent* aTargetActor,
@@ -94,7 +94,7 @@ class RemoteWorkerManager final {
   
   template <typename Callback>
   void ForEachActor(Callback&& aCallback, const RemoteType& aRemoteType,
-                    Maybe<base::ProcessId> aProcessId = Nothing()) const;
+                    Maybe<GeckoChildID> aChildID = Nothing()) const;
 
   
   

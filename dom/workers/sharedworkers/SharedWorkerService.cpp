@@ -86,7 +86,7 @@ class WorkerManagerCreatedRunnable final : public Runnable {
     if (NS_WARN_IF(
             !mActor->CanSend() ||
             !mManagerWrapper->Manager()->MaybeCreateRemoteWorker(
-                mData, mWindowID, mPortIdentifier, mActor->OtherPid()))) {
+                mData, mWindowID, mPortIdentifier, mActor->OtherChildID()))) {
       
       
       MessagePortIdentifier port = mPortIdentifier.release();
