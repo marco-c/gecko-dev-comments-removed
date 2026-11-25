@@ -19,7 +19,7 @@ const lazy = XPCOMUtils.declareLazy({
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   logConsole: () =>
     console.createInstance({
-      prefix: "OpenSearchLoader",
+      logModule: "OpenSearchLoader",
       maxLogLevel: lazy.SearchUtils.loggingEnabled ? "Debug" : "Warn",
     }),
 });
@@ -27,6 +27,14 @@ const lazy = XPCOMUtils.declareLazy({
 /**
  * @import {OpenSearchProperties} from "./OpenSearchParser.sys.mjs"
  */
+
+/**
+ * Web progress only holds weak references to its listeners, so this keeps the
+ * hidden browser progress listeners alive until their load finishes.
+ *
+ * @type {Set<object>}
+ */
+const gProgressListeners = new Set();
 
 /**
  * Retrieves the engine data from a URI and returns it.
@@ -120,10 +128,12 @@ async function parseInHiddenBrowser(xmlData) {
             return;
           }
           browser.removeProgressListener(progressListener);
+          gProgressListeners.delete(progressListener);
           resolve();
         },
       };
 
+      gProgressListeners.add(progressListener);
       browser.addProgressListener(
         progressListener,
         Ci.nsIWebProgress.NOTIFY_STATE_NETWORK
