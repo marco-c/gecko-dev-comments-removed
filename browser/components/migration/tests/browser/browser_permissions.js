@@ -39,6 +39,12 @@ add_task(async function test_permissions() {
     sandbox.restore();
   });
 
+  
+  
+  sandbox.stub(MigrationUtils, "availableMigratorKeys").get(() => {
+    return [InternalTestingProfileMigrator.key];
+  });
+
   sandbox
     .stub(InternalTestingProfileMigrator.prototype, "canGetPermissions")
     .resolves("/some/path");
