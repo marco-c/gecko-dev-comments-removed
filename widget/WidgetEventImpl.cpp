@@ -694,7 +694,7 @@ bool WidgetEvent::AllowFlushingPendingNotifications() const {
   
   
   
-  return AsQueryContentEvent()->mNeedsToFlushLayout;
+  return AsQueryContentEvent()->mInput.mNeedsToFlushLayout;
 }
 
 bool WidgetEvent::ShouldIgnoreCapturingContent() const {
@@ -2547,7 +2547,11 @@ bool WidgetKeyboardEvent::IsLockableModifier(KeyNameIndex aKeyNameIndex) {
 
 
 QueryContentOptions::QueryContentOptions(const WidgetQueryContentEvent& aEvent)
-    : mRelativeToInsertionPoint(aEvent.mInput.mRelativeToInsertionPoint) {}
+    : mRelativeToInsertionPoint(aEvent.mInput.mRelativeToInsertionPoint),
+      mRequestFontRanges(aEvent.mInput.mWithFontRanges),
+      mNeedsToFlushLayout(aEvent.mInput.mNeedsToFlushLayout) {
+  
+}
 
 
 
