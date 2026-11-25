@@ -65,6 +65,7 @@ const uint64_t HTTP3_APP_ERROR_VERSION_FALLBACK = 0x110;
 const uint32_t MAX_PTO_COUNTS = 16;
 
 const uint32_t TRANSPORT_ERROR_STATELESS_RESET = 20;
+const uint32_t TRANSPORT_ERROR_TOO_MANY_PTOS = 31;
 
 NS_IMPL_ADDREF_INHERITED(Http3Session, nsAHttpConnection)
 NS_IMPL_RELEASE_INHERITED(Http3Session, nsAHttpConnection)
@@ -425,7 +426,7 @@ void Http3Session::Shutdown() {
         }
       }
     } else if (!stream->HasStreamId()) {
-      if (NS_SUCCEEDED(mError)) {
+      if (NS_SUCCEEDED(mError) || mBlackholeError) {
         
         stream->Transaction()->DoNotRemoveAltSvc();
       }
@@ -441,6 +442,9 @@ void Http3Session::Shutdown() {
       stream->Close(NS_ERROR_NET_PARTIAL_TRANSFER);
     } else if (mError == NS_ERROR_NET_HTTP3_PROTOCOL_ERROR) {
       stream->Close(NS_ERROR_NET_HTTP3_PROTOCOL_ERROR);
+    } else if (mBlackholeError) {
+      stream->Transaction()->DoNotRemoveAltSvc();
+      stream->Close(NS_ERROR_NET_RESET);
     } else if (mError == NS_ERROR_NET_RESET) {
       stream->Close(NS_ERROR_NET_RESET);
     } else {
@@ -634,6 +638,15 @@ nsresult Http3Session::ProcessEvents() {
   Http3Event event{};
   event.tag = Http3Event::Tag::NoEvent;
 
+  
+  
+  nsTArray<RefPtr<Http3WebTransportSession>> datagramSessions;
+  auto flushDatagrams = MakeScopeExit([&datagramSessions] {
+    for (const auto& session : datagramSessions) {
+      session->FlushIncomingDatagrams();
+    }
+  });
+
   nsresult rv = mHttp3Connection->GetEvent(&event, data);
   if (NS_FAILED(rv)) {
     LOG(("Http3Session::ProcessEvents [this=%p] rv=%" PRIx32, this,
@@ -766,6 +779,19 @@ nsresult Http3Session::ProcessEvents() {
         LOG(("Http3Session::ProcessEvents - StreamCreatable"));
         ProcessPending();
         break;
+      case Http3Event::Tag::OutgoingDatagramSpaceAvailable:
+        LOG(("Http3Session::ProcessEvents - OutgoingDatagramSpaceAvailable"));
+        
+        
+        
+        
+        for (const auto& stream : mWebTransportSessions) {
+          if (Http3WebTransportSession* session =
+                  stream->GetHttp3WebTransportSession()) {
+            session->NotifyOutgoingDatagramSpaceAvailable();
+          }
+        }
+        break;
       case Http3Event::Tag::AuthenticationNeeded:
         LOG(("Http3Session::ProcessEvents - AuthenticationNeeded %d",
              mAuthenticationStarted));
@@ -876,15 +902,23 @@ nsresult Http3Session::ProcessEvents() {
         }
         return mError;
         break;
-      case Http3Event::Tag::ConnectionClosed:
+      case Http3Event::Tag::ConnectionClosed: {
         LOG(("Http3Session::ProcessEvents - ConnectionClosed"));
-        if (NS_SUCCEEDED(mError)) {
+        CloseError& closeError = event.connection_closed.error;
+        if (closeError.tag == CloseError::Tag::TransportInternalErrorOther &&
+            closeError.transport_internal_error_other._0 ==
+                TRANSPORT_ERROR_TOO_MANY_PTOS) {
+          mBlackholeError = true;
+          mUdpConn->SetCloseReason(ConnectionCloseReason::NET_TIMEOUT);
+          mError = NS_ERROR_NET_TIMEOUT;
+          CloseConnectionTelemetry(event.connection_closed.error, false);
+        } else if (NS_SUCCEEDED(mError)) {
           mError = NS_ERROR_NET_TIMEOUT;
           mUdpConn->SetCloseReason(ConnectionCloseReason::IDLE_TIMEOUT);
           CloseConnectionTelemetry(event.connection_closed.error, false);
         }
         mIsClosedByNeqo = true;
-        if (event.connection_closed.error.tag == CloseError::Tag::EchRetry) {
+        if (closeError.tag == CloseError::Tag::EchRetry) {
           mSocketControl->SetRetryEchConfig(Substring(
               reinterpret_cast<const char*>(data.Elements()), data.Length()));
           mError = psm::GetXPCOMFromNSSError(SSL_ERROR_ECH_RETRY_WITH_ECH);
@@ -893,7 +927,7 @@ nsresult Http3Session::ProcessEvents() {
              static_cast<uint32_t>(mError)));
         
         return mError;
-        break;
+      } break;
       case Http3Event::Tag::EchFallbackAuthenticationNeeded: {
         nsCString echPublicName(reinterpret_cast<const char*>(data.Elements()),
                                 data.Length());
@@ -1082,6 +1116,9 @@ nsresult Http3Session::ProcessEvents() {
             }
 
             wt->OnDatagramReceived(std::move(data));
+            if (!datagramSessions.Contains(wt)) {
+              datagramSessions.AppendElement(wt);
+            }
           } break;
           case WebTransportEventExternal::Tag::Draining: {
             uint64_t sessionId = event.web_transport._0.draining.session_id;
@@ -1321,6 +1358,9 @@ nsresult Http3Session::ProcessOutput(nsIUDPSocket* socket) {
           self->SetupTimer(timeout);
         });
     mSocket = nullptr;
+    if (NS_SUCCEEDED(rv)) {
+      NotifyOutgoingDatagramProgress();
+    }
     return rv;
   }
 
@@ -1347,7 +1387,25 @@ nsresult Http3Session::ProcessOutput(nsIUDPSocket* socket) {
     socket->AddOutputBytes(rv.bytes_written);
   }
 
+  NotifyOutgoingDatagramProgress();
   return NS_OK;
+}
+
+void Http3Session::NotifyOutgoingDatagramProgress() {
+  if (!std::exchange(mOutgoingDatagramProgressRequested, false)) {
+    return;
+  }
+  
+  
+  
+  for (const auto& stream : mWebTransportSessions) {
+    if (Http3WebTransportSession* session =
+            stream->GetHttp3WebTransportSession()) {
+      if (session->TakeOutgoingDatagramProgressRequest()) {
+        session->NotifyOutgoingDatagramSpaceAvailable();
+      }
+    }
+  }
 }
 
 
@@ -2508,6 +2566,7 @@ void Http3Session::CloseStreamInternal(Http3StreamBase* aStream,
     }
 
     mStreamIdHash.Remove(aStream->StreamId());
+    mWebTransportStreamToSessionMap.Remove(aStream->StreamId());
 
     
     if (mStreamIdHash.IsEmpty()) {
@@ -3317,52 +3376,30 @@ nsresult Http3Session::CreateWebTransportStream(
                                                     aStreamId);
 }
 
-void Http3Session::SendDatagram(Http3WebTransportSession* aSession,
-                                nsTArray<uint8_t>& aData, uint64_t aTrackingId,
-                                uint64_t aSendGroupId, int64_t aSendOrder,
-                                TimeStamp aTimestamp) {
+nsresult Http3Session::SendDatagram(Http3WebTransportSession* aSession,
+                                    nsTArray<uint8_t>& aData,
+                                    uint64_t aSendGroupId, int64_t aSendOrder,
+                                    TimeStamp aTimestamp) {
   
   uint64_t ageUs = static_cast<uint64_t>(
       std::max(0.0, (TimeStamp::Now() - aTimestamp).ToMicroseconds()));
-  bool belowHighWaterMark = false;
+  
+  
+  
   nsresult rv = mHttp3Connection->WebTransportSendDatagram(
-      aSession->StreamId(), aData, aTrackingId, &belowHighWaterMark,
-      aSendGroupId, aSendOrder, ageUs);
-  LOG(("Http3Session::SendDatagram %p res=%" PRIx32
-       " belowHWM=%d, sendGroup=%" PRIu64 ", sendOrder=%" PRId64,
-       this, static_cast<uint32_t>(rv), belowHighWaterMark, aSendGroupId,
-       aSendOrder));
+      aSession->StreamId(), aData, aSendGroupId, aSendOrder, ageUs);
+  LOG(("Http3Session::SendDatagram %p res=%" PRIx32 ", sendGroup=%" PRIu64
+       ", sendOrder=%" PRId64,
+       this, static_cast<uint32_t>(rv), aSendGroupId, aSendOrder));
 
   
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aTrackingId && NS_SUCCEEDED(rv)) {
-    aSession->OnOutgoingDatagramOutCome(
-        aTrackingId, WebTransportSessionEventListener::DatagramOutcome::SENT);
+  if (NS_SUCCEEDED(rv) && mUdpConn && !IsClosing()) {
+    (void)mUdpConn->ForceSendNow();
   }
-
-  if (aTrackingId && NS_FAILED(rv)) {
-    WebTransportSessionEventListener::DatagramOutcome outcome;
-    if (rv == NS_ERROR_NOT_AVAILABLE) {
-      outcome = WebTransportSessionEventListener::DatagramOutcome::
-          DROPPED_TOO_MUCH_DATA;
-    } else if (rv == NS_BASE_STREAM_WOULD_BLOCK) {
-      outcome =
-          WebTransportSessionEventListener::DatagramOutcome::DROPPED_QUEUE_FULL;
-    } else {
-      outcome = WebTransportSessionEventListener::DatagramOutcome::UNKNOWN;
-    }
-    aSession->OnOutgoingDatagramOutCome(aTrackingId, outcome);
-  }
+  return rv;
 }
 
 uint64_t Http3Session::MaxDatagramSize(uint64_t aSessionId) {
@@ -3386,6 +3423,23 @@ void Http3Session::SetDatagramMaxBufferedDatagrams(
        aSessionId, aMaxBufferedDatagrams));
   (void)mHttp3Connection->WebTransportSetDatagramMaxBufferedDatagrams(
       aSessionId, aMaxBufferedDatagrams);
+}
+
+bool Http3Session::GetDatagramQueueCapacity(uint64_t aSessionId,
+                                            size_t* aRemainingBytes,
+                                            size_t* aQueuedDatagrams,
+                                            size_t* aMaxQueuedBytes) {
+  nsresult rv = mHttp3Connection->WebTransportDatagramQueueCapacity(
+      aSessionId, aRemainingBytes, aQueuedDatagrams, aMaxQueuedBytes);
+  return NS_SUCCEEDED(rv);
+}
+
+bool Http3Session::GetDatagramSessionStats(uint64_t aSessionId, uint64_t* aSent,
+                                           uint64_t* aExpired,
+                                           uint64_t* aDropped) {
+  nsresult rv = mHttp3Connection->WebTransportDatagramSessionStats(
+      aSessionId, aSent, aExpired, aDropped);
+  return NS_SUCCEEDED(rv);
 }
 
 void Http3Session::SetDatagramMaxAge(uint64_t aSessionId, double aMaxAge) {
@@ -3462,11 +3516,11 @@ void Http3Session::SetSendOrder(Http3StreamBase* aStream, int64_t aSendOrder) {
   }
 }
 
-void Http3Session::SetSendGroup(Http3StreamBase* aStream,
+void Http3Session::SetSendGroup(Http3WebTransportStream* aStream,
                                 uint64_t aSendGroupId) {
   if (!IsClosing()) {
     nsresult rv = mHttp3Connection->WebTransportSetSendGroup(
-        aStream->StreamId(), aSendGroupId);
+        aStream->SessionId(), aStream->StreamId(), aSendGroupId);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "WebTransportSetSendGroup failed");
     (void)rv;
   }

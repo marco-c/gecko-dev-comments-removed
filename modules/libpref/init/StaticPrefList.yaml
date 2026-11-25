@@ -3034,12 +3034,6 @@
   value: true
   mirror: always
 
-# Whether drag events have non-zero clientX/Y, etc.
-- name: dom.event.drag.include_coordinates
-  type: bool
-  value: true
-  mirror: always
-
 - name: dom.event.dragexit.enabled
   type: bool
   value: @IS_NOT_NIGHTLY_BUILD@
@@ -17173,6 +17167,14 @@
   value: true
   mirror: always
 
+# Maximum consecutive PTOs before closing an HTTP/3 connection. Set to zero
+# to disable the black-hole detector.
+- name: network.http.http3.max_pto
+  type: RelaxedAtomicUint32
+  value: 0
+  mirror: always
+  rust: true
+
 # Receive buffer size of QUIC socket
 - name: network.http.http3.recvBufferSize
   type: RelaxedAtomicInt32
@@ -21635,6 +21637,14 @@
 # Use native D&D session type on Wayland instead of Gtk.
 # Recently disabled due compositor bugs (Bug 2046911).
 - name: widget.wayland.native-data-session
+  type: bool
+  value: false
+  mirror: once
+
+# Use native D&D popups with layered rendering.
+# Recently disabled due Mutter compositor bug
+# https://gitlab.gnome.org/GNOME/mutter/-/work_items/5207
+- name: widget.wayland.native-dnd-popups
   type: bool
   value: false
   mirror: once

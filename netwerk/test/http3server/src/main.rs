@@ -13,11 +13,12 @@ use neqo_http3::{
     connect_udp::{ServerEvent as ConnectUdpServerEvent, ServerSession as ConnectUdpRequest},
     webtransport::{ServerEvent as WebTransportServerEvent, ServerSession as WebTransportRequest},
     Error, Http3OrWebTransportStream, Http3Parameters, Http3Server, Http3ServerEvent,
-    SessionAcceptAction, StreamId,
+    SendGroupId, SessionAcceptAction, StreamId,
 };
 use neqo_transport::server::ConnectionRef;
 use neqo_transport::{
-    ConnectionEvent, ConnectionParameters, OutputBatch, RandomConnectionIdGenerator, StreamType,
+    ConnectionEvent, ConnectionParameters, DatagramQueueOutcome, OutputBatch,
+    RandomConnectionIdGenerator, StreamType,
 };
 use std::env;
 use std::pin::Pin;
@@ -86,8 +87,18 @@ struct Http3TestServer {
     received_datagram: Option<Bytes>,
     
     
+    
+    echo_datagram_sessions: HashSet<StreamId>,
+    
+    
+    datagram_floods: Vec<(WebTransportRequest, Vec<u8>, usize)>,
+    
+    
     stuck_0rtt_mode: bool,
     stuck_0rtt_activated: bool,
+    
+    is_blackhole_mode: bool,
+    blackhole_addr: Option<SocketAddr>,
 }
 
 impl ::std::fmt::Display for Http3TestServer {
@@ -110,8 +121,12 @@ impl Http3TestServer {
             wt_unidi_conn_to_stream: HashMap::new(),
             wt_unidi_echo_back: HashMap::new(),
             received_datagram: None,
+            echo_datagram_sessions: HashSet::new(),
+            datagram_floods: Vec::new(),
             stuck_0rtt_mode: false,
             stuck_0rtt_activated: false,
+            is_blackhole_mode: false,
+            blackhole_addr: None,
         }
     }
 
@@ -218,6 +233,25 @@ impl Http3TestServer {
 
     
     
+    fn maybe_flood_datagrams(&mut self, now: Instant) {
+        self.datagram_floods.retain_mut(|(session, data, remaining)| {
+            while *remaining > 0 {
+                match session.send_datagram(data, None, now, SendGroupId::new(0), 0) {
+                    Ok(DatagramQueueOutcome::Ok) => *remaining -= 1,
+                    Ok(DatagramQueueOutcome::Rejected) => break,
+                    Ok(_) => {
+                        *remaining -= 1;
+                        break;
+                    }
+                    Err(_) => return false,
+                }
+            }
+            *remaining > 0
+        });
+    }
+
+    
+    
     
     fn maybe_create_wt_stream_and_stop_sending(&mut self, now: Instant) {
         if self.sessions_to_create_bidi_and_stop_sending.is_empty() {
@@ -266,6 +300,14 @@ impl HttpServer for Http3TestServer {
             return OutputBatch::Callback(Duration::from_millis(100));
         }
 
+        let mut dgrams_peek = dgrams.into_iter().peekable();
+
+        if self.is_blackhole_mode && self.blackhole_addr.is_none() {
+            self.blackhole_addr = dgrams_peek.peek().map(|d| d.source());
+        }
+
+        let dgrams = dgrams_peek.filter(|dgram| Some(dgram.source()) != self.blackhole_addr);
+
         let output = self.server.process_multiple(dgrams, now, max_datagrams);
 
         
@@ -300,6 +342,7 @@ impl HttpServer for Http3TestServer {
         self.maybe_create_wt_stream(now);
         self.maybe_create_wt_stream_and_stop_sending(now);
         self.maybe_stop_sending(now);
+        self.maybe_flood_datagrams(now);
 
         while let Some(event) = self.server.next_event() {
             trace!("Event: {:?}", event);
@@ -392,6 +435,26 @@ impl HttpServer for Http3TestServer {
                                         Header::new(
                                             "content-length",
                                             response_body.len().to_string(),
+                                        ),
+                                    ])
+                                    .unwrap();
+                                self.new_response(stream, response_body, now);
+                            } else if path == b"/SetBlackhole" {
+                                qinfo!("Enabling Blackhole mode for the current connection.");
+                                self.is_blackhole_mode = true;
+                                let response_body = b"Blackhole mode enabled".to_vec();
+                                stream
+                                    .send_headers(&[
+                                        Header::new(":status", "200"),
+                                        Header::new("cache-control", "no-cache"),
+                                        Header::new("content-type", "text/plain"),
+                                        Header::new(
+                                            "content-length",
+                                            response_body.len().to_string(),
+                                        ),
+                                        Header::new(
+                                            "x-http3-conn-hash",
+                                            connection_hash.to_string(),
                                         ),
                                     ])
                                     .unwrap();
@@ -777,6 +840,29 @@ impl HttpServer for Http3TestServer {
                                     StreamType::BiDi,
                                     Some(data),
                                 ));
+                            } else if path.starts_with(b"/flood_datagrams/") {
+                                let params = std::str::from_utf8(&path[17..]).unwrap();
+                                let (count, size) = params.split_once('/').unwrap();
+                                session.response(&SessionAcceptAction::Accept, now).unwrap();
+                                
+                                
+                                
+                                session
+                                    .set_max_buffered_datagrams(NonZeroUsize::new(64))
+                                    .unwrap();
+                                let size = if size == "max" {
+                                    session.max_datagram_size().unwrap() as usize
+                                } else {
+                                    size.parse().unwrap()
+                                };
+                                self.datagram_floods.push((
+                                    session,
+                                    vec![42; size],
+                                    count.parse().unwrap(),
+                                ));
+                            } else if path == b"/echo_datagrams" {
+                                session.response(&SessionAcceptAction::Accept, now).unwrap();
+                                self.echo_datagram_sessions.insert(session.stream_id());
                             } else if path == b"/create_bidi_stream_and_stop_sending" {
                                 session.response(&SessionAcceptAction::Accept, now).unwrap();
                                 self.sessions_to_create_bidi_and_stop_sending
@@ -806,6 +892,7 @@ impl HttpServer for Http3TestServer {
                         "WebTransportServerEvent::SessionClosed {:?} {:?}",
                         session, reason
                     );
+                    self.echo_datagram_sessions.remove(&session.stream_id());
                 }
                 Http3ServerEvent::WebTransport(WebTransportServerEvent::NewStream(stream)) => {
                     
@@ -832,7 +919,19 @@ impl HttpServer for Http3TestServer {
                         "WebTransportServerEvent::Datagram {:?} {:?}",
                         session, datagram
                     );
-                    self.received_datagram = Some(datagram);
+                    if self.echo_datagram_sessions.contains(&session.stream_id()) {
+                        
+                        
+                        _ = session.send_datagram(
+                            datagram.as_ref(),
+                            None,
+                            now,
+                            SendGroupId::new(0),
+                            0,
+                        );
+                    } else {
+                        self.received_datagram = Some(datagram);
+                    }
                 }
                 Http3ServerEvent::ConnectUdp(_) => {
                     unimplemented!()

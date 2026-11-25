@@ -14,6 +14,7 @@ use std::{
     ffi::c_void,
     io,
     net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr},
+    num::NonZeroUsize,
     path::PathBuf,
     ptr,
     rc::Rc,
@@ -38,8 +39,8 @@ use neqo_http3::{
 };
 use neqo_transport::{
     stream_id::StreamType, streams::SendGroupId, CongestionControl, Connection,
-    ConnectionParameters, DatagramQueueOutcome, Error as TransportError, HyStartCssBaseline,
-    Output, OutputBatch, RandomConnectionIdGenerator, SlowStart, Stats as TransportStats,
+    ConnectionParameters, Error as TransportError, HyStartCssBaseline, Output, OutputBatch,
+    RandomConnectionIdGenerator, SlowStart, Stats as TransportStats,
     StreamDataLimit, StreamId, Version,
 };
 use nserror::{
@@ -141,7 +142,13 @@ pub struct NeqoHttp3Conn {
     would_block_counter: WouldBlockCounter,
     
     
-    webtransport_send_groups: HashMap<u64, SendGroupId>,
+    
+    
+    
+    webtransport_send_groups: HashMap<(u64, u64), SendGroupId>,
+    
+    
+    last_datagram_written: Option<Instant>,
     
     
     
@@ -377,6 +384,18 @@ type BorrowedSocket = std::os::windows::io::BorrowedSocket<'static>;
 impl NeqoHttp3Conn {
     
     
+    fn neqo_send_group_id(&self, session_id: u64, child_id: u64) -> Option<SendGroupId> {
+        if child_id == 0 {
+            Some(SendGroupId::new(0))
+        } else {
+            self.webtransport_send_groups
+                .get(&(session_id, child_id))
+                .copied()
+        }
+    }
+
+    
+    
     
     
     
@@ -502,6 +521,9 @@ impl NeqoHttp3Conn {
             && socket.as_ref().map_or(false, |s| !s.may_fragment());
 
         let spurious_recovery = static_prefs::pref!("network.http.http3.spurious_recovery");
+        let max_pto = NonZeroUsize::new(
+            static_prefs::pref!("network.http.http3.max_pto") as usize
+        );
 
         let css_baseline =
             if static_prefs::pref!("network.http.http3.hystart_alternative_css_baseline") {
@@ -527,7 +549,8 @@ impl NeqoHttp3Conn {
             .pacing(pacing_enabled)
             .spurious_recovery(spurious_recovery)
             .abe(static_prefs::pref!("network.http.http3.abe"))
-            .hystart_css_baseline(css_baseline);
+            .hystart_css_baseline(css_baseline)
+            .max_pto(max_pto);
 
         
         if fast_pto > 0 {
@@ -650,6 +673,7 @@ impl NeqoHttp3Conn {
             buffered_outbound_datagram: None,
             would_block_counter: WouldBlockCounter::new(),
             webtransport_send_groups: HashMap::new(),
+            last_datagram_written: None,
             #[cfg(not(target_os = "android"))]
             close_reason_recorded: false,
         }));
@@ -2211,6 +2235,8 @@ pub enum Http3Event {
     EchFallbackAuthenticationNeeded,
     WebTransport(WebTransportEventExternal),
     ConnectUdp(ConnectUdpEventExternal),
+    
+    OutgoingDatagramSpaceAvailable,
     NoEvent,
 }
 
@@ -2260,7 +2286,6 @@ pub extern "C" fn neqo_http3conn_event(
             Http3ClientEvent::DataWritable { stream_id } => Http3Event::DataWritable {
                 stream_id: stream_id.as_u64(),
             },
-            Http3ClientEvent::OutgoingDatagramSpaceAvailable { .. } => Http3Event::NoEvent,
             Http3ClientEvent::StopSending { stream_id, error } => Http3Event::StopSending {
                 stream_id: stream_id.as_u64(),
                 error,
@@ -2294,6 +2319,9 @@ pub extern "C" fn neqo_http3conn_event(
                 local,
             },
             Http3ClientEvent::RequestsCreatable => Http3Event::RequestsCreatable,
+            Http3ClientEvent::OutgoingDatagramSpaceAvailable { .. } => {
+                Http3Event::OutgoingDatagramSpaceAvailable
+            }
             Http3ClientEvent::AuthenticationNeeded => Http3Event::AuthenticationNeeded,
             Http3ClientEvent::ZeroRttRejected => Http3Event::ZeroRttRejected,
             Http3ClientEvent::ResumptionToken(token) => {
@@ -2352,6 +2380,11 @@ pub extern "C" fn neqo_http3conn_event(
                 Http3Event::EchFallbackAuthenticationNeeded
             }
             Http3ClientEvent::WebTransport(e) => {
+                if let WebTransportEvent::SessionClosed { stream_id, .. } = &e {
+                    let session_id = stream_id.as_u64();
+                    conn.webtransport_send_groups
+                        .retain(|&(sid, _), _| sid != session_id);
+                }
                 Http3Event::WebTransport(WebTransportEventExternal::new(e, data))
             }
             Http3ClientEvent::ConnectUdp(e) => {
@@ -2715,39 +2748,94 @@ pub extern "C" fn neqo_http3conn_webtransport_send_datagram(
     conn: &mut NeqoHttp3Conn,
     session_id: u64,
     data: &mut ThinVec<u8>,
-    tracking_id: u64,
-    below_high_water_mark: &mut bool,
     send_group_id: u64,
     send_order: i64,
     age_us: u64,
 ) -> nsresult {
-    let id = if tracking_id == 0 {
-        None
-    } else {
-        Some(tracking_id)
-    };
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let translated_group_id = conn
+        .neqo_send_group_id(session_id, send_group_id)
+        .unwrap_or(SendGroupId::new(0));
+    
+    
+    
     
     
     let now = Instant::now();
-    let written = now
+    let mut written = now
         .checked_sub(Duration::from_micros(age_us))
         .unwrap_or(now);
+    if let Some(last) = conn.last_datagram_written {
+        written = written.max(last);
+    }
+    conn.last_datagram_written = Some(written);
     match conn.conn.webtransport_send_datagram(
         StreamId::from(session_id),
         data,
-        id,
+        None,
         written,
-        SendGroupId::new(send_group_id),
+        translated_group_id,
         send_order,
     ) {
-        Ok(DatagramQueueOutcome::Rejected) => NS_BASE_STREAM_WOULD_BLOCK,
-        Ok(outcome) => {
-            
-            
-            *below_high_water_mark = matches!(outcome, DatagramQueueOutcome::Ok);
+        
+        
+        
+        
+        Ok(_outcome) => NS_OK,
+        Err(Http3Error::Transport(TransportError::TooMuchData)) => NS_ERROR_NOT_AVAILABLE,
+        Err(_) => NS_ERROR_UNEXPECTED,
+    }
+}
+
+
+
+
+
+#[no_mangle]
+pub extern "C" fn neqo_http3conn_webtransport_datagram_session_stats(
+    conn: &NeqoHttp3Conn,
+    session_id: u64,
+    sent: &mut u64,
+    expired: &mut u64,
+    dropped: &mut u64,
+) -> nsresult {
+    match conn.conn.webtransport_session_stats(StreamId::from(session_id)) {
+        Ok(session_stats) => {
+            *sent = session_stats.outgoing_datagrams.sent;
+            *expired = session_stats.outgoing_datagrams.expired;
+            *dropped = session_stats.outgoing_datagrams.dropped;
             NS_OK
         }
-        Err(Http3Error::Transport(TransportError::TooMuchData)) => NS_ERROR_NOT_AVAILABLE,
+        Err(_) => NS_ERROR_UNEXPECTED,
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn neqo_http3conn_webtransport_datagram_queue_capacity(
+    conn: &mut NeqoHttp3Conn,
+    session_id: u64,
+    remaining_bytes: &mut usize,
+    queued_datagrams: &mut usize,
+    max_queued_bytes: &mut usize,
+) -> nsresult {
+    match conn
+        .conn
+        .webtransport_datagram_queue_capacity(StreamId::from(session_id))
+    {
+        Ok(capacity) => {
+            *remaining_bytes = capacity.remaining_bytes;
+            *queued_datagrams = capacity.queued_datagrams;
+            *max_queued_bytes = capacity.max_queued_bytes;
+            NS_OK
+        }
         Err(_) => NS_ERROR_UNEXPECTED,
     }
 }
@@ -2803,8 +2891,18 @@ pub extern "C" fn neqo_http3conn_webtransport_set_datagram_max_buffered_datagram
     max_buffered_datagrams: u32,
 ) -> nsresult {
     
-    let _ = (conn, session_id, max_buffered_datagrams);
-    NS_OK
+    
+    
+    
+    
+    let max_buffered_datagrams =
+        NonZeroUsize::new(max_buffered_datagrams as usize).unwrap_or(NonZeroUsize::MIN);
+    conn.conn
+        .webtransport_set_max_buffered_datagrams(
+            StreamId::from(session_id),
+            Some(max_buffered_datagrams),
+        )
+        .map_or(NS_ERROR_UNEXPECTED, |()| NS_OK)
 }
 
 #[no_mangle]
@@ -2814,8 +2912,18 @@ pub extern "C" fn neqo_http3conn_webtransport_set_datagram_max_age(
     max_age: f64,
 ) -> nsresult {
     
-    let _ = (conn, session_id, max_age);
-    NS_OK
+    
+    if max_age.is_nan() || max_age <= 0.0 {
+        return NS_ERROR_INVALID_ARG;
+    }
+    let max_age = Duration::try_from_secs_f64(max_age / 1000.0).unwrap_or(Duration::MAX);
+    conn.conn
+        .webtransport_set_datagram_max_age(
+            StreamId::from(session_id),
+            Some(max_age),
+            Instant::now(),
+        )
+        .map_or(NS_ERROR_UNEXPECTED, |()| NS_OK)
 }
 
 
@@ -2842,6 +2950,7 @@ pub unsafe extern "C" fn neqo_http3conn_webtransport_set_sendorder(
 #[no_mangle]
 pub unsafe extern "C" fn neqo_http3conn_webtransport_set_sendgroup(
     conn: &mut NeqoHttp3Conn,
+    session_id: u64,
     stream_id: u64,
     sendgroup_id: u64,
 ) -> nsresult {
@@ -2855,7 +2964,7 @@ pub unsafe extern "C" fn neqo_http3conn_webtransport_set_sendgroup(
             Err(_) => NS_ERROR_UNEXPECTED,
         };
     }
-    let Some(&sg_id) = conn.webtransport_send_groups.get(&sendgroup_id) else {
+    let Some(sg_id) = conn.neqo_send_group_id(session_id, sendgroup_id) else {
         return NS_ERROR_UNEXPECTED;
     };
     match conn
@@ -2879,7 +2988,8 @@ pub extern "C" fn neqo_http3conn_webtransport_register_send_group(
         .webtransport_create_send_group(StreamId::from(session_id))
     {
         Ok(neqo_id) => {
-            conn.webtransport_send_groups.insert(group_id, neqo_id);
+            conn.webtransport_send_groups
+                .insert((session_id, group_id), neqo_id);
             NS_OK
         }
         Err(_) => NS_ERROR_UNEXPECTED,
