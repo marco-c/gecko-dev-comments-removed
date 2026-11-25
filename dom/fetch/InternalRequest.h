@@ -405,12 +405,12 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
     return mEmbedderPolicy;
   }
 
-  void SetInterceptionTriggeringPrincipalInfo(
-      UniquePtr<mozilla::ipc::PrincipalInfo> aPrincipalInfo);
+  void SetInterceptionTriggeringPrincipal(nsIPrincipal* aPrincipal) {
+    mInterceptionTriggeringPrincipal = aPrincipal;
+  }
 
-  const UniquePtr<mozilla::ipc::PrincipalInfo>&
-  GetInterceptionTriggeringPrincipalInfo() const {
-    return mInterceptionTriggeringPrincipalInfo;
+  nsIPrincipal* GetInterceptionTriggeringPrincipal() const {
+    return mInterceptionTriggeringPrincipal;
   }
 
   nsContentPolicyType InterceptionContentPolicyType() const {
@@ -543,7 +543,7 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
   
 
   
-  UniquePtr<mozilla::ipc::PrincipalInfo> mInterceptionTriggeringPrincipalInfo;
+  nsCOMPtr<nsIPrincipal> mInterceptionTriggeringPrincipal;
 
   
   nsContentPolicyType mInterceptionContentPolicyType{
