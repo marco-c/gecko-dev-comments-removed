@@ -30,6 +30,7 @@ mod http_client;
 mod oauth;
 mod profile;
 mod push;
+mod retry;
 mod scoped_keys;
 mod scopes;
 mod send_tab;
@@ -56,6 +57,8 @@ pub struct FirefoxAccount {
     devices_cache: Option<CachedResponse<Vec<http_client::GetDeviceResponse>>>,
     auth_circuit_breaker: AuthCircuitBreaker,
     telemetry: FxaTelemetry,
+    network_retry_bucket: retry::TokenBucket,
+    auth_retry_bucket: retry::TokenBucket,
     
     
     pub(crate) auth_state: FxaState,
@@ -73,6 +76,8 @@ impl FirefoxAccount {
             auth_circuit_breaker: Default::default(),
             telemetry: FxaTelemetry::new(),
             auth_state: FxaState::Uninitialized,
+            network_retry_bucket: retry::TokenBucket::network(),
+            auth_retry_bucket: retry::TokenBucket::auth(),
             device_config: None,
         }
     }
@@ -92,7 +97,7 @@ impl FirefoxAccount {
             last_seen_profile: None,
             access_token_cache: HashMap::new(),
             logged_out_from_auth_issues: false,
-            last_auth_check_time: None,
+            last_refresh_token_scopes: HashSet::new(),
         })
     }
 
@@ -262,10 +267,6 @@ impl FirefoxAccount {
         self.telemetry = FxaTelemetry::new();
     }
 
-    pub fn on_recovered_from_auth_issues(&mut self) {
-        self.state.on_recovered_from_auth_issues();
-    }
-
     pub fn simulate_network_error(&mut self) {
         self.client.simulate_network_error();
     }
@@ -276,19 +277,6 @@ impl FirefoxAccount {
 
     pub fn simulate_permanent_auth_token_issue(&mut self) {
         self.state.simulate_permanent_auth_token_issue()
-    }
-
-    
-    
-    pub fn should_recheck_auth(&self) -> bool {
-        self.state.should_recheck_auth()
-    }
-
-    
-    
-    
-    pub fn reset_auth_recheck_timer(&mut self) {
-        self.state.reset_auth_recheck_timer();
     }
 }
 
@@ -594,6 +582,38 @@ mod tests {
         
         
         assert_eq!(fxa.state.current_device_id(), Some("original-device-id"));
+    }
+
+    #[test]
+    fn test_initial_state_with_sync_scope_requires_sync_key() {
+        nss_as::ensure_initialized();
+        let new_fxa = || {
+            let config = Config::new("https://stable.dev.lcip.org", "12345678", "https://foo.bar");
+            let mut fxa = FirefoxAccount::with_config(config);
+            fxa.state.force_refresh_token(RefreshToken {
+                token: "refresh_token".to_owned(),
+                scopes: HashSet::from([scopes::OLD_SYNC.to_owned()]),
+            });
+            fxa
+        };
+
+        
+        let mut fxa = new_fxa();
+        let state = fxa
+            .process_event(crate::FxaEvent::Initialize {
+                device_config: DeviceConfig {
+                    name: "test".to_owned(),
+                    device_type: crate::DeviceType::Mobile,
+                    capabilities: vec![],
+                },
+            })
+            .unwrap();
+        assert_eq!(state, FxaState::AuthIssues);
+        assert!(fxa.state.refresh_token().is_none());
+        assert!(fxa
+            .state
+            .last_refresh_token_scopes()
+            .contains(scopes::OLD_SYNC));
     }
 
     #[test]

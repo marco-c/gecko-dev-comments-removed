@@ -3,12 +3,12 @@
 
 
 use std::collections::{HashMap, HashSet};
-use std::time::SystemTime;
 
 use crate::{
     internal::{
         oauth::{AccessTokenInfo, RefreshToken},
         profile::Profile,
+        scopes,
         state_persistence::state_to_json,
         CachedResponse, Config, OAuthFlow, PersistedState,
     },
@@ -43,24 +43,16 @@ impl StateManager {
     }
 
     pub fn refresh_token(&self) -> Option<&RefreshToken> {
-        
-        
-        
-        if self.persisted_state.logged_out_from_auth_issues {
-            None
-        } else {
-            self.persisted_state.refresh_token.as_ref()
-        }
-    }
-
-    
-    
-    pub fn refresh_token_for_reauth(&self) -> Option<&RefreshToken> {
         self.persisted_state.refresh_token.as_ref()
     }
 
     pub fn session_token(&self) -> Option<&str> {
         self.persisted_state.session_token.as_deref()
+    }
+
+    #[cfg(test)] 
+    pub fn last_refresh_token_scopes(&self) -> &HashSet<String> {
+        &self.persisted_state.last_refresh_token_scopes
     }
 
     
@@ -86,31 +78,6 @@ impl StateManager {
     
     pub fn update_server_local_device_info(&mut self, local_device: LocalDevice) {
         self.persisted_state.server_local_device_info = Some(local_device)
-    }
-
-    
-    
-    pub fn should_recheck_auth(&self) -> bool {
-        let last_auth_time: u64 = self.persisted_state.last_auth_check_time.unwrap_or(0);
-        
-        let next_auth_time = last_auth_time + (7 * 24 * 60 * 60);
-        
-        
-        
-        if let Ok(now) = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
-            let now: u64 = now.as_secs();
-            if next_auth_time <= now {
-                return true;
-            }
-        }
-        false
-    }
-
-    pub fn reset_auth_recheck_timer(&mut self) {
-        
-        if let Ok(now) = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
-            self.persisted_state.last_auth_check_time = Some(now.as_secs());
-        }
     }
 
     
@@ -175,10 +142,18 @@ impl StateManager {
         self.persisted_state.access_token_cache.get(scope)
     }
 
+    pub fn has_cached_access_token(&self, scope: &str) -> bool {
+        self.persisted_state.access_token_cache.contains_key(scope)
+    }
+
     pub fn add_cached_access_token(&mut self, scope: impl Into<String>, token: AccessTokenInfo) {
         self.persisted_state
             .access_token_cache
             .insert(scope.into(), token);
+    }
+
+    pub fn remove_cached_access_token(&mut self, scope: &str) {
+        self.persisted_state.access_token_cache.remove(scope);
     }
 
     pub fn clear_access_token_cache(&mut self) {
@@ -239,6 +214,7 @@ impl StateManager {
     pub fn disconnect(&mut self) {
         self.persisted_state.current_device_id = None;
         self.persisted_state.refresh_token = None;
+        self.persisted_state.last_refresh_token_scopes = HashSet::new();
         self.persisted_state.scoped_keys = HashMap::new();
         self.persisted_state.last_handled_command = None;
         self.persisted_state.commands_data = HashMap::new();
@@ -248,10 +224,11 @@ impl StateManager {
         self.persisted_state.session_token = None;
         self.persisted_state.logged_out_from_auth_issues = false;
         self.persisted_state.last_seen_profile = None;
-        self.persisted_state.last_auth_check_time = None;
         self.flow_store.clear();
     }
 
+    
+    
     
     
     
@@ -269,21 +246,34 @@ impl StateManager {
         self.persisted_state.access_token_cache = HashMap::new();
         self.persisted_state.server_local_device_info = None;
         self.persisted_state.session_token = None;
+        let refresh_token = std::mem::take(&mut self.persisted_state.refresh_token);
+        self.persisted_state.last_refresh_token_scopes =
+            refresh_token.map(|t| t.scopes).unwrap_or_default();
         self.persisted_state.logged_out_from_auth_issues = true;
         self.flow_store.clear();
     }
 
-    pub fn on_recovered_from_auth_issues(&mut self) {
-        self.persisted_state.logged_out_from_auth_issues = false;
-    }
-
     pub fn get_initial_state(&self) -> FxaState {
-        if self.persisted_state.logged_out_from_auth_issues {
-            FxaState::AuthIssues
-        } else if self.persisted_state.refresh_token.is_some() {
-            FxaState::Connected
-        } else {
-            FxaState::Disconnected
+        match &self.persisted_state.refresh_token {
+            Some(refresh_token) => {
+                
+                
+                
+                if refresh_token.scopes.contains(scopes::OLD_SYNC)
+                    && self.get_scoped_key(scopes::OLD_SYNC).is_none()
+                {
+                    FxaState::AuthIssues
+                } else {
+                    FxaState::Connected
+                }
+            }
+            None => {
+                if self.persisted_state.logged_out_from_auth_issues {
+                    FxaState::AuthIssues
+                } else {
+                    FxaState::Disconnected
+                }
+            }
         }
     }
 
@@ -296,6 +286,7 @@ impl StateManager {
         self.persisted_state.refresh_token = Some(refresh_token);
         self.persisted_state.access_token_cache.clear();
         self.persisted_state.server_local_device_info = None;
+        self.persisted_state.logged_out_from_auth_issues = false;
     }
 
     

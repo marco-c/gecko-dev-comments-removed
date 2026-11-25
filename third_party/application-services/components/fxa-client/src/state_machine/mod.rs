@@ -14,7 +14,7 @@ mod display;
 mod helpers;
 mod transitions;
 
-use helpers::{RetryingAccount, StateMachineErr};
+use helpers::StateMachineErr;
 
 impl FirefoxAccount {
     
@@ -35,8 +35,7 @@ impl FirefoxAccount {
 
         breadcrumb!("FxaStateMachine.process_event starting: {event}");
 
-        let mut retrying = RetryingAccount::new(self);
-        let new_state = match transitions::transition(&mut retrying, from_state, event) {
+        let new_state = match transitions::transition(self, from_state, event) {
             Ok(s) => {
                 breadcrumb!("FxaStateMachine.process_event finished (Done({s}))");
                 s
@@ -55,8 +54,6 @@ impl FirefoxAccount {
         self.auth_state = new_state.clone();
         if !was_in_auth_issues && matches!(new_state, FxaState::AuthIssues) {
             self.on_auth_issues();
-        } else if was_in_auth_issues && !matches!(new_state, FxaState::AuthIssues) {
-            self.on_recovered_from_auth_issues();
         }
         Ok(new_state)
     }

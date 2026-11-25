@@ -2,7 +2,6 @@
 
 
 
-mod builder;
 mod cache_control;
 mod connection_initializer;
 mod outcome;
@@ -13,20 +12,25 @@ mod strategy;
 mod ttl;
 
 use self::{
-    builder::HttpCacheBuilder,
+    connection_initializer::HttpCacheConnectionInitializer,
     store::HttpCacheStore,
     strategy::{CacheFirst, NetworkFirst},
 };
 use crate::bytesize::ByteSize;
 use crate::clock::Clock;
+#[cfg(test)]
+use crate::clock::MockClock;
+use crate::telemetry;
+use crate::IN_MEMORY_DB_PATH;
 
-use sql_support::open_database;
+use rusqlite::OpenFlags;
+use sql_support::{open_database, LazyDb};
 use std::hash::Hash;
 use viaduct::{Client, Request, Response};
 
-pub use self::builder::HttpCacheBuilderError;
 pub use self::outcome::CacheOutcome;
 pub use self::request_hash::RequestHash;
+use std::path::Path;
 use std::time::Duration;
 
 pub type HttpCacheSendResult = Result<(Response, Vec<CacheOutcome>), viaduct::ViaductError>;
@@ -43,6 +47,31 @@ impl Default for CachePolicy {
     }
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum HttpCacheError {
+    #[error("Database error: {0}")]
+    Database(#[from] open_database::Error),
+    
+    #[error("Database (memory) error: {0}")]
+    DatabaseMemory(open_database::Error),
+    #[error("Database path cannot be empty")]
+    EmptyDbPath,
+    #[error(
+        "Maximum cache size must be between {min_size} and {max_size}, got {size_bytes} bytes"
+    )]
+    InvalidMaxSize {
+        max_size: String,
+        min_size: String,
+        size_bytes: u64,
+    },
+    #[error("TTL must be between {min_ttl} and {max_ttl}, got {ttl} seconds")]
+    InvalidTtl {
+        max_ttl: String,
+        min_ttl: String,
+        ttl: u64,
+    },
+}
+
 pub struct HttpCache {
     clock: Clock,
     default_ttl: Duration,
@@ -51,8 +80,24 @@ pub struct HttpCache {
 }
 
 impl HttpCache {
-    pub fn builder() -> HttpCacheBuilder {
-        HttpCacheBuilder::new()
+    
+    
+    
+    
+    
+    
+    
+    pub fn new<P: AsRef<Path>>(
+        db_path: P,
+        default_ttl: Duration,
+        max_size: ByteSize,
+    ) -> Result<Self, HttpCacheError> {
+        Ok(Self {
+            clock: Clock::default(),
+            default_ttl,
+            max_size,
+            store: HttpCacheStore::new(open_db(db_path.as_ref())?),
+        })
     }
 
     pub fn is_memory(&self) -> Result<bool, open_database::Error> {
@@ -122,6 +167,40 @@ impl HttpCache {
     pub fn shutdown_db(&self) {
         self.store.close();
     }
+
+    
+    #[cfg(test)]
+    pub(crate) fn with_mock_clock(mut self, clock: MockClock) -> Self {
+        self.clock = clock.into();
+        self
+    }
+}
+
+
+fn open_db(db_path: &Path) -> Result<LazyDb<HttpCacheConnectionInitializer>, HttpCacheError> {
+    let memory = Path::new(IN_MEMORY_DB_PATH);
+    if db_path != memory {
+        match open_connection(db_path) {
+            Ok(db) => return Ok(db),
+            Err(e) => telemetry::record_build_cache_error(&HttpCacheError::from(e)),
+        }
+    }
+
+    
+    open_connection(memory).map_err(HttpCacheError::DatabaseMemory)
+}
+
+
+fn open_connection(
+    path: &Path,
+) -> Result<LazyDb<HttpCacheConnectionInitializer>, open_database::Error> {
+    let db = LazyDb::new(
+        path,
+        OpenFlags::default(),
+        HttpCacheConnectionInitializer {},
+    );
+    drop(db.lock()?);
+    Ok(db)
 }
 
 #[cfg(test)]
@@ -131,6 +210,7 @@ mod tests {
 
     use super::*;
     use crate::clock::MockClock;
+    use crate::test_utils::memory_http_cache;
     use viaduct::ClientSettings;
 
     fn make_client() -> Client {
@@ -160,24 +240,15 @@ mod tests {
         TestRequest(Request::post(url).json(&serde_json::json!({"fake":"data"})))
     }
 
-    fn make_cache() -> HttpCache {
-        
-        HttpCache::builder()
-            .default_ttl(Duration::from_secs(60))
-            .max_size(ByteSize::mib(1))
-            .build()
-            .expect("cache build should succeed")
-    }
-
     fn make_cache_with_ttl(secs: u64) -> (HttpCache, MockClock) {
         let clock = MockClock::new();
-        
-        let cache = HttpCache::builder()
-            .default_ttl(Duration::from_secs(secs))
-            .max_size(ByteSize::mib(4))
-            .mock_clock(clock.clone())
-            .build()
-            .expect("cache build should succeed");
+        let cache = HttpCache::new(
+            crate::IN_MEMORY_DB_PATH,
+            Duration::from_secs(secs),
+            ByteSize::mib(4),
+        )
+        .expect("cache build should succeed")
+        .with_mock_clock(clock.clone());
         (cache, clock)
     }
 
@@ -193,20 +264,38 @@ mod tests {
     #[test]
     fn test_http_cache_creation() {
         
-        let cache: Result<HttpCache, _> = HttpCache::builder().build();
+        let cache: Result<HttpCache, _> = HttpCache::new(
+            crate::IN_MEMORY_DB_PATH,
+            Duration::from_secs(300),
+            ByteSize::mib(10),
+        );
         assert!(cache.is_ok());
 
         
-        let cache_with_config: Result<HttpCache, _> = HttpCache::builder()
-            .max_size(ByteSize::mib(1))
-            .default_ttl(Duration::from_secs(60))
-            .build();
+        let cache_with_config: Result<HttpCache, _> = HttpCache::new(
+            crate::IN_MEMORY_DB_PATH,
+            Duration::from_secs(60),
+            ByteSize::mib(1),
+        );
         assert!(cache_with_config.is_ok());
     }
 
     #[test]
+    fn test_unopenable_path_falls_back_to_memory_db() {
+        
+        let _lock = crate::telemetry::test_lock();
+        let cache = HttpCache::new(
+            "this/is/a/test/bad/path",
+            Duration::from_secs(60),
+            ByteSize::mib(1),
+        )
+        .unwrap();
+        assert!(cache.is_memory().unwrap());
+    }
+
+    #[test]
     fn test_clear_cache() {
-        let cache: HttpCache = HttpCache::builder().build().unwrap();
+        let cache = memory_http_cache();
 
         
         let hash = RequestHash::new(&("Get", "https://example.com/test"));
@@ -253,7 +342,7 @@ mod tests {
             .expect(1) 
             .create();
 
-        let cache = make_cache();
+        let cache = memory_http_cache();
         let req = make_post_request();
         let client = make_client();
 
@@ -284,7 +373,7 @@ mod tests {
             .expect(2)
             .create();
 
-        let cache = make_cache();
+        let cache = memory_http_cache();
         let req = make_post_request();
         let client = make_client();
 
@@ -319,7 +408,7 @@ mod tests {
             .expect(2) 
             .create();
 
-        let cache = make_cache();
+        let cache = memory_http_cache();
         let req = make_post_request();
         let client = make_client();
 
@@ -353,7 +442,7 @@ mod tests {
             .expect(2) 
             .create();
 
-        let cache = make_cache();
+        let cache = memory_http_cache();
         let req = make_post_request();
         let client = make_client();
 
@@ -669,7 +758,7 @@ mod tests {
 
     #[test]
     fn test_invalidate_by_hash() {
-        let cache: HttpCache = HttpCache::builder().build().unwrap();
+        let cache = memory_http_cache();
 
         let hash1 = RequestHash::new(&("Post", "https://example.com/api1"));
         let hash2 = RequestHash::new(&("Post", "https://example.com/api2"));
