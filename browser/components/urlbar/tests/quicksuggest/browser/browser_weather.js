@@ -318,143 +318,63 @@ add_task(async function manage() {
 });
 
 
-add_task(async function simplestUi() {
-  let nimbusVariablesList = [
-    
-    
-    null,
-    { weatherUiTreatment: 0 },
-  ];
-
-  for (let nimbusVariables of nimbusVariablesList) {
-    let nimbusCleanup = nimbusVariables
-      ? await UrlbarTestUtils.initNimbusFeature(nimbusVariables)
-      : null;
-
-    await BrowserTestUtils.withNewTab("about:blank", async () => {
-      await UrlbarTestUtils.promiseAutocompleteResultPopup({
-        window,
-        value: "weather",
-      });
-
-      let details = await assertWeatherResultPresent();
-
-      let { row } = details.element;
-
-      
-      let unit = Services.locale.regionalPrefsLocales[0] == "en-US" ? "f" : "c";
-      let temperature =
-        WEATHER_SUGGESTION.current_conditions.temperature[unit] +
-        "°" +
-        unit.toUpperCase();
-      let expectedTitle = [
-        temperature,
-        "in",
-        WEATHER_SUGGESTION.city_name + ",",
-        WEATHER_SUGGESTION.region_code,
-      ].join(" ");
-
-      
-      
-      let title = row.querySelector(".urlbarView-title");
-      await TestUtils.waitForCondition(
-        () => title.textContent == expectedTitle,
-        "Waiting for the row's title text to be updated"
-      );
-      Assert.equal(
-        title.textContent,
-        expectedTitle,
-        "Row should have expected title"
-      );
-
-      
-      let strongChildren = title.querySelectorAll("strong");
-      Assert.equal(
-        strongChildren.length,
-        1,
-        "Title should have one <strong> child"
-      );
-      Assert.equal(
-        strongChildren[0].textContent,
-        temperature,
-        "Strong child should be correct"
-      );
-
-      Assert.ok(
-        !row.hasAttribute("label"),
-        "Simplest UI should not have a row label"
-      );
-
-      await assertPageLoad();
+add_task(async function ui() {
+  await BrowserTestUtils.withNewTab("about:blank", async () => {
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "weather",
     });
 
-    await nimbusCleanup?.();
-  }
-});
+    let details = await assertWeatherResultPresent();
 
+    let { row } = details.element;
 
-add_task(async function simplerAndFullUi() {
-  const testData = [
     
-    {
-      nimbusVariables: { weatherUiTreatment: 1 },
-      expectedSummary: WEATHER_SUGGESTION.current_conditions.summary,
-    },
+    let unit = Services.locale.regionalPrefsLocales[0] == "en-US" ? "f" : "c";
+    let temperature =
+      WEATHER_SUGGESTION.current_conditions.temperature[unit] +
+      "°" +
+      unit.toUpperCase();
+    let expectedTitle = [
+      temperature,
+      "in",
+      WEATHER_SUGGESTION.city_name + ",",
+      WEATHER_SUGGESTION.region_code,
+    ].join(" ");
+
     
-    {
-      nimbusVariables: { weatherUiTreatment: 2 },
-      expectedSummary: `${WEATHER_SUGGESTION.current_conditions.summary}; ${WEATHER_SUGGESTION.forecast.summary}`,
-    },
-  ];
+    
+    let title = row.querySelector(".urlbarView-title");
+    await TestUtils.waitForCondition(
+      () => title.textContent == expectedTitle,
+      "Waiting for the row's title text to be updated"
+    );
+    Assert.equal(
+      title.textContent,
+      expectedTitle,
+      "Row should have expected title"
+    );
 
-  for (let { nimbusVariables, expectedSummary } of testData) {
-    let nimbusCleanup = nimbusVariables
-      ? await UrlbarTestUtils.initNimbusFeature(nimbusVariables)
-      : null;
+    
+    let strongChildren = title.querySelectorAll("strong");
+    Assert.equal(
+      strongChildren.length,
+      1,
+      "Title should have one <strong> child"
+    );
+    Assert.equal(
+      strongChildren[0].textContent,
+      temperature,
+      "Strong child should be correct"
+    );
 
-    await BrowserTestUtils.withNewTab("about:blank", async () => {
-      await UrlbarTestUtils.promiseAutocompleteResultPopup({
-        window,
-        value: "weather",
-      });
+    Assert.ok(
+      !row.hasAttribute("label"),
+      "The row should not have a row label"
+    );
 
-      let details = await assertWeatherResultPresent();
-
-      let { row } = details.element;
-      let summary = row.querySelector(
-        ".urlbarView-dynamic-weather-summaryText"
-      );
-
-      Assert.equal(
-        summary.textContent,
-        expectedSummary,
-        "The summary text should be correct"
-      );
-
-      
-      let expectedTitle = [
-        "Weather for",
-        WEATHER_SUGGESTION.city_name + ",",
-        WEATHER_SUGGESTION.region_code,
-      ].join(" ");
-      let title = row.querySelector(".urlbarView-dynamic-weather-title");
-      Assert.equal(
-        title.textContent,
-        expectedTitle,
-        "The title text should be correct"
-      );
-
-      Assert.equal(
-        row.getAttribute("label"),
-        "Firefox Suggest",
-        "Row label should be correct"
-      );
-
-      await assertPageLoad();
-    });
-
-    await nimbusCleanup?.();
-  }
+    await assertPageLoad();
+  });
 });
 
 async function assertWeatherResultPresent() {
