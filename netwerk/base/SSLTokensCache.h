@@ -74,7 +74,7 @@ class SSLTokensCache : public nsIMemoryReporter,
                       uint32_t aTokenLen, CommonSocketControl* aSocketControl);
   static nsresult Put(const nsACString& aKey, const uint8_t* aToken,
                       uint32_t aTokenLen, CommonSocketControl* aSocketControl,
-                      PRTime aExpirationTime);
+                      PRTime aExpirationTime, bool aPlaintextSecret = false);
   static nsresult Get(const nsACString& aKey, nsTArray<uint8_t>& aToken,
                       SessionCacheInfo& aResult, uint64_t* aTokenId = nullptr,
                       bool* aRestored = nullptr);
@@ -147,8 +147,10 @@ class SSLTokensCache : public nsIMemoryReporter,
   void ClearCacheLocked() MOZ_REQUIRES(sLock);
   
   
-  static bool ShouldPersistKey(const nsACString& aKey,
-                               uint8_t aOverridableError);
+  static bool ShouldPersist(const TokenCacheRecord& aRec, PRTime aNow);
+  
+  static bool ShouldPersistIgnoringPlaintext(const TokenCacheRecord& aRec,
+                                             PRTime aNow);
   static bool MatchesAny(const nsTArray<StringPredicate>& aPredicates,
                          const nsACString& aKey);
 
@@ -212,7 +214,8 @@ class SSLTokensCache : public nsIMemoryReporter,
   
   static UniquePtr<TokenCacheRecord> MakeRecord(
       const nsACString& aKey, PRTime aExpirationTime, uint8_t aOverridableError,
-      bool aRestored, nsTArray<uint8_t>&& aCompressedPayload);
+      bool aRestored, bool aPlaintextSecret,
+      nsTArray<uint8_t>&& aCompressedPayload);
 
   
   
@@ -310,6 +313,8 @@ class SSLTokensCache : public nsIMemoryReporter,
     
     
     bool mRestored = false;
+    
+    bool mPlaintextSecret = false;
   };
 
   class TokenCacheEntry {
