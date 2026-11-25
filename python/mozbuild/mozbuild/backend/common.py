@@ -358,6 +358,8 @@ class CommonBackend(BuildBackend):
         
         elif substs.get("CC_TYPE") == "clang-cl":
             rustflags = ("-C", "link-arg=-FORCE:UNRESOLVED")
+        elif substs.get("CC_TYPE") == "clang":  
+            rustflags = ("-C", "link-arg=-Wl,-Xlink=-force:unresolved")
         return CargoCommand(
             kind="test",
             manifest_path=mozpath.normsep(mozpath.join(tests.srcdir, "Cargo.toml")),
