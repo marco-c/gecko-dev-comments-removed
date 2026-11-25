@@ -1462,11 +1462,11 @@ var gSync = {
     
     
     
-    const novaFxaLabel = PanelMultiView.getViewNode(
+    const fxaSignInButton = PanelMultiView.getViewNode(
       document,
       "appMenu-nova-fxa-label"
     );
-    const [headerDesc, headerText, novaSignIn] =
+    const [headerDesc, headerText, signInLabel] =
       this.fluentStrings.formatValuesSync([
         "appmenu-fxa-signed-in-label",
         "appmenu-fxa-sync-and-save-data2",
@@ -1474,8 +1474,8 @@ var gSync = {
       ]);
     appMenuHeaderDescription.value = headerDesc;
     appMenuHeaderText.textContent = headerText;
-    if (novaFxaLabel) {
-      novaFxaLabel.label = novaSignIn;
+    if (fxaSignInButton) {
+      fxaSignInButton.label = signInLabel;
     }
 
     
