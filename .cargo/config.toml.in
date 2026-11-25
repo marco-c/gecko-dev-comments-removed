@@ -70,9 +70,9 @@ git = "https://github.com/mozilla/audioipc"
 rev = "ef46a7bd05032d1577208ff048d444cc7412c7b8"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/cubeb-coreaudio-rs?rev=076ecf68dbf20087d2fa8e9210a1965e341f66d0"]
+[source."git+https://github.com/mozilla/cubeb-coreaudio-rs?rev=fea0321b47deec3d28a025336f379949d07b9945"]
 git = "https://github.com/mozilla/cubeb-coreaudio-rs"
-rev = "076ecf68dbf20087d2fa8e9210a1965e341f66d0"
+rev = "fea0321b47deec3d28a025336f379949d07b9945"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/mozilla/cubeb-pulse-rs?rev=43e6ffe0dcaace8e02093abc738fb80cc93db8db"]
@@ -110,9 +110,9 @@ git = "https://github.com/mozilla/mp4parse-rust"
 rev = "f0c80783227a1fb46f34cb04e10607045eac4297"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/neqo?tag=v0.34.0"]
+[source."git+https://github.com/mozilla/neqo?tag=v0.36.0"]
 git = "https://github.com/mozilla/neqo"
-tag = "v0.34.0"
+tag = "v0.36.0"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/mozilla/nss-rs"]
@@ -124,9 +124,9 @@ git = "https://github.com/rust-minidump/minidump-writer.git"
 rev = "d5ec275ce1276947f09f205a581fe2b3cf90178f"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/servo/rust-cssparser?rev=9f3ceddf398f5ce4ab76fdad1b42ccb6c578a926"]
+[source."git+https://github.com/servo/rust-cssparser?rev=f918ac231a8da7ff8c8e7d98a1b9488fa2bdac20"]
 git = "https://github.com/servo/rust-cssparser"
-rev = "9f3ceddf398f5ce4ab76fdad1b42ccb6c578a926"
+rev = "f918ac231a8da7ff8c8e7d98a1b9488fa2bdac20"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/servo/unicode-bidi?rev=ca612daf1c08c53abe07327cb3e6ef6e0a760f0c"]
