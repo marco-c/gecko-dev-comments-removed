@@ -62,11 +62,6 @@ class RtcEventLogDriver {
   struct Config {
     
     
-    
-    bool reuse_streams = false;
-
-    
-    
     std::set<uint32_t> ssrc_filter = {};
   };
 
