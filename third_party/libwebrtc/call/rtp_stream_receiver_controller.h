@@ -14,8 +14,6 @@
 #include <memory>
 
 #include "absl/base/nullability.h"
-#include "api/scoped_refptr.h"
-#include "api/task_queue/pending_task_safety_flag.h"
 #include "api/task_queue/task_queue_base.h"
 #include "call/rtp_demuxer.h"
 #include "call/rtp_stream_receiver_controller_interface.h"
@@ -30,30 +28,11 @@ class RtpPacketReceived;
 
 
 
-class RtpSinkValidator {
- public:
-  virtual ~RtpSinkValidator() = default;
-  
-  
-  
-  virtual void OnSinkAdded(RtpPacketSinkInterface* sink) = 0;
-  
-  
-  
-  virtual void OnSinkRemoved(RtpPacketSinkInterface* sink) = 0;
-  
-  virtual bool IsValidSink(RtpPacketSinkInterface* sink) const = 0;
-};
-
-
-
-
-
 class RtpStreamReceiverController : public RtpStreamReceiverControllerInterface,
                                     public RecoveredPacketReceiver {
  public:
-  RtpStreamReceiverController(TaskQueueBase* absl_nonnull network_thread,
-                              RtpSinkValidator* absl_nonnull sink_validator);
+  explicit RtpStreamReceiverController(
+      TaskQueueBase* absl_nonnull network_thread);
   ~RtpStreamReceiverController() override;
 
   
@@ -68,54 +47,32 @@ class RtpStreamReceiverController : public RtpStreamReceiverControllerInterface,
 
   
   
+  
   void OnRecoveredPacket(const RtpPacketReceived& packet) override;
 
-  
   
   void DisconnectFromNetworkThread();
 
   bool IsEmpty() const;
 
  private:
-  
-  
-  
-  class ProxySink : public RtpPacketSinkInterface {
-   public:
-    explicit ProxySink(RtpPacketSinkInterface* sink) : sink_(sink) {}
-    void OnRtpPacket(const RtpPacketReceived& packet) override {
-      sink_->OnRtpPacket(packet);
-    }
-    RtpPacketSinkInterface* sink() const { return sink_; }
-
-   private:
-    RtpPacketSinkInterface* const sink_;
-  };
-
   class Receiver : public RtpStreamReceiverInterface {
    public:
     Receiver(RtpStreamReceiverController* controller,
              uint32_t ssrc,
-             std::unique_ptr<ProxySink> proxy_sink);
+             RtpPacketSinkInterface* sink);
 
     ~Receiver() override;
 
    private:
     RtpStreamReceiverController* const controller_;
-    std::unique_ptr<ProxySink> proxy_sink_;
+    RtpPacketSinkInterface* const sink_;
   };
 
   bool AddSink(uint32_t ssrc, RtpPacketSinkInterface* sink);
   bool RemoveSink(const RtpPacketSinkInterface* sink);
 
   TaskQueueBase* const network_thread_;
-  RtpSinkValidator* const sink_validator_;
-  scoped_refptr<PendingTaskSafetyFlag> network_safety_ =
-      PendingTaskSafetyFlag::CreateAttachedToTaskQueue(true, network_thread_);
-  
-  
-  
-  
   RtpDemuxer demuxer_ RTC_GUARDED_BY(network_thread_){false };
 };
 
