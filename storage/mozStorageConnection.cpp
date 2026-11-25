@@ -62,6 +62,9 @@
 
 #define MAX_CACHE_SIZE_KIBIBYTES 2048  // 2 MiB
 
+
+#define DEFAULT_ASYNC_BUSY_TIMEOUT_MS 100
+
 mozilla::LazyLogModule gStorageLog("mozStorage");
 
 
@@ -1479,6 +1482,14 @@ nsresult Connection::initializeInternal() {
 #endif
 
   
+  
+  
+  
+  if (mSupportedOperations == ASYNCHRONOUS) {
+    (void)::sqlite3_busy_timeout(mDBConn, DEFAULT_ASYNC_BUSY_TIMEOUT_MS);
+  }
+
+  
   guard.release();
   return NS_OK;
 }
@@ -1679,8 +1690,11 @@ bool Connection::isClosed(MutexAutoLock& ) {
 
 bool Connection::isAsyncExecutionThreadAvailable() {
   MOZ_ASSERT(IsOnCurrentSerialEventTarget(eventTargetOpenedOn));
+  if (!mAsyncExecutionThread) {
+    return false;
+  }
   MutexAutoLock lockedScope(sharedAsyncExecutionMutex);
-  return mAsyncExecutionThread && !mAsyncExecutionThreadShuttingDown;
+  return !mAsyncExecutionThreadShuttingDown;
 }
 
 void Connection::shutdownAsyncThread() {
@@ -2239,9 +2253,12 @@ nsresult Connection::initializeClone(Connection* aClone, bool aReadOnly) {
   
   
   
-  static const char* pragmas[] = {
-      "cache_size",  "temp_store",         "foreign_keys", "journal_size_limit",
-      "synchronous", "wal_autocheckpoint", "busy_timeout"};
+  
+  
+  
+  static const char* pragmas[] = {"cache_size",   "temp_store",
+                                  "foreign_keys", "journal_size_limit",
+                                  "synchronous",  "wal_autocheckpoint"};
   for (auto& pragma : pragmas) {
     
     if (aReadOnly && ::strcmp(pragma, "cache_size") != 0 &&
@@ -2259,6 +2276,16 @@ nsresult Connection::initializeClone(Connection* aClone, bool aReadOnly) {
       pragmaQuery.AppendLiteral(" = ");
       pragmaQuery.AppendInt(stmt->AsInt32(0));
       rv = aClone->ExecuteSimpleSQL(pragmaQuery);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+  }
+
+  {
+    int noCheckpoint = 0;
+    int srv = ::sqlite3_db_config(mDBConn, SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE, -1,
+                                  &noCheckpoint);
+    if (srv == SQLITE_OK && noCheckpoint) {
+      rv = aClone->DisableCheckpointOnClose();
       NS_ENSURE_SUCCESS(rv, rv);
     }
   }
@@ -3277,6 +3304,21 @@ uint32_t Connection::IncreaseTransactionNestingLevel(
 uint32_t Connection::DecreaseTransactionNestingLevel(
     const mozilla::storage::SQLiteMutexAutoLock& ) {
   return --mTransactionNestingLevel;
+}
+
+NS_IMETHODIMP
+Connection::DisableCheckpointOnClose() {
+  if (!connectionReady()) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+  nsresult rv = ensureOperationSupported(SYNCHRONOUS);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  int srv = ::sqlite3_db_config(mDBConn, SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE, 1,
+                                nullptr);
+  return convertResultCode(srv);
 }
 
 NS_IMETHODIMP
