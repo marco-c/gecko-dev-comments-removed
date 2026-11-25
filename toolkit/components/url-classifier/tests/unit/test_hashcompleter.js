@@ -317,6 +317,7 @@ function runNextCompletion() {
       completion.hash.substring(0, 4),
       gethashUrl,
       "test-phish-shavar", 
+      false,
       new callback(completion)
     );
   }

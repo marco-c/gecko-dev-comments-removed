@@ -1299,7 +1299,7 @@ nsresult nsUrlClassifierHashCompleterBase::RequestHashCompletions(
         
         
         rv = completer->Complete(result->PartialHash(), gethashUrl,
-                                 result->mTableName, this);
+                                 result->mTableName, false, this);
         if (NS_SUCCEEDED(rv)) {
           mPendingCompletions++;
         }
