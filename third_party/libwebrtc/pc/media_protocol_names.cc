@@ -10,10 +10,11 @@
 
 #include "pc/media_protocol_names.h"
 
-#include <ctype.h>
-#include <stddef.h>
-
+#include <cctype>
+#include <cstddef>
 #include <string>
+
+#include "absl/strings/string_view.h"
 
 namespace webrtc {
 
@@ -47,10 +48,14 @@ namespace {
 const char kMediaProtocolSavp[] = "RTP/SAVP";
 const char kMediaProtocolAvp[] = "RTP/AVP";
 
-const char kMediaProtocolTcpTlsSavpf[] = "TCP/TLS/RTP/SAVPF";
-const char kMediaProtocolUdpTlsSavpf[] = "UDP/TLS/RTP/SAVPF";
-const char kMediaProtocolTcpTlsSavp[] = "TCP/TLS/RTP/SAVP";
+
 const char kMediaProtocolUdpTlsSavp[] = "UDP/TLS/RTP/SAVP";
+
+const char kMediaProtocolTcpDtlsSavpf[] = "TCP/DTLS/RTP/SAVPF";
+const char kMediaProtocolTcpDtlsSavp[] = "TCP/DTLS/RTP/SAVP";
+
+const char kMediaProtocolTcpTlsSavpf[] = "TCP/TLS/RTP/SAVPF";
+const char kMediaProtocolTcpTlsSavp[] = "TCP/TLS/RTP/SAVP";
 
 }  
 
@@ -90,9 +95,10 @@ bool IsRtpProtocol(absl::string_view protocol) {
 bool IsDtlsRtp(absl::string_view protocol) {
   
   return protocol == kMediaProtocolDtlsSavpf ||
-         protocol == kMediaProtocolTcpTlsSavpf ||
-         protocol == kMediaProtocolUdpTlsSavpf ||
+         protocol == kMediaProtocolTcpDtlsSavpf ||
          protocol == kMediaProtocolUdpTlsSavp ||
+         protocol == kMediaProtocolTcpDtlsSavp ||
+         protocol == kMediaProtocolTcpTlsSavpf ||
          protocol == kMediaProtocolTcpTlsSavp;
 }
 
