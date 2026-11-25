@@ -2950,9 +2950,6 @@ class Document : public nsINode,
       ExternalResourceLoad** aPendingLoad);
 
   
-  bool CanLoadExternalResource(nsIURI* aURI) const;
-
-  
 
 
 
