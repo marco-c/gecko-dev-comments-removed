@@ -25,6 +25,7 @@
 #include "mozilla/RemoteMediaManagerParent.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticMutex.h"
+#include "mozilla/TaskQueue.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Logging.h"
@@ -36,6 +37,7 @@
 #include "mozilla/layers/AndroidImageConsumer.h"
 #include "mozilla/webrender/RenderThread.h"
 #include "nsProxyRelease.h"
+#include "nsThreadManager.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {
@@ -505,7 +507,8 @@ void AndroidImageReader::ScheduleRemoteFrameTimeout() {
   if (mRemoteState->mFrameTimeoutScheduled) {
     return;
   }
-  auto* target = GetMainThreadSerialEventTarget();
+  auto map = GpuProcessAndroidImageReaderMap::Get();
+  TaskQueue* target = map ? map->mRemoteFrameTimeoutQueue.get() : nullptr;
   if (!target) {
     return;
   }
@@ -974,7 +977,7 @@ void AndroidImageReader::MaybeRenderFirstFrame(
 bool AndroidImageReader::DoUpdateTexImage(const MonitorAutoLock& aProofOfLock,
                                           AndroidMediaCodecFrameId aFrameId,
                                           CachePolicy aCachePolicy) {
-  MOZ_ASSERT(static_cast<int32_t>(mAcquiredImageCount) <= mMaxImageCount);
+  MOZ_ASSERT(mAcquiredImageCount.load() <= mMaxImageCount);
 
   if (IsStopped() || mCurrentFrameId == aFrameId) {
     return false;
@@ -1010,7 +1013,7 @@ bool AndroidImageReader::DoUpdateTexImage(const MonitorAutoLock& aProofOfLock,
   
   bool acquiredAnyImage = false;
   auto ensureCapacity = [&]() MOZ_REQUIRES(mMonitor) {
-    if (static_cast<int32_t>(mAcquiredImageCount) < mMaxImageCount) {
+    if (mAcquiredImageCount.load() < mMaxImageCount) {
       return true;
     }
     if (aCachePolicy == CachePolicy::PreserveOnFull) {
@@ -1026,7 +1029,7 @@ bool AndroidImageReader::DoUpdateTexImage(const MonitorAutoLock& aProofOfLock,
       MonitorAutoUnlock unlock(mMonitor);
       previous = nullptr;
     }
-    return static_cast<int32_t>(mAcquiredImageCount) < mMaxImageCount;
+    return mAcquiredImageCount.load() < mMaxImageCount;
   };
 
   while (mCurrentFrameId != aFrameId) {
@@ -1199,7 +1202,7 @@ AndroidImageReader::AcquirePendingImage() {
                                           format, std::move(fence), *crop);
   mCurrentFrameId = frameId;
 
-  MOZ_ASSERT(static_cast<int32_t>(mAcquiredImageCount) <= mMaxImageCount);
+  MOZ_ASSERT(mAcquiredImageCount.load() <= mMaxImageCount);
 
   return AcquireImageResult::Success;
 }
@@ -1299,13 +1302,22 @@ void GpuProcessAndroidImageReaderMap::Shutdown() {
   }
 
   
+  if (map && map->mRemoteFrameTimeoutQueue) {
+    map->mRemoteFrameTimeoutQueue->BeginShutdown();
+  }
+
+  
   StaticMutexAutoLock lock(sAImageReadbackMutex);
   sAImageReadbackShuttingDown = true;
   DestroyAImageSnapshotContext();
 }
 
 GpuProcessAndroidImageReaderMap::GpuProcessAndroidImageReaderMap()
-    : mMonitor("GpuProcessAndroidImageReaderMap.mMonitor") {}
+    : mRemoteFrameTimeoutQueue(nsThreadManager::get().CreateBackgroundTaskQueue(
+          "ImageReaderFrameTimeout")),
+      mMonitor("GpuProcessAndroidImageReaderMap.mMonitor") {}
+
+GpuProcessAndroidImageReaderMap::~GpuProcessAndroidImageReaderMap() = default;
 
 void GpuProcessAndroidImageReaderMap::Register(
     AndroidImageReader* aImageReader) {
