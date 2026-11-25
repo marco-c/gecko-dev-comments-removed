@@ -407,12 +407,12 @@ static EncoderConfig BuildEncoderConfig(const MediaExtendedMIMEType& aMime,
   const uint32_t bitrate = SaturatingCast<uint32_t>(aConfig.mBitrate);
   
   
-  return EncoderConfig(
-      codec, size, Usage::Realtime,
-      EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P), fr,
-       0, bitrate,  0,  0,
-      mozilla::BitrateMode::Variable, HardwarePreference::None,
-      ScalabilityMode::None, specific);
+  return EncoderConfig(codec, size, Usage::Realtime,
+                       EncoderConfig::SampleFormat(ImagePixelFormat::I420), fr,
+                        0, bitrate,  0,
+                        0, mozilla::BitrateMode::Variable,
+                       HardwarePreference::None, ScalabilityMode::None,
+                       specific);
 }
 
 

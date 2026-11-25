@@ -278,8 +278,8 @@ EncoderConfig VideoEncoderConfigInternal::ToEncoderConfig() const {
   
   
   EncoderConfig::SampleFormat format(usage == Usage::Realtime
-                                         ? dom::ImageBitmapFormat::YUV420P
-                                         : dom::ImageBitmapFormat::BGRA32);
+                                         ? ImagePixelFormat::I420
+                                         : ImagePixelFormat::BGRA);
   if (usage == Usage::Realtime) {
     format.mColorSpace.mRange.emplace(gfx::ColorRange::LIMITED);
   }

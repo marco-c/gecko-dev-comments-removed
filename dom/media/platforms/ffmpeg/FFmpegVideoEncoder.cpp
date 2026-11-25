@@ -22,8 +22,6 @@
 #include "libavutil/pixfmt.h"
 #include "libyuv.h"
 #include "mozilla/StaticPrefs_media.h"
-#include "mozilla/dom/ImageBitmapBinding.h"
-#include "mozilla/dom/ImageUtils.h"
 #include "mozilla/dom/VideoFrameBinding.h"
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/gfx/gfxVars.h"
@@ -34,7 +32,6 @@
 
 
 namespace ffmpeg {
-
 
 
 #if LIBAVCODEC_VERSION_MAJOR < 54

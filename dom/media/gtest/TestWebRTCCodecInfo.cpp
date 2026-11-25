@@ -45,7 +45,7 @@ static EncoderConfig MakeWebrtcEncoderConfig(
   }
   return EncoderConfig(
       codec, gfx::IntSize(640, 480), Usage::Realtime,
-      EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
+      EncoderConfig::SampleFormat(ImagePixelFormat::I420),
        30u,  0,  0,  0,
        0, BitrateMode::Variable, HardwarePreference::None,
       ScalabilityMode::None, specific);
