@@ -159,7 +159,8 @@ class JitFrameIter {
   uint8_t* resumePCinCurrentFrame() const;
 
   
-  void skipNonScriptedJSFrames();
+  
+  void skipNonScriptedFrames();
 
   
   

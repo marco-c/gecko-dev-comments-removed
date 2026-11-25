@@ -821,9 +821,29 @@ void wasm::HandleExceptionWasm(JSContext* cx, JitFrameIter& iter,
   
   
   wasm::ContStack* wasmPreviousStack = iter.asWasm().unwoundContStack();
-#endif
 
-  for (; !iter.done() && iter.isWasm(); ++iter) {
+  
+  
+  
+  wasm::ContStack* wasmStackToFree = nullptr;
+  auto freeUnwoundStack = [&]() {
+    if (!wasmStackToFree) {
+      return;
+    }
+    MOZ_RELEASE_ASSERT(
+        !activation->hasWasmExitFP() ||
+        !wasmStackToFree->hasStackAddress(uintptr_t(activation->wasmExitFP())));
+    ContStack::unwind(wasmStackToFree->handlers());
+    wasmStackToFree = nullptr;
+  };
+#else
+  auto freeUnwoundStack = [&]() {};
+#endif
+  
+  auto ensureFreeUnwoundStack =
+      mozilla::MakeScopeExit([&]() { freeUnwoundStack(); });
+
+  for (; !iter.done() && iter.isWasm(); ++iter, freeUnwoundStack()) {
     
     
     WasmFrameIter& wasmFrame = iter.asWasm();
@@ -833,14 +853,19 @@ void wasm::HandleExceptionWasm(JSContext* cx, JitFrameIter& iter,
 #ifdef ENABLE_WASM_JSPI
     wasm::ContStack* wasmStack = wasmFrame.contStack();
     if (wasmFrame.currentFrameStackSwitched()) {
-      if (wasmPreviousStack) {
-        ContStack::unwind(wasmPreviousStack->handlers());
-      }
+      MOZ_RELEASE_ASSERT(!wasmStackToFree);
+      wasmStackToFree = wasmPreviousStack;
       wasmPreviousStack = wasmStack;
     } else {
       MOZ_RELEASE_ASSERT(wasmStack == wasmPreviousStack);
     }
 #endif
+
+    
+    
+    if (wasmFrame.currentFrameIsReturnCallFallback()) {
+      continue;
+    }
 
     
     if (wasmExn) {

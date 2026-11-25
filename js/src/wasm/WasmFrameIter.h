@@ -88,6 +88,8 @@ class WasmFrameIter {
   bool failedUnwindSignatureMismatch_ = false;
   
   bool currentFrameStackSwitched_ = false;
+  
+  bool currentFrameIsReturnCallFallback_ = false;
 #ifdef ENABLE_WASM_JSPI
   ContStack* contStack_ = nullptr;
   
@@ -236,6 +238,14 @@ class WasmFrameIter {
   bool currentFrameStackSwitched() const {
     MOZ_ASSERT(!done());
     return currentFrameStackSwitched_;
+  }
+
+  
+  
+  
+  bool currentFrameIsReturnCallFallback() const {
+    MOZ_ASSERT(!done());
+    return currentFrameIsReturnCallFallback_;
   }
 
 #ifdef ENABLE_WASM_JSPI

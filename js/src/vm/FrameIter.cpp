@@ -94,14 +94,33 @@ JitFrameIter::JitFrameIter(jit::JitActivation* act, bool mustUnwindActivation,
   settle();
 }
 
-void JitFrameIter::skipNonScriptedJSFrames() {
-  if (isJSJit()) {
-    
-    jit::JSJitFrameIter& frames = asJSJit();
-    while (!frames.isScripted() && !frames.done()) {
-      ++frames;
+void JitFrameIter::skipNonScriptedFrames() {
+  while (!done()) {
+    if (isJSJit()) {
+      
+      jit::JSJitFrameIter& frames = asJSJit();
+      while (!frames.isScripted() && !frames.done()) {
+        ++frames;
+      }
+      
+      if (!frames.done()) {
+        break;
+      }
+      
+      settle();
+    } else if (isWasm()) {
+      
+      wasm::WasmFrameIter& frames = asWasm();
+      while (!frames.done() && frames.currentFrameIsReturnCallFallback()) {
+        ++frames;
+      }
+      
+      if (!frames.done()) {
+        break;
+      }
+      
+      settle();
     }
-    settle();
   }
 }
 
@@ -317,7 +336,7 @@ void FrameIter::settleOnActivation() {
 
     if (activation->isJit()) {
       data_.jitFrames_ = JitFrameIter(activation->asJit());
-      data_.jitFrames_.skipNonScriptedJSFrames();
+      data_.jitFrames_.skipNonScriptedFrames();
       if (data_.jitFrames_.done()) {
         
         
@@ -428,7 +447,7 @@ void FrameIter::popJitFrame() {
   }
 
   ++data_.jitFrames_;
-  data_.jitFrames_.skipNonScriptedJSFrames();
+  data_.jitFrames_.skipNonScriptedFrames();
 
   if (!data_.jitFrames_.done()) {
     nextJitFrame();
