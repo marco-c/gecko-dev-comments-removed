@@ -1447,8 +1447,7 @@ already_AddRefed<nsPIDOMWindowInner> EventListenerManager::WindowFromListener(
     } else if (mTarget) {
       
       
-      if (aListener && aTypeAtom == nsGkAtoms::onkeypress &&
-          mTarget->IsRootWindow()) {
+      if (aTypeAtom == nsGkAtoms::onkeypress && mTarget->IsRootWindow()) {
         nsPIWindowRoot* root = mTarget->AsWindowRoot();
         if (nsPIDOMWindowOuter* outerWindow = root->GetWindow()) {
           innerWindow = outerWindow->GetCurrentInnerWindow();
@@ -1527,13 +1526,16 @@ EventListenerManager::EventListenerMap::GetOrCreateListenersForAllEvents() {
   return listeners;
 }
 
-void EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
-                                               WidgetEvent* aEvent,
-                                               Event** aDOMEvent,
-                                               EventTarget* aCurrentTarget,
-                                               nsEventStatus* aEventStatus,
-                                               bool aItemInShadowTree) {
+void EventListenerManager::HandleEventInternal(
+    nsPresContext* aPresContext, WidgetEvent* aEvent, nsAtom* aTypeAtom,
+    Event** aDOMEvent, EventTarget* aCurrentTarget, nsEventStatus* aEventStatus,
+    bool aItemInShadowTree) {
   MOZ_ASSERT_IF(aEvent->mMessage != eUnidentifiedEvent, mIsMainThreadELM);
+
+#ifdef DEBUG
+  RefPtr<nsAtom> type = nsContentUtils::GetEventType(aEvent);
+  MOZ_ASSERT(aTypeAtom == type, "Cached type atom doesn't match the event");
+#endif
 
   
   
@@ -1548,6 +1550,13 @@ void EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
     return;
   }
 
+  if (!aTypeAtom) {
+    
+    
+    
+    return;
+  }
+
   Maybe<AutoHandlingUserInputStatePusher> userInputStatePusher;
   Maybe<AutoPopupStatePusher> popupStatePusher;
   if (mIsMainThreadELM) {
@@ -1557,21 +1566,13 @@ void EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
         PopupBlocker::GetEventPopupControlState(aEvent, *aDOMEvent));
   }
 
-  RefPtr<nsAtom> typeAtom = nsContentUtils::GetEventType(aEvent);
-  if (!typeAtom) {
-    
-    
-    
-    return;
-  }
-
   EventMessage eventMessage = aEvent->mMessage;
   bool hasAnyListenerForEventType = false;
 
   
   if (RefPtr<ListenerArray> listenersForAllEvents =
           mListenerMap.GetListenersForAllEvents()) {
-    HandleEventWithListenerArray(listenersForAllEvents, typeAtom, eventMessage,
+    HandleEventWithListenerArray(listenersForAllEvents, aTypeAtom, eventMessage,
                                  aPresContext, aEvent, aDOMEvent,
                                  aCurrentTarget, aItemInShadowTree);
     hasAnyListenerForEventType = true;
@@ -1580,9 +1581,9 @@ void EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
   
   bool hasAnyListenerMatchingGroup = false;
   if (RefPtr<ListenerArray> listeners =
-          mListenerMap.GetListenersForType(typeAtom)) {
+          mListenerMap.GetListenersForType(aTypeAtom)) {
     hasAnyListenerMatchingGroup = HandleEventWithListenerArray(
-        listeners, typeAtom, eventMessage, aPresContext, aEvent, aDOMEvent,
+        listeners, aTypeAtom, eventMessage, aPresContext, aEvent, aDOMEvent,
         aCurrentTarget, aItemInShadowTree);
     hasAnyListenerForEventType = true;
   }

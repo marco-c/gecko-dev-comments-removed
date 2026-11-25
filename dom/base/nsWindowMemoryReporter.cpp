@@ -755,7 +755,7 @@ void nsWindowMemoryReporter::CheckForGhostWindows(
   for (const auto& entry : *windowsById) {
     
     
-    nsGlobalWindowInner* window = entry.GetWeak();
+    nsGlobalWindowInner* window = entry.GetRawPtr();
     if (!window->GetOuterWindow() || !window->GetInProcessTopInternal() ||
         !window->GetBrowsingContextGroup()) {
       
@@ -815,7 +815,7 @@ void nsWindowMemoryReporter::CheckForGhostWindows(
         
         
         mGhostWindowCount++;
-        if (aOutGhostIDs && window) {
+        if (aOutGhostIDs) {
           aOutGhostIDs->Insert(window->WindowID());
         }
       }
