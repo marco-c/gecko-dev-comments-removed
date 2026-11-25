@@ -28,7 +28,7 @@ import mozilla.components.browser.engine.gecko.permission.GeckoPermissionRequest
 import mozilla.components.browser.engine.gecko.prompt.GeckoPromptDelegate
 import mozilla.components.browser.engine.gecko.translate.GeckoTranslateSessionDelegate
 import mozilla.components.browser.engine.gecko.translate.GeckoTranslationUtils.intoTranslationError
-import mozilla.components.browser.engine.gecko.util.makePdfDownloadFilename
+import mozilla.components.browser.engine.gecko.util.findBestPdfFilename
 import mozilla.components.browser.engine.gecko.window.GeckoWindowRequest
 import mozilla.components.concept.engine.DownloadDelegate
 import mozilla.components.concept.engine.EngineSession
@@ -69,7 +69,6 @@ import mozilla.components.support.ktx.kotlin.isEmail
 import mozilla.components.support.ktx.kotlin.isExtensionUrl
 import mozilla.components.support.ktx.kotlin.isGeoLocation
 import mozilla.components.support.ktx.kotlin.isPhone
-import mozilla.components.support.ktx.kotlin.sanitizeFileName
 import mozilla.components.support.ktx.kotlin.tryGetHostFromUrl
 import mozilla.components.support.utils.CertificateUtils
 import mozilla.components.support.utils.DownloadUtils
@@ -188,7 +187,9 @@ class GeckoEngineSession(
     ) {
         notifyObservers { onLoadUrl() }
 
-        val scheme = url.toUri().normalizeScheme().scheme
+        // Filter the URL the way Gecko's net_FilterURIString does, so that the checked scheme is the scheme Gecko
+        // loads: remove control characters and spaces at the ends, and tabs, line feeds and carriage returns anywhere.
+        val scheme = url.trim { it.code <= 0x20 }.filterNot { it in "\t\n\r" }.toUri().normalizeScheme().scheme
         if (BLOCKED_SCHEMES.contains(scheme) && !shouldLoadJSSchemes(scheme, flags)) {
             logger.error("URL scheme not allowed. Aborting load.")
             return
@@ -261,9 +262,16 @@ class GeckoEngineSession(
                     val responseStatus = RESPONSE_CODE_SUCCESS
                     // We do not know the size at this point; send 0 so consumers do not display it.
                     val contentLength = 0L
+                    val pdfFilename =
+                        findBestPdfFilename(
+                            downloadDelegate = settings.downloadDelegate,
+                            url = currentUrl,
+                            contentDisposition = webResponse.headers[CONTENT_DISPOSITION],
+                            title = currentTitle,
+                        )
                     // Update the content disposition to ensure we have proper file naming for both viewed or generated
                     // PDFs
-                    val disposition = contentDispositionForPdf(webResponse)
+                    val disposition = makePdfContentDisposition(pdfFilename)
                     // Ensures the name is properly sanitized for the filesystem
                     val fileName =
                         settings.downloadDelegate?.guessFileName(
@@ -313,7 +321,7 @@ class GeckoEngineSession(
         onResult: (Response) -> Unit,
         onException: (Throwable) -> Unit,
     ) {
-        pdfToDownload()
+        pdfToDownload(flatten = true)
             .then(
                 { webResponse ->
                     val body = webResponse?.body
@@ -322,6 +330,13 @@ class GeckoEngineSession(
                         return@then GeckoResult<Void>()
                     }
 
+                    val pdfFilename =
+                        findBestPdfFilename(
+                            downloadDelegate = settings.downloadDelegate,
+                            url = currentUrl,
+                            contentDisposition = webResponse.headers[CONTENT_DISPOSITION],
+                            title = currentTitle,
+                        )
                     onResult(
                         Response(
                             url = webResponse.uri,
@@ -329,7 +344,7 @@ class GeckoEngineSession(
                             headers =
                                 MutableHeaders(
                                     CONTENT_TYPE to "application/pdf",
-                                    CONTENT_DISPOSITION to contentDispositionForPdf(webResponse),
+                                    CONTENT_DISPOSITION to makePdfContentDisposition(pdfFilename),
                                 ),
                             body = Response.Body(body),
                         )
@@ -344,36 +359,29 @@ class GeckoEngineSession(
     }
 
     /**
-     * Ensures a proper Content-Disposition is available to guarantee PDFs have reasonable names for downloading or
-     * sharing.
+     * Determines the correct PDF bytes to download or share. If the tab is showing a PDF, then the bytes should come
+     * directly from that PDF, else they should be generated for the page.
      *
-     * @param webResponse The PDF response. May come either from the PDF viewer or from generating a PDF from browser
-     *   content.
-     * @return The Content-Disposition to download or share the PDF with.
+     * @param flatten Whether a shown PDF should have its annotations drawn into the page content, for share targets
+     *   such as print services that may not render annotations. Form fields are flattened too, so they can no longer be
+     *   filled in. HTML pages generated as PDFs are always flattened.
+     * @return The PDF response.
      */
-    private fun contentDispositionForPdf(webResponse: WebResponse): String {
-        val pdfFilename =
-            DownloadUtils.extractFileNameFromUrlOrNull(
-                    contentDisposition = webResponse.headers[CONTENT_DISPOSITION],
-                    url = null,
-                )
-                ?.sanitizeFileName()
-        // Ensures content disposition is set up properly for downloading a PDF
-        return makePdfContentDisposition(makePdfDownloadFilename(filename = pdfFilename, title = currentTitle))
-    }
-
-    /**
-     * Determines the correct PDF bytes to download. If the tab is showing a PDF, then the bytes should come directly
-     * from that PDF, else they should be generated for the page.
-     */
-    private fun pdfToDownload(): GeckoResult<WebResponse> =
+    private fun pdfToDownload(flatten: Boolean = false): GeckoResult<WebResponse> =
         geckoSession.isPdfJs.then(
-            { isPdfJs -> if (isPdfJs == true) visiblePdfDocument() else pageSavedAsPdf() },
+            { isPdfJs -> if (isPdfJs == true) visiblePdfDocument(flatten) else pageSavedAsPdf() },
             { pageSavedAsPdf() },
         )
 
-    /** Method to get the bytes from the shown PDF document. */
-    private fun visiblePdfDocument(): GeckoResult<WebResponse> = geckoSession.pdfFileSaver.save()
+    /**
+     * Method to get the bytes from the shown PDF document.
+     *
+     * @param flatten Whether a shown PDF should have its annotations drawn into the page content, for share targets
+     *   such as print services that may not render annotations. Form fields are flattened too, so they can no longer be
+     *   filled in.
+     * @return The PDF response.
+     */
+    private fun visiblePdfDocument(flatten: Boolean): GeckoResult<WebResponse> = geckoSession.pdfFileSaver.save(flatten)
 
     /** Method to generate a PDF from the content. */
     private fun pageSavedAsPdf(): GeckoResult<WebResponse> =
