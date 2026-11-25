@@ -11,6 +11,7 @@
 #ifndef PC_ICE_SERVER_PARSING_H_
 #define PC_ICE_SERVER_PARSING_H_
 
+#include <cstddef>
 #include <vector>
 
 #include "api/peer_connection_interface.h"
@@ -20,6 +21,10 @@
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
+
+
+
+inline constexpr size_t kMaxStunServers = 32;
 
 
 
