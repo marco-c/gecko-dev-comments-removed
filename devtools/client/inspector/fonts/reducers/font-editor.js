@@ -21,7 +21,7 @@ const {
   UPDATE_WARNING_MESSAGE,
 } = require("resource://devtools/client/inspector/fonts/actions/index.js");
 
-const CUSTOM_INSTANCE_NAME = getStr("fontinspector.customInstanceName");
+const CUSTOM_INSTANCE_NAME = getStr("font-inspector-custom-instance-name");
 
 const INITIAL_STATE = {
   
@@ -42,7 +42,7 @@ const INITIAL_STATE = {
   
   id: "",
   
-  warning: getStr("fontinspector.noFontsUsedOnCurrentElement"),
+  warning: getStr("font-inspector-no-fonts-used"),
 };
 
 const reducers = {
