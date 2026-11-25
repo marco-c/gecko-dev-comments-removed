@@ -161,6 +161,14 @@ bool CodeGeneratorShared::generatePrologue() {
     masm.profilerEnterFrame(FramePointer, CallTempReg0);
   }
 
+  if (frameSize() > MAX_UNCHECKED_UNDERFLOW_SIZE) {
+    Label noUnderflow;
+    masm.branchStackPtr(Assembler::AboveOrEqual, Imm32(frameSize()),
+                        &noUnderflow);
+    masm.assumeUnreachable("stack underflow");
+    masm.bind(&noUnderflow);
+  }
+
   
   masm.reserveStack(frameSize());
   MOZ_ASSERT(masm.framePushed() == frameSize());
@@ -433,6 +441,13 @@ void CodeGeneratorShared::encodeAllocation(LSnapshot* snapshot,
                                            bool hasSideEffects) {
   if (mir->isBox()) {
     mir = mir->toBox()->getOperand(0);
+  }
+
+  if (mir->isNurseryObject()) {
+    uint32_t index = mir->toNurseryObject()->nurseryObjectIndex();
+    masm.propagateOOM(snapshots_.add(RValueAllocation::NurseryObject(index)));
+    *allocIndex += 1;
+    return;
   }
 
   MIRType type = mir->isRecoveredOnBailout() ? MIRType::None

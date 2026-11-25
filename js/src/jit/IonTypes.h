@@ -801,6 +801,10 @@ enum class RoundingMode { Down, Up, NearestTiesToEven, TowardsZero };
 static const uint32_t MAX_UNCHECKED_LEAF_FRAME_SIZE = 64;
 
 
+
+static const uint32_t MAX_UNCHECKED_UNDERFLOW_SIZE = 4096;
+
+
 using TruncFlags = uint32_t;
 static const TruncFlags TRUNC_UNSIGNED = TruncFlags(1) << 0;
 static const TruncFlags TRUNC_SATURATING = TruncFlags(1) << 1;
