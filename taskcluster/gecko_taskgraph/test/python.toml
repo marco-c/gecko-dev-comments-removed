@@ -25,6 +25,8 @@ subsuite = "taskgraph"
 
 ["test_taskcluster_yml.py"]
 
+["test_transforms_beetmover_apt.py"]
+
 ["test_transforms_build.py"]
 
 ["test_transforms_build_schedules.py"]
@@ -44,6 +46,8 @@ subsuite = "taskgraph"
 ["test_transforms_perftest.py"]
 
 ["test_transforms_raptor_ab.py"]
+
+["test_transforms_repackage_partner.py"]
 
 ["test_transforms_source_test.py"]
 
