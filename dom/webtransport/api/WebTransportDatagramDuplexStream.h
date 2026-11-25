@@ -5,6 +5,7 @@
 #ifndef DOM_WEBTRANSPORT_API_WEBTRANSPORTDATAGRAMDUPLEXSTREAM_H_
 #define DOM_WEBTRANSPORT_API_WEBTRANSPORTDATAGRAMDUPLEXSTREAM_H_
 
+#include "mozilla/dom/DatagramCredit.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/TypedArray.h"
@@ -65,10 +66,7 @@ class OutgoingDatagramStreamAlgorithms final
 
   explicit OutgoingDatagramStreamAlgorithms(
       WebTransportDatagramDuplexStream* aDatagrams,
-      WebTransportSendGroup* aSendGroup = nullptr, int64_t aSendOrder = 0)
-      : mDatagrams(aDatagrams),
-        mSendGroup(aSendGroup),
-        mSendOrder(aSendOrder) {}
+      WebTransportSendGroup* aSendGroup = nullptr, int64_t aSendOrder = 0);
 
   void SetChild(WebTransportChild* aChild);
   WebTransportChild* GetChild() const { return mChild; }
@@ -90,12 +88,35 @@ class OutgoingDatagramStreamAlgorithms final
       ErrorResult& aError) override;
 
   
-  void OnDatagramReady(uint64_t aDatagramId);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool TryResolveBackpressureFromCredit(uint64_t aAvailableBytes,
+                                        size_t* aResolvedBytes);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void RetireInFlight(uint64_t aCount);
 
   
   void UpdateQueueParams(uint32_t aMaxBufferedDatagrams, double aMaxAge);
 
-  
   
   
   void Cleanup();
@@ -103,38 +124,40 @@ class OutgoingDatagramStreamAlgorithms final
  private:
   ~OutgoingDatagramStreamAlgorithms() override = default;
 
-  struct QueuedDatagram {
-    uint64_t mDatagramId;
-    UniquePtr<DatagramEntry> mEntry;
-    RefPtr<Promise> mPromise;
-
-    QueuedDatagram(uint64_t aId, UniquePtr<DatagramEntry>&& aEntry,
-                   RefPtr<Promise> aPromise)
-        : mDatagramId(aId),
-          mEntry(std::move(aEntry)),
-          mPromise(std::move(aPromise)) {}
-  };
-
-  
-  
-  
-  friend void ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback&,
-                                          QueuedDatagram&, const char*,
-                                          uint32_t);
-  friend void ImplCycleCollectionUnlink(QueuedDatagram&);
-
   RefPtr<WebTransportDatagramDuplexStream> mDatagrams;
   RefPtr<WebTransportChild> mChild;
   RefPtr<WebTransportDatagramsWritable> mOwnerWritable;
   
-  nsTArray<QueuedDatagram> mWaitConnectQueue;
+  nsTArray<UniquePtr<DatagramEntry>> mWaitConnectQueue;
 
   
   RefPtr<WebTransportSendGroup> mSendGroup;
   int64_t mSendOrder;
 
   
-  nsTHashMap<nsUint64HashKey, RefPtr<Promise>> mPendingDatagramPromises;
+  
+  
+  
+  
+  RefPtr<Promise> mBackpressurePromise;
+  
+  
+  size_t mBackpressureBytes = 0;
+
+  
+  
+  
+  
+  OutgoingDatagramInFlight mInFlight;
+
+  
+  
+  
+  
+  
+  
+  
+  bool mCleanedUp = false;
 };
 
 class WebTransportDatagramDuplexStream final : public nsISupports,
@@ -160,23 +183,56 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
   
   
   
-  
-  
-  
-  void Cleanup();
+  [[nodiscard]] nsTArray<RefPtr<WebTransportDatagramsWritable>> Cleanup();
 
   
   
+  MOZ_CAN_RUN_SCRIPT void ErrorWritables(
+      JSContext* aCx,
+      const nsTArray<RefPtr<WebTransportDatagramsWritable>>& aWritables,
+      JS::Handle<JS::Value> aErrorValue);
+
   
   
-  MOZ_CAN_RUN_SCRIPT void CloseOrErrorWritables(
+  MOZ_CAN_RUN_SCRIPT void CloseOrErrorReadable(
       JSContext* aCx, bool aClean, JS::Handle<JS::Value> aErrorValue);
 
   void NewDatagramReceived(nsTArray<uint8_t>&& aData,
                            const mozilla::TimeStamp& aTimeStamp);
 
   
-  void OnDatagramReady(uint64_t aDatagramId);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void QueueOutgoingDatagram(OutgoingDatagram&& aDatagram);
+
+  
+  
+  
+  
+  
+  void FlushOutgoingDatagrams();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void OnDatagramCapacity(uint64_t aCumulativeDatagrams,
+                          uint64_t aCumulativeBytes, uint64_t aSentDelta,
+                          uint64_t aExpiredDelta, uint64_t aDroppedDelta,
+                          uint64_t aDatagramPrefixBytes);
 
   
   nsIGlobalObject* GetParentObject() const;
@@ -221,10 +277,6 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
  private:
   ~WebTransportDatagramDuplexStream() = default;
 
-  MOZ_CAN_RUN_SCRIPT static void CloseOrErrorWritable(
-      JSContext* aCx, WritableStream* aWritable, bool aClean,
-      JS::Handle<JS::Value> aErrorValue);
-
   nsCOMPtr<nsIGlobalObject> mGlobal;
   RefPtr<WebTransport> mWebTransport;
   RefPtr<ReadableStream> mReadable;
@@ -238,9 +290,6 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
   
   
   
-  
-  
-  
   nsTArray<RefPtr<WebTransportDatagramsWritable>> mAllWritables;
 
   
@@ -248,28 +297,57 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
   Nullable<double> mIncomingMaxAge;
   Nullable<double> mOutgoingMaxAge;
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   uint32_t mIncomingMaxBufferedDatagrams = 5;
   uint32_t mOutgoingMaxBufferedDatagrams = 5;
   uint64_t mOutgoingMaxDataSize = 1024;  
 
   mozilla::Queue<UniquePtr<DatagramEntry>, 32> mIncomingDatagramsQueue;
   uint64_t mDroppedIncoming = 0;
+  uint64_t mExpiredIncoming = 0;
 
   
   
   
-  uint64_t mNextDatagramId = 1;
-  
-  nsTHashMap<nsUint64HashKey, RefPtr<WebTransportDatagramsWritable>>
-      mWritableDatagramMap;
+  uint64_t mExpiredOutgoing = 0;
   
   
   
+  uint64_t mSentOutgoing = 0;
+  uint64_t mDroppedOutgoing = 0;
+
   
-  bool mCleanedUp = false;
+  
+  nsTArray<OutgoingDatagram> mPendingOutgoing;
+  size_t mPendingOutgoingBytes = 0;
+  
+  
+  bool mOutgoingFlushPending = false;
+
+  
+  
+  OutgoingDatagramCredit mCredit;
 
  public:
   uint64_t GetDroppedIncoming() const { return mDroppedIncoming; }
+  uint64_t GetExpiredIncoming() const { return mExpiredIncoming; }
+  uint64_t GetExpiredOutgoing() const { return mExpiredOutgoing; }
+  uint64_t GetSentOutgoing() const { return mSentOutgoing; }
+  uint64_t GetDroppedOutgoing() const { return mDroppedOutgoing; }
 };
 
 }  

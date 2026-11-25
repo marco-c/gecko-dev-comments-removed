@@ -78,6 +78,7 @@ promise_test(async t => {
   wt.closed.catch(() => {});
   t.add_cleanup(() => wt.close());
   await wt.ready;
+  wt.datagrams.outgoingMaxAge = Infinity;
 
   const writable = wt.datagrams.createWritable();
   const writer = writable.getWriter();
@@ -115,6 +116,7 @@ promise_test(async t => {
   wt.closed.catch(() => {});
   t.add_cleanup(() => wt.close());
   await wt.ready;
+  wt.datagrams.outgoingMaxAge = Infinity;
 
   const writable = wt.datagrams.createWritable({ sendOrder: 5 });
   const writer = writable.getWriter();
@@ -216,6 +218,7 @@ promise_test(async t => {
   wt.closed.catch(() => {});
   t.add_cleanup(() => wt.close());
   await wt.ready;
+  wt.datagrams.outgoingMaxAge = Infinity;
 
   const writable = wt.datagrams.createWritable();
   const writer = writable.getWriter();
@@ -242,9 +245,11 @@ promise_test(async t => {
   const writer = wt.datagrams.createWritable().getWriter();
   wt.close();
 
-  await writer.closed;
+  
+  
+  await promise_rejects_dom(t, 'AbortError', writer.closed);
   await wt.closed;
-}, 'WebTransportDatagramsWritable is closed when the transport is closed');
+}, 'WebTransportDatagramsWritable is errored when the transport is closed');
 
 promise_test(async t => {
   const wt = new WebTransport(webtransport_url('server-connection-close.py'));
