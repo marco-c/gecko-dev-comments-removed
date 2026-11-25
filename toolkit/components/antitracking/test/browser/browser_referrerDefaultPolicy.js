@@ -258,7 +258,6 @@ async function executeTests() {
         set: [
           ["network.http.referer.defaultPolicy.trackers", test.nonPBPref],
           ["network.http.referer.defaultPolicy.trackers.pbmode", test.pbPref],
-          ["dom.security.https_first_pbm", false],
           ["network.http.referer.disallowCrossSiteRelaxingDefault", false],
           ["network.http.referer.sendFromRefresh", true], 
         ],
