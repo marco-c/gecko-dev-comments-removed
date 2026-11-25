@@ -64,16 +64,7 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
   mozilla::a11y::AccType AccessibleType() final;
 #endif
 
-  
-
-
-
-
-  void GetOptionText(uint32_t aIndex, nsAString& aStr);
-
   nscoord GetBSizeOfARow();
-
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void OnSelectionReset();
 
   
 
@@ -84,16 +75,6 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
   bool IsFocused() const;
 
   
-
-
-
-
-  void PaintFocus(mozilla::gfx::DrawTarget* aDrawTarget, nsPoint aPt);
-
-  
-
-
-
 
 
   void InvalidateFocus();
@@ -116,23 +97,11 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
 
   uint32_t GetNumDisplayRows() const { return mNumDisplayRows; }
 
-#ifdef ACCESSIBILITY
-  
-
-
-
-
-  void FireMenuItemActiveEvent(
-      nsIContent* aPreviousOption);  
-#endif
-
  protected:
   mozilla::dom::HTMLSelectElement& Select() const;
   MOZ_CAN_RUN_SCRIPT void ScrollToFrame(HTMLOptionElement& aOptElement);
   nsListControlFrame(ComputedStyle*, nsPresContext*);
   virtual ~nsListControlFrame();
-
-  bool CheckIfAllFramesHere();
 
   
   nscoord CalcFallbackRowBSize(float aFontSizeInflation);
@@ -141,9 +110,6 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
   
   
   nscoord CalcIntrinsicBSize(nscoord aBSizeOfARow, int32_t aNumberOfOptions);
-
-  
-  void SetComboboxItem(int32_t aIndex);
 
   nscoord BSizeOfARow() const { return mBSizeOfARow; }
 

@@ -1283,11 +1283,30 @@ bool HTMLSelectElement::IsDisabledForEvents(WidgetEvent* aEvent) {
   return IsElementDisabledForEvents(aEvent, GetPrimaryFrame());
 }
 
+static bool SelectWantsPostHandleEvent(EventChainVisitor& aVisitor) {
+  WidgetEvent const* event = aVisitor.mEvent;
+  if (!event->IsTrusted()) {
+    return false;
+  }
+
+  switch (event->mMessage) {
+    case eKeyDown:
+    case eKeyPress:
+    case eMouseDown:
+    case eMouseUp:
+    case eMouseMove:
+      return true;
+    default:
+      return false;
+  }
+}
+
 void HTMLSelectElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   aVisitor.mCanHandle = false;
   if (IsDisabledForEvents(aVisitor.mEvent)) {
     return;
   }
+  aVisitor.mWantsPostHandleEvent = SelectWantsPostHandleEvent(aVisitor);
 
   nsGenericHTMLFormControlElementWithState::GetEventTargetParent(aVisitor);
 }
@@ -1625,7 +1644,7 @@ void HTMLSelectElement::SelectedContentTextMightHaveChanged(
   if (!mPreviewValue.IsEmpty()) {
     newText.Assign(mPreviewValue);
   } else if (auto* selectedOption = GetSelectedOption(aIgnored)) {
-    selectedOption->GetRenderedLabel(newText);
+    selectedOption->GetRenderedLabel(newText, AltText::Include);
   }
   ButtonControlFrame::EnsureNonEmptyLabel(newText);
   textNode->SetText(newText, aNotify);
@@ -1664,21 +1683,6 @@ void HTMLSelectElement::UserFinishedInteracting(bool aChanged) {
                                        Cancelable::eNo);
 }
 
-void HTMLSelectElement::AttributeChanged(dom::Element* aElement,
-                                         int32_t aNameSpaceID,
-                                         nsAtom* aAttribute, AttrModType,
-                                         const nsAttrValue* aOldValue) {
-  if (aElement->IsHTMLElement(nsGkAtoms::option) &&
-      aNameSpaceID == kNameSpaceID_None && aAttribute == nsGkAtoms::label) {
-    
-    
-    SelectedContentTextMightHaveChanged();
-    if (!mIsUpdatingSelectedContent) {
-      ScheduleSelectedContentUpdate();
-    }
-  }
-}
-
 static bool InsideSelectedOption(nsIContent* aContent,
                                  HTMLSelectElement* aLimit) {
   for (nsIContent* cur = aContent->GetParent(); cur != aLimit;
@@ -1688,6 +1692,33 @@ static bool InsideSelectedOption(nsIContent* aContent,
     }
   }
   return false;
+}
+
+void HTMLSelectElement::AttributeChanged(dom::Element* aElement,
+                                         int32_t aNameSpaceID,
+                                         nsAtom* aAttribute, AttrModType,
+                                         const nsAttrValue* aOldValue) {
+  if (aNameSpaceID != kNameSpaceID_None) {
+    return;
+  }
+  if (aElement->IsHTMLElement(nsGkAtoms::option) &&
+      aAttribute == nsGkAtoms::label) {
+    
+    
+    SelectedContentTextMightHaveChanged();
+    if (!mIsUpdatingSelectedContent) {
+      ScheduleSelectedContentUpdate();
+    }
+    return;
+  }
+  if (aElement->IsHTMLElement(nsGkAtoms::img) && aAttribute == nsGkAtoms::alt &&
+      IsInComposedDoc() && IsCombobox() &&
+      nsContentUtils::IsInSameAnonymousTree(this, aElement)) {
+    OptionValueMightHaveChanged(aElement);
+    if (InsideSelectedOption(aElement, this)) {
+      SelectedContentTextMightHaveChanged();
+    }
+  }
 }
 
 void HTMLSelectElement::CharacterDataChanged(nsIContent* aContent,
@@ -2334,15 +2365,13 @@ void HTMLSelectElement::MaybeFireMenuItemActiveEvent(
 #endif
 
 nsresult HTMLSelectElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
+  MOZ_ASSERT(SelectWantsPostHandleEvent(aVisitor));
+
   if (aVisitor.mEventStatus == nsEventStatus_eConsumeNoDefault) {
     return NS_OK;
   }
 
   WidgetEvent* event = aVisitor.mEvent;
-  if (!event->IsTrusted()) {
-    return NS_OK;
-  }
-
   switch (event->mMessage) {
     case eKeyDown:
       return HandleKeyDown(aVisitor);
@@ -2625,7 +2654,7 @@ nsresult HTMLSelectElement::HandleKeyPress(EventChainPostVisitor& aVisitor) {
     }
 
     nsAutoString text;
-    optionElement->GetRenderedLabel(text);
+    optionElement->GetRenderedLabel(text, AltText::Include);
     if (!StringBeginsWith(
             nsContentUtils::TrimWhitespace<
                 nsContentUtils::IsHTMLWhitespaceOrNBSP>(text, false),
