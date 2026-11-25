@@ -59,13 +59,6 @@ namespace webrtc {
 
 
 
-
-
-
-
-
-
-
 class BaseChannel : public ChannelInterface,
                     public MediaChannelNetworkInterface,
                     public RtpPacketSinkInterface {
@@ -79,7 +72,6 @@ class BaseChannel : public ChannelInterface,
 
   
   BaseChannel(
-      TaskQueueBase* absl_nonnull worker_thread,
       Thread* absl_nonnull network_thread,
       TaskQueueBase* absl_nonnull signaling_thread,
       std::unique_ptr<MediaSendChannelInterface> media_send_channel,
@@ -92,13 +84,11 @@ class BaseChannel : public ChannelInterface,
       ChannelCallbacks callbacks = {});
   ~BaseChannel() override;
 
-  TaskQueueBase* worker_thread() const { return worker_thread_; }
-  Thread* network_thread() const { return network_thread_; }
   const std::string& mid() const override { return mid_; }
   MediaType media_type() const override { return media_type_; }
   
   absl::string_view transport_name() const override {
-    RTC_DCHECK_RUN_ON(network_thread());
+    RTC_DCHECK_RUN_ON(network_thread_);
     if (rtp_transport_)
       return rtp_transport_->transport_name();
     return "";
@@ -106,7 +96,7 @@ class BaseChannel : public ChannelInterface,
 
   
   bool srtp_active() const {
-    RTC_DCHECK_RUN_ON(network_thread());
+    RTC_DCHECK_RUN_ON(network_thread_);
     return rtp_transport_ && rtp_transport_->IsSrtpActive();
   }
 
@@ -117,7 +107,7 @@ class BaseChannel : public ChannelInterface,
   bool SetRtpTransport(RtpTransportInternal* rtp_transport) override;
 
   RtpTransportInternal* rtp_transport() const {
-    RTC_DCHECK_RUN_ON(network_thread());
+    RTC_DCHECK_RUN_ON(network_thread_);
     return rtp_transport_;
   }
 
@@ -172,32 +162,32 @@ class BaseChannel : public ChannelInterface,
 
  protected:
   void set_local_content_direction(RtpTransceiverDirection direction)
-      RTC_RUN_ON(worker_thread()) {
+      RTC_RUN_ON(network_thread_) {
     local_content_direction_ = direction;
   }
 
   RtpTransceiverDirection local_content_direction() const
-      RTC_RUN_ON(worker_thread()) {
+      RTC_RUN_ON(network_thread_) {
     return local_content_direction_;
   }
 
   void set_remote_content_direction(RtpTransceiverDirection direction)
-      RTC_RUN_ON(worker_thread()) {
+      RTC_RUN_ON(network_thread_) {
     remote_content_direction_ = direction;
   }
 
   RtpTransceiverDirection remote_content_direction() const
-      RTC_RUN_ON(worker_thread()) {
+      RTC_RUN_ON(network_thread_) {
     return remote_content_direction_;
   }
 
   RtpExtension::Filter extensions_filter() const { return extensions_filter_; }
 
-  bool network_initialized() RTC_RUN_ON(network_thread()) {
+  bool network_initialized() RTC_RUN_ON(network_thread_) {
     return media_send_channel()->HasNetworkInterface();
   }
 
-  bool enabled() const RTC_RUN_ON(worker_thread()) { return enabled_; }
+  bool enabled() const RTC_RUN_ON(network_thread_) { return enabled_; }
   TaskQueueBase* signaling_thread() const { return signaling_thread_; }
 
   
@@ -209,7 +199,7 @@ class BaseChannel : public ChannelInterface,
   
   
   
-  bool IsReadyToSendMedia_w() const RTC_RUN_ON(worker_thread());
+  bool IsReadyToSendMedia_n() const RTC_RUN_ON(network_thread_);
 
   
   bool SendPacket(CopyOnWriteBuffer* packet,
@@ -224,29 +214,25 @@ class BaseChannel : public ChannelInterface,
                   CopyOnWriteBuffer* packet,
                   const AsyncSocketPacketOptions& options);
 
-  void EnableMedia_w() RTC_RUN_ON(worker_thread());
-  void DisableMedia_w() RTC_RUN_ON(worker_thread());
+  void EnableMedia_n() RTC_RUN_ON(network_thread_);
+  void DisableMedia_n() RTC_RUN_ON(network_thread_);
 
   
   
   
-  void UpdateWritableState_n() RTC_RUN_ON(network_thread());
-  void ChannelWritable_n() RTC_RUN_ON(network_thread());
-  void ChannelNotWritable_n() RTC_RUN_ON(network_thread());
+  void UpdateWritableState_n() RTC_RUN_ON(network_thread_);
+  void ChannelWritable_n() RTC_RUN_ON(network_thread_);
+  void ChannelNotWritable_n() RTC_RUN_ON(network_thread_);
 
   
   
   
-  void UpdateMediaSendRecvState_w() RTC_RUN_ON(worker_thread());
+  void UpdateMediaSendRecvState_n() RTC_RUN_ON(network_thread_);
 
-  RTCError UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
-                                SdpType type) RTC_RUN_ON(worker_thread());
-  RTCError UpdateRemoteStreams_w(const MediaContentDescription* content,
-                                 SdpType type) RTC_RUN_ON(worker_thread());
-  RTCError SetLocalContent_w(const MediaContentDescription* content,
-                             SdpType type) RTC_RUN_ON(worker_thread());
-  RTCError SetRemoteContent_w(const MediaContentDescription* content,
-                              SdpType type) RTC_RUN_ON(worker_thread());
+  RTCError UpdateLocalStreams_n(const std::vector<StreamParams>& streams,
+                                SdpType type) RTC_RUN_ON(network_thread_);
+  RTCError UpdateRemoteStreams_n(const MediaContentDescription* content,
+                                 SdpType type) RTC_RUN_ON(network_thread_);
 
   
   
@@ -257,18 +243,18 @@ class BaseChannel : public ChannelInterface,
   
   
   
-  RTCError MaybeUpdateDemuxerAndRtpExtensions_w(
+  RTCError MaybeUpdateDemuxerAndRtpExtensions_n(
       bool update_demuxer,
       std::optional<flat_set<uint8_t>> payload_types,
       const RtpHeaderExtensions& extensions,
-      std::optional<flat_set<uint32_t>> ssrcs) RTC_RUN_ON(worker_thread());
+      std::optional<flat_set<uint32_t>> ssrcs) RTC_RUN_ON(network_thread_);
 
   
   
   
-  bool RegisterRtpDemuxerSink_w(const MediaContentDescription* content,
+  bool RegisterRtpDemuxerSink_n(const MediaContentDescription* content,
                                 std::vector<uint32_t> removed_ssrcs = {})
-      RTC_RUN_ON(worker_thread());
+      RTC_RUN_ON(network_thread_);
 
   
   std::string ToString() const;
@@ -278,59 +264,54 @@ class BaseChannel : public ChannelInterface,
 
  private:
   bool ConnectToRtpTransport_n(RtpTransportInternal* rtp_transport)
-      RTC_RUN_ON(network_thread());
+      RTC_RUN_ON(network_thread_);
   void DisconnectFromRtpTransport_n(bool permanent_teardown)
-      RTC_RUN_ON(network_thread());
+      RTC_RUN_ON(network_thread_);
   void SignalSentPacket_n(const SentPacketInfo& sent_packet);
   
-  RtpDemuxerCriteria demuxer_criteria() const RTC_RUN_ON(network_thread());
+  RtpDemuxerCriteria demuxer_criteria() const RTC_RUN_ON(network_thread_);
 
-  TaskQueueBase* const worker_thread_;
   Thread* const network_thread_;
   TaskQueueBase* const signaling_thread_;
   scoped_refptr<PendingTaskSafetyFlag> alive_;
 
   
   absl::AnyInvocable<void() &&> on_first_packet_sent_
-      RTC_GUARDED_BY(network_thread());
+      RTC_GUARDED_BY(network_thread_);
 
   
   absl::AnyInvocable<void(const RtpPacketReceived&)> on_packet_received_n_
-      RTC_GUARDED_BY(network_thread());
+      RTC_GUARDED_BY(network_thread_);
 
-  RtpTransportInternal* rtp_transport_ RTC_GUARDED_BY(network_thread()) =
+  RtpTransportInternal* rtp_transport_ RTC_GUARDED_BY(network_thread_) =
       nullptr;
 
-  std::vector<std::pair<Socket::Option, int> > socket_options_
-      RTC_GUARDED_BY(network_thread());
-  std::vector<std::pair<Socket::Option, int> > rtcp_socket_options_
-      RTC_GUARDED_BY(network_thread());
-  bool writable_ RTC_GUARDED_BY(network_thread()) = false;
-  bool was_ever_writable_n_ RTC_GUARDED_BY(network_thread()) = false;
-  bool was_ever_writable_ RTC_GUARDED_BY(worker_thread()) = false;
+  std::vector<std::pair<Socket::Option, int>> socket_options_
+      RTC_GUARDED_BY(network_thread_);
+  std::vector<std::pair<Socket::Option, int>> rtcp_socket_options_
+      RTC_GUARDED_BY(network_thread_);
+  bool writable_ RTC_GUARDED_BY(network_thread_) = false;
+  bool was_ever_writable_ RTC_GUARDED_BY(network_thread_) = false;
   const bool srtp_required_ = true;
 
   
   
   const RtpExtension::Filter extensions_filter_;
 
-  
-  
-  
-  bool enabled_ RTC_GUARDED_BY(worker_thread()) = false;
+  bool enabled_ RTC_GUARDED_BY(network_thread_) = false;
   bool enabled_s_ RTC_GUARDED_BY(signaling_thread()) = false;
-  std::vector<StreamParams> local_streams_ RTC_GUARDED_BY(worker_thread());
-  std::vector<StreamParams> remote_streams_ RTC_GUARDED_BY(worker_thread());
+  std::vector<StreamParams> local_streams_ RTC_GUARDED_BY(network_thread_);
+  std::vector<StreamParams> remote_streams_ RTC_GUARDED_BY(network_thread_);
   RtpTransceiverDirection local_content_direction_
-      RTC_GUARDED_BY(worker_thread()) = RtpTransceiverDirection::kInactive;
+      RTC_GUARDED_BY(network_thread_) = RtpTransceiverDirection::kInactive;
   RtpTransceiverDirection remote_content_direction_
-      RTC_GUARDED_BY(worker_thread()) = RtpTransceiverDirection::kInactive;
+      RTC_GUARDED_BY(network_thread_) = RtpTransceiverDirection::kInactive;
 
   
-  flat_set<uint8_t> payload_types_ RTC_GUARDED_BY(network_thread());
+  flat_set<uint8_t> payload_types_ RTC_GUARDED_BY(network_thread_);
 
   const std::string mid_;
-  flat_set<uint32_t> ssrcs_ RTC_GUARDED_BY(network_thread());
+  flat_set<uint32_t> ssrcs_ RTC_GUARDED_BY(network_thread_);
 
   using ReceiverParamsVariant =
       std::variant<AudioReceiverParameters, VideoReceiverParameters>;
