@@ -1155,29 +1155,31 @@ static void ReleaseImage(void* aImageGrip, const void* aDataPtr,
 CVPixelBufferRef AppleVTEncoder::CreateCVPixelBuffer(Image* aSource) {
   AssertOnTaskQueue();
 
-  auto sfr = EncoderConfig::SampleFormat::FromImage(aSource);
-  if (sfr.isErr()) {
-    MediaResult err = sfr.unwrapErr();
-    LOGE("{}", err.Description().get());
-    return nullptr;
-  }
-  const EncoderConfig::SampleFormat sf = sfr.unwrap();
-
-  if (sf != mConfig.mFormat) {
-    LOGV(
-        "Input image in format {} but encoder configured with "
-        "format {}. "
-        "Fingers crossed",
-        sf.ToString().get(), mConfig.mFormat.ToString().get());
-    
-    
-    
-    
-    
-  }
-
+  
+  
   if (aSource->GetFormat() == ImageFormat::PLANAR_YCBCR ||
       aSource->GetFormat() == ImageFormat::NV_IMAGE) {
+    auto sfr = EncoderConfig::SampleFormat::FromImage(aSource);
+    if (sfr.isErr()) {
+      MediaResult err = sfr.unwrapErr();
+      LOGE("{}", err.Description().get());
+      return nullptr;
+    }
+    const EncoderConfig::SampleFormat sf = sfr.unwrap();
+
+    if (sf != mConfig.mFormat) {
+      LOGV(
+          "Input image in format {} but encoder configured with "
+          "format {}. "
+          "Fingers crossed",
+          sf.ToString().get(), mConfig.mFormat.ToString().get());
+      
+      
+      
+      
+      
+    }
+
     const PlanarYCbCrData* yuv = nullptr;
     if (PlanarYCbCrImage* image = aSource->AsPlanarYCbCrImage()) {
       yuv = image->GetData();
@@ -1256,6 +1258,7 @@ CVPixelBufferRef AppleVTEncoder::CreateCVPixelBuffer(Image* aSource) {
     return nullptr;
   }
 
+  
   RefPtr<gfx::SourceSurface> surface = aSource->GetAsSourceSurface();
   if (!surface) {
     LOGE("Failed to get SourceSurface");
