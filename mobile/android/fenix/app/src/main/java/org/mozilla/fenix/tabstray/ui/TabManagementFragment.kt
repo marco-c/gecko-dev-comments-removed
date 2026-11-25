@@ -214,7 +214,6 @@ class TabManagementFragment : Fragment() {
             )
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Suppress("LongMethod", "CognitiveComplexMethod")
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -536,9 +535,6 @@ class TabManagementFragment : Fragment() {
                 group = expandedGroup,
                 homepageAsNewTabEnabled = tabsTrayStore.state.config.homepageAsNewTabEnabled,
                 dispatch = tabsTrayStore::dispatch,
-                addNewHomepageTab = {
-                    requireComponents.useCases.fenixBrowserUseCases.addNewHomepageTab(private = false)
-                },
                 onTabClick = handleTabClick,
                 onShareClick = { handleShareTabGroupClick(group = expandedGroup, dotColor = expandedGroupDotColor) },
                 onAddNewTabCompleted = { tabManagerController.handleNavigateToHome() },
