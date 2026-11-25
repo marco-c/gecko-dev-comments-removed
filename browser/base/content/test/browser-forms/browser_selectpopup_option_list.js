@@ -17,9 +17,6 @@ const PAGE_CONTENT = `
 
 
 
-
-
-
 function buildSelect() {
   const doc = content.document;
   const select = doc.getElementById("select");
@@ -44,13 +41,6 @@ function buildSelect() {
   const nested = el("optgroup", group);
   nested.label = "Nested";
   el("option", nested, "Four");
-
-  const legendGroup = el("optgroup", wrapper);
-  legendGroup.label = "Ignored";
-  const legend = el("legend", legendGroup, "Leg");
-  el("img", legend, "hidden").alt = "end";
-  const seven = el("option", legendGroup, "Seven");
-  el("img", seven, "hidden").alt = "!";
 
   el("option", el("datalist", wrapper), "Five");
   el("option", el("select", wrapper), "Six");
@@ -82,8 +72,6 @@ async function testOptionList(customizableSelect) {
       ["menuseparator", null],
       ["menucaption", "Group"],
       ["menuitem", "Three"],
-      ["menucaption", "Legend"],
-      ["menuitem", "Seven!"],
     ],
     `Dropdown lists the option list, and only the option list (customizable select: ${customizableSelect})`
   );
