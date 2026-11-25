@@ -929,7 +929,8 @@ class MarionetteProtocol(Protocol):
 
     def on_environment_change(self, old_environment, new_environment):
         
-        for name in old_environment.get("prefs", {}).keys():
+        
+        for name in reversed(old_environment.get("prefs", {}).keys()):
             value = self.executor.original_pref_values[name]
             if value is None:
                 self.prefs.clear(name)
@@ -1263,7 +1264,10 @@ class MarionetteRefTestExecutor(RefTestExecutor):
     def _screenshot(self, protocol, url, timeout):
         protocol.testdriver.run(url, self.wait_script)
 
-        screenshot = protocol.marionette.screenshot(full=False)
+        
+        
+        
+        screenshot = protocol.marionette.screenshot(full=False, readback=True)
         
         if screenshot.startswith("data:image/png;base64,"):
             screenshot = screenshot.split(",", 1)[1]
