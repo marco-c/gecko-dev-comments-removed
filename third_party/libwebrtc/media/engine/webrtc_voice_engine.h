@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "absl/base/nullability.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/audio/audio_device.h"
@@ -73,6 +74,7 @@
 namespace webrtc {
 
 class AudioFrameProcessor;
+class WebRtcVoiceSendChannel;
 
 
 
@@ -137,6 +139,20 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
 
   AudioDeviceModule* adm();
   AudioProcessing* apm() const;
+
+  
+  
+  
+  
+  
+  void RegisterSendChannel(WebRtcVoiceSendChannel* channel);
+  void UnregisterSendChannel(WebRtcVoiceSendChannel* channel);
+
+  
+  
+  
+  void OnChannelMuteStateChange();
+
   std::vector<RtpHeaderExtensionCapability> GetRtpHeaderExtensions(
       const FieldTrialsView* field_trials) const override;
 
@@ -176,6 +192,14 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
   const scoped_refptr<AudioState> audio_state_;
   const std::vector<Codec> legacy_send_codecs_;
   const std::vector<Codec> legacy_recv_codecs_;
+  
+  
+  
+  absl::flat_hash_set<WebRtcVoiceSendChannel*> send_channels_
+      RTC_GUARDED_BY(worker_thread_checker_);
+  
+  std::optional<bool> output_will_be_muted_
+      RTC_GUARDED_BY(worker_thread_checker_);
   bool initialized_ RTC_GUARDED_BY(worker_thread_checker_) = false;
 };
 
@@ -275,6 +299,10 @@ class WebRtcVoiceSendChannel final : public MediaChannelUtil,
       uint32_t ssrc,
       absl_nonnull scoped_refptr<AudioEncoderFactory> encoder_factory) override;
   void ResetEncoderFactoryOverride(uint32_t ssrc) override;
+
+  
+  
+  std::optional<bool> muted() const;
 
  private:
   bool SetOptions(const AudioOptions& options);
