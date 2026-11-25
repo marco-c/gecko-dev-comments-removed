@@ -538,7 +538,9 @@ TurnServerConnection::TurnServerConnection(const SocketAddress& src,
                                            ProtocolType proto,
                                            AsyncPacketSocket* socket)
     : src_(src),
-      dst_(socket->GetRemoteAddress()),
+      
+      
+      dst_(proto == PROTO_UDP ? SocketAddress() : socket->GetRemoteAddress()),
       proto_(proto),
       socket_(socket) {}
 
