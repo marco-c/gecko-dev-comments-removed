@@ -195,7 +195,9 @@ bool CodeGeneratorShared::generateEpilogue() {
   masm.ret();
 
   
-  masm.flushBuffer();
+  
+  
+  masm.flushBufferIfDue();
   return true;
 }
 

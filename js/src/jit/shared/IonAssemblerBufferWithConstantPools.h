@@ -1257,12 +1257,26 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
   }
 
  public:
-  void flushPool() {
+  void flushPool() { flushPool(SIZE_MAX); }
+
+  
+  
+  
+  void flushPool(size_t bytes) {
     if (this->oom()) {
       return;
     }
     JitSpew(JitSpew_Pools, "Requesting a pool flush");
-    finishPool(SIZE_MAX);
+    finishPool(bytes);
+  }
+
+  
+  
+  void flushPoolIfDue(size_t bytes) {
+    if (this->oom() || hasSpaceForInsts(bytes / InstSize, 0)) {
+      return;
+    }
+    flushPool(bytes);
   }
 
   void enterNoPool(size_t maxInst, size_t maxNewDeadlines = 0) {

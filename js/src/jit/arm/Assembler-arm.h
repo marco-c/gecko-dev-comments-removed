@@ -1892,6 +1892,7 @@ class Assembler : public AssemblerShared {
   
   
   void flushBuffer();
+  void flushBufferIfDue() { flushBuffer(); }
   void enterNoPool(size_t maxInst);
   void leaveNoPool();
   void enterNoNops();

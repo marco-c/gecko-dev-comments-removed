@@ -310,6 +310,16 @@ class MozBaseAssembler : public js::jit::AssemblerShared {
   
   
   
+  
+  
+  void flushBufferIfDue() {
+    armbuffer_.flushPoolIfDue(BufferMaxPoolOffset / 2);
+  }
+
+  
+  
+  
+  
   void enterNoPool(size_t maxInst) {
     armbuffer_.enterNoPool(maxInst);
   }
