@@ -286,7 +286,7 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
 
 
   bool OwnsCompositorAnimationsId(uint64_t aId) const {
-    return (aId >> 32) == (uint64_t)OtherPid();
+    return (aId >> 32) == (uint64_t)OtherChildID();
   }
 
   void FlushRendering(wr::RenderReasons aReasons, bool aBlocking);
