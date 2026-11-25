@@ -312,9 +312,6 @@ class LoadSymbolsInfo {
  public:
   typedef typename ElfClass::Addr Addr;
 
-  explicit LoadSymbolsInfo(const vector<string>& dbg_dirs)
-      : debug_dirs_(dbg_dirs), has_loading_addr_(false) {}
-
   
   
   void LoadedSection(const string& section) {
@@ -328,12 +325,7 @@ class LoadSymbolsInfo {
   string debuglink_file() const { return debuglink_file_; }
 
  private:
-  const vector<string>& debug_dirs_;  
-                                      
-
   string debuglink_file_;  
-
-  bool has_loading_addr_;  
 
   set<string> loaded_sections_;  
                                  
@@ -540,7 +532,7 @@ bool ReadSymbolDataElfClass(const typename ElfClass::Ehdr* elf_header,
   string os = "Linux";
   string id = FormatIdentifier(identifier);
 
-  LoadSymbolsInfo<ElfClass> info(debug_dirs);
+  LoadSymbolsInfo<ElfClass> info;
   if (!LoadSymbols<ElfClass>(obj_filename, big_endian, elf_header,
                              !debug_dirs.empty(), &info, smap, rx_avma, rx_size,
                              usu, log)) {
