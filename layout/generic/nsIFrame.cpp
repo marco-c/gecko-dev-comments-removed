@@ -3508,15 +3508,10 @@ void nsIFrame::BuildDisplayListForStackingContext(
     }
   }
 
-  
-  
-  
-  
   const bool usingFilter = effects->HasFilters() && !style.IsRootElementStyle();
   const SVGUtils::MaskUsage maskUsage =
       SVGUtils::DetermineMaskUsage(this, false);
-  const bool usingMask =
-      maskUsage.UsingMaskOrClipPath() && !style.IsRootElementStyle();
+  const bool usingMask = maskUsage.UsingMaskOrClipPath();
   const bool usingSVGEffects = usingFilter || usingMask;
 
   const nsRect visibleRectOutsideSVGEffects = visibleRect;
