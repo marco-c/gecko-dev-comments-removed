@@ -15,9 +15,7 @@
 #include <memory>
 
 #include "api/environment/environment.h"
-#include "api/sequence_checker.h"
 #include "api/task_queue/task_queue_base.h"
-#include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/thread_annotations.h"
 #include "video/stream_synchronization.h"
@@ -33,7 +31,7 @@ namespace internal {
 class RtpStreamsSynchronizer {
  public:
   RtpStreamsSynchronizer(const Environment& env,
-                         TaskQueueBase* main_queue,
+                         TaskQueueBase* network_queue,
                          Syncable* syncable_video);
   ~RtpStreamsSynchronizer();
 
@@ -54,25 +52,17 @@ class RtpStreamsSynchronizer {
   void UpdateDelay();
 
   const Environment env_;
-  TaskQueueBase* const task_queue_;
-
-  
-  
-  
-  
-  
-  RTC_NO_UNIQUE_ADDRESS SequenceChecker main_checker_;
-
+  TaskQueueBase* const network_queue_;
   Syncable* const syncable_video_;
 
-  Syncable* syncable_audio_ RTC_GUARDED_BY(main_checker_) = nullptr;
-  std::unique_ptr<StreamSynchronization> sync_ RTC_GUARDED_BY(main_checker_);
+  Syncable* syncable_audio_ RTC_GUARDED_BY(network_queue_) = nullptr;
+  std::unique_ptr<StreamSynchronization> sync_ RTC_GUARDED_BY(network_queue_);
   StreamSynchronization::Measurements audio_measurement_
-      RTC_GUARDED_BY(main_checker_);
+      RTC_GUARDED_BY(network_queue_);
   StreamSynchronization::Measurements video_measurement_
-      RTC_GUARDED_BY(main_checker_);
-  RepeatingTaskHandle repeating_task_ RTC_GUARDED_BY(main_checker_);
-  int64_t last_stats_log_ms_ RTC_GUARDED_BY(&main_checker_);
+      RTC_GUARDED_BY(network_queue_);
+  RepeatingTaskHandle repeating_task_ RTC_GUARDED_BY(network_queue_);
+  int64_t last_stats_log_ms_ RTC_GUARDED_BY(network_queue_);
 };
 
 }  
