@@ -15,12 +15,6 @@ namespace freestanding {
 
 
 
-#if defined(__MINGW32__) && !defined(HAVE_THREAD_TLS_KEYWORD)
-#  error "This code requires the compiler to have native TLS support"
-#endif  
-
-
-
 
 
 
