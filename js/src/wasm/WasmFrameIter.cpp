@@ -316,13 +316,6 @@ static inline void AssertDirectJitCall(const void* fp) {
 
 #ifdef ENABLE_WASM_JSPI
 void WasmFrameIter::popContBaseFrame() {
-  
-  
-  
-  
-  contBaseInstance_ =
-      const_cast<Instance*>(ExtractCalleeInstanceFromFrameWithInstances(fp_));
-
   ContStack* stack = ContStack::fromBaseFrameFP(fp_);
   MOZ_ASSERT(cx()->wasm().findStackForAddress(
                  cx(), reinterpret_cast<uintptr_t>(fp_)) == stack);
@@ -370,7 +363,6 @@ void WasmFrameIter::popFrame(bool isLeavingFrame) {
 #ifdef ENABLE_WASM_JSPI
   
   unwoundContStack_ = nullptr;
-  contBaseInstance_ = nullptr;
 #endif
   currentFrameIsReturnCallFallback_ = false;
 

@@ -669,6 +669,7 @@ void ContStack::reset() {
   initialResumeCode_ = nullptr;
   handlers_ = nullptr;
   resumeTarget_ = nullptr;
+  baseFrame()->setCalleeInstance(nullptr);
 }
 
 void ContStack::poison() {
@@ -748,6 +749,13 @@ void ContStack::traceFields(JSTracer* trc) {
 
   
   
+  
+  if (Instance* instance = baseFrame()->calleeInstance()) {
+    TraceInstanceEdge(trc, instance, "cont base frame instance");
+  }
+
+  
+  
   if (handlers_) {
     handlers_->trace(trc);
   }
@@ -818,11 +826,6 @@ void ContStack::traceSuspended(JSTracer* trc, JSObject* src) {
     }
     ++iter;
   }
-
-  
-  
-  TraceInstanceEdge(trc, baseFrame()->calleeInstance(),
-                    "cont base frame instance");
 }
 
 void ContStack::updateSuspendedForMovingGC(Nursery& nursery) {

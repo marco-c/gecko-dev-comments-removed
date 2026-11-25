@@ -297,6 +297,7 @@ class ContStack {
 
   
   void traceFields(JSTracer* trc);
+  Instance* baseInstance() { return baseFrame()->calleeInstance(); }
   
   
   

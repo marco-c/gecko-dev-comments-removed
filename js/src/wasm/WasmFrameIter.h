@@ -96,11 +96,6 @@ class WasmFrameIter {
   
   
   ContStack* unwoundContStack_ = nullptr;
-  
-  
-  
-  
-  Instance* contBaseInstance_ = nullptr;
 #endif
 #ifdef JS_HW_SHADOW_STACK
   
@@ -257,9 +252,6 @@ class WasmFrameIter {
   
   
   ContStack* unwoundContStack() const { return unwoundContStack_; }
-
-  
-  Instance* contBaseInstance() const { return contBaseInstance_; }
 #endif
 
   uintptr_t* shadowStackPointer() const {
