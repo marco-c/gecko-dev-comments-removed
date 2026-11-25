@@ -35,6 +35,8 @@ add_setup(
     skip_if: () => AppConstants.MOZ_SYSTEM_NSS,
   },
   async () => {
+    do_get_profile();
+    Services.fog.initializeFOG();
     httpServer = new HttpServer();
     httpServer.registerPathHandler("/callback/1", () => {
       resumeCallbackCount++;
@@ -45,8 +47,11 @@ add_setup(
     });
     await asyncSetupFaultyServer(httpServer);
     Services.prefs.setCharPref("network.dns.localDomains", kHost);
+    
+    Services.prefs.setBoolPref("network.dns.disableIPv6", true);
     registerCleanupFunction(() => {
       Services.prefs.clearUserPref("network.dns.localDomains");
+      Services.prefs.clearUserPref("network.dns.disableIPv6");
     });
   }
 );
@@ -75,6 +80,7 @@ add_task(
         beforeCallbacks,
         "FaultyServer did not fire on fresh handshake"
       );
+      assertTokenResumption({});
     }
 
     
@@ -96,6 +102,8 @@ add_task(
         beforeCallbacks + 1,
         "FaultyServer fired exactly once (on the resumption attempt)"
       );
+      
+      assertTokenResumption({ "tcp_session/failed": 1 });
     }
   }
 );

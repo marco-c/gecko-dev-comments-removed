@@ -303,6 +303,7 @@ class Http3Session final : public Http3SessionBase,
   
   
   void Authenticated(int32_t aError, bool aServCertHashesSucceeded = false);
+  void NoteHandshakeTimeout() { mHandshakeTimedOut = true; }
 
   nsresult ProcessOutputAndEvents(nsIUDPSocket* socket);
 
@@ -535,6 +536,7 @@ class Http3Session final : public Http3SessionBase,
   
   
   bool mHandshakeSucceeded = false;
+  bool mHandshakeTimedOut = false;
 
   bool mTokenAccepted = false;
   
