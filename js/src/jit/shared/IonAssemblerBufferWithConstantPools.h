@@ -17,7 +17,21 @@
 #include "jit/JitSpewer.h"
 #include "jit/shared/IonAssemblerBuffer.h"
 #include "js/HashTable.h"
+#include "util/Memory.h"
 #include "util/PolicyAllocator.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -447,6 +461,19 @@ struct Pool {
   
   
   
+  const unsigned dataAlignmentUnits_;
+
+  
+  
+  bool hasAlignedEntry_ = false;
+
+  
+  
+  size_t fill_ = 0;
+
+  
+  
+  
   
   
   
@@ -475,9 +502,11 @@ struct Pool {
 
   
   
-  Pool(size_t maxOffset, unsigned bias, LifoAlloc& lifoAlloc)
+  Pool(size_t maxOffset, unsigned bias, unsigned dataAlignmentUnits,
+       LifoAlloc& lifoAlloc)
       : maxOffset_(maxOffset),
         bias_(bias),
+        dataAlignmentUnits_(dataAlignmentUnits),
         poolData_(lifoAlloc),
         sharedEntries_(lifoAlloc),
         loadOffsets(lifoAlloc) {}
@@ -489,6 +518,23 @@ struct Pool {
 
   size_t getPoolSize() const { return numEntries() * sizeof(PoolAllocUnit); }
 
+  size_t getFill() const { return fill_; }
+  void setFill(size_t fill) { fill_ = fill; }
+
+  
+  unsigned paddingFor(unsigned num) const {
+    if (num < dataAlignmentUnits_) {
+      return 0;
+    }
+    return ComputeByteAlignment(numEntries(), dataAlignmentUnits_);
+  }
+
+  
+  
+  bool needsDataAlignment(unsigned num = 0) const {
+    return hasAlignedEntry_ || num >= dataAlignmentUnits_;
+  }
+
   
   
   
@@ -497,14 +543,15 @@ struct Pool {
   
   
   
-  void updateLimiter(BufferOffset nextInst) {
+  void updateLimiter(BufferOffset nextInst, unsigned num) {
+    unsigned index = numEntries() + paddingFor(num);
     ptrdiff_t oldRange =
         limitingUsee * sizeof(PoolAllocUnit) - limitingUser.getOffset();
-    ptrdiff_t newRange = getPoolSize() - nextInst.getOffset();
+    ptrdiff_t newRange = index * sizeof(PoolAllocUnit) - nextInst.getOffset();
     if (!limitingUser.assigned() || newRange > oldRange) {
       
       limitingUser = nextInst;
-      limitingUsee = numEntries();
+      limitingUsee = index;
     }
   }
 
@@ -537,7 +584,14 @@ struct Pool {
       oom_ = true;
       return OOM_FAIL;
     }
+    if (num >= dataAlignmentUnits_) {
+      hasAlignedEntry_ = true;
+    }
     if (kind == PoolEntryKind::Unshared) {
+      if (!poolData_.appendN(0, paddingFor(num))) {
+        oom_ = true;
+        return OOM_FAIL;
+      }
       unsigned ret = numEntries();
       if (!poolData_.append((PoolAllocUnit*)data, num)) {
         oom_ = true;
@@ -549,6 +603,10 @@ struct Pool {
     auto p = sharedEntries_.lookupForAdd(key);
     if (p) {
       return p->value();
+    }
+    if (!poolData_.appendN(0, paddingFor(num))) {
+      oom_ = true;
+      return OOM_FAIL;
     }
     unsigned ret = numEntries();
     if (!poolData_.append((PoolAllocUnit*)data, num) ||
@@ -563,6 +621,8 @@ struct Pool {
     poolData_.clear();
     sharedEntries_.clear();
     loadOffsets.clear();
+    hasAlignedEntry_ = false;
+    fill_ = 0;
 
     limitingUser = BufferOffset();
     limitingUsee = -1;
@@ -573,7 +633,8 @@ struct Pool {
 
 
 struct EmptyPool final {
-  EmptyPool(size_t maxOffset, unsigned bias, LifoAlloc& lifoAlloc) {}
+  EmptyPool(size_t maxOffset, unsigned bias, unsigned dataAlignmentUnits,
+            LifoAlloc& lifoAlloc) {}
 
   unsigned numEntries() const {
     
@@ -581,6 +642,10 @@ struct EmptyPool final {
   }
 
   size_t getPoolSize() const { return numEntries() * sizeof(PoolAllocUnit); }
+
+  unsigned paddingFor(unsigned num) const { return 0; }
+
+  bool needsDataAlignment(unsigned num = 0) const { return false; }
 
   bool checkFull(size_t poolOffset) const {
     
@@ -625,6 +690,13 @@ struct AssemblerBufferSettings {
 
   
   size_t shortRangeBranchHysteresis = jit::ShortRangeBranchHysteresis;
+
+  
+  
+  
+  
+  
+  size_t poolDataAlignment = instSize;
 };
 
 
@@ -665,6 +737,15 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 
   
   static constexpr bool UseConstantPools = HeaderSize > 0;
+
+  
+  static constexpr size_t PoolDataAlignment = settings.poolDataAlignment;
+  static constexpr size_t MaxPoolDataFill = PoolDataAlignment - InstSize;
+  static_assert(std::has_single_bit(PoolDataAlignment) &&
+                    PoolDataAlignment % InstSize == 0 &&
+                    PoolDataAlignment % sizeof(PoolAllocUnit) == 0,
+                "The pool data alignment must be a power of two and a multiple "
+                "of the instruction and pool unit sizes");
 
   using PoolImpl = std::conditional_t<UseConstantPools, Pool, EmptyPool>;
 
@@ -720,7 +801,8 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 
  public:
   AssemblerBufferWithConstantPools(size_t poolMaxOffset, unsigned nopFill)
-      : pool_(poolMaxOffset, PcBias, this->lifoAlloc_),
+      : pool_(poolMaxOffset, PcBias, PoolDataAlignment / sizeof(PoolAllocUnit),
+              this->lifoAlloc_),
         branchDeadlines_(this->lifoAlloc_),
         nopFill_(nopFill) {}
 
@@ -811,14 +893,21 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 
   
   
+  size_t maxPoolDataFill(unsigned numPoolEntries = 0) const {
+    return pool_.needsDataAlignment(numPoolEntries) ? MaxPoolDataFill : 0;
+  }
+
+  
+  
   bool hasSpaceForInsts(unsigned numInsts, unsigned numPoolEntries,
                         unsigned numNewDeadlines = 0) const {
     size_t nextOffset = sizeExcludingCurrentPool();
     
     
     
-    size_t poolOffset =
-        nextOffset + (numInsts + GuardSize + HeaderSize) * InstSize;
+    size_t poolOffset = nextOffset +
+                        (numInsts + GuardSize + HeaderSize) * InstSize +
+                        maxPoolDataFill(numPoolEntries);
 
     
     if (pool_.checkFull(poolOffset)) {
@@ -831,7 +920,8 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     if (!branchDeadlines_.empty()) {
       size_t deadline = branchDeadlines_.earliestDeadline().getOffset();
       size_t poolEnd = poolOffset + pool_.getPoolSize() +
-                       numPoolEntries * sizeof(PoolAllocUnit);
+                       (pool_.paddingFor(numPoolEntries) + numPoolEntries) *
+                           sizeof(PoolAllocUnit);
       size_t primaryVeneers = sizeOfPrimaryVeneers();
       size_t secondaryVeneers = sizeOfSecondaryVeneers(numNewDeadlines);
 
@@ -850,7 +940,8 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
       
       
       if (numPoolEntries) {
-        pool_.updateLimiter(BufferOffset(sizeExcludingCurrentPool()));
+        pool_.updateLimiter(BufferOffset(sizeExcludingCurrentPool()),
+                            numPoolEntries);
       }
     } else {
       MOZ_ASSERT(numPoolEntries == 0);
@@ -1054,7 +1145,8 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     
     size_t deadline = branchDeadlines_.earliestDeadline().getOffset();
     size_t nextOffset = sizeExcludingCurrentPool();
-    size_t poolOffset = nextOffset + (GuardSize + HeaderSize) * InstSize;
+    size_t poolOffset =
+        nextOffset + (GuardSize + HeaderSize) * InstSize + maxPoolDataFill();
     mozilla::CheckedInt<size_t> poolFreeSpace(reservedBytes);
     auto future =
         (poolOffset + sizeOfPrimaryVeneers() + sizeOfSecondaryVeneers()) +
@@ -1088,6 +1180,16 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     BufferOffset data;
     if constexpr (UseConstantPools) {
       header = this->putBytes(HeaderSize * InstSize, nullptr);
+      if (pool_.needsDataAlignment()) {
+        size_t fill = 0;
+        uint32_t fillInst = AlignFillInst;
+        while (this->nextOffset().getOffset() % PoolDataAlignment != 0 &&
+               !this->oom()) {
+          this->putBytes(InstSize, &fillInst);
+          fill += InstSize;
+        }
+        pool_.setFill(fill);
+      }
       data =
           this->putBytes(pool_.getPoolSize(), (const uint8_t*)pool_.poolData());
     }
