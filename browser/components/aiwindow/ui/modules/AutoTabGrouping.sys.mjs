@@ -7,10 +7,14 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  AIWindowToolbarButtons:
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowToolbarButtons.sys.mjs",
   AutoTabGroupingSuggestions:
     "moz-src:///browser/components/aiwindow/ui/modules/AutoTabGroupingSuggestions.sys.mjs",
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
+  GROUP_TABS_WIDGET_ID:
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowToolbarButtons.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   TabMetrics: "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
@@ -27,23 +31,18 @@ ChromeUtils.defineLazyGetter(lazy, "console", () =>
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "minTabsPerGroup",
-  "browser.smartwindow.autoTabGrouping.minTabsPerGroup",
-  2
+  "browser.smartwindow.autoTabGrouping.minTabsPerGroup"
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "minCandidateTabs",
-  "browser.smartwindow.autoTabGrouping.minCandidateTabs",
-  2
+  "browser.smartwindow.autoTabGrouping.minCandidateTabs"
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "timeoutMs",
-  "browser.smartwindow.autoTabGrouping.timeoutMs",
-  8000
+  "browser.smartwindow.autoTabGrouping.timeoutMs"
 );
-
-const BUTTON_ID = "smartwindow-group-tabs-button";
 const PANEL_ID = "smartwindow-group-tabs-panel";
 const FLYOUT_ID = "smartwindow-group-tabs-flyout";
 const CARD_TAG = "smartwindow-group-tabs-card";
@@ -171,17 +170,6 @@ export const AutoTabGrouping = {
   },
 
   /**
-   * Get the "Organize Tabs" button in `win`, or the overflow menu's chevron
-   * button if the widget has been moved or overflowed into that menu.
-   *
-   * @param {ChromeWindow} win
-   * @returns {Element}
-   */
-  _getButtonAnchor(win) {
-    return lazy.CustomizableUI.getWidget(BUTTON_ID).forWindow(win).anchor;
-  },
-
-  /**
    * Build the panel, show it, then populate it once the clustering models have
    * run (or immediately if suggestions were already computed).
    *
@@ -195,12 +183,15 @@ export const AutoTabGrouping = {
       return;
     }
     const doc = win.document;
-    const button = doc.getElementById(BUTTON_ID);
+    const button = doc.getElementById(lazy.GROUP_TABS_WIDGET_ID);
     const popupSet = doc.getElementById("mainPopupSet");
     if (!button || !popupSet) {
       return;
     }
-    const anchor = this._getButtonAnchor(win);
+    const anchor = lazy.AIWindowToolbarButtons.getAnchor(
+      win,
+      lazy.GROUP_TABS_WIDGET_ID
+    );
     lazy.CustomizableUI.hidePanelForNode(button);
 
     Glean.smartWindow.autoTabGroupMenuOpened.record({
@@ -1083,7 +1074,10 @@ export const AutoTabGrouping = {
 
     try {
       win.gBrowser.removeAllDuplicateTabs({
-        confirmationAnchor: this._getButtonAnchor(win),
+        confirmationAnchor: lazy.AIWindowToolbarButtons.getAnchor(
+          win,
+          lazy.GROUP_TABS_WIDGET_ID
+        ),
       });
     } catch (e) {
       lazy.console.warn("removeAllDuplicateTabs failed", e);

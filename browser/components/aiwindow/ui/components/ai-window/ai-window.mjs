@@ -194,6 +194,7 @@ const PREF_MEMORIES_HISTORY =
   "browser.smartwindow.memories.generateFromHistory";
 const PREF_MEMORIES_HAS_SEEN_MEMORIES =
   "browser.smartwindow.memories.hasSeenMemories";
+const PREF_NEW_TAB_FOCUS_SMARTBAR = "browser.smartwindow.newtab.focusSmartbar";
 const PREF_MODEL_CHOICE = "browser.smartwindow.firstrun.modelChoice";
 const PREF_CUSTOM_ENDPOINT = "browser.smartwindow.customEndpoint";
 const TAB_FAVICON_CHAT =
@@ -523,23 +524,24 @@ export class AIWindow extends MozLitElement {
       this,
       "memoriesConversationPref",
       PREF_MEMORIES_CONVERSATION,
-      true,
+      null,
       () => this.#syncMemoriesButtonUI()
     );
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
       "memoriesHistoryPref",
       PREF_MEMORIES_HISTORY,
-      true,
+      null,
       () => this.#syncMemoriesButtonUI()
     );
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
       "hideTopSitesPref",
       PREF_HIDE_TOP_SITES,
-      false,
+      null,
       () => this.#syncTopSites()
     );
+    // Newtab sets this pref's default at runtime, so it can still be unset.
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
       "topSitesFeedPref",
@@ -550,14 +552,13 @@ export class AIWindow extends MozLitElement {
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
       "agentEnabledPref",
-      PREF_AGENT_ENABLED,
-      false
+      PREF_AGENT_ENABLED
     );
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
       "resumeCardsPref",
       PREF_RESUME_CARDS,
-      false,
+      null,
       () => this.requestUpdate()
     );
 
@@ -1951,7 +1952,13 @@ export class AIWindow extends MozLitElement {
         "smartbar-initialized",
         () => {
           this.#resolveSmartbarReady();
-          smartbar.focus();
+          if (
+            this.mode !== MODE.FULLPAGE ||
+            !this.#topChromeWindow?.gURLBar?.focused ||
+            Services.prefs.getBoolPref(PREF_NEW_TAB_FOCUS_SMARTBAR)
+          ) {
+            smartbar.focus();
+          }
           this.#observeSmartbarHeight();
           this.#updateSmartbarModels(smartbar);
         },
