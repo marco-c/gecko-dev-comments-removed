@@ -423,7 +423,9 @@ TestRunner._makeIframe = function (url, retry) {
       "Error: Unable to restore focus, expect failures and timeouts."
     );
   }
-  window.scrollTo(0, $("indicator").offsetTop);
+  
+  let scroller = $("xulharness") || document.scrollingElement;
+  scroller.scrollTop = $("indicator").offsetTop;
   try {
     let urlObj = new URL(url);
     if (TestRunner.xOriginTests) {
@@ -574,6 +576,11 @@ async function _runNextTest() {
         set: [["dom.security.https_first", false]],
       });
     }
+    
+    
+    SpecialPowers.wrap(
+      $("testframe")
+    ).browsingContext.resetNavigationRateLimit();
     TestRunner._makeIframe(url, 0);
   } else {
     $("current-test").innerHTML = "<b>Finished</b>";
