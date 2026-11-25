@@ -8789,6 +8789,7 @@ pub extern "C" fn Servo_StyleSet_MaybeInvalidateRelativeSelectorForInsertion(
     
     
     
+    
     if inherited.is_empty() {
         return;
     }
@@ -8805,13 +8806,16 @@ pub extern "C" fn Servo_StyleSet_MaybeInvalidateRelativeSelectorForInsertion(
         element.next_sibling_element(),
     ) {
         (Some(prev_sibling), Some(next_sibling)) => 'sibling: {
-            
-            if !prev_sibling
-                .relative_selector_search_direction()
-                .intersects(ElementSelectorFlags::RELATIVE_SELECTOR_SEARCH_DIRECTION_SIBLING)
-            {
+            let prev_sibling_search_direction = prev_sibling.relative_selector_search_direction();
+            if prev_sibling_search_direction.is_empty() {
+                
+                
                 break 'sibling;
             }
+            
+            
+            
+            
             element.apply_selector_flags(
                 ElementSelectorFlags::RELATIVE_SELECTOR_SEARCH_DIRECTION_SIBLING,
             );
@@ -8865,6 +8869,7 @@ pub extern "C" fn Servo_StyleSet_MaybeInvalidateRelativeSelectorForAppend(
         first_node.parent_element(),
         first_node.prev_sibling_element(),
     );
+    
     if inherited.is_empty() {
         return;
     }
@@ -8905,6 +8910,7 @@ pub extern "C" fn Servo_StyleSet_MaybeInvalidateRelativeSelectorForRemoval(
     let element = GeckoElement(element);
 
     let search_direction = element.relative_selector_search_direction();
+    
     
     
     
