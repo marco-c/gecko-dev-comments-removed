@@ -802,7 +802,7 @@ NS_IMETHODIMP CacheStorageService::ClearBaseDomain(
 
       
       
-      CacheEntryTable* table = globalEntry.GetWeak();
+      CacheEntryTable* table = globalEntry.GetRawPtr();
       MOZ_ASSERT(table);
 
       nsTArray<RefPtr<CacheEntry>> entriesToDelete;
@@ -839,6 +839,9 @@ NS_IMETHODIMP CacheStorageService::ClearBaseDomain(
           return rv;
         }
 
+        if (entry->DeferOrBypassRemovalOnPinStatus(false)) {
+          continue;
+        }
         RemoveExactEntry(table, entryKey, entry, false );
       }
     }
@@ -875,7 +878,7 @@ nsresult CacheStorageService::ClearOriginInternal(
         continue;
       }
 
-      CacheEntryTable* table = globalEntry.GetWeak();
+      CacheEntryTable* table = globalEntry.GetRawPtr();
       MOZ_ASSERT(table);
 
       nsTArray<RefPtr<CacheEntry>> entriesToDelete;
@@ -903,6 +906,9 @@ nsresult CacheStorageService::ClearOriginInternal(
           return rv;
         }
         MOZ_ASSERT_IF(info->IsPrivate(), !entry->IsUsingDisk());
+        if (entry->DeferOrBypassRemovalOnPinStatus(false)) {
+          continue;
+        }
         RemoveExactEntry(table, entryKey, entry, false );
       }
     }
@@ -2493,7 +2499,7 @@ CacheStorageService::CollectReports(nsIHandleReportCallback* aHandleReport,
     for (const auto& globalEntry : *sGlobalEntryTables) {
       CacheStorageService::Self()->Lock().AssertCurrentThreadOwns();
 
-      CacheEntryTable* table = globalEntry.GetWeak();
+      CacheEntryTable* table = globalEntry.GetRawPtr();
 
       size_t size = 0;
       mozilla::MallocSizeOf mallocSizeOf = CacheStorageService::MallocSizeOf;
