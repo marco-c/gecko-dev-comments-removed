@@ -205,14 +205,6 @@ class LogSink {
   
   
   virtual void OnLogMessage(const LogLineRef& line);
-
- private:
-  friend class LogMessage;
-#if RTC_LOG_ENABLED()
-  
-  LogSink* next_ = nullptr;
-  LoggingSeverity min_severity_ = LS_INFO;
-#endif
 };
 
 class LoggingConfig {
@@ -641,6 +633,7 @@ class LogMessage {
   
   
   
+  
   static void AddLogToStream(LogSink* stream, LoggingSeverity min_sev);
   
   
@@ -649,9 +642,6 @@ class LogMessage {
   
   
   static int GetMinLogSeverity();
-  
-  static void UpdateMinLogSeverity();
-  
   
   
   
@@ -723,16 +713,12 @@ class LogMessage {
   std::string extra_;
 
   
-  static LogSink* streams_;
-
-  
   static bool log_timestamp_;
 
   
   static bool log_to_stderr_;
 #else  
   
-  inline static void UpdateMinLogSeverity() {}
 #if defined(WEBRTC_ANDROID)
   inline static void OutputToDebug(absl::string_view filename,
                                    int line,

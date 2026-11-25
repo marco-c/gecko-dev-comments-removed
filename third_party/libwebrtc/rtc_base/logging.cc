@@ -22,8 +22,10 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #include "absl/base/no_destructor.h"
+#include "absl/base/nullability.h"
 #include "absl/strings/string_view.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/units/timestamp.h"
@@ -133,12 +135,101 @@ LoggingConfig& GetOrInitConfig(LoggingConfig* init_config = nullptr,
   return *config;
 }
 
+
+
+
+
+
+
+class DynamicLogSinks {
+ public:
+  
+  static DynamicLogSinks& Get() {
+    static absl::NoDestructor<DynamicLogSinks> instance;
+    return *instance;
+  }
+
+  
+  void Add(LogSink* absl_nonnull sink, LoggingSeverity min_severity) {
+    MutexLock lock(&mutex_);
+    auto it = std::ranges::find_if(
+        sinks_, [&](const Entry& entry) { return entry.sink == sink; });
+    if (it != sinks_.end()) {
+      it->min_severity = min_severity;
+    } else {
+      
+      sinks_.insert(sinks_.begin(), {sink, min_severity});
+    }
+    active_instance_.store(this, std::memory_order_release);
+    UpdateMinLogSeverityLocked();
+  }
+
+  void Remove(LogSink* absl_nonnull sink) {
+    MutexLock lock(&mutex_);
+    std::erase_if(sinks_,
+                  [sink](const Entry& entry) { return entry.sink == sink; });
+    if (sinks_.empty()) {
+      active_instance_.store(nullptr, std::memory_order_relaxed);
+    }
+    UpdateMinLogSeverityLocked();
+  }
+
+  void SetDebugSeverity(LoggingSeverity severity) {
+    MutexLock lock(&mutex_);
+    g_dbg_sev.store(severity, std::memory_order_relaxed);
+    UpdateMinLogSeverityLocked();
+  }
+
+  static void OnLogMessage(const LogLineRef& line) {
+    
+    
+    
+    if (DynamicLogSinks* instance =
+            active_instance_.load(std::memory_order_acquire);
+        instance != nullptr) {
+      MutexLock lock(&instance->mutex_);
+      for (const Entry& entry : instance->sinks_) {
+        if (line.severity() >= entry.min_severity) {
+          entry.sink->OnLogMessage(line);
+        }
+      }
+    }
+  }
+
+ private:
+  
+  struct Entry {
+    LogSink* absl_nonnull sink;
+    LoggingSeverity min_severity;
+  };
+
+  void UpdateMinLogSeverityLocked() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_) {
+    LoggingSeverity min_sev = g_dbg_sev.load(std::memory_order_relaxed);
+    const LoggingConfig& config = GetLoggingConfig();
+    if (!config.sinks().empty()) {
+      min_sev = std::min(min_sev, config.min_severity());
+    }
+    for (const Entry& entry : sinks_) {
+      min_sev = std::min(min_sev, entry.min_severity);
+    }
+    g_min_sev.store(min_sev, std::memory_order_relaxed);
+  }
+
+  
+  
+  
+  constinit static inline std::atomic<DynamicLogSinks*> active_instance_ =
+      nullptr;
+
+  Mutex mutex_;
+  std::vector<Entry> sinks_ RTC_GUARDED_BY(mutex_);
+};
+
 void ApplyConfigToLogMessageLocked(const LoggingConfig& config)
     RTC_EXCLUSIVE_LOCKS_REQUIRED(GetLoggingLock()) {
   LogMessage::LogTimestamps(config.log_timestamp());
   LogMessage::SetLogToStderr(config.log_to_stderr());
-  g_dbg_sev.store(config.debug_severity(), std::memory_order_relaxed);
-  LogMessage::UpdateMinLogSeverity();
+  DynamicLogSinks::Get().SetDebugSeverity(config.debug_severity());
 }
 
 }  
@@ -228,13 +319,6 @@ const std::string& LogLineRef::DefaultLogLine() const {
 
 
 bool LogMessage::log_to_stderr_ = false;
-
-
-
-
-
-constinit LogSink* LogMessage::streams_ RTC_GUARDED_BY(GetLoggingLock()) =
-    nullptr;
 
 
 constinit bool LogMessage::log_timestamp_ = false;
@@ -339,12 +423,7 @@ LogMessage::~LogMessage() {
     }
   }
 
-  MutexLock lock(&GetLoggingLock());
-  for (LogSink* entry = streams_; entry != nullptr; entry = entry->next_) {
-    if (log_line_.severity() >= entry->min_severity_) {
-      entry->OnLogMessage(log_line_);
-    }
-  }
+  DynamicLogSinks::OnLogMessage(log_line_);
 }
 
 void LogMessage::AddTag([[maybe_unused]] const char* tag) {
@@ -389,9 +468,7 @@ void LogMessage::LogTimestamps(bool on) {
 }
 
 void LogMessage::LogToDebug(LoggingSeverity min_sev) {
-  g_dbg_sev.store(min_sev, std::memory_order_relaxed);
-  MutexLock lock(&GetLoggingLock());
-  UpdateMinLogSeverity();
+  DynamicLogSinks::Get().SetDebugSeverity(min_sev);
 }
 
 void LogMessage::SetLogToStderr(bool log_to_stderr) {
@@ -399,36 +476,11 @@ void LogMessage::SetLogToStderr(bool log_to_stderr) {
 }
 
 void LogMessage::AddLogToStream(LogSink* stream, LoggingSeverity min_sev) {
-  MutexLock lock(&GetLoggingLock());
-  stream->min_severity_ = min_sev;
-  stream->next_ = streams_;
-  streams_ = stream;
-  UpdateMinLogSeverity();
+  DynamicLogSinks::Get().Add(stream, min_sev);
 }
 
 void LogMessage::RemoveLogToStream(LogSink* stream) {
-  MutexLock lock(&GetLoggingLock());
-  for (LogSink** entry = &streams_; *entry != nullptr;
-       entry = &(*entry)->next_) {
-    if (*entry == stream) {
-      *entry = (*entry)->next_;
-      break;
-    }
-  }
-  UpdateMinLogSeverity();
-}
-
-void LogMessage::UpdateMinLogSeverity()
-    RTC_EXCLUSIVE_LOCKS_REQUIRED(GetLoggingLock()) {
-  LoggingSeverity min_sev = g_dbg_sev.load(std::memory_order_relaxed);
-  const LoggingConfig& config = GetLoggingConfig();
-  if (!config.sinks().empty()) {
-    min_sev = std::min(min_sev, config.min_severity());
-  }
-  for (LogSink* entry = streams_; entry != nullptr; entry = entry->next_) {
-    min_sev = std::min(min_sev, entry->min_severity_);
-  }
-  g_min_sev.store(min_sev, std::memory_order_relaxed);
+  DynamicLogSinks::Get().Remove(stream);
 }
 
 void LogMessage::OutputToDebug(const LogLineRef& log_line) {
