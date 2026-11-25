@@ -17,7 +17,6 @@ extern crate nsstring;
 extern crate rkv;
 extern crate sha2;
 extern crate thin_vec;
-extern crate time;
 #[macro_use]
 extern crate xpcom;
 extern crate storage_variant;
@@ -68,6 +67,14 @@ const PREFIX_REV_SPK: &str = "spk";
 const PREFIX_SUBJECT: &str = "subject";
 const PREFIX_CERT: &str = "cert";
 const PREFIX_DATA_TYPE: &str = "datatype";
+
+
+const PREFIX_LEGACY_CRLITE_ENROLLMENT: &str = "crlite";
+
+
+const LEGACY_CRLITE_DATA_TYPES: [u8; 3] = [3, 4, 5];
+
+const PRUNED_MARKER_KEY: &str = "bug-2095295-cleanup";
 
 const LAST_CRLITE_UPDATE_KEY: &str = "last_crlite_update";
 
@@ -239,6 +246,16 @@ impl SecurityState {
         }
 
         
+        
+        
+        if let Err(e) = SecurityState::bug_2095295_cleanup(&env, &store) {
+            warn!(
+                "failed to prune obsolete cert_storage entries: {}",
+                e.message
+            );
+        }
+
+        
         match self.env_and_store.replace(EnvAndStore { env, store }) {
             Some(_) => Err(SecurityStateError::from(
                 "env and store already initialized? (did we mess up our threading model?)",
@@ -307,6 +324,30 @@ impl SecurityState {
             }
         }
 
+        writer.commit()?;
+        Ok(())
+    }
+
+    fn bug_2095295_cleanup(env: &Rkv, store: &SingleStore) -> Result<(), SecurityStateError> {
+        let obsolete_keys = {
+            let reader = env.read()?;
+            if store.get(&reader, PRUNED_MARKER_KEY)?.is_some() {
+                return Ok(());
+            }
+            let mut obsolete_keys = Vec::new();
+            for entry in store.iter_start(&reader)? {
+                let (key, value) = entry?;
+                if is_bug_2095295_entry(key, &value) {
+                    obsolete_keys.push(key.to_vec());
+                }
+            }
+            obsolete_keys
+        };
+        let mut writer = env.write()?;
+        for key in &obsolete_keys {
+            store.delete(&mut writer, key)?;
+        }
+        store.put(&mut writer, PRUNED_MARKER_KEY, &Value::Bool(true))?;
         writer.commit()?;
         Ok(())
     }
@@ -393,9 +434,19 @@ impl SecurityState {
                     continue;
                 }
             };
-            env_and_store
-                .store
-                .put(&mut writer, &key, &Value::I64(entry.state() as i64))?;
+            if entry.state() == nsICertStorage::STATE_UNSET {
+                
+                
+                match env_and_store.store.delete(&mut writer, &key) {
+                    Ok(()) => {}
+                    Err(StoreError::KeyValuePairNotFound) => {}
+                    Err(e) => return Err(SecurityStateError::from(e)),
+                };
+            } else {
+                env_and_store
+                    .store
+                    .put(&mut writer, &key, &Value::I64(entry.state() as i64))?;
+            }
         }
 
         writer.commit()?;
@@ -690,7 +741,11 @@ impl SecurityState {
                         None => empty_vec,
                     };
                     let new_cert_hash_list = CertHashList::remove(&old_cert_hash_list, &hash)?;
-                    if new_cert_hash_list.len() != old_cert_hash_list.len() {
+                    if new_cert_hash_list.is_empty() && !old_cert_hash_list.is_empty() {
+                        
+                        
+                        env_and_store.store.delete(&mut writer, &subject_key)?;
+                    } else if new_cert_hash_list.len() != old_cert_hash_list.len() {
                         env_and_store.store.put(
                             &mut writer,
                             &subject_key,
@@ -1038,6 +1093,30 @@ fn get_store_path(profile_path: &PathBuf) -> Result<PathBuf, SecurityStateError>
     store_path.push("security_state");
     create_dir_all(store_path.as_path())?;
     Ok(store_path)
+}
+
+
+
+fn is_bug_2095295_entry(key: &[u8], value: &Value) -> bool {
+    
+    
+    if key.starts_with(PREFIX_REV_IS.as_bytes()) || key.starts_with(PREFIX_REV_SPK.as_bytes()) {
+        return *value == Value::I64(nsICertStorage::STATE_UNSET as i64);
+    }
+    
+    if key.starts_with(PREFIX_LEGACY_CRLITE_ENROLLMENT.as_bytes()) {
+        return true;
+    }
+    if let Some(data_type) = key.strip_prefix(PREFIX_DATA_TYPE.as_bytes()) {
+        return matches!(data_type, [t] if LEGACY_CRLITE_DATA_TYPES.contains(t));
+    }
+    
+    
+    
+    if key.starts_with(PREFIX_SUBJECT.as_bytes()) {
+        return *value == Value::Blob(&[]);
+    }
+    false
 }
 
 fn make_env(path: &Path) -> Result<Rkv, SecurityStateError> {
