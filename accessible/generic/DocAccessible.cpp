@@ -977,6 +977,17 @@ void DocAccessible::AttributeChanged(dom::Element* aElement,
 
   LocalAccessible* accessible = GetAccessibleOrDocument(aElement);
   if (!accessible) {
+    if (aAttribute == nsGkAtoms::label) {
+      HTMLComboboxAccessible::SelectedOptionLabelMaybeChanged(this, aElement);
+      return;
+    }
+
+    
+    
+    if (!aElement->GetPrimaryFrame() &&
+        !nsCoreUtils::CanCreateAccessibleWithoutFrame(aElement)) {
+      return;
+    }
     if (aModType == AttrModType::Addition &&
         aria::AttrCharacteristicsFor(aAttribute) & ATTR_GLOBAL) {
       
@@ -989,10 +1000,6 @@ void DocAccessible::AttributeChanged(dom::Element* aElement,
       
       ContentInserted(aElement, aElement->GetNextSibling());
       return;
-    }
-
-    if (aAttribute == nsGkAtoms::label) {
-      HTMLComboboxAccessible::SelectedOptionLabelMaybeChanged(this, aElement);
     }
 
     

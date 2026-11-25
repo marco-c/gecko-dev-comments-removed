@@ -507,7 +507,11 @@ nsAccessibilityService::ListenersChanged(nsIArray* aEventChanges) {
         if (!acc && nsCoreUtils::HasClickListener(content)) {
           
           
-          document->ContentInserted(content, content->GetNextSibling());
+          
+          if (content->GetPrimaryFrame() ||
+              nsCoreUtils::CanCreateAccessibleWithoutFrame(content)) {
+            document->ContentInserted(content, content->GetNextSibling());
+          }
         } else if (acc) {
           if ((acc->IsHTMLLink() && !acc->AsHTMLLink()->IsLinked()) ||
               (content->IsElement() &&
