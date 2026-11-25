@@ -24,18 +24,6 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
  * is visible. You can use the "expanded" attribute to force the accordion
  * card to show its content on initial render.
  *
- * @property {string} heading - The heading text that will be used for the card.
- * @property {number} headingLevel - Can be used to specify whether the heading is h1-h6 if not a regular span.
- * @property {string} iconSrc - Path to the icon that should be displayed in the card.
- * @property {string} type - (optional) The type of card. No type specified
- *   will be the default card. The other available type is "accordion"
- * @property {string} spacing - (optional) The level of spacing applied to the card. If unspecified,
- *   will use default spacing. The other available option is "compact", which has reduced spacing.
- * @property {boolean} expanded - A flag to indicate whether the card is
- *  expanded or not. Can be used to expand the content section of the
- *  accordion card on initial render.
- * @property {string} role - (optional) Role of the article element in the card.
- * @property {number} summaryTabIndex - (optional) tabindex for the accordion summary.
  * @slot content - The content to show inside of the card.
  */
 export class MozCard extends MozLitElement {
@@ -56,15 +44,103 @@ export class MozCard extends MozLitElement {
     expanded: { type: Boolean },
     role: { type: String, mapped: true },
     summaryTabIndex: { type: Number },
+    treeItem: { type: Boolean },
+    ariaLevel: { type: String, mapped: true },
+    ariaPosInSet: { type: String, mapped: true },
+    ariaSetSize: { type: String, mapped: true },
   };
 
   constructor() {
     super();
-    this.type = "default";
-    this.spacing = "default";
-    this.expanded = false;
-    /* When set to 1-6, it uses h1-h6 around the heading */
+
+    /**
+     * The heading text of the card.
+     *
+     * @type {string | undefined}
+     */
+    this.heading = undefined;
+
+    /**
+     * Heading level 1-6 used around the heading. 0 renders a regular span.
+     *
+     * @type {number}
+     */
     this.headingLevel = 0;
+
+    /**
+     * Path to the icon displayed in the card.
+     *
+     * @type {string | undefined}
+     */
+    this.iconSrc = undefined;
+
+    /**
+     * The type of card.
+     *
+     * @type {"default" | "accordion"}
+     */
+    this.type = "default";
+
+    /**
+     * The level of spacing applied to the card.
+     *
+     * @type {"default" | "compact"}
+     */
+    this.spacing = "default";
+
+    /**
+     * Whether the accordion card shows its content.
+     *
+     * @type {boolean}
+     */
+    this.expanded = false;
+
+    /**
+     * Role of the article element in the card.
+     *
+     * @type {string | undefined}
+     */
+    this.role = undefined;
+
+    /**
+     * Tabindex for the accordion summary.
+     *
+     * @type {number | undefined}
+     */
+    this.summaryTabIndex = undefined;
+
+    /**
+     * Whether the accordion summary is an item of a tree. When set, the
+     * summary gets the treeitem role, the article is presentational, and the
+     * heading always renders as a span. Ignored unless the type is
+     * "accordion".
+     *
+     * @type {boolean}
+     */
+    this.treeItem = false;
+
+    /**
+     * The aria-level of the accordion summary.
+     *
+     * @type {string | undefined}
+     */
+    this.ariaLevel = undefined;
+
+    /**
+     * The aria-posinset of the accordion summary.
+     *
+     * @type {string | undefined}
+     */
+    this.ariaPosInSet = undefined;
+
+    /**
+     * The aria-setsize of the accordion summary. With ariaLevel and
+     * ariaPosInSet, this lets a tree item say where it is when its siblings
+     * are in other cards. Ignored unless treeItem is set.
+     *
+     * @type {string | undefined}
+     */
+    this.ariaSetSize = undefined;
   }
 
   headingTextTemplate() {
@@ -77,8 +153,14 @@ export class MozCard extends MozLitElement {
       literal`h5`,
       literal`h6`,
     ];
-    const tagName = headingLevels[this.headingLevel] || headingLevels[0];
+    const tagName =
+      (!this.#isTreeItem && headingLevels[this.headingLevel]) ||
+      headingLevels[0];
     return staticHtml`<${tagName} id="heading" title=${ifDefined(this.heading)} part="heading">${this.heading}</${tagName}>`;
+  }
+
+  get #isTreeItem() {
+    return this.type === "accordion" && this.treeItem;
   }
 
   headingTemplate() {
@@ -115,7 +197,20 @@ export class MozCard extends MozLitElement {
             @toggle=${this.onToggle}
             ?open=${this.expanded}
           >
-            <summary part="summary" tabindex=${ifDefined(this.summaryTabIndex)}>
+            <summary
+              part="summary"
+              role=${ifDefined(this.#isTreeItem ? "treeitem" : undefined)}
+              aria-level=${ifDefined(
+                this.#isTreeItem ? this.ariaLevel : undefined
+              )}
+              aria-posinset=${ifDefined(
+                this.#isTreeItem ? this.ariaPosInSet : undefined
+              )}
+              aria-setsize=${ifDefined(
+                this.#isTreeItem ? this.ariaSetSize : undefined
+              )}
+              tabindex=${ifDefined(this.summaryTabIndex)}
+            >
               ${this.headingTemplate()}
             </summary>
             <div id="content"><slot id="content-slot"></slot></div>
@@ -156,9 +251,11 @@ export class MozCard extends MozLitElement {
         href="chrome://global/content/elements/moz-card.css"
       />
       <article
-        role=${ifDefined(this.role)}
+        role=${ifDefined(this.#isTreeItem ? "none" : this.role)}
         class="moz-card"
-        aria-labelledby=${ifDefined(this.heading ? "heading" : undefined)}
+        aria-labelledby=${ifDefined(
+          this.heading && !this.#isTreeItem ? "heading" : undefined
+        )}
       >
         ${this.cardTemplate()}
       </article>
