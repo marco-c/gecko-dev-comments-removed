@@ -85,12 +85,12 @@ struct PLDHashEntryHdr {
 
 class Checker {
  public:
-  constexpr Checker() : mState(kIdle), mIsWritable(true) {}
+  constexpr Checker() = default;
 
   Checker& operator=(Checker&& aOther) {
     
-    mState = uint32_t(aOther.mState);
-    mIsWritable = bool(aOther.mIsWritable);
+    mState = aOther.mState.load();
+    mIsWritable = aOther.mIsWritable.load();
 
     aOther.mState = kIdle;
     
@@ -190,8 +190,8 @@ class Checker {
   static const uint32_t kReadMax = 9999;
   static const uint32_t kWrite = 10000;
 
-  mozilla::Atomic<uint32_t, mozilla::SequentiallyConsistent> mState;
-  mozilla::Atomic<bool, mozilla::SequentiallyConsistent> mIsWritable;
+  mozilla::Atomic<uint32_t, mozilla::SequentiallyConsistent> mState{kIdle};
+  mozilla::Atomic<bool, mozilla::SequentiallyConsistent> mIsWritable{true};
 };
 #endif
 
@@ -448,6 +448,7 @@ class PLDHashTable {
 
   uint32_t EntrySize() const { return mEntrySize; }
   uint32_t EntryCount() const { return mEntryCount; }
+  bool IsEmpty() const { return mEntryCount == 0; }
   uint32_t Generation() const { return mGeneration; }
 
   
