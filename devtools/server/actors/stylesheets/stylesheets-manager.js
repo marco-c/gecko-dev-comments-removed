@@ -1074,6 +1074,7 @@ class StyleSheetsManager extends EventEmitter {
     if (
       href === "resource:
       href === "resource:
+      href === "resource:
       (href === "resource:
         this.#targetActor.sessionContext.type !== "all")
     ) {
