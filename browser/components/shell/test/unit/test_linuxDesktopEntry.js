@@ -71,9 +71,12 @@ async function parseINI(path) {
 }
 
 add_setup(async function setup() {
-  Services.dirsvc
-    .QueryInterface(Ci.nsIDirectoryService)
-    .registerProvider(gDirectoryServiceProvider);
+  
+  
+  if (Services.dirsvc.has("Home")) {
+    Services.dirsvc.undefine("Home");
+  }
+  Services.dirsvc.registerProvider(gDirectoryServiceProvider);
 
   sinon
     .stub(getSubprocessImplForTest(), "getEnvironment")
