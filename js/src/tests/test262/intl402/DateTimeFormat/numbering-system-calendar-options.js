@@ -9,7 +9,8 @@
 
 
 
-let defaultLocale = new Intl.DateTimeFormat().resolvedOptions().locale;
+
+let defaultLocale = getLocaleBaseName(new Intl.DateTimeFormat().resolvedOptions().locale);
 
 let supportedNumberingSystems = ["latn", "arab"].filter(nu =>
   new Intl.DateTimeFormat(defaultLocale + "-u-nu-" + nu)

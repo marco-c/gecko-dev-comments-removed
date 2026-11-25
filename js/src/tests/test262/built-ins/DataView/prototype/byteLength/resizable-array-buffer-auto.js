@@ -12,6 +12,20 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 assert.sameValue(typeof ArrayBuffer.prototype.resize, "function");
 
 var ab = new ArrayBuffer(4, {maxByteLength: 5});
@@ -43,14 +57,16 @@ assert.sameValue(dataView.byteLength, expected, "following shrink (on boundary)"
 
 try {
   ab.resize(0);
-  expected = TypeError;
-} catch (_) {
-  expected = Test262Error;
-}
+  expected = 0;
+} catch (_) {}
 
-assert.throws(expected, function() {
-  dataView.byteLength;
-  throw new Test262Error('the operation completed successfully');
-});
+assert.sameValue(dataView.byteLength, expected, "following shrink (out of bounds)");
+
+try {
+  ab.resize(2);
+  expected = 1;
+} catch (_) {}
+
+assert.sameValue(dataView.byteLength, expected, "following grow (back into bounds)");
 
 reportCompare(0, 0);

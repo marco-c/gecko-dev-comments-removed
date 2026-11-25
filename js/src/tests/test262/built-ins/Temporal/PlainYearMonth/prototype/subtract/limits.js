@@ -8,9 +8,15 @@
 
 
 
+
 const min = Temporal.PlainYearMonth.from("-271821-04");
+
+
+const monthAfterEarliestResult = Temporal.PlainYearMonth.from("-271821-06");
 for (const overflow of ["reject", "constrain"]) {
   assert.throws(RangeError, () => min.subtract({ months: 1 }, { overflow }), overflow);
+  TemporalHelpers.assertPlainYearMonth(monthAfterEarliestResult.subtract({ months: 1 }, { overflow }),
+    -271821, 5, "M05", `reaching earliest result with ${overflow}`);
 }
 
 reportCompare(0, 0);

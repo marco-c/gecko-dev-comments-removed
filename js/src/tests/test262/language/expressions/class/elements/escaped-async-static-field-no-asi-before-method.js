@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+
+var C = class {
+  static a\u0073ync value() {}
+}
+
+

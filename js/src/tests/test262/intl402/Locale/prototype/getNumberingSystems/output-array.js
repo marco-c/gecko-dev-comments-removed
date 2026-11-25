@@ -13,7 +13,12 @@
 
 
 
-assert(Array.isArray(new Intl.Locale('en').getNumberingSystems()));
-assert(new Intl.Locale('en').getNumberingSystems().length > 0, 'array has at least one element');
+
+
+
+
+var numberingSystems = new Intl.Locale('en').getNumberingSystems();
+assert.sameValue(Object.getPrototypeOf(numberingSystems), Array.prototype);
+assert.sameValue(numberingSystems.length, 1, 'array has exactly one element');
 
 reportCompare(0, 0);

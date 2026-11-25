@@ -17,8 +17,8 @@
 
 
 
-testWithTypedArrayConstructors(function(TA) {
-  var sample = new TA([42]);
+testWithTypedArrayConstructors(function(TA, makeCtorArg) {
+  var sample = new TA(makeCtorArg([42]));
 
   assert.sameValue(
     Reflect.set(sample, "test262", "ecma262"),

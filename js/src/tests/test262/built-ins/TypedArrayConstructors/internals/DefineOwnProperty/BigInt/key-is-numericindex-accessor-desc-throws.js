@@ -17,8 +17,8 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
-  var sample = new TA([0n]);
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  var sample = new TA(makeCtorArg([0n]));
 
   assert.throws(TypeError, function() {
     Object.defineProperty(sample, "0", {

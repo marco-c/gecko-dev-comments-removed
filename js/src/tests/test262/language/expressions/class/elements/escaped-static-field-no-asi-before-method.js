@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+
+var C = class {
+  st\u0061tic value() {}
+}
+
+

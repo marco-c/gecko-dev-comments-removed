@@ -23,8 +23,8 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
-  let sample = new TA(1);
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  let sample = new TA(makeCtorArg(1));
 
   Object.defineProperty(sample, "foo", {
     get() {

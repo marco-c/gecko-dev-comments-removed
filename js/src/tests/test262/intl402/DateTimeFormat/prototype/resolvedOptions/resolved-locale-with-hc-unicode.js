@@ -29,7 +29,8 @@
 
 
 
-var defaultLocale = new Intl.DateTimeFormat().resolvedOptions().locale;
+
+var defaultLocale = getLocaleBaseName(new Intl.DateTimeFormat().resolvedOptions().locale);
 var defaultLocaleWithHourCycle = defaultLocale + "-u-hc-h11";
 
 function assertLocale(locale, expectedLocale, options, message) {

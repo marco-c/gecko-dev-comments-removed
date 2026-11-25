@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  se\u0074
+}
+
+var c = new C();
+assert.compareArray(Object.keys(c), ["set"]);
+assert.compareArray(Object.keys(C), []);
+
+reportCompare(0, 0);

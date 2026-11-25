@@ -19,8 +19,8 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
-  var sample = new TA(2);
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  var sample = new TA(makeCtorArg(2));
 
   assert.sameValue(
     Reflect.defineProperty(sample, "0", {
@@ -33,6 +33,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
     "defineProperty's result"
   );
   assert.sameValue(sample[0], 42n, "side effect check");
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

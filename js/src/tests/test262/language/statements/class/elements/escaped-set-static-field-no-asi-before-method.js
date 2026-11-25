@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+
+class C {
+  static s\u0065t value(v) {}
+}
+
+

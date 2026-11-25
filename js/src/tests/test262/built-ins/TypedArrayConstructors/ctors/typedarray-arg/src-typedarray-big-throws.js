@@ -23,17 +23,16 @@
 
 var bigTypedArray;
 
-testWithBigIntTypedArrayConstructors(function(BTA) {
+testWithBigIntTypedArrayConstructors(function(BTA, makeCtorArg) {
 
-  bigTypedArray = new BTA(16);
+  bigTypedArray = new BTA(makeCtorArg(16));
 
-  testWithTypedArrayConstructors(function(TA) {
+  testWithTypedArrayConstructors(function(TA, makeCtorArg) {
     assert.throws(TypeError, function() {
       new TA(bigTypedArray);
     });
   });
 
 });
-
 
 reportCompare(0, 0);

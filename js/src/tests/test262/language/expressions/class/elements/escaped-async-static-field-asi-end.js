@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var C = class {
+  static asyn\u0063
+}
+
+var c = new C();
+assert.compareArray(Object.keys(c), []);
+assert.compareArray(Object.keys(C), ["async"]);
+
+reportCompare(0, 0);

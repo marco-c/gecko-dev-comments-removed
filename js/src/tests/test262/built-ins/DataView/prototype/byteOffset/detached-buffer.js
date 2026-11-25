@@ -14,13 +14,13 @@
 
 
 
-var buffer = new ArrayBuffer(1);
-var sample = new DataView(buffer, 0);
+
+
+var buffer = new ArrayBuffer(128);
+var sample = new DataView(buffer, 8, 1);
 
 $DETACHBUFFER(buffer);
 
-assert.throws(TypeError, function() {
-  sample.byteOffset;
-});
+assert.sameValue(sample.byteOffset, 0);
 
 reportCompare(0, 0);

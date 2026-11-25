@@ -30,7 +30,7 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   let proto = TypedArray.prototype;
   Object.defineProperty(proto, "-0", {
     configurable: true,
@@ -38,7 +38,7 @@ testWithBigIntTypedArrayConstructors(function(TA) {
       throw new Test262Error("OrdinaryGet was called!");
     }
   });
-  let sample = new TA(1);
+  let sample = new TA(makeCtorArg(1));
 
   assert.sameValue(delete sample["-0"], true, 'The value of `delete sample["-0"]` is true');
   assert.throws(TypeError, () => {

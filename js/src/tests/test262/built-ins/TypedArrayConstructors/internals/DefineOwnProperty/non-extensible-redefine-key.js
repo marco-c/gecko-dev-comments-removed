@@ -17,8 +17,8 @@
 
 
 
-testWithTypedArrayConstructors(function(TA) {
-  var sample = new TA([42, 43]);
+testWithTypedArrayConstructors(function(TA, makeCtorArg) {
+  var sample = new TA(makeCtorArg([42, 43]));
   sample.foo = true;
   sample.bar = true;
 
@@ -54,6 +54,6 @@ testWithTypedArrayConstructors(function(TA) {
   assert.sameValue(desc.set, fnset, "accessor's set");
   verifyNotEnumerable(sample, "bar");
   verifyNotConfigurable(sample, "bar");
-});
+}, null, null, ["resizable"]);
 
 reportCompare(0, 0);

@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+
+class C {
+  acc\u0065ssor value;
+}

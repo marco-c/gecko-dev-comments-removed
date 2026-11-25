@@ -17,8 +17,8 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
-  var sample = new TA([42n, 43n]);
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  var sample = new TA(makeCtorArg([42n, 43n]));
   sample.foo = true;
   sample.bar = true;
 
@@ -54,6 +54,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
   assert.sameValue(desc.set, fnset, "accessor's set");
   verifyNotEnumerable(sample, "bar");
   verifyNotConfigurable(sample, "bar");
-});
+}, null, null, ["resizable"]);
 
 reportCompare(0, 0);

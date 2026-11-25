@@ -23,8 +23,8 @@
 
 
 
-testWithTypedArrayConstructors(function(TA) {
-  var sample = new TA([0]);
+testWithTypedArrayConstructors(function(TA, makeCtorArg) {
+  var sample = new TA(makeCtorArg([0]));
   var desc = Object.getOwnPropertyDescriptor(sample, "0");
 
   assert.throws(TypeError, function() {

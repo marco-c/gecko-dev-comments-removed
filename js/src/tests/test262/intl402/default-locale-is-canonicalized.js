@@ -10,9 +10,25 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 testWithIntlConstructors(function (Constructor) {
     var defaultLocale = new Constructor().resolvedOptions().locale;
     assert(isCanonicalizedStructurallyValidLanguageTag(defaultLocale), "Default locale \"" + defaultLocale + "\" is not canonicalized and structurally valid language tag.");
+    assert.sameValue(defaultLocale.indexOf("-u-"), -1, "Default locale \"" + defaultLocale + "\" contains a Unicode locale extension sequence.");
 });
 
 reportCompare(0, 0);

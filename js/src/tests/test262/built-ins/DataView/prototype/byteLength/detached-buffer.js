@@ -13,13 +13,14 @@
 
 
 
+
+
+
 let buffer = new ArrayBuffer(1);
 let dv = new DataView(buffer, 0);
 
 $DETACHBUFFER(buffer);
 
-assert.throws(TypeError, () => {
-  dv.byteLength;
-});
+assert.sameValue(dv.byteLength, 0);
 
 reportCompare(0, 0);

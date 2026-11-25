@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  static stati\u0063
+}
+
+var c = new C();
+assert.compareArray(Object.keys(c), []);
+assert.compareArray(Object.keys(C), ["static"]);
+
+reportCompare(0, 0);

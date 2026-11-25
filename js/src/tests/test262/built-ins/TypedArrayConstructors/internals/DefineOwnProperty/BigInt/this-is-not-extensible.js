@@ -17,8 +17,8 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
-  var sample = new TA([42n, 43n]);
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  var sample = new TA(makeCtorArg([42n, 43n]));
 
   Object.preventExtensions(sample);
 
@@ -28,6 +28,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
   var s = Symbol("1");
   assert.sameValue(Reflect.defineProperty(sample, s, {value:42}), false);
   assert.sameValue(Reflect.getOwnPropertyDescriptor(sample, s), undefined);
-});
+}, null, null, ["resizable"]);
 
 reportCompare(0, 0);

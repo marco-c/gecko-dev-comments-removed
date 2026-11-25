@@ -9,7 +9,8 @@
 
 
 
-var defaultLocale = new Intl.NumberFormat().resolvedOptions().locale;
+
+var defaultLocale = getLocaleBaseName(new Intl.NumberFormat().resolvedOptions().locale);
 
 assert.throws(TypeError, function () {
         return new Intl.NumberFormat([defaultLocale], {style: "currency"});

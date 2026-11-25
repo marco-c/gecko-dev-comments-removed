@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+
+var C = class {
+  static s\u0065t value(v) {}
+}
+
+

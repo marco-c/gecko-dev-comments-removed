@@ -24,9 +24,9 @@
 
 
 
-testWithTypedArrayConstructors(function(TA) {
+testWithTypedArrayConstructors(function(TA, makeCtorArg) {
   TypedArray.prototype.baz = "baz";
-  let sample = new TA(1);
+  let sample = new TA(makeCtorArg(1));
 
   assert.sameValue(
     delete sample.foo, true,

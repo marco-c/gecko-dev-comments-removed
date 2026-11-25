@@ -10,24 +10,17 @@
 
 
 for (var cu = 0; cu <= 0xffff; ++cu) {
-  var Elimination =
-    ((cu === 0x002A) || (cu === 0x002F) || (cu === 0x005C) || (cu === 0x002B) ||
-     (cu === 0x003F) || (cu === 0x0028) || (cu === 0x0029) ||
-     (cu === 0x005B) || (cu === 0x005D) || (cu === 0x007B) || (cu === 0x007D));
-     
-
-
-
-
   var LineTerminator = ((cu === 0x000A) || (cu === 0x000D) || (cu === 0x2028) || (cu === 0x2029));
-  if ((Elimination || LineTerminator ) === false) {
+  if (LineTerminator === false) {
     var xx = "a\\" + String.fromCharCode(cu);
     try {
       var pattern = eval("/" + xx + "/");
     } catch (e) {
-      var identifierPartNotUnicodeIDContinue = ((cu === 0x0024) || (cu === 0x200C) || (cu === 0x200D));
-      if (e instanceof SyntaxError && !identifierPartNotUnicodeIDContinue) {
-        
+      
+      
+      
+      var isSpecialIdentifierPart = cu === 0x0024; 
+      if (e instanceof SyntaxError && !isSpecialIdentifierPart) {
         try {
           eval("var _" + String.fromCharCode(cu));
           continue;

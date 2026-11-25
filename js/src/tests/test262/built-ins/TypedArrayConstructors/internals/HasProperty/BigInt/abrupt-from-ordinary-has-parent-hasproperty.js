@@ -35,8 +35,8 @@ var handler = {
 
 var proxy = new Proxy(TypedArray.prototype, handler);
 
-testWithBigIntTypedArrayConstructors(function(TA) {
-  var sample = new TA(1);
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  var sample = new TA(makeCtorArg(1));
 
   Object.setPrototypeOf(sample, proxy);
 

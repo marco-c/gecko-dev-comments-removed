@@ -9,13 +9,14 @@
 
 
 
+
 var options = [
     {key: "kn", property: "numeric", type: "boolean", values: [true, false]},
     {key: "kf", property: "caseFirst", type: "string", values: ["upper", "lower", "false"]}
 ];
 
 options.forEach(function (option) {
-    var defaultLocale = new Intl.Collator().resolvedOptions().locale;
+    var defaultLocale = getLocaleBaseName(new Intl.Collator().resolvedOptions().locale);
     var collator, opt, result;
     
     

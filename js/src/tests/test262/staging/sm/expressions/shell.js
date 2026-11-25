@@ -47,7 +47,7 @@ function assertThrowsValue(f, val, msg) {
     function test_one(pattern, val, opt) {
         var stmts = [];
         var i = 0;
-        var c;
+        var a, c;
 
         stmts.push(`var ${pattern} = ${val};`);
 
