@@ -1185,10 +1185,16 @@ void ScrollContainerFrame::PlaceScrollArea(ScrollReflowInput& aState,
     }
     AdjustForPerspective(aState.mContentsOverflowAreas.ScrollableOverflow());
   }
+  StoreScrolledFrameOverflow(
+      aState.mContentsOverflowAreas.ScrollableOverflow());
+}
+
+void ScrollContainerFrame::StoreScrolledFrameOverflow(
+    const nsRect& aScrollableOverflow) {
   
   const nsSize portSize = ScrollPort().Size();
-  nsRect scrolledRect = GetUnsnappedScrolledRectInternal(
-      aState.mContentsOverflowAreas.ScrollableOverflow(), portSize);
+  nsRect scrolledRect =
+      GetUnsnappedScrolledRectInternal(aScrollableOverflow, portSize);
   nsRect scrolledArea = scrolledRect.UnionEdges(nsRect(nsPoint(), portSize));
   
   
@@ -6632,6 +6638,15 @@ void ScrollContainerFrame::ReflowCallbackCanceled() {
 bool ScrollContainerFrame::ComputeCustomOverflow(
     OverflowAreas& aOverflowAreas) {
   ScrollStyles ss = GetScrollStyles();
+
+  if (ChildrenHavePerspective()) {
+    
+    
+    
+    nsRect scrollableOverflow;
+    AdjustForPerspective(scrollableOverflow);
+    StoreScrolledFrameOverflow(scrollableOverflow);
+  }
 
   
   

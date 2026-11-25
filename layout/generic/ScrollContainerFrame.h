@@ -143,6 +143,10 @@ class ScrollContainerFrame : public nsContainerFrame,
 
   
   
+  void StoreScrolledFrameOverflow(const nsRect& aScrollableOverflow);
+
+  
+  
   void SetInitialChildList(ChildListID aListID,
                            nsFrameList&& aChildList) override;
   void AppendFrames(ChildListID aListID, nsFrameList&& aFrameList) final;
