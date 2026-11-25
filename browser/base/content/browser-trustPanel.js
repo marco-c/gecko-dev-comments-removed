@@ -977,7 +977,7 @@ class TrustPanel {
     }
     icon.classList.add(...targetClasses);
 
-    icon.setAttribute("tooltiptext", this.#tooltipText());
+    this.#updateTooltip();
     icon.classList.toggle("chickletShown", this.#isInternalSecurePage);
   }
 
@@ -2042,6 +2042,49 @@ class TrustPanel {
     return { supplemental, verifier, owner };
   }
 
+  
+  
+  #updateTooltip() {
+    let icon = document.getElementById("trust-icon-container");
+    let label = document.getElementById("trust-icon-tooltip-label");
+    let l10nId = this.#trackerCountTooltipL10nId();
+    if (l10nId) {
+      document.l10n.setAttributes(label, l10nId, {
+        count: this.#getCumulativeTrackerCount(),
+      });
+      icon.setAttribute("tooltip", "trust-icon-tooltip");
+      return;
+    }
+    let tooltip = this.#tooltipText();
+    label.removeAttribute("data-l10n-id");
+    label.textContent = tooltip;
+    if (tooltip) {
+      icon.setAttribute("tooltip", "trust-icon-tooltip");
+    } else {
+      icon.removeAttribute("tooltip");
+    }
+  }
+
+  #trackerCountTooltipL10nId() {
+    if (
+      !this.#trackerCountEnabled ||
+      !this.#isWebPage() ||
+      !this.#isSecurePage() ||
+      this.#breachedStatus === "breached"
+    ) {
+      return null;
+    }
+    if (!this.#trackingProtectionEnabled) {
+      return "urlbar-trust-icon-tracking-protection-off-tooltip";
+    }
+    if (this.#getCumulativeTrackerCount() > 0) {
+      return "urlbar-trust-icon-trackers-blocked-tooltip";
+    }
+    return this.#blockersChecked
+      ? "urlbar-trust-icon-no-trackers-found-tooltip"
+      : null;
+  }
+
   #tooltipText() {
     let tooltip = "";
     let warnTextOnInsecure =
@@ -2050,9 +2093,9 @@ class TrustPanel {
         PrivateBrowsingUtils.isWindowPrivate(window));
 
     if (this.#uriHasHost && this.#isSecureConnection) {
-      
+      // This is a secure connection.
       if (!this.#isCertUserOverridden) {
-        
+        // It's a normal cert, verifier is the CA Org.
         tooltip = gNavigatorBundle.getFormattedString(
           "identity.identified.verifier",
           [this.#getIdentityData().caOrg]
@@ -2072,7 +2115,7 @@ class TrustPanel {
     }
 
     if (this.#isCertUserOverridden) {
-      
+      // Cert is trusted because of a security exception, verifier is a special string.
       tooltip = gNavigatorBundle.getString(
         "identity.identified.verified_by_you"
       );
@@ -2081,7 +2124,7 @@ class TrustPanel {
   }
 
   #connectionState() {
-    
+    // Determine connection security information.
     let connection = "not-secure";
     if (this.#isInternalSecurePage) {
       connection = "chrome";
