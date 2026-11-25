@@ -584,6 +584,7 @@ PromiseResolver::~PromiseResolver() { mPromise = nullptr; }
 
 already_AddRefed<Promise> Localization::MaybeWrapPromise(
     Promise* aInnerPromise) {
+  MOZ_ASSERT(aInnerPromise->State() == Promise::PromiseState::Pending);
   
   
   nsIPrincipal* principal = mGlobal->PrincipalOrNull();
