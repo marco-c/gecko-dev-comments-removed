@@ -220,18 +220,6 @@ class WorkerPrivate final
   
   using TerminationCallback = std::function<void(void)>;
 
-  struct LocationInfo {
-    nsCString mHref;
-    nsCString mProtocol;
-    nsCString mHost;
-    nsCString mHostname;
-    nsCString mPort;
-    nsCString mPathname;
-    nsCString mSearch;
-    nsCString mHash;
-    nsString mOrigin;
-  };
-
   NS_INLINE_DECL_REFCOUNTING(WorkerPrivate)
 
   FONT_VISIBILITY_PROVIDER_IMPL
@@ -758,8 +746,6 @@ class WorkerPrivate final
     return duration.ToMilliseconds();
   }
 
-  LocationInfo& GetLocationInfo() { return mLocationInfo; }
-
   void CopyJSSettings(workerinternals::JSSettings& aSettings) {
     mozilla::MutexAutoLock lock(mMutex);
     aSettings = mJSSettings;
@@ -995,13 +981,16 @@ class WorkerPrivate final
     return PolicyContainer::GetCSP(GetPolicyContainer());
   }
 
-  nsresult SetCSPFromHeaderValues(const nsACString& aCSPHeaderValue,
-                                  const nsACString& aCSPReportOnlyHeaderValue);
+  nsresult SetPolicyContainerFromHeaders(
+      const PolicyContainer::Headers& aHeaders);
 
   void StorePolicyContainerArgsOnClient();
 
-  const mozilla::ipc::CSPInfo& GetCSPInfo() const {
-    return mLoadInfo.mCSPContext->CSPInfo();
+  Maybe<const mozilla::ipc::CSPInfo&> GetCSPInfo() const {
+    if (!mLoadInfo.mCSPContext) {
+      return Nothing();
+    }
+    return SomeRef(mLoadInfo.mCSPContext->CSPInfo());
   }
 
   OffThreadCSPContext* GetCSPContext() const {
@@ -1516,7 +1505,6 @@ class WorkerPrivate final
   
   
   WorkerLoadInfo mLoadInfo;
-  LocationInfo mLocationInfo;
 
   
   workerinternals::JSSettings mJSSettings MOZ_GUARDED_BY(mMutex);

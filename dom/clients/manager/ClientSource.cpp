@@ -182,8 +182,9 @@ void ClientSource::Activate(PClientManagerChild* aActor) {
   
   
   
+  RefPtr<LoadedOriginSet> loadedOrigins = CurrentLoadedOriginSet();
   if (NS_WARN_IF(!ClientIsValidPrincipalInfo(mClientInfo.PrincipalInfo(),
-                                             CurrentRemoteType()))) {
+                                             loadedOrigins))) {
     Shutdown();
     return;
   }
@@ -238,8 +239,10 @@ void ClientSource::WorkerExecutionReady(WorkerPrivate* aWorkerPrivate) {
         StringBeginsWith(aWorkerPrivate->ScriptURL(), u"blob:"_ns));
   }
 
-  ClientSourceExecutionReadyArgs args(aWorkerPrivate->GetLocationInfo().mHref,
-                                      FrameType::None);
+  nsCString spec;
+  (void)aWorkerPrivate->GetBaseURI()->GetSpec(spec);
+
+  ClientSourceExecutionReadyArgs args(spec, FrameType::None);
 
   ExecutionReady(args);
 }
