@@ -8,17 +8,16 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import android.os.StrictMode
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.fragment.app.Fragment
 import androidx.fragment.compose.content
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import kotlinx.coroutines.launch
@@ -153,8 +152,6 @@ class OnboardingFragment : Fragment() {
         )
     }
 
-    private val navBackStackEntry by lazy { findNavController().getBackStackEntry(R.id.onboardingFragment) }
-
     @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -239,13 +236,9 @@ class OnboardingFragment : Fragment() {
     @Composable
     @Suppress("LongMethod")
     private fun ScreenContent() {
-        val isSyncFlowCompleted by OnboardingSyncFlowResult.isCompleted(navBackStackEntry).collectAsStateWithLifecycle()
-
         OnboardingScreen(
             pagesToDisplay = pagesToDisplay,
             initialPageIndex = requireComponents.settings.onboardingCurrentPageIndex,
-            isSyncFlowCompleted = isSyncFlowCompleted,
-            onSyncFlowCompletedHandled = { OnboardingSyncFlowResult.consume(navBackStackEntry) },
             onMakeFirefoxDefaultClick = {
                 promptToSetAsDefaultBrowser()
             },
@@ -419,7 +412,8 @@ class OnboardingFragment : Fragment() {
         settings.onboardingCurrentPageIndex = 0
 
         val downloadUrl = settings.rtamoAddonDownloadUrl
-        if (downloadUrl.isNotBlank()) {
+        val hasPendingAddonInstall = downloadUrl.isNotBlank()
+        if (hasPendingAddonInstall) {
             requireComponents.core.store.dispatch(
                 WebExtensionAction.UpdatePromptRequestWebExtensionAction(
                     WebExtensionPromptRequest.InstallationRequested(
@@ -436,6 +430,24 @@ class OnboardingFragment : Fragment() {
         settings.rtamoAddonImageUrl = ""
 
         maybeAddMenuNotification()
+
+        // Skip when an add-on install prompt is about to show so the two prompts don't compete.
+        if (!hasPendingAddonInstall) {
+            maybeRequestNotificationPermission()
+        }
+    }
+
+    private fun maybeRequestNotificationPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+
+        val notificationsDelegate = requireComponents.notificationsDelegate
+        if (notificationsDelegate.hasPostNotificationsPermission()) return
+
+        val notificationPrompt = FxNimbus.features.onboardingNotificationPrompt
+        notificationPrompt.recordExposure()
+        if (notificationPrompt.value().enabled) {
+            notificationsDelegate.requestNotificationPermission()
+        }
     }
 
     private fun isNotDefaultBrowser(context: Context) = !Browsers.isDefaultBrowser(context)
