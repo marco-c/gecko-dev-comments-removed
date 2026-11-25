@@ -32,6 +32,7 @@ struct dma_buf_sync {
 #define DMA_BUF_IOCTL_SYNC _IOW(DMA_BUF_BASE, 0, struct dma_buf_sync)
 
 struct pw_thread_loop;
+struct spa_buffer;
 
 namespace webrtc {
 
@@ -76,6 +77,18 @@ class PipeWireInitializer {
   PipeWireInitializer(const PipeWireInitializer&) = delete;
   PipeWireInitializer& operator=(const PipeWireInitializer&) = delete;
 };
+
+
+
+
+
+bool PipeWireBufferHasUncorruptedChunk(const spa_buffer& buffer);
+
+
+
+
+
+bool PipeWireBufferHasFrameData(const spa_buffer& buffer);
 
 
 

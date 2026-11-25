@@ -364,6 +364,21 @@ TEST_F(MAYBE_PipeWireStreamTest, TestModifierFallback) {
 
   
   
+  Event zeroSizeFrameEvent;
+  EXPECT_CALL(*this, OnFrameRecorded);
+  EXPECT_CALL(*this, OnDesktopFrameChanged).WillOnce([&zeroSizeFrameEvent] {
+    zeroSizeFrameEvent.Set();
+  });
+
+  test_screencast_stream_provider_->RecordFrame(
+      green_color, TestScreenCastStreamProvider::EmptyData);
+  zeroSizeFrameEvent.Wait(kShortWait);
+
+  frame = shared_screencast_stream_->CaptureFrame();
+  ASSERT_NE(frame, nullptr);
+
+  
+  
   Event waitRenegotiation3;
   EXPECT_CALL(*this, OnStopStreaming);
   
