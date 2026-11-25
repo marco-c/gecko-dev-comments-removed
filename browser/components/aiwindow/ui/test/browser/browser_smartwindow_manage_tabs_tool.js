@@ -7,8 +7,11 @@ const { MockEngineManager } = ChromeUtils.importESModule(
   "resource://testing-common/AIWindowTestUtils.sys.mjs"
 );
 
-const { UI_TYPES, ToolUI } = ChromeUtils.importESModule(
+const { UI_TYPES } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs"
+);
+const { ToolTabActions } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/ui/modules/ToolTabActions.sys.mjs"
 );
 
 const { tabManagementService } = ChromeUtils.importESModule(
@@ -430,7 +433,7 @@ add_task(async function test_close_tab_in_non_interacting_window() {
       "Target tab starts open in the non-interacting window"
     );
 
-    const result = await ToolUI.closeSelectedTabs(
+    const result = await ToolTabActions.closeSelectedTabs(
       selectedTabs,
       tokenToKey,
       interactingWindow
@@ -488,7 +491,7 @@ add_task(async function test_close_tabs_spanning_multiple_windows() {
   ];
 
   try {
-    const result = await ToolUI.closeSelectedTabs(
+    const result = await ToolTabActions.closeSelectedTabs(
       selectedTabs,
       tokenToKey,
       windowA
@@ -510,6 +513,52 @@ add_task(async function test_close_tabs_spanning_multiple_windows() {
   } finally {
     await BrowserTestUtils.closeWindow(windowA);
     await BrowserTestUtils.closeWindow(windowB);
+  }
+});
+
+add_task(async function test_group_tabs_skips_chat_tab_window() {
+  const interactingWindow = await openAIWindow();
+  const otherWindow = await openAIWindow();
+
+  const chatTab = interactingWindow.gBrowser.selectedTab;
+  const tabA = await BrowserTestUtils.openNewForegroundTab(
+    otherWindow.gBrowser,
+    "https://example.com/"
+  );
+  const tabB = await BrowserTestUtils.openNewForegroundTab(
+    otherWindow.gBrowser,
+    "https://example.org/"
+  );
+
+  const tokenToKey = new Map([
+    ["token-a", tabA.permanentKey],
+    ["token-b", tabB.permanentKey],
+    ["token-chat", chatTab.permanentKey],
+  ]);
+  const selectedTabs = [
+    { token: "token-a", url: "https://example.com/" },
+    { token: "token-b", url: "https://example.org/" },
+    { token: "token-chat", url: AIWINDOW_URL, isChatTab: true },
+  ];
+
+  try {
+    const result = await ToolTabActions.createTabGroup({
+      tabs: selectedTabs,
+      tokenToKey,
+      window: interactingWindow,
+      label: "Group",
+    });
+
+    Assert.ok(result.success, "Should create the group");
+    Assert.deepEqual(
+      tabA.group.tabs,
+      [tabA, tabB],
+      "The group holds the tabs in the other window"
+    );
+    Assert.ok(!chatTab.group, "The chat tab is not grouped");
+  } finally {
+    await BrowserTestUtils.closeWindow(otherWindow);
+    await BrowserTestUtils.closeWindow(interactingWindow);
   }
 });
 
@@ -543,7 +592,7 @@ add_task(async function test_undo_close_tabs_spanning_multiple_windows() {
   ];
 
   try {
-    const closeResult = await ToolUI.closeSelectedTabs(
+    const closeResult = await ToolTabActions.closeSelectedTabs(
       selectedTabs,
       tokenToKey,
       windowA
@@ -618,7 +667,7 @@ add_task(async function test_close_last_tab_keeps_window_open() {
   const selectedTabs = [{ token: "token-a", url: "https://example.com/" }];
 
   try {
-    const result = await ToolUI.closeSelectedTabs(
+    const result = await ToolTabActions.closeSelectedTabs(
       selectedTabs,
       tokenToKey,
       interactingWindow

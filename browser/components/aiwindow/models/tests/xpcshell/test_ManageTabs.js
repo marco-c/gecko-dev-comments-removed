@@ -23,6 +23,9 @@ const { BrowserWindowTracker } = ChromeUtils.importESModule(
 const { ToolUI } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs"
 );
+const { ToolTabActions } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/ui/modules/ToolTabActions.sys.mjs"
+);
 
 function createFakeTab(
   url,
@@ -108,6 +111,7 @@ add_task(async function test_manageTabsAction_confirmation_path_matches_tabs() {
         title: sanitizeUntrustedContent("Example"),
         userContextId: undefined,
         pinned: false,
+        inGroup: false,
         selected: false,
         iconSrc: `page-icon:${url1}`,
         checked: true,
@@ -122,6 +126,7 @@ add_task(async function test_manageTabsAction_confirmation_path_matches_tabs() {
         title: sanitizeUntrustedContent("Mozilla"),
         userContextId: undefined,
         pinned: false,
+        inGroup: false,
         selected: false,
         iconSrc: `page-icon:${url2}`,
         checked: true,
@@ -191,7 +196,7 @@ add_task(async function test_manageTabsAction_direct_close_path() {
       createFakeWindow([targetTab, otherTab], { selectedTab: otherTab })
     );
 
-    sb.stub(ToolUI, "closeSelectedTabs").resolves({
+    sb.stub(ToolTabActions, "closeSelectedTabs").resolves({
       operationIds: ["op-1"],
       closedTabs: [],
       failedTabs: [],
@@ -226,6 +231,7 @@ add_task(async function test_manageTabsAction_direct_close_path() {
         title: sanitizeUntrustedContent("Example"),
         userContextId: undefined,
         pinned: false,
+        inGroup: false,
         selected: false,
         iconSrc: `page-icon:${url}`,
         checked: true,
@@ -277,7 +283,7 @@ add_task(async function test_manageTabsAction_direct_group_path() {
       })
     );
 
-    const createTabGroup = sb.stub(ToolUI, "createTabGroup").resolves({
+    const createTabGroup = sb.stub(ToolTabActions, "createTabGroup").resolves({
       operationId: "op-1",
       failedTabs: [],
       group: { id: "op-1", label: "Bears", color: "blue", tabCount: 2 },
@@ -340,7 +346,6 @@ add_task(async function test_manageTabsAction_direct_group_path() {
 
 
 
-
 add_task(async function test_manageTabsAction_offers_the_chat_tab() {
   const sb = sinon.createSandbox();
   try {
@@ -352,11 +357,12 @@ add_task(async function test_manageTabsAction_offers_the_chat_tab() {
       "chrome://browser/content/aiwindow/aiWindow.html",
       "Smart Window"
     );
-    setupBrowserWindowTracker(
-      sb,
-      createFakeWindow([chatTab, targetTab1], { selectedTab: chatTab })
-    );
-    sb.stub(ToolUI, "findChatTab").returns(chatTab);
+    const win = createFakeWindow([chatTab, targetTab1], {
+      selectedTab: chatTab,
+    });
+    chatTab.documentGlobal = win;
+    setupBrowserWindowTracker(sb, win);
+    sb.stub(ToolTabActions, "findChatTab").returns(chatTab);
     const registerTabKeys = sb.stub(ToolUI, "registerTabKeys");
 
     const { uiData } = await manageTabsAction(
@@ -381,7 +387,7 @@ add_task(async function test_manageTabsAction_offers_the_chat_tab() {
       sanitizeUntrustedContent("Smart Window"),
       "The chat tab is the row that was added"
     );
-    Assert.ok(chatRow.checked, "The chat tab starts ticked");
+    Assert.ok(!chatRow.checked, "The chat tab starts unticked");
 
     const [, tokenToKey] = registerTabKeys.firstCall.args;
     Assert.equal(
@@ -389,13 +395,30 @@ add_task(async function test_manageTabsAction_offers_the_chat_tab() {
       chatTab.permanentKey,
       "The chat tab's token resolves back to it when the user confirms"
     );
+
+    chatTab.documentGlobal = createFakeWindow([]);
+    const { uiData: otherWindowUIData } = await manageTabsAction(
+      {
+        action: GROUP_TABS,
+        validUrls: new Set([url1]),
+        ask_confirmation: true,
+        label: "Bears",
+        toolCallId: "tool-call-2",
+      },
+      makeConversation()
+    );
+    Assert.equal(
+      otherWindowUIData.properties.tabs.length,
+      1,
+      "The chat tab is not offered when it is in another window"
+    );
   } finally {
     sb.restore();
   }
 });
 
 
-add_task(async function test_manageTabsAction_direct_group_includes_chat_tab() {
+add_task(async function test_manageTabsAction_direct_group_skips_chat_tab() {
   const sb = sinon.createSandbox();
   try {
     const url1 = "https://example.com/a";
@@ -414,12 +437,12 @@ add_task(async function test_manageTabsAction_direct_group_includes_chat_tab() {
         selectedTab: otherTab,
       })
     );
-    sb.stub(ToolUI, "findChatTab").returns(chatTab);
+    sb.stub(ToolTabActions, "findChatTab").returns(chatTab);
 
-    const createTabGroup = sb.stub(ToolUI, "createTabGroup").resolves({
+    const createTabGroup = sb.stub(ToolTabActions, "createTabGroup").resolves({
       operationId: "op-1",
       failedTabs: [],
-      group: { id: "op-1", label: "Bears", color: "blue", tabCount: 2 },
+      group: { id: "op-1", label: "Bears", color: "blue", tabCount: 1 },
     });
 
     await manageTabsAction(
@@ -433,15 +456,88 @@ add_task(async function test_manageTabsAction_direct_group_includes_chat_tab() {
     );
 
     const args = createTabGroup.firstCall.args[0];
-    Assert.equal(args.tabs.length, 2, "The chat tab is grouped as well");
+    Assert.deepEqual(
+      args.tabs.map(tab => tab.url),
+      [url1],
+      "Only the matched tab is grouped"
+    );
     Assert.ok(
-      [...args.tokenToKey.values()].includes(chatTab.permanentKey),
-      "The chat tab is resolvable by its token"
+      ![...args.tokenToKey.values()].includes(chatTab.permanentKey),
+      "The chat tab is not resolvable by any token"
     );
   } finally {
     sb.restore();
   }
 });
+
+function setupWindowWithChatTab(sandbox, url, chatTabState) {
+  const targetTab = createFakeTab(url, "Example A");
+  const chatTab = createFakeTab(
+    "chrome://browser/content/aiwindow/aiWindow.html",
+    "Smart Window"
+  );
+  const win = createFakeWindow([chatTab, targetTab], { selectedTab: chatTab });
+  Object.assign(chatTab, chatTabState, { documentGlobal: win });
+  setupBrowserWindowTracker(sandbox, win);
+  sandbox.stub(ToolTabActions, "findChatTab").returns(chatTab);
+  sandbox.stub(ToolUI, "registerTabKeys");
+}
+
+function requestGroupTabs(url, options = {}) {
+  return manageTabsAction(
+    {
+      action: GROUP_TABS,
+      validUrls: new Set([url]),
+      ask_confirmation: false,
+      label: "L",
+      toolCallId: "tool-call-1",
+      ...options,
+    },
+    makeConversation()
+  );
+}
+
+add_task(
+  async function test_manageTabsAction_requires_confirmation_for_pinned_chat_tab() {
+    const url = "https://example.com/a";
+    const sb = sinon.createSandbox();
+    try {
+      setupWindowWithChatTab(sb, url, { pinned: true });
+
+      const { uiData } = await requestGroupTabs(url, {
+        include_chat_tab: true,
+      });
+      Assert.equal(
+        uiData.uiType,
+        "tab-group-confirmation",
+        "Including a pinned chat tab requires confirmation"
+      );
+    } finally {
+      sb.restore();
+    }
+  }
+);
+
+add_task(
+  async function test_manageTabsAction_requires_confirmation_for_grouped_chat_tab() {
+    const url = "https://example.com/a";
+    const sb = sinon.createSandbox();
+    try {
+      setupWindowWithChatTab(sb, url, { group: {} });
+
+      const { uiData } = await requestGroupTabs(url, {
+        include_chat_tab: true,
+      });
+      Assert.equal(
+        uiData.uiType,
+        "tab-group-confirmation",
+        "Including a grouped chat tab requires confirmation"
+      );
+    } finally {
+      sb.restore();
+    }
+  }
+);
 
 add_task(async function test_manageTabsAction_marks_failed_tabs() {
   const sb = sinon.createSandbox();
@@ -458,7 +554,7 @@ add_task(async function test_manageTabsAction_marks_failed_tabs() {
       })
     );
 
-    sb.stub(ToolUI, "closeSelectedTabs").resolves({
+    sb.stub(ToolTabActions, "closeSelectedTabs").resolves({
       operationIds: ["op-1"],
       closedTabs: [],
       failedTabs: [{ tab: failedTab, reason: "already-closing" }],
@@ -601,6 +697,97 @@ add_task(async function test_manageTabsAction_skips_non_ai_windows() {
     sb.restore();
   }
 });
+
+add_task(
+  async function test_manageTabsAction_requires_confirmation_for_grouped_tab() {
+    const url = "https://example.com/a";
+    const sb = sinon.createSandbox();
+    try {
+      const grouped = createFakeTab(url, "Grouped");
+      grouped.group = {};
+      const other = createFakeTab("https://example.com/keep", "Keep");
+      setupBrowserWindowTracker(
+        sb,
+        createFakeWindow([grouped, other], { selectedTab: other })
+      );
+      sb.stub(ToolTabActions, "findChatTab").returns(null);
+      sb.stub(ToolUI, "registerTabKeys");
+
+      const { uiData } = await requestGroupTabs(url);
+      Assert.equal(
+        uiData.uiType,
+        "tab-group-confirmation",
+        "Grouping an already grouped tab requires confirmation"
+      );
+    } finally {
+      sb.restore();
+    }
+  }
+);
+
+add_task(
+  async function test_manageTabsAction_closes_grouped_tab_without_confirmation() {
+    const url = "https://example.com/a";
+    const sb = sinon.createSandbox();
+    try {
+      const grouped = createFakeTab(url, "Grouped");
+      grouped.group = {};
+      const other = createFakeTab("https://example.com/keep", "Keep");
+      setupBrowserWindowTracker(
+        sb,
+        createFakeWindow([grouped, other], { selectedTab: other })
+      );
+      sb.stub(ToolTabActions, "closeSelectedTabs").resolves({
+        operationIds: ["op-1"],
+        failedTabs: [],
+      });
+
+      const { uiData } = await manageTabsAction(
+        {
+          action: CLOSE_TABS,
+          validUrls: new Set([url]),
+          ask_confirmation: false,
+        },
+        makeConversation()
+      );
+      Assert.equal(
+        uiData.uiType,
+        "ai-action-result",
+        "Closing a grouped tab does not require confirmation"
+      );
+    } finally {
+      sb.restore();
+    }
+  }
+);
+
+add_task(
+  async function test_manageTabsAction_requires_confirmation_for_grouped_tab_in_other_window() {
+    const url = "https://example.com/a";
+    const sb = sinon.createSandbox();
+    try {
+      const topTab = createFakeTab("https://example.com/top", "Top");
+      const grouped = createFakeTab(url, "Grouped");
+      grouped.group = {};
+      const other = createFakeTab("https://example.com/keep", "Keep");
+      setupBrowserWindowTracker(sb, [
+        createFakeWindow([topTab], { selectedTab: topTab }),
+        createFakeWindow([grouped, other], { selectedTab: other }),
+      ]);
+      sb.stub(ToolTabActions, "findChatTab").returns(null);
+      sb.stub(ToolUI, "registerTabKeys");
+
+      const { uiData } = await requestGroupTabs(url);
+      Assert.equal(
+        uiData.uiType,
+        "tab-group-confirmation",
+        "Grouping a grouped tab of another window requires confirmation"
+      );
+    } finally {
+      sb.restore();
+    }
+  }
+);
 
 add_task(async function test_manageTabsAction_forces_confirmation_overrides() {
   const url1 = "https://example.com/a";
