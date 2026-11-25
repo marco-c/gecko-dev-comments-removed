@@ -64,6 +64,7 @@
 #include "nsIGfxInfo.h"
 #include "nsIXULRuntime.h"
 #include "nsThreadManager.h"
+#include "nsXULAppAPI.h"
 #include "nscore.h"
 #include "prenv.h"
 #include "skia/include/core/SkGraphics.h"
@@ -294,7 +295,8 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
     nsTArray<GfxVarUpdate>&& vars, const DevicePrefs& devicePrefs,
     nsTArray<LayerTreeIdMapping>&& aMappings,
     nsTArray<GfxInfoFeatureStatus>&& aFeatures, uint32_t aWrNamespace,
-    InitResolver&& aInitResolver) {
+    bool aDecodeVideo, InitResolver&& aInitResolver) {
+  mDecodeVideo = aDecodeVideo;
   gfxVars::ApplyUpdate(vars);
 
   
@@ -366,9 +368,15 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
   } else if (!waylandEnabled) {
     gtk_init(nullptr, nullptr);
   }
+
   
   
   
+
+#  ifdef MOZ_X11
+  
+  XRE_InstallX11ErrorHandler();
+#  endif
 
   
   
@@ -425,18 +433,20 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
 
   
   
-  MOZ_ALWAYS_SUCCEEDS(NS_DispatchBackgroundTask(
-      NS_NewRunnableFunction(
-          "GPUParent::Supported",
-          []() {
-            NS_DispatchToMainThread(NS_NewRunnableFunction(
-                "GPUParent::UpdateMediaCodecsSupported",
-                [supported = media::MCSInfo::GetSupportFromFactory()]() {
-                  (void)GPUParent::GetSingleton()
-                      ->SendUpdateMediaCodecsSupported(supported);
-                }));
-          }),
-      nsIEventTarget::DISPATCH_NORMAL));
+  if (mDecodeVideo) {
+    MOZ_ALWAYS_SUCCEEDS(NS_DispatchBackgroundTask(
+        NS_NewRunnableFunction(
+            "GPUParent::Supported",
+            []() {
+              NS_DispatchToMainThread(NS_NewRunnableFunction(
+                  "GPUParent::UpdateMediaCodecsSupported",
+                  [supported = media::MCSInfo::GetSupportFromFactory()]() {
+                    (void)GPUParent::GetSingleton()
+                        ->SendUpdateMediaCodecsSupported(supported);
+                  }));
+            }),
+        nsIEventTarget::DISPATCH_NORMAL));
+  }
 
   glean::gpu_process::initialization_time.AccumulateRawDuration(
       TimeStamp::Now() - mLaunchTime);
@@ -519,6 +529,9 @@ mozilla::ipc::IPCResult GPUParent::RecvInitProfiler(
 mozilla::ipc::IPCResult GPUParent::RecvUpdateVar(
     const nsTArray<GfxVarUpdate>& aUpdate) {
   gfxVars::ApplyUpdate(aUpdate);
+  if (!mDecodeVideo) {
+    return IPC_OK();
+  }
   MOZ_ALWAYS_SUCCEEDS(NS_DispatchBackgroundTask(
       NS_NewRunnableFunction(
           "GPUParent::RecvUpdateVar",
@@ -825,6 +838,9 @@ void GPUParent::ActorDestroy(ActorDestroyReason aWhy) {
         gfxVars::Shutdown();
         gfxConfig::Shutdown();
         CrashReporterClient::DestroySingleton();
+#ifdef MOZ_X11
+        XRE_CleanupX11ErrorHandler();
+#endif
         XRE_ShutdownChildProcess();
       });
 }
