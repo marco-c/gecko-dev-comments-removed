@@ -34,10 +34,29 @@ def check(ctx, paths):
     maybe_setup(ctx)
 
     for p in paths:
-        rv = tsc(ctx, "--project", p)
+        rv = tsc(ctx, "--noEmit", "--project", p)
         if rv:
             return rv
     return 0
+
+
+@SubCommand(
+    "ts",
+    "summary",
+    description="Count the tsc errors in a project by file and cause.",
+)
+@CommandArgument("project", help="Path to a (dir with a) tsconfig.json.")
+@CommandArgument(
+    "--members", metavar="TYPE", help="Also list the properties missing from TYPE."
+)
+@CommandArgument("--full-lists", action="store_true", help="Do not shorten the lists.")
+def summary(ctx, project, members=None, full_lists=False):
+    args = [project]
+    if members:
+        args += ["--members", members]
+    if full_lists:
+        args.append("--full-lists")
+    return node(ctx, "summary.mjs", *args)
 
 
 @SubCommand("ts", "update", description="Update tools/@types libraries.")
@@ -76,6 +95,13 @@ def tsc(ctx, *args):
         os.path.join(ctx.topsrcdir, "node_modules", "typescript", "bin", "tsc"),
         *args,
     ])
+
+
+def node(ctx, script, *args):
+    if rv := maybe_setup(ctx):
+        return rv
+    path = mozpath.join(mozpath.dirname(__file__), script)
+    return ctx._sub_mach(["node", path, *args])
 
 
 def maybe_setup(ctx):
