@@ -364,6 +364,9 @@ with modules["NETWORK"]:
     
     
     errors["NS_ERROR_BASIC_HTTP_AUTH_DISABLED"] = FAILURE(92)
+    
+    
+    errors["NS_ERROR_HTTP_AUTH_SCHEME_DISABLED"] = FAILURE(102)
     errors["NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED"] = FAILURE(93)
     
     
