@@ -18,6 +18,7 @@
 #include "builtin/BigInt.h"
 #include "builtin/Date.h"
 #include "builtin/MapObject.h"
+#include "builtin/ModuleObject.h"
 #include "builtin/Number.h"
 #include "builtin/Object.h"
 #include "builtin/String.h"
@@ -2822,8 +2823,7 @@ void JSObject::addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
   
   
   if (is<JSFunction>() || is<PlainObject>() || is<ArrayObject>() ||
-      is<CallObject>() || is<RegExpObject>() || is<ProxyObject>()) {
-    
+      is<CallObject>() || is<RegExpObject>()) {
     
     
     
@@ -2838,6 +2838,11 @@ void JSObject::addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
     
     
     
+  } else if (is<ProxyObject>()) {
+    if (is<ModuleNamespaceObject>()) {
+      info->objectsMallocHeapMisc +=
+          as<ModuleNamespaceObject>().sizeOfMallocData(mallocSizeOf);
+    }
   } else if (is<ArgumentsObject>()) {
     info->objectsGCBufferMisc += as<ArgumentsObject>().sizeOfMisc();
   } else if (is<MapObject>()) {
