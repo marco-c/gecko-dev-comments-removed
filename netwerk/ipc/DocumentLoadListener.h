@@ -181,6 +181,10 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
                            nsDocShellLoadState* aLoadState,
                            bool aSetNavigating);
 
+  static uint32_t SecurityFlagsForLoadInfo(nsDocShellLoadState*);
+  static uint32_t EffectiveSandboxFlags(uint32_t aBaseSandboxFlags,
+                                        nsSecurityFlags);
+
   
   
   
@@ -268,10 +272,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   dom::ContentParent* GetContentParent() const { return mContentParent; }
-
-  
-  
-  base::ProcessId OtherPid() const;
 
   [[nodiscard]] RefPtr<ChildEndpointPromise> AttachStreamFilter();
 

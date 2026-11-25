@@ -290,8 +290,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   bool IsReadingFromCache() const { return mIsReadingFromCache; }
 
-  base::ProcessId ProcessId();
-
   using ChildEndpointPromise =
       MozPromise<mozilla::ipc::Endpoint<extensions::PStreamFilterChild>, bool,
                  true>;

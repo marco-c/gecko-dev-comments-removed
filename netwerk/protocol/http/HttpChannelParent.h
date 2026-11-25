@@ -112,8 +112,6 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   
   void OnBackgroundParentDestroyed();
 
-  base::ProcessId OtherPid() const;
-
   
   
   void OverrideReferrerInfoDuringBeginConnect(nsIReferrerInfo* aReferrerInfo);
