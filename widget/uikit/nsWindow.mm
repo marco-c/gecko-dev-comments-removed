@@ -30,9 +30,7 @@
 #include "TextInputHandler.h"
 #include "UIKitUtils.h"
 #include "gfxContext.h"
-#include "gfxImageSurface.h"
 #include "gfxPlatform.h"
-#include "gfxQuartzSurface.h"
 #include "gfxUtils.h"
 #include "nsObjCExceptions.h"
 #include "nsQueryObject.h"
@@ -41,6 +39,7 @@
 
 #include "mozilla/BasicEvents.h"
 #include "mozilla/EventForwards.h"
+#include "mozilla/MacStringHelpers.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/TouchEvents.h"
 #include "mozilla/dom/MouseEventBinding.h"
@@ -460,65 +459,7 @@ class nsAutoRetainUIKitObject {
 
   
   
-  
-  
-  double scale = mGeckoChild->BackingScaleFactor();
-  CGContextSaveGState(aContext);
-  CGContextScaleCTM(aContext, 1.0 / scale, 1.0 / scale);
-
-  CGSize viewSize = [self bounds].size;
-  gfx::IntSize backingSize(NSToIntRound(viewSize.width * scale),
-                           NSToIntRound(viewSize.height * scale));
-
-  CGContextSaveGState(aContext);
-
-  LayoutDeviceIntRegion region =
-      LayoutDeviceIntRect(NSToIntRound(aRect.origin.x * scale),
-                          NSToIntRound(aRect.origin.y * scale),
-                          NSToIntRound(aRect.size.width * scale),
-                          NSToIntRound(aRect.size.height * scale));
-
-  
-  RefPtr<gfxQuartzSurface> targetSurface;
-
-  UniquePtr<gfxContext> targetContext;
-  if (gfxPlatform::GetPlatform()->SupportsAzureContentForType(
-          gfx::BackendType::CAIRO)) {
-    
-    
-    targetSurface = new gfxQuartzSurface(aContext, backingSize);
-    RefPtr<gfx::DrawTarget> dt =
-        gfxPlatform::CreateDrawTargetForSurface(targetSurface, backingSize);
-    if (!dt || !dt->IsValid()) {
-      gfxDevCrash(mozilla::gfx::LogReason::InvalidContext)
-          << "Window context problem 2 " << backingSize;
-      return;
-    }
-    targetContext = gfxContext::CreateOrNull(dt);
-  } else {
-    MOZ_ASSERT_UNREACHABLE("COREGRAPHICS is the only supported backend");
-  }
-  MOZ_ASSERT(targetContext);  
-
-  
-  targetContext->NewPath();
-  for (auto iter = region.RectIter(); !iter.Done(); iter.Next()) {
-    const LayoutDeviceIntRect& r = iter.Get();
-    targetContext->Rectangle(gfxRect(r.x, r.y, r.width, r.height));
-  }
-  targetContext->Clip();
-
-  
-  bool painted = false;
-  targetContext = nullptr;
-  targetSurface = nullptr;
-
-  CGContextRestoreGState(aContext);
-
-  
-  
-  CGContextRestoreGState(aContext);
-  if (!painted && [self isOpaque]) {
+  if ([self isOpaque]) {
     
     
     CGContextSetRGBFillColor(aContext, 1, 1, 1, 1);
@@ -1289,12 +1230,12 @@ id<GeckoViewWindow> GeckoViewOpenWindow(NSString* aId,
     chromeFlags += ",private";
   }
 
+  nsAutoString windowId;
+  CopyNSStringToXPCOMString(aId, windowId);
+
   nsCOMPtr<mozIDOMWindowProxy> domWindow;
-  ww->OpenWindow(
-      nullptr, url,
-      nsDependentCString([aId UTF8String],
-                         [aId lengthOfBytesUsingEncoding:NSUTF8StringEncoding]),
-      chromeFlags, iosView, getter_AddRefs(domWindow));
+  ww->OpenWindow(nullptr, url, windowId, chromeFlags, iosView,
+                 getter_AddRefs(domWindow));
   MOZ_RELEASE_ASSERT(domWindow);
 
   nsCOMPtr<nsPIDOMWindowOuter> pdomWindow = nsPIDOMWindowOuter::From(domWindow);
