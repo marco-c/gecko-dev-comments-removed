@@ -5,11 +5,6 @@
 
 
 
-const L10N = new LocalizationHelper(
-  "devtools/client/locales/device.properties",
-  true
-);
-
 const device = {
   name: "Test Device",
   width: 400,
@@ -72,7 +67,7 @@ addRDMTask(
     ok(customHeaderEl, "There's a Custom header when add a custom devices");
     is(
       customHeaderEl.textContent,
-      L10N.getStr(`device.custom`),
+      getDeviceString("custom"),
       "The custom header has the expected text"
     );
 
