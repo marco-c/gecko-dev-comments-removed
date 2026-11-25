@@ -68,13 +68,33 @@ std::span<uint8_t> HexDecodeWithDelimiter(std::span<uint8_t> buffer,
 
 
 
-std::vector<absl::string_view> split(absl::string_view source, char delimiter);
+
+
+template <typename Container = std::vector<absl::string_view>>
+Container split(absl::string_view source, char delimiter) {
+  Container fields;
+  size_t start = 0;
+  for (size_t end = source.find(delimiter); end != absl::string_view::npos;
+       end = source.find(delimiter, start)) {
+    fields.push_back(source.substr(start, end - start));
+    start = end + 1;
+  }
+  fields.push_back(source.substr(start));
+  return fields;
+}
+
+
 
 
 
 size_t tokenize(absl::string_view source,
                 char delimiter,
                 std::vector<std::string>* fields);
+size_t tokenize(absl::string_view source,
+                char delimiter,
+                std::vector<absl::string_view>* fields);
+
+
 
 
 
@@ -83,6 +103,10 @@ bool tokenize_first(absl::string_view source,
                     char delimiter,
                     std::string* token,
                     std::string* rest);
+bool tokenize_first(absl::string_view source,
+                    char delimiter,
+                    absl::string_view* token,
+                    absl::string_view* rest);
 
 
 

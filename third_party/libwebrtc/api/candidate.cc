@@ -156,8 +156,8 @@ RTCErrorOr<Candidate> ParseCandidate(absl::string_view message) {
   
   first_line = TrimReturnChar(first_line);
 
-  std::string attribute_candidate;
-  std::string candidate_value;
+  absl::string_view attribute_candidate;
+  absl::string_view candidate_value;
 
   
   if (!tokenize_first(first_line, kSdpDelimiterColonChar, &attribute_candidate,

@@ -359,6 +359,35 @@ TEST(CodecParameterMap, ParsesNonKeyValueFmtpParameterSet) {
   EXPECT_EQ(codec_params[""], "not-in-key-value-format");
 }
 
+TEST(CodecParameterMap, ParsesFmtpParameterSetEdgeCases) {
+  CodecParameterMap codec_params;
+  
+  ASSERT_TRUE(ParseFmtpParameterSet("a=1;a=2", codec_params).ok());
+  EXPECT_THAT(codec_params, UnorderedElementsAre(Pair("a", "2")));
+
+  
+  codec_params.clear();
+  ASSERT_TRUE(ParseFmtpParameterSet("a=1; b=", codec_params).ok());
+  EXPECT_THAT(codec_params,
+              UnorderedElementsAre(Pair("a", "1"), Pair("b", "")));
+
+  
+  codec_params.clear();
+  ASSERT_TRUE(ParseFmtpParameterSet("a=1;", codec_params).ok());
+  EXPECT_THAT(codec_params, UnorderedElementsAre(Pair("", ""), Pair("a", "1")));
+
+  
+  codec_params.clear();
+  ASSERT_TRUE(ParseFmtpParameterSet("a==1", codec_params).ok());
+  EXPECT_THAT(codec_params, UnorderedElementsAre(Pair("a", "1")));
+
+  
+  
+  codec_params.clear();
+  ASSERT_TRUE(ParseFmtpParameterSet("a;;b=1", codec_params).ok());
+  EXPECT_THAT(codec_params, UnorderedElementsAre(Pair("", ""), Pair("b", "1")));
+}
+
 TEST(RtpParametersTest, IsMixedCodec) {
   RtpParameters parameters;
   RtpCodec codec1, codec2;
