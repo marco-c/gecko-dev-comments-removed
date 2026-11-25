@@ -3750,17 +3750,18 @@ RTCError SdpOfferAnswerHandler::UpdateSessionState(
 
   
   
+  PeerConnectionInterface::SignalingState new_signaling_state;
   if (type == SdpType::kOffer) {
-    ChangeSignalingState(source == CS_LOCAL
-                             ? PeerConnectionInterface::kHaveLocalOffer
-                             : PeerConnectionInterface::kHaveRemoteOffer);
+    new_signaling_state = source == CS_LOCAL
+                              ? PeerConnectionInterface::kHaveLocalOffer
+                              : PeerConnectionInterface::kHaveRemoteOffer;
   } else if (type == SdpType::kPrAnswer) {
-    ChangeSignalingState(source == CS_LOCAL
-                             ? PeerConnectionInterface::kHaveLocalPrAnswer
-                             : PeerConnectionInterface::kHaveRemotePrAnswer);
+    new_signaling_state = source == CS_LOCAL
+                              ? PeerConnectionInterface::kHaveLocalPrAnswer
+                              : PeerConnectionInterface::kHaveRemotePrAnswer;
   } else {
     RTC_DCHECK(type == SdpType::kAnswer);
-    ChangeSignalingState(PeerConnectionInterface::kStable);
+    new_signaling_state = PeerConnectionInterface::kStable;
     if (ConfiguredForMedia()) {
       transceivers()->DiscardStableStates();
     }
@@ -3768,7 +3769,18 @@ RTCError SdpOfferAnswerHandler::UpdateSessionState(
 
   
   
-  return PushdownMediaDescription(type, source, bundle_groups_by_mid);
+  RTCError error = PushdownMediaDescription(type, source, bundle_groups_by_mid);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  ChangeSignalingState(new_signaling_state);
+  return error;
 }
 
 bool SdpOfferAnswerHandler::ShouldFireNegotiationNeededEvent(
