@@ -331,6 +331,7 @@ var allowlist = [
 
   
   { file: "resource://gre/localization/en-US/dom/dom.ftl" },
+  { file: "resource://gre/localization/en-US/dom/deprecations.ftl" },
 
   
   { file: "chrome://browser/content/places/interactionsViewer.html" },
