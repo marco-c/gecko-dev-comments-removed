@@ -307,7 +307,7 @@ void GeckoProfilerThread::exit(JSContext* cx, JSScript* script) {
     if (!profilingStack_->frames[sp].isJsFrame()) {
       fprintf(stderr, "--- ABOUT TO FAIL ASSERTION ---\n");
       fprintf(stderr, " frames=%p size=%u/%u\n", (void*)profilingStack_->frames,
-              uint32_t(profilingStack_->stackPointer),
+              profilingStack_->stackPointer.load(),
               profilingStack_->stackCapacity());
       for (int32_t i = sp; i >= 0; i--) {
         ProfilingStackFrame& frame = profilingStack_->frames[i];
@@ -501,9 +501,9 @@ js::ProfilerJSSources GeckoProfilerRuntime::getProfilerScriptSources(
 
     
     if (!gatherSourceText) {
-      (void)result.append(ProfilerJSSourceData(
-          sourceId, std::move(filenameCopy), filenameLen, startLine,
-          startColumn, std::move(sourceMapURLCopy), sourceMapURLLen));
+      (void)result.emplaceBack(sourceId, std::move(filenameCopy), filenameLen,
+                               startLine, startColumn,
+                               std::move(sourceMapURLCopy), sourceMapURLLen);
       continue;
     }
 
@@ -515,18 +515,18 @@ js::ProfilerJSSources GeckoProfilerRuntime::getProfilerScriptSources(
     }
 
     if (!sourceReader.hasSourceText()) {
-      (void)result.append(ProfilerJSSourceData(
-          sourceId, std::move(filenameCopy), filenameLen, startLine,
-          startColumn, std::move(sourceMapURLCopy), sourceMapURLLen));
+      (void)result.emplaceBack(sourceId, std::move(filenameCopy), filenameLen,
+                               startLine, startColumn,
+                               std::move(sourceMapURLCopy), sourceMapURLLen);
       continue;
     }
 
     size_t sourceLength = sourceReader->length();
     if (sourceLength == 0) {
-      (void)result.append(ProfilerJSSourceData(
-          sourceId, JS::UniqueTwoByteChars(), 0, std::move(filenameCopy),
-          filenameLen, startLine, startColumn, std::move(sourceMapURLCopy),
-          sourceMapURLLen));
+      (void)result.emplaceBack(sourceId, JS::UniqueTwoByteChars(), 0,
+                               std::move(filenameCopy), filenameLen, startLine,
+                               startColumn, std::move(sourceMapURLCopy),
+                               sourceMapURLLen);
       continue;
     }
 
@@ -538,10 +538,10 @@ js::ProfilerJSSources GeckoProfilerRuntime::getProfilerScriptSources(
           sourceReader->functionBodyStringChars(scriptSource, &charsLength);
 
       if (charsLength == 0) {
-        (void)result.append(ProfilerJSSourceData(
-            sourceId, JS::UniqueTwoByteChars(), 0, std::move(filenameCopy),
-            filenameLen, startLine, startColumn, std::move(sourceMapURLCopy),
-            sourceMapURLLen));
+        (void)result.emplaceBack(sourceId, JS::UniqueTwoByteChars(), 0,
+                                 std::move(filenameCopy), filenameLen,
+                                 startLine, startColumn,
+                                 std::move(sourceMapURLCopy), sourceMapURLLen);
         continue;
       }
     } else {
@@ -557,19 +557,19 @@ js::ProfilerJSSources GeckoProfilerRuntime::getProfilerScriptSources(
       if (!utf8Chars) {
         continue;
       }
-      (void)result.append(ProfilerJSSourceData(
-          sourceId, std::move(utf8Chars), charsLength, std::move(filenameCopy),
-          filenameLen, startLine, startColumn, std::move(sourceMapURLCopy),
-          sourceMapURLLen));
+      (void)result.emplaceBack(sourceId, std::move(utf8Chars), charsLength,
+                               std::move(filenameCopy), filenameLen, startLine,
+                               startColumn, std::move(sourceMapURLCopy),
+                               sourceMapURLLen);
     } else {
       auto& utf16Chars = sourceResult.as<JS::UniqueTwoByteChars>();
       if (!utf16Chars) {
         continue;
       }
-      (void)result.append(ProfilerJSSourceData(
-          sourceId, std::move(utf16Chars), charsLength, std::move(filenameCopy),
-          filenameLen, startLine, startColumn, std::move(sourceMapURLCopy),
-          sourceMapURLLen));
+      (void)result.emplaceBack(sourceId, std::move(utf16Chars), charsLength,
+                               std::move(filenameCopy), filenameLen, startLine,
+                               startColumn, std::move(sourceMapURLCopy),
+                               sourceMapURLLen);
     }
   }
 
