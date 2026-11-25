@@ -10,6 +10,7 @@
 
 
 
+
 const { RemoteSecuritySettings } = ChromeUtils.importESModule(
   "moz-src:///security/manager/ssl/RemoteSecuritySettings.sys.mjs"
 );
@@ -30,7 +31,16 @@ updateAppInfo({
   crashReporter: true,
 });
 
-do_get_profile();
+
+
+var gProfile = do_get_profile();
+
+var gRevocations = gProfile.clone();
+gRevocations.append("revocations.txt");
+if (!gRevocations.exists()) {
+  let existing = do_get_file("test_onecrl/sample_revocations.txt", false);
+  existing.copyTo(gProfile, "revocations.txt");
+}
 
 var certDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
   Ci.nsIX509CertDB
@@ -72,12 +82,14 @@ const certBlocklist = [
   
   
   
+  
+  
   {
-    issuerName: "MBIxEDAOBgNVBAMMB1Rlc3QgQ0E=",
-    serialNumber: "Kg==",
+    issuerName: "MBwxGjAYBgNVBAMMEVRlc3QgSW50ZXJtZWRpYXRl",
+    serialNumber: "Tg==",
   },
   {
-    issuerName: "MBIxEDAOBgNVBAMMB1Rlc3QgQ0E=",
+    issuerName: "MBwxGjAYBgNVBAMMEVRlc3QgSW50ZXJtZWRpYXRl",
     serialNumber: "Hw==",
   },
   
@@ -129,9 +141,9 @@ async function update_blocklist() {
   const { OneCRLBlocklistClient } = RemoteSecuritySettings.init();
 
   const fakeEvent = {
-    current: certBlocklist,
+    current: certBlocklist, 
     deleted: [],
-    created: certBlocklist,
+    created: certBlocklist, 
     updated: [],
   };
   await OneCRLBlocklistClient.emit("sync", { data: fakeEvent });
@@ -152,10 +164,32 @@ function run_test() {
   add_task(async function () {
     
     
-    let file = "test_onecrl/ee-revoked-by-issuer-and-serial.pem";
-    await verify_cert(file, PRErrorCodeSuccess);
-    file = "test_onecrl/ee-revoked-by-issuer-and-serial-2.pem";
-    await verify_cert(file, PRErrorCodeSuccess);
+    
+    
+    let file = "test_onecrl/ee-revoked-by-revocations-txt.pem";
+    await verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
+
+    
+    
+    
+    file = "test_onecrl/another-ee-revoked-by-revocations-txt.pem";
+    await verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
+
+    
+    
+    
+    
+    file = "test_onecrl/another-ee-revoked-by-revocations-txt-serial-2.pem";
+    await verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
+
+    
+    
+    
+    
+    
+    
+    file = "test_onecrl/ee-revoked-by-subject-and-pubkey.pem";
+    await verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
 
     
     
@@ -179,9 +213,20 @@ function run_test() {
 
   add_task(async function () {
     
-    let file = "test_onecrl/ee-revoked-by-issuer-and-serial.pem";
+    
+    
+    let file = "test_onecrl/ee-revoked-by-revocations-txt.pem";
     await verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
-    file = "test_onecrl/ee-revoked-by-issuer-and-serial-2.pem";
+
+    
+    
+    file = "test_onecrl/another-ee-revoked-by-revocations-txt.pem";
+    await verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
+    file = "test_onecrl/another-ee-revoked-by-revocations-txt-serial-2.pem";
+    await verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
+
+    
+    file = "test_onecrl/ee-revoked-by-subject-and-pubkey.pem";
     await verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
 
     
