@@ -80,6 +80,16 @@ user_pref("widget.gtk.theme-scrollbar-colors.enabled", false);
 
 
 user_pref("ui.scrollbarFadeDuration", 0);
+
+
+
+user_pref("full-screen-api.warning.timeout", 0);
+user_pref("full-screen-api.keyboardlock-warning.timeout", 0);
+
+
+
+
+user_pref("browser.overlink-delay", 3600000);
 user_pref("media.block-autoplay-until-in-foreground", false);
 
 user_pref("layout.css.prefers-color-scheme.content-override", 1);
