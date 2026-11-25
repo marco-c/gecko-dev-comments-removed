@@ -62,7 +62,7 @@ typedef HRESULT(WINAPI* SetThreadDescription)(HANDLE hThread,
 
 void SetNameInternal(PlatformThreadId thread_id, const char* name) {
   
-#ifndef __MINGW32__
+#ifdef HAVE_SEH_EXCEPTIONS
   THREADNAME_INFO info;
   info.dwType = 0x1000;
   info.szName = name;
