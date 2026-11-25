@@ -158,6 +158,7 @@ assertEq(wasmEvalText(quad64).exports.f(42000000000n), 168000000000n)
 
 
 
+
 let quint32 =
     `(module
        (func (export "f") (param i32) (result i32)
@@ -165,10 +166,63 @@ let quint32 =
 codegenTestARM64_adhoc(
     quint32,
     'f',
-    `mov     w16, #0x5
-     mul     w0, w0, w16`);
+    'add     w0, w0, w0, lsl #2');
 assertEq(wasmEvalText(quint32).exports.f(-37), -37*5)
 assertEq(wasmEvalText(quint32).exports.f(42), 42*5)
+
+
+
+
+let ten32 =
+    `(module
+       (func (export "f") (param i32) (result i32)
+         (i32.mul (local.get 0) (i32.const 10))))`;
+codegenTestARM64_adhoc(
+    ten32,
+    'f',
+    `add     w0, w0, w0, lsl #2
+     lsl     w0, w0, #1`);
+assertEq(wasmEvalText(ten32).exports.f(-37), -37*10)
+assertEq(wasmEvalText(ten32).exports.f(42), 42*10)
+
+let twelve32 =
+    `(module
+       (func (export "f") (param i32) (result i32)
+         (i32.mul (local.get 0) (i32.const 12))))`;
+codegenTestARM64_adhoc(
+    twelve32,
+    'f',
+    `add     w0, w0, w0, lsl #1
+     lsl     w0, w0, #2`);
+assertEq(wasmEvalText(twelve32).exports.f(-37), -37*12)
+assertEq(wasmEvalText(twelve32).exports.f(42), 42*12)
+
+
+
+let eleven32 =
+    `(module
+       (func (export "f") (param i32) (result i32)
+         (i32.mul (local.get 0) (i32.const 11))))`;
+codegenTestARM64_adhoc(
+    eleven32,
+    'f',
+    `mov     w16, #0xb
+     mul     w0, w0, w16`);
+assertEq(wasmEvalText(eleven32).exports.f(-37), -37*11)
+assertEq(wasmEvalText(eleven32).exports.f(42), 42*11)
+
+
+
+let big32 =
+    `(module
+       (func (export "f") (param i32) (result i32)
+         (i32.mul (local.get 0) (i32.const 0x40000001))))`;
+codegenTestARM64_adhoc(
+    big32,
+    'f',
+    'add     w0, w0, w0, lsl #30');
+assertEq(wasmEvalText(big32).exports.f(-37), Math.imul(-37, 0x40000001))
+assertEq(wasmEvalText(big32).exports.f(42), Math.imul(42, 0x40000001))
 
 let quint64 = `(module
        (func (export "f") (param i64) (result i64)
