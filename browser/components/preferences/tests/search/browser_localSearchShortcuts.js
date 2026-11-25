@@ -28,7 +28,14 @@ add_task(async function test_visible_rows() {
   );
 
   for (let row of engineList.children) {
+    await row.updateComplete;
     let rowElem = row.children[0];
+    
+    
+    if (!rowElem.label) {
+      await waitForSettingChange(row.setting);
+      await row.updateComplete;
+    }
     Assert.ok(rowElem.description, "Row shortcut is present");
     Assert.ok(rowElem.label, "l10n label is present");
   }
