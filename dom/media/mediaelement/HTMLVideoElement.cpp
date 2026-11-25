@@ -150,7 +150,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(HTMLVideoElement)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mVisualCloneTargetPromise)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mVisualCloneSource)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPictureInPictureWindow)
-  tmp->mSecondaryVideoOutput = nullptr;
+  tmp->ClearSecondaryVideoOutput();
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END_INHERITED(HTMLMediaElement)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(HTMLVideoElement,
@@ -687,6 +687,8 @@ void HTMLVideoElement::MaybeBeginCloningVisually() {
     return;
   }
 
+  ClearSecondaryVideoOutput();
+
   if (mDecoder) {
     mDecoder->SetSecondaryVideoContainer(
         mVisualCloneTarget->GetVideoFrameContainer());
@@ -707,19 +709,25 @@ void HTMLVideoElement::MaybeBeginCloningVisually() {
   }
 }
 
+void HTMLVideoElement::ClearSecondaryVideoOutput() {
+  if (!mSecondaryVideoOutput) {
+    return;
+  }
+  mVideoWatchManager.Unwatch(
+      mSecondaryVideoOutput->mFirstFrameRendered,
+      &HTMLVideoElement::OnSecondaryVideoOutputFirstFrameRendered);
+  mSecondaryVideoOutput = nullptr;
+}
+
 void HTMLVideoElement::EndCloningVisually() {
   MOZ_ASSERT(mVisualCloneTarget);
+
+  ClearSecondaryVideoOutput();
 
   if (mDecoder) {
     mDecoder->SetSecondaryVideoContainer(nullptr);
     NotifyDecoderActivityChanges();
   } else if (mSrcStream) {
-    if (mSecondaryVideoOutput) {
-      mVideoWatchManager.Unwatch(
-          mSecondaryVideoOutput->mFirstFrameRendered,
-          &HTMLVideoElement::OnSecondaryVideoOutputFirstFrameRendered);
-      mSecondaryVideoOutput = nullptr;
-    }
     SetSecondaryMediaStreamRenderer(nullptr);
   }
 
@@ -763,45 +771,50 @@ void HTMLVideoElement::OnSecondaryVideoOutputFirstFrameRendered() {
       mVisualCloneTarget->GetVideoFrameContainer());
 }
 
+void HTMLVideoElement::UpdateAutoplayAfterVisibilityChange(bool aSync) {
+  
+  
+  
+  
+  
+  
+  if (!HasAttr(nsGkAtoms::autoplay) || IsAudible() ||
+      mVisibilityState == Visibility::Untracked) {
+    return;
+  }
+  const bool visible = mVisibilityState == Visibility::ApproximatelyVisible;
+  if (visible) {
+    if (!IsEligibleForAutoplay() || !AllowedToPlay()) {
+      return;
+    }
+    if (aSync) {
+      LOG("resume invisible paused autoplay video");
+      RunAutoplay();
+      return;
+    }
+  } else {
+    
+    if (IsCloningElementVisually() || !mCanAutoplayFlag) {
+      return;
+    }
+    if (aSync) {
+      LOG("pause non-audible autoplay video when it's invisible");
+      PauseInternal();
+      mCanAutoplayFlag = true;
+      return;
+    }
+  }
+
+  MOZ_ASSERT(!aSync);
+  NS_DispatchToMainThread(NewRunnableMethod<bool>(
+      "HTMLVideoElement::UpdateAutoplayAfterVisibilityChange", this,
+      &HTMLVideoElement::UpdateAutoplayAfterVisibilityChange,
+       true));
+}
+
 void HTMLVideoElement::OnVisibilityChange(Visibility aNewVisibility) {
   HTMLMediaElement::OnVisibilityChange(aNewVisibility);
-
-  
-  
-  
-  
-  
-  
-  if (!HasAttr(nsGkAtoms::autoplay) || IsAudible()) {
-    return;
-  }
-
-  if (aNewVisibility == Visibility::ApproximatelyVisible && mPaused &&
-      IsEligibleForAutoplay() && AllowedToPlay()) {
-    LOG("resume invisible paused autoplay video");
-    RunAutoplay();
-  }
-
-  
-  
-  if ((aNewVisibility == Visibility::ApproximatelyNonVisible &&
-       !IsCloningElementVisually()) &&
-      mCanAutoplayFlag) {
-    
-    
-    NS_DispatchToMainThread(NS_NewRunnableFunction(
-        __func__, [self = RefPtr<HTMLMediaElement>(this), this] {
-          
-          if (mVisibilityState != Visibility::ApproximatelyNonVisible ||
-              !mCanAutoplayFlag) {
-            return;
-          }
-          LOG("pause non-audible autoplay video when it's invisible");
-          PauseInternal();
-          mCanAutoplayFlag = true;
-        }));
-    return;
-  }
+  UpdateAutoplayAfterVisibilityChange( false);
 }
 
 void HTMLVideoElement::ResetState() {
