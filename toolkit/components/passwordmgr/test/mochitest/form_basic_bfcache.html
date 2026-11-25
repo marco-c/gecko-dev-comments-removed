@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <script src="/tests/SimpleTest/SimpleTest.js"></script>
     <script>
-    var bc = new BroadcastChannel("form_basic_bfcache");
+    var bc = SpecialPowers.wrap(BroadcastChannel).unpartitionedTestingChannel("form_basic_bfcache");
     bc.onmessage = function(event) {
       if (event.data == "nextpage") {
         location.href = "https://example.org/tests/toolkit/components/passwordmgr/test/mochitest/file_history_back.html";
@@ -31,11 +31,12 @@
       // pwmgr_common.js uses internally some helper methods from SimpleTest.
       SimpleTest.waitForExplicitFinish();
 
-      runChecksAfterCommonInit();
+      const commonInitPromise = runChecksAfterCommonInit();
 
       onpageshow = async function(pageShow) {
         if (!pageShow.persisted) {
           // This is the initial page load.
+          await commonInitPromise;
           await setStoredLoginsAsync([location.origin, "", null, "autofilled", "pass1", "", ""]);
         } else {
           await promiseFormsProcessedInSameProcess();
