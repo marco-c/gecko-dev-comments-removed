@@ -277,10 +277,6 @@ nsIFrame::SizeComputationResult nsInlineFrame::ComputeSize(
 }
 
 nsRect nsInlineFrame::ComputeTightBounds(DrawTarget* aDrawTarget) const {
-  
-  if (Style()->HasTextDecorationLines()) {
-    return InkOverflowRect();
-  }
   return ComputeSimpleTightBounds(aDrawTarget);
 }
 

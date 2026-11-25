@@ -3200,11 +3200,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
-
-
-
-  virtual nsRect ComputeTightBounds(DrawTarget* aDrawTarget) const;
+  virtual nsRect ComputeTightBounds(DrawTarget*) const;
 
   
 
