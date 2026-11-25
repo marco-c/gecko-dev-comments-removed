@@ -2734,6 +2734,16 @@ class MediaDecoderStateMachine::CompletedState
   explicit CompletedState(Master* aPtr) : StateObject(aPtr) {}
 
   void Enter() {
+    bool hasNextFrame = (!mMaster->HasAudio() || !mMaster->mAudioCompleted) &&
+                        (!mMaster->HasVideo() || !mMaster->mVideoCompleted);
+
+    
+    
+    
+    mMaster->mOnNextFrameStatus.Notify(
+        hasNextFrame ? MediaDecoderOwner::NEXT_FRAME_AVAILABLE
+                     : MediaDecoderOwner::NEXT_FRAME_UNAVAILABLE);
+
     
     
 #ifndef MOZ_WIDGET_ANDROID
@@ -2743,12 +2753,6 @@ class MediaDecoderStateMachine::CompletedState
       Reader()->ReleaseResources();
     }
 #endif
-    bool hasNextFrame = (!mMaster->HasAudio() || !mMaster->mAudioCompleted) &&
-                        (!mMaster->HasVideo() || !mMaster->mVideoCompleted);
-
-    mMaster->mOnNextFrameStatus.Notify(
-        hasNextFrame ? MediaDecoderOwner::NEXT_FRAME_AVAILABLE
-                     : MediaDecoderOwner::NEXT_FRAME_UNAVAILABLE);
 
     Step();
   }
