@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { resolveFrameVariant } from "common/WidgetsRegistry.mjs";
+import { usePageVisible } from "./usePageVisible";
 
 // Protocol v1 rules from the framed-widgets host integration doc.
 const TOKEN = /^[a-z][a-z0-9_]{0,63}$/;
@@ -96,15 +97,28 @@ export function useFramedWidgetMessages({ widget, src, iframeRef, onMessage }) {
  * frame can stay hidden until it has, and the variant it sent with it when
  * the widget's frameVariants list it. Calls onError with (reason, terminal)
  * for widget_errors, and with ("load_timeout", true) when widget_ready doesn't
- * arrive in time. So a frame can't flood telemetry, each load reports a
- * non-terminal reason once and nothing after its first terminal error. A
- * terminal error means the widget is unusable.
+ * arrive in time. The timeout only runs while the page is visible, since a
+ * hidden tab can hold back the frame's load, and it starts over each time the
+ * page is shown again: a frame that never loads only times out once the page
+ * has been visible for the whole timeout in one stretch. So a frame can't flood
+ * telemetry, each load reports a non-terminal reason once and nothing after
+ * its first terminal error. A terminal error means the widget is unusable.
+ * readyPayload is a new object for every widget_ready, including one from a
+ * reload inside the frame.
  *
  * @param {object} options - see useFramedWidgetMessages, without onMessage
  * @param {Function} options.onError - called with (reason, terminal)
- * @returns {{ready: boolean, variant: string|undefined}}
+ * @param {*} [options.reloadKey] - changes when the caller remounts the iframe
+ *   with the same src, which starts a new load just like a new src
+ * @returns {{ready: boolean, readyPayload: object|null, variant: string|undefined}}
  */
-export function useFramedWidgetReady({ widget, src, iframeRef, onError }) {
+export function useFramedWidgetReady({
+  widget,
+  src,
+  iframeRef,
+  onError,
+  reloadKey,
+}) {
   const [readyPayload, setReadyPayload] = useState(null);
   const ready = readyPayload !== null;
   const onErrorRef = useRef(onError);
@@ -116,11 +130,12 @@ export function useFramedWidgetReady({ widget, src, iframeRef, onError }) {
     setReadyPayload(null);
     reportedReasons.clear();
     failedRef.current = false;
-  }, [src, reportedReasons]);
+  }, [src, reloadKey, reportedReasons]);
 
+  const isPageVisible = usePageVisible();
   useEffect(() => {
     // Without a document there is nothing to wait for.
-    if (ready || !src) {
+    if (ready || !src || !isPageVisible) {
       return undefined;
     }
     const timer = setTimeout(() => {
@@ -130,7 +145,7 @@ export function useFramedWidgetReady({ widget, src, iframeRef, onError }) {
       }
     }, FRAMED_WIDGET_LOAD_TIMEOUT_MS);
     return () => clearTimeout(timer);
-  }, [src, ready]);
+  }, [src, reloadKey, ready, isPageVisible]);
 
   useFramedWidgetMessages({
     widget,
@@ -153,7 +168,11 @@ export function useFramedWidgetReady({ widget, src, iframeRef, onError }) {
     },
   });
 
-  return { ready, variant: resolveFrameVariant(widget, readyPayload?.variant) };
+  return {
+    ready,
+    readyPayload,
+    variant: resolveFrameVariant(widget, readyPayload?.variant),
+  };
 }
 
 /**
