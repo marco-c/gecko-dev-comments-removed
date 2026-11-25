@@ -43,7 +43,6 @@
 #include "mozilla/dom/FromParser.h"
 #include "mozilla/fallible.h"
 #include "mozilla/gfx/Point.h"
-#include "mozilla/intl/FluentArg.h"
 #include "nsCOMPtr.h"
 #include "nsIContent.h"
 #include "nsIContentPolicy.h"
@@ -282,16 +281,6 @@ enum class PropertiesFile : uint8_t {
 
 namespace mozilla::dom {
 enum JSONBehavior { UndefinedIsNullStringLiteral, UndefinedIsVoidString };
-
-
-enum class FluentResourceFile : uint8_t {
-  DOM,
-  DOM_DEPRECATIONS,
-  DOM_DIALOGS,
-  DOM_FORM_VALIDATION,
-  _COUNT
-};
-
 }  
 
 
@@ -1435,33 +1424,13 @@ class nsContentUtils {
 
 
 
-  static nsresult ReportToConsole(
-      uint32_t aErrorFlags, const nsACString& aCategory,
-      const Document* aDocument, mozilla::dom::FluentResourceFile aFile,
-      const nsACString& aL10nId,
-      const nsTArray<mozilla::intl::FluentArg>& aArgs =
-          nsTArray<mozilla::intl::FluentArg>(),
-      const mozilla::SourceLocation& aLocation =
-          mozilla::JSCallingLocation::Get());
-
-  
-
-
-
-
-
-
-
-
-
-
 
 
 
 
 
   static void ReportDeprecation(
-      nsIGlobalObject* aGlobal, nsIURI* aURI,
+      nsIGlobalObject* aGlobal, const Document* aDoc, nsIURI* aURI,
       mozilla::dom::DeprecatedOperations aOperation,
       const mozilla::JSCallingLocation& aLocation,
       const nsTArray<nsString>& aParams = nsTArray<nsString>());
@@ -1595,47 +1564,6 @@ class nsContentUtils {
   static nsresult FormatMaybeLocalizedString(
       PropertiesFile aFile, const char* aKey, Document* aDocument,
       const nsTArray<nsString>& aParamArray, nsAString& aResult);
-
-  
-
-
-
-
-  static nsresult FormatFluentString(
-      mozilla::dom::FluentResourceFile aFile, const nsACString& aL10nId,
-      const nsTArray<mozilla::intl::FluentArg>& aArgs, nsAString& aResult);
-
-  
-
-
-
-
-  static nsresult FormatMaybeLocalizedFluentString(
-      mozilla::dom::FluentResourceFile aFile, const nsACString& aL10nId,
-      const nsTArray<mozilla::intl::FluentArg>& aArgs, nsIGlobalObject* aGlobal,
-      nsAString& aResult);
-
-  
-
-
-
-  static nsresult FormatMaybeLocalizedFluentString(
-      mozilla::dom::FluentResourceFile aFile, const nsACString& aL10nId,
-      const nsTArray<mozilla::intl::FluentArg>& aArgs,
-      const Document* aDocument, nsAString& aResult);
-
-  
-
-
-
-
-
-
-
-  static bool GetDeprecationFluentMessage(
-      mozilla::dom::DeprecatedOperations aOperation,
-      const nsTArray<nsString>& aParams, nsACString& aL10nId,
-      nsTArray<mozilla::intl::FluentArg>& aArgs);
 
   
 

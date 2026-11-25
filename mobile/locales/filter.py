@@ -55,9 +55,6 @@ def test(mod, path, entity=None):
             "chrome/dom/dom.properties",
         ):
             return "error"
-        if re.match(r"dom/[^/]*\.ftl", path):
-            
-            return "error"
         return "ignore"
 
     return "error"

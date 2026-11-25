@@ -330,12 +330,6 @@ var allowlist = [
   { file: "resource://gre/localization/en-US/dom/xslt.ftl" },
 
   
-  { file: "resource://gre/localization/en-US/dom/dom.ftl" },
-  { file: "resource://gre/localization/en-US/dom/deprecations.ftl" },
-  { file: "resource://gre/localization/en-US/dom/dialogs.ftl" },
-  { file: "resource://gre/localization/en-US/dom/form-validation.ftl" },
-
-  
   { file: "chrome://browser/content/places/interactionsViewer.html" },
 
   

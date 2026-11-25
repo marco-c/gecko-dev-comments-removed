@@ -13,27 +13,12 @@ class ErrorResult;
 
 namespace dom {
 
-class Document;
-
 class ConstraintValidation : public nsIConstraintValidation {
  public:
   
   void GetValidationMessage(nsAString& aValidationMessage,
                             mozilla::ErrorResult& aError);
   MOZ_CAN_RUN_SCRIPT bool CheckValidity();
-
-  enum class TextLengthLimit { Max, Min };
-
-  
-
-
-
-
-  static nsresult GetTextLengthValidationMessage(const Document* aDocument,
-                                                 TextLengthLimit aLimitType,
-                                                 int32_t aLimit,
-                                                 int32_t aTextLength,
-                                                 nsAString& aResult);
 
  protected:
   
