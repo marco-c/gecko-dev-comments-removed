@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef TOOLKIT_COMPONENTS_REMOTE_NSREMOTESERVER_H_
 #define TOOLKIT_COMPONENTS_REMOTE_NSREMOTESERVER_H_
 
@@ -13,9 +10,12 @@
 #include "nsIRemoteService.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
 #include "mozilla/UniquePtr.h"
+#include "nsTArray.h"
 #include "nsIFile.h"
 #include "nsProfileLock.h"
 #include "mozilla/MozPromise.h"
+
+class nsIToolkitProfile;
 
 class nsStartupLock final
     : public mozilla::SupportsThreadSafeWeakPtr<nsStartupLock> {
@@ -41,7 +41,8 @@ class nsRemoteService final : public nsIObserver, public nsIRemoteService {
 
   nsRemoteService();
   void SetProgram(const char* aProgram);
-  void SetProfile(nsACString& aProfile);
+  
+  nsresult SetProfile(nsIFile* aProfileDir, nsIToolkitProfile* aProfile);
 #ifdef MOZ_WIDGET_GTK
   void SetStartupToken(nsACString& aStartupToken);
 #endif
@@ -93,7 +94,11 @@ class nsRemoteService final : public nsIObserver, public nsIRemoteService {
 
   mozilla::UniquePtr<nsRemoteServer> mRemoteServer;
   nsCString mProgram;
-  nsCString mProfile;
+  
+  nsCString mProfileId;
+  
+  
+  nsTArray<nsCString> mLegacyProfileIds;
 #ifdef MOZ_WIDGET_GTK
   nsCString mStartupToken;
 #endif
