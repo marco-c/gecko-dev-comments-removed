@@ -1,6 +1,7 @@
 
 
 
+
 promise_test(async t => {
   const getCount = ticker(1000);
 
@@ -12,7 +13,7 @@ promise_test(async t => {
 
 promise_test(async t => {
   
-  const specifier = "./empty-module.js?" + Date.now();
+  const specifier = "./empty-module.js?" + token();
 
   await import(specifier);
 
@@ -23,7 +24,7 @@ promise_test(async t => {
 
 promise_test(async t => {
   
-  const specifier = "./empty-module.js?" + Date.now();
+  const specifier = "./empty-module.js?" + token();
 
   const getCount = ticker(1e6);
   await import(specifier);
