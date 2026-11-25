@@ -7,6 +7,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/PodOperations.h"
 
+#include <string.h>
 #include <type_traits>
 
 #include "builtin/RegExp.h"
@@ -333,8 +334,8 @@ void ForEachRegExpFlag(JS::RegExpFlags flags, KnownF known, UnknownF unknown) {
 
 std::ostream& JS::operator<<(std::ostream& os, RegExpFlags flags) {
   ForEachRegExpFlag(
-      flags, [&](const char* name, const char* c) { os << c; },
-      [&](uint8_t value) { os << '?'; });
+      flags, [&](const char* name, const char* c) { os.write(c, strlen(c)); },
+      [&](uint8_t value) { os.put('?'); });
   return os;
 }
 
@@ -730,12 +731,6 @@ bool RegExpShared::quickCheckRejects(const JS::Latin1Char* chars, size_t length,
   }
 
   
-  auto [word, bit] = quickCheckBitsetBit(chars[index]);
-  if ((quickCheckRejectBitset_[word] & bit) != 0) {
-    return true;
-  }
-
-  
   if (index + sizeof(uint32_t) <= length) {
     
     
@@ -744,6 +739,12 @@ bool RegExpShared::quickCheckRejects(const JS::Latin1Char* chars, size_t length,
     if ((word & quickCheckMask_) != quickCheckValue_) {
       return true;
     }
+  }
+
+  
+  auto [word, bit] = quickCheckBitsetBit(chars[index]);
+  if ((quickCheckRejectBitset_[word] & bit) != 0) {
+    return true;
   }
 
   return false;

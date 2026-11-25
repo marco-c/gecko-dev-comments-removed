@@ -15,7 +15,6 @@
 #include "mozilla/Vector.h"            
 
 #include <algorithm>    
-#include <functional>   
 #include <stddef.h>     
 #include <stdint.h>     
 #include <string.h>     
@@ -796,8 +795,8 @@ bool Debugger::getFrame(JSContext* cx, Handle<AbstractGeneratorObject*> genObj,
   return true;
 }
 
-static bool DebuggerExists(
-    GlobalObject* global, const std::function<bool(Debugger* dbg)>& predicate) {
+template <typename Predicate>
+static bool DebuggerExists(GlobalObject* global, Predicate predicate) {
   
   
   JS::AutoSuppressGCAnalysis nogc;
