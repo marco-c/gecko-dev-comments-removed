@@ -1577,84 +1577,85 @@ void nsIWidget::DispatchTouchInput(MultiTouchInput& aInput) {
   if (mAPZC) {
     MOZ_ASSERT(APZThreadUtils::IsControllerThread());
 
-    switch (aInput.mInputSource) {
-      case mozilla::dom::MouseEvent_Binding::MOZ_SOURCE_TOUCH: {
-        mTouchSwipeState.AssertCountConsistency();
+    mTouchSwipeState.AssertCountConsistency();
 
-        if (mTouchSwipeState.phase == TouchSwipeState::Phase::WaitingForAPZ &&
-            aInput.mType == MultiTouchInput::MULTITOUCH_START) {
-          
-          
-          mAPZC->Bridge()->SetBrowserGestureResponse(
-              mTouchSwipeState.touchSwipeInfoQueue->inputBlockId,
-              BrowserGestureResponse::NotConsumed);
-          if (aInput.mTouches.Length() == 1) {
-            mTouchSwipeState.Reset();
-          }
-        }
-
-        
-        
-        aInput.mMayTriggerSwipe = MayTriggerSwipe(aInput);
-
-        if (mTouchSwipeState.phase == TouchSwipeState::Phase::WaitingForAPZ &&
-            aInput.mType != MultiTouchInput::MULTITOUCH_START) {
-          
-          
-          const APZEventResult result =
-              mAPZC->Bridge()->ReceiveInputEvent(aInput);
-          mTouchSwipeState.QueueInfo(
-              TouchSwipeInfo{.input = aInput, .result = result});
-          if (result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
-            return;
-          }
-          WidgetTouchEvent event = aInput.ToWidgetEvent(this);
-          ProcessUntransformedAPZEvent(&event, result);
-          return;
-        }
-
-        const bool touchSwipeEnabled = IsTouchSwipeEnabled();
-        if (touchSwipeEnabled) {
-          
-          
-          mTouchSwipeState.touchCounter.Update(aInput);
-        }
-
-        APZEventResult result = mAPZC->Bridge()->ReceiveInputEvent(aInput);
+    
+    
+    if (aInput.mInputSource != mTouchSwipeState.currentInputSource) {
+      if (mTouchSwipeState.phase != mozilla::TouchSwipeState::Phase::Idle) {
+        const APZEventResult result =
+            mAPZC->Bridge()->ReceiveInputEvent(aInput);
         if (result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
-          if (touchSwipeEnabled) {
-            HandleTouchInputForSwipe(aInput, result);
-          }
           return;
         }
-
-        
-        
-        
-        
-        
-        
-        if (touchSwipeEnabled) {
-          HandleTouchInputForSwipe(aInput, result);
-        }
-
         WidgetTouchEvent event = aInput.ToWidgetEvent(this);
         ProcessUntransformedAPZEvent(&event, result);
         return;
       }
-      case mozilla::dom::MouseEvent_Binding::MOZ_SOURCE_PEN: {
-        APZEventResult result = mAPZC->Bridge()->ReceiveInputEvent(aInput);
-        if (result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
-          return;
-        }
-
-        WidgetTouchEvent event = aInput.ToWidgetEvent(this);
-        ProcessUntransformedAPZEvent(&event, result);
-        return;
-      }
-      default:
-        MOZ_ASSERT_UNREACHABLE("Unexpected type.");
+      mTouchSwipeState.currentInputSource = aInput.mInputSource;
     }
+
+    if (mTouchSwipeState.phase == TouchSwipeState::Phase::WaitingForAPZ &&
+        aInput.mType == MultiTouchInput::MULTITOUCH_START) {
+      
+      
+      mAPZC->Bridge()->SetBrowserGestureResponse(
+          mTouchSwipeState.touchSwipeInfoQueue->inputBlockId,
+          BrowserGestureResponse::NotConsumed);
+      if (aInput.mTouches.Length() == 1) {
+        mTouchSwipeState.Reset();
+        
+        
+        mTouchSwipeState.currentInputSource = aInput.mInputSource;
+      }
+    }
+
+    
+    
+    aInput.mMayTriggerSwipe = MayTriggerSwipe(aInput);
+
+    if (mTouchSwipeState.phase == TouchSwipeState::Phase::WaitingForAPZ &&
+        aInput.mType != MultiTouchInput::MULTITOUCH_START) {
+      
+      
+      const APZEventResult result = mAPZC->Bridge()->ReceiveInputEvent(aInput);
+      mTouchSwipeState.QueueInfo(
+          TouchSwipeInfo{.input = aInput, .result = result});
+      if (result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
+        return;
+      }
+      WidgetTouchEvent event = aInput.ToWidgetEvent(this);
+      ProcessUntransformedAPZEvent(&event, result);
+      return;
+    }
+
+    const bool touchSwipeEnabled = IsTouchSwipeEnabled();
+    if (touchSwipeEnabled) {
+      
+      
+      mTouchSwipeState.touchCounter.Update(aInput);
+    }
+
+    APZEventResult result = mAPZC->Bridge()->ReceiveInputEvent(aInput);
+    if (result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
+      if (touchSwipeEnabled) {
+        HandleTouchInputForSwipe(aInput, result);
+      }
+      return;
+    }
+
+    
+    
+    
+    
+    
+    
+    if (touchSwipeEnabled) {
+      HandleTouchInputForSwipe(aInput, result);
+    }
+
+    WidgetTouchEvent event = aInput.ToWidgetEvent(this);
+    ProcessUntransformedAPZEvent(&event, result);
   } else {
     WidgetTouchEvent event = aInput.ToWidgetEvent(this);
     DispatchEvent(&event);

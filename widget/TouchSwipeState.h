@@ -81,6 +81,10 @@ struct TouchSwipeState {
   
   UniquePtr<TouchSwipeInfoQueue> touchSwipeInfoQueue;
 
+  
+  uint16_t currentInputSource =
+       0;
+
   void AssertCountConsistency() const;
 
   void Start(mozilla::SideBits aSwipableDirections,
