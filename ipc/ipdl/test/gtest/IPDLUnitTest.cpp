@@ -118,7 +118,7 @@ ipc::IPCResult IPDLUnitTestParent::RecvReport(const TestPartResult& aReport) {
 
   
   ADD_FAILURE_AT(aReport.filename().get(), aReport.lineNumber())
-      << "[child " << OtherPid() << "] " << aReport.summary();
+      << "[child " << OtherChildID() << "] " << aReport.summary();
 
   
   if (aReport.fatal()) {
