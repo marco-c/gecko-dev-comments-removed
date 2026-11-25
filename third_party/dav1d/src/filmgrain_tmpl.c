@@ -196,6 +196,7 @@ static void fgy_32x32xn_c(pixel *const dst_row, const pixel *const src_row,
     }
 
     assert(stride % (FG_BLOCK_SIZE * sizeof(pixel)) == 0);
+    const ptrdiff_t pxstride = PXSTRIDE(stride);
 
     int offsets[2 ][2 ];
 
@@ -219,39 +220,14 @@ static void fgy_32x32xn_c(pixel *const dst_row, const pixel *const src_row,
 
         static const int w[2][2] = { { 27, 17 }, { 17, 27 } };
 
-#define add_noise_y(x, y, grain)                                                  \
-        const pixel *const src = src_row + (y) * PXSTRIDE(stride) + (x) + bx;     \
-        pixel *const dst = dst_row + (y) * PXSTRIDE(stride) + (x) + bx;           \
-        const int noise = round2(scaling[ *src ] * (grain), data->scaling_shift); \
-        *dst = iclip(*src + noise, min_value, max_value);
+#define add_noise_y(x, grain)                                                     \
+        const int noise = round2(scaling[src[x]] * (grain), data->scaling_shift); \
+        dst[x] = iclip(src[x] + noise, min_value, max_value);
 
-        for (int y = ystart; y < bh; y++) {
-            
-            for (int x = xstart; x < bw; x++) {
-                int grain = sample_lut(grain_lut, offsets, 0, 0, 0, 0, x, y);
-                add_noise_y(x, y, grain);
-            }
+        const pixel *src = src_row + bx;
+        pixel *dst = dst_row + bx;
 
-            
-            for (int x = 0; x < xstart; x++) {
-                int grain = sample_lut(grain_lut, offsets, 0, 0, 0, 0, x, y);
-                int old   = sample_lut(grain_lut, offsets, 0, 0, 1, 0, x, y);
-                grain = round2(old * w[x][0] + grain * w[x][1], 5);
-                grain = iclip(grain, grain_min, grain_max);
-                add_noise_y(x, y, grain);
-            }
-        }
-
-        for (int y = 0; y < ystart; y++) {
-            
-            for (int x = xstart; x < bw; x++) {
-                int grain = sample_lut(grain_lut, offsets, 0, 0, 0, 0, x, y);
-                int old   = sample_lut(grain_lut, offsets, 0, 0, 0, 1, x, y);
-                grain = round2(old * w[y][0] + grain * w[y][1], 5);
-                grain = iclip(grain, grain_min, grain_max);
-                add_noise_y(x, y, grain);
-            }
-
+        for (int y = 0; y < ystart; y++, src += pxstride, dst += pxstride) {
             
             for (int x = 0; x < xstart; x++) {
                 
@@ -269,9 +245,36 @@ static void fgy_32x32xn_c(pixel *const dst_row, const pixel *const src_row,
                 
                 grain = round2(top * w[y][0] + grain * w[y][1], 5);
                 grain = iclip(grain, grain_min, grain_max);
-                add_noise_y(x, y, grain);
+                add_noise_y(x, grain);
+            }
+
+            
+            for (int x = xstart; x < bw; x++) {
+                int grain = sample_lut(grain_lut, offsets, 0, 0, 0, 0, x, y);
+                int old   = sample_lut(grain_lut, offsets, 0, 0, 0, 1, x, y);
+                grain = round2(old * w[y][0] + grain * w[y][1], 5);
+                grain = iclip(grain, grain_min, grain_max);
+                add_noise_y(x, grain);
             }
         }
+
+        for (int y = ystart; y < bh; y++, src += pxstride, dst += pxstride) {
+            
+            for (int x = 0; x < xstart; x++) {
+                int grain = sample_lut(grain_lut, offsets, 0, 0, 0, 0, x, y);
+                int old   = sample_lut(grain_lut, offsets, 0, 0, 1, 0, x, y);
+                grain = round2(old * w[x][0] + grain * w[x][1], 5);
+                grain = iclip(grain, grain_min, grain_max);
+                add_noise_y(x, grain);
+            }
+
+            
+            for (int x = xstart; x < bw; x++) {
+                int grain = sample_lut(grain_lut, offsets, 0, 0, 0, 0, x, y);
+                add_noise_y(x, grain);
+            }
+        }
+#undef add_noise_y
     }
 }
 
@@ -307,6 +310,8 @@ fguv_32x32xn_c(pixel *const dst_row, const pixel *const src_row,
     }
 
     assert(stride % (FG_BLOCK_SIZE * sizeof(pixel)) == 0);
+    const ptrdiff_t pxstride = PXSTRIDE(stride);
+    const ptrdiff_t luma_pxstride = PXSTRIDE(luma_stride) << sy;
 
     int offsets[2 ][2 ];
 
@@ -332,52 +337,26 @@ fguv_32x32xn_c(pixel *const dst_row, const pixel *const src_row,
             { { 23, 22 } },
         };
 
-#define add_noise_uv(x, y, grain)                                                    \
-            const int lx = (bx + x) << sx;                                           \
-            const int ly = y << sy;                                                  \
-            const pixel *const luma = luma_row + ly * PXSTRIDE(luma_stride) + lx;    \
-            pixel avg = luma[0];                                                     \
+#define add_noise_uv(x, grain)                                                       \
+            const pixel *const luma_src = luma + ((x) << sx);                        \
+            pixel avg = luma_src[0];                                                 \
             if (sx)                                                                  \
-                avg = (avg + luma[1] + 1) >> 1;                                      \
-            const pixel *const src = src_row + (y) * PXSTRIDE(stride) + (bx + (x));  \
-            pixel *const dst = dst_row + (y) * PXSTRIDE(stride) + (bx + (x));        \
+                avg = (avg + luma_src[1] + 1) >> 1;                                  \
             int val = avg;                                                           \
             if (!data->chroma_scaling_from_luma) {                                   \
                 const int combined = avg * data->uv_luma_mult[uv] +                  \
-                               *src * data->uv_mult[uv];                             \
+                               src[x] * data->uv_mult[uv];                           \
                 val = iclip_pixel( (combined >> 6) +                                 \
                                    (data->uv_offset[uv] * (1 << bitdepth_min_8)) );  \
             }                                                                        \
             const int noise = round2(scaling[ val ] * (grain), data->scaling_shift); \
-            *dst = iclip(*src + noise, min_value, max_value);
+            dst[x] = iclip(src[x] + noise, min_value, max_value);
 
-        for (int y = ystart; y < bh; y++) {
-            
-            for (int x = xstart; x < bw; x++) {
-                int grain = sample_lut(grain_lut, offsets, sx, sy, 0, 0, x, y);
-                add_noise_uv(x, y, grain);
-            }
+        const pixel *src = src_row + bx;
+        pixel *dst = dst_row + bx;
+        const pixel *luma = luma_row + (bx << sx);
 
-            
-            for (int x = 0; x < xstart; x++) {
-                int grain = sample_lut(grain_lut, offsets, sx, sy, 0, 0, x, y);
-                int old   = sample_lut(grain_lut, offsets, sx, sy, 1, 0, x, y);
-                grain = round2(old * w[sx][x][0] + grain * w[sx][x][1], 5);
-                grain = iclip(grain, grain_min, grain_max);
-                add_noise_uv(x, y, grain);
-            }
-        }
-
-        for (int y = 0; y < ystart; y++) {
-            
-            for (int x = xstart; x < bw; x++) {
-                int grain = sample_lut(grain_lut, offsets, sx, sy, 0, 0, x, y);
-                int old   = sample_lut(grain_lut, offsets, sx, sy, 0, 1, x, y);
-                grain = round2(old * w[sy][y][0] + grain * w[sy][y][1], 5);
-                grain = iclip(grain, grain_min, grain_max);
-                add_noise_uv(x, y, grain);
-            }
-
+        for (int y = 0; y < ystart; y++, src += pxstride, dst += pxstride, luma += luma_pxstride) {
             
             for (int x = 0; x < xstart; x++) {
                 
@@ -395,9 +374,36 @@ fguv_32x32xn_c(pixel *const dst_row, const pixel *const src_row,
                 
                 grain = round2(top * w[sy][y][0] + grain * w[sy][y][1], 5);
                 grain = iclip(grain, grain_min, grain_max);
-                add_noise_uv(x, y, grain);
+                add_noise_uv(x, grain);
+            }
+
+            
+            for (int x = xstart; x < bw; x++) {
+                int grain = sample_lut(grain_lut, offsets, sx, sy, 0, 0, x, y);
+                int old   = sample_lut(grain_lut, offsets, sx, sy, 0, 1, x, y);
+                grain = round2(old * w[sy][y][0] + grain * w[sy][y][1], 5);
+                grain = iclip(grain, grain_min, grain_max);
+                add_noise_uv(x, grain);
             }
         }
+
+        for (int y = ystart; y < bh; y++, src += pxstride, dst += pxstride, luma += luma_pxstride) {
+            
+            for (int x = 0; x < xstart; x++) {
+                int grain = sample_lut(grain_lut, offsets, sx, sy, 0, 0, x, y);
+                int old   = sample_lut(grain_lut, offsets, sx, sy, 1, 0, x, y);
+                grain = round2(old * w[sx][x][0] + grain * w[sx][x][1], 5);
+                grain = iclip(grain, grain_min, grain_max);
+                add_noise_uv(x, grain);
+            }
+
+            
+            for (int x = xstart; x < bw; x++) {
+                int grain = sample_lut(grain_lut, offsets, sx, sy, 0, 0, x, y);
+                add_noise_uv(x, grain);
+            }
+        }
+#undef add_noise_uv
     }
 }
 

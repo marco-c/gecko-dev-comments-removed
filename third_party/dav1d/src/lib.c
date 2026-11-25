@@ -88,9 +88,9 @@ COLD void dav1d_default_settings(Dav1dSettings *const s) {
 
 static void close_internal(Dav1dContext **const c_out, int flush);
 
+#if defined(__linux__) && HAVE_DLSYM && defined(__GLIBC__)
 NO_SANITIZE("cfi-icall") 
 static COLD size_t get_stack_size_internal(const pthread_attr_t *const thread_attr) {
-#if defined(__linux__) && HAVE_DLSYM && defined(__GLIBC__)
     
 
 
@@ -100,9 +100,11 @@ static COLD size_t get_stack_size_internal(const pthread_attr_t *const thread_at
         dlsym(RTLD_DEFAULT, "__pthread_get_minstack");
     if (get_minstack)
         return get_minstack(thread_attr) - PTHREAD_STACK_MIN;
-#endif
     return 0;
 }
+#else
+#define get_stack_size_internal(attr) (0)
+#endif
 
 static COLD void get_num_threads(Dav1dContext *const c, const Dav1dSettings *const s,
                                  unsigned *n_tc, unsigned *n_fc)
@@ -285,6 +287,7 @@ COLD int dav1d_open(Dav1dContext **const c_out, const Dav1dSettings *const s) {
             t->task_thread.td.inited = 1;
         }
     }
+    dav1d_lf_mask_dsp_init(&c->lf_mask_dsp);
     dav1d_pal_dsp_init(&c->pal_dsp);
     dav1d_refmvs_dsp_init(&c->refmvs_dsp);
 
@@ -659,7 +662,7 @@ static COLD void close_internal(Dav1dContext **const c_out, int flush) {
         dav1d_free(f->a);
         dav1d_free(f->tile);
         dav1d_free(f->lf.mask);
-        dav1d_free(f->lf.level);
+        dav1d_free_aligned(f->lf.level[0]);
         dav1d_free(f->lf.lr_mask);
         dav1d_free(f->lf.tx_lpf_right_edge[0]);
         dav1d_free(f->lf.start_of_tile_row);

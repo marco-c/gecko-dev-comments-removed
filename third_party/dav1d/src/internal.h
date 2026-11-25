@@ -175,6 +175,7 @@ struct Dav1dContext {
     CdfThreadContext cdf[8];
 
     Dav1dDSPContext dsp[3 ];
+    Dav1dLfMaskDSPContext lf_mask_dsp;
     Dav1dPalDSPContext pal_dsp;
     Dav1dRefmvsDSPContext refmvs_dsp;
 
@@ -294,7 +295,7 @@ struct Dav1dFrameContext {
 
     
     struct {
-        uint8_t (*level)[4];
+        uint8_t (*level[2])[2];
         Av1Filter *mask;
         Av1Restoration *lr_mask;
         int mask_sz , lr_mask_sz;
