@@ -5,8 +5,6 @@
 #ifndef SSLTokensCache_h_
 #define SSLTokensCache_h_
 
-#include <functional>
-
 #include "CertVerifier.h"  
 #include "mozilla/Maybe.h"
 #include "mozilla/OriginAttributes.h"
@@ -34,7 +32,6 @@
 #endif
 
 class CommonSocketControl;
-class nsITimer;
 class mozIStorageConnection;
 class mozIStorageService;
 class mozIStorageStatement;
@@ -76,8 +73,7 @@ class SSLTokensCache : public nsIMemoryReporter,
                       uint32_t aTokenLen, CommonSocketControl* aSocketControl,
                       PRTime aExpirationTime);
   static nsresult Get(const nsACString& aKey, nsTArray<uint8_t>& aToken,
-                      SessionCacheInfo& aResult, uint64_t* aTokenId = nullptr,
-                      bool* aRestored = nullptr);
+                      SessionCacheInfo& aResult, uint64_t* aTokenId = nullptr);
   static nsresult Remove(const nsACString& aKey, uint64_t aId);
   static nsresult RemoveAll(const nsACString& aKey);
   static void Clear();
@@ -120,14 +116,10 @@ class SSLTokensCache : public nsIMemoryReporter,
   static uint32_t CacheSizeForTest();
   static void ReplaceAllRecordsForTest(
       nsTArray<SSLTokensCacheRecordInfo>&& aRecords);
-  static void HoldLoadForTest(bool aHold);
-  static void PauseLoadAfterRowsForTest(uint32_t aRows);
-  static void FailDBOpensForTest(uint32_t aCount);
 #endif
 
  private:
   class TokenCacheRecord;  
-  using StringPredicate = std::function<bool(const nsACString&)>;
 
   SSLTokensCache();
   virtual ~SSLTokensCache();
@@ -149,8 +141,6 @@ class SSLTokensCache : public nsIMemoryReporter,
   
   static bool ShouldPersistKey(const nsACString& aKey,
                                uint8_t aOverridableError);
-  static bool MatchesAny(const nsTArray<StringPredicate>& aPredicates,
-                         const nsACString& aKey);
 
   
   
@@ -181,16 +171,6 @@ class SSLTokensCache : public nsIMemoryReporter,
   TimeStamp mLoadStartTime MOZ_GUARDED_BY(sLock);
   
   uint32_t mLoadGeneration MOZ_GUARDED_BY(sLock){0};
-  
-  nsTArray<StringPredicate> mPendingDBRemovals MOZ_GUARDED_BY(sLock);
-  nsCOMPtr<nsITimer> mDBDeleteTimer MOZ_GUARDED_BY(sLock);
-  
-  nsTArray<StringPredicate> mRemovalsBeforeLoad MOZ_GUARDED_BY(sLock);
-  
-  nsISerialEventTarget* ActiveDBQueueLocked() const MOZ_REQUIRES(sLock);
-  template <typename F>
-  static void DispatchToDBQueue(nsISerialEventTarget* aQueue, const char* aName,
-                                F&& aFunction);
   void DoWrite(bool aSynchronous) MOZ_EXCLUDES(sLock);
   void RegisterShutdownBlocker() MOZ_EXCLUDES(sLock);
   void RemoveShutdownBlocker() MOZ_EXCLUDES(sLock);
@@ -232,18 +212,10 @@ class SSLTokensCache : public nsIMemoryReporter,
   
   static already_AddRefed<mozIStorageConnection> OpenActiveDB();
   static uint32_t LoadFromDB(uint32_t aLoadGen);
-  static bool WriteSnapshotToDB(nsTArray<SSLTokensCacheRecordInfo>&& aSnapshot);
-  
+  static void WriteSnapshotToDB(nsTArray<SSLTokensCacheRecordInfo>&& aSnapshot);
   
   static void CollectAndWriteSnapshotIfLoaded();
-  
   static void ClearDB();
-  
-  static void DeleteMatchesFromDB(nsTArray<StringPredicate>&& aRemovals);
-  static nsresult DeleteMatchesFrom(mozIStorageConnection* aConn,
-                                    const nsTArray<StringPredicate>& aRemovals);
-  
-  static void RemoveDBFileAfterFailure();
   static void RemoveDBFileSync();
   
   
@@ -273,9 +245,9 @@ class SSLTokensCache : public nsIMemoryReporter,
   static nsDependentCSubstring HostFromBasePart(
       const nsDependentCSubstring& aBasePart);
   static OriginAttributes OAFromPeerId(const nsACString& aPeerId);
-  static void RemoveByHostMatchAndOAPattern(
-      const mozilla::OriginAttributesPattern& aPattern,
-      StringPredicate&& aHostMatches) MOZ_EXCLUDES(sLock);
+  static void RemoveByMatchAndOAPattern(
+      const nsACString& aValue, const nsACString& aSeparatedValue,
+      const mozilla::OriginAttributesPattern& aPattern) MOZ_EXCLUDES(sLock);
 
   
   
@@ -285,11 +257,6 @@ class SSLTokensCache : public nsIMemoryReporter,
   
   template <typename Pred>
   void RemoveMatchingLocked(Pred&& aPredicate) MOZ_REQUIRES(sLock);
-  
-  static void RemoveMatchingAndQueueDeletes(StringPredicate&& aPredicate)
-      MOZ_EXCLUDES(sLock);
-  
-  static void FlushPendingDBDeletes() MOZ_EXCLUDES(sLock);
 
   class TokenCacheRecord {
    public:

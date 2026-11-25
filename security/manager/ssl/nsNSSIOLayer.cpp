@@ -1873,12 +1873,11 @@ nsresult nsSSLIOLayerAddToSocket(int32_t family, const char* host, int32_t port,
   
   if (forSTARTTLS || haveProxy) {
     infoObject->SetHandshakeNotPending();
-  } else {
-    
-    rv = infoObject->SetResumptionTokenFromExternalCache(sslSock);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
+  }
+
+  rv = infoObject->SetResumptionTokenFromExternalCache(sslSock);
+  if (NS_FAILED(rv)) {
+    return rv;
   }
   if (SSL_SetResumptionTokenCallback(sslSock, &StoreResumptionToken,
                                      infoObject) != SECSuccess) {

@@ -137,8 +137,6 @@ class HttpConnectionBase : public nsSupportsWeakReference {
     *ci = do_AddRef(mConnInfo).take();
   }
   virtual void GetTLSSocketControl(nsITLSSocketControl** result) = 0;
-  
-  void NoteHandshakeTimeout();
 
   [[nodiscard]] virtual nsresult ResumeSend() = 0;
   [[nodiscard]] virtual nsresult ResumeRecv() = 0;
