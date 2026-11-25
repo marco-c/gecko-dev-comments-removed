@@ -319,6 +319,8 @@ bool Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
     return false;
   }
 
+  AutoMutationBatchForAnimation mb(*this);
+
   
   const AnimationPlayState previousPlayState = PlayState();
   
@@ -460,9 +462,10 @@ bool Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
   
   
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
+  if (IsRelevant()) {
+    MutationObservers::NotifyAnimationChanged(this);
+  }
 
-  
-  
   return true;
 }
 

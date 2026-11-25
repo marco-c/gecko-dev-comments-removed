@@ -21,6 +21,7 @@
 #include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/ScrollTimelineBinding.h"
 #include "mozilla/dom/TimelineName.h"
+#include "nsDOMMutationObserver.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsRefreshDriver.h"
@@ -267,9 +268,7 @@ void ScrollTimeline::WillRefresh() {
     return;
   }
 
-  
-  
-  
+  nsAutoAnimationMutationBatch mb(mDocument);
 
   TickState dummyState;
   Tick(dummyState);
@@ -393,7 +392,6 @@ void ScrollTimeline::ReplacePropertiesWith(
        anim = static_cast<LinkedListElement<Animation>*>(anim)->getNext()) {
     MOZ_ASSERT(anim->GetTimeline() == this);
     MOZ_ASSERT(anim->GetTimelineName() == aName);
-    
     
     anim->SetTimeline(this, aName, Animation::FromJS::No);
   }
