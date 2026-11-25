@@ -7,6 +7,9 @@ use crate::units::*;
 
 
 
+const MAX_GRADIENT_LINE_LENGTH: f32 = 1.0e7;
+
+
 
 
 pub struct GradientBuilder {
@@ -49,8 +52,23 @@ impl GradientBuilder {
         extend_mode: di::ExtendMode,
         alpha_mode: di::AlphaMode,
     ) -> di::Gradient {
-        let (start_offset, end_offset) = self.normalize(extend_mode);
         let start_to_end = end_point - start_point;
+
+        
+        
+        
+        
+        let length = start_to_end.length();
+        if length > 0.0 {
+            let max_offset = MAX_GRADIENT_LINE_LENGTH / length;
+            for stop in &mut self.stops {
+                if !stop.offset.is_nan() {
+                    stop.offset = stop.offset.max(-max_offset).min(max_offset);
+                }
+            }
+        }
+
+        let (start_offset, end_offset) = self.normalize(extend_mode);
 
         di::Gradient {
             start: start_point + start_to_end * start_offset,
