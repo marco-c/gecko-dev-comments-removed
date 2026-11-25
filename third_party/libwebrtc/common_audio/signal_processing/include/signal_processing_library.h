@@ -473,12 +473,14 @@ void WebRtcSpl_AddVectorsAndShift(int16_t* out_vector,
 
 
 
+
 void WebRtcSpl_AddAffineVectorToVector(int16_t* out_vector,
                                        const int16_t* in_vector,
                                        int16_t gain,
                                        int32_t add_constant,
                                        int16_t right_shifts,
                                        size_t vector_length);
+
 
 
 
