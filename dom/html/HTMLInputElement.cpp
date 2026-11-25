@@ -3252,10 +3252,12 @@ void HTMLInputElement::SetCheckedInternal(bool aChecked, bool aNotify,
   }
 
   
-  
-  UpdateAllValidityStatesButNotElementState();
+  const bool validBefore = IsValid();
+  UpdateValueMissingValidityState();
   UpdateIndeterminateState(aNotify);
-  UpdateValidityElementStates(aNotify);
+  if (validBefore != IsValid()) {
+    UpdateValidityElementStates(aNotify);
+  }
 
   
   
@@ -3373,6 +3375,8 @@ void HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   if (IsDisabledForEvents(aVisitor.mEvent)) {
     return;
   }
+
+  aVisitor.mWantsPostHandleEvent = true;
 
   
   if (NeedToInitializeEditorForEvent(aVisitor)) {
@@ -4624,16 +4628,25 @@ void HTMLInputElement::SetupShadowTree(bool aNotify) {
   TextControlElement::SetupShadowTree(*shadow, aNotify);
 }
 
-ShadowRoot* HTMLInputElement::CreateShadowTreeBeforeLayoutIfNeeded() {
+ShadowRoot* HTMLInputElement::CreateShadowTreeBeforeLayoutIfNeeded(
+    FromFrameConstruction aFromFrameConstruction) {
   if (!CreatesUAShadowTree() || GetShadowRoot()) {
     return nullptr;
   }
-  if (HasChildren()) [[unlikely]] {
-    
-    
-    
-    RestyleManager::ClearServoDataFromSubtree(this,
-                                              RestyleManager::IncludeRoot::No);
+  if (HasChildren() && IsInComposedDoc()) [[unlikely]] {
+    if (aFromFrameConstruction == FromFrameConstruction::Yes) {
+      
+      
+      
+      
+      RestyleManager::ClearServoDataFromSubtree(
+          this, RestyleManager::IncludeRoot::No);
+    } else if (RefPtr ps = OwnerDoc()->GetPresShell()) {
+      
+      
+      
+      ps->DestroyFramesForAndRestyle(this);
+    }
   }
   SetupShadowTree( false);
   return GetShadowRoot();

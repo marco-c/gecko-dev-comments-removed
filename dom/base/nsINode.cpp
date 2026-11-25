@@ -2039,6 +2039,7 @@ bool nsINode::DispatchEvent(Event& aEvent, CallerType aCallerType,
 }
 
 nsresult nsINode::PostHandleEvent(EventChainPostVisitor& ) {
+  MOZ_ASSERT_UNREACHABLE("Does not want PostHandleEvent");
   return NS_OK;
 }
 
@@ -4587,10 +4588,9 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
         
         clone->AsElement()->CloneAnimationsFrom(*aNode->AsElement());
 
-        if (auto* input = HTMLInputElement::FromNode(aNode);
-            input && input->CreateShadowTreeBeforeLayoutIfNeeded()) {
-          nsLayoutUtils::PostRestyleEvent(input, RestyleHint::RestyleSubtree(),
-                                          nsChangeHint(0));
+        if (auto* input = HTMLInputElement::FromNode(aNode)) {
+          input->CreateShadowTreeBeforeLayoutIfNeeded(
+              HTMLInputElement::FromFrameConstruction::No);
         }
 
         
