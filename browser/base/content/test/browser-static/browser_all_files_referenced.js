@@ -339,7 +339,14 @@ var allowlist = [
   },
 
   
-  { file: "moz-src:///browser/components/widgets/WidgetGenerator.sys.mjs" },
+  {
+    file: "moz-src:///browser/components/widgets/WidgetGenerator.sys.mjs",
+  },
+
+  
+  {
+    file: "chrome://browser/content/aiwindow/components/smartwindow-digest-form.mjs",
+  },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {
