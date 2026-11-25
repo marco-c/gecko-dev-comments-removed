@@ -853,8 +853,9 @@ BigInt::Digit BigInt::digitDivByMultiplication(Digit high, Digit low,
   return q1;
 }
 
-BigInt::Digit BigInt::multiplyDigits(ConstDigits src, Digit multiplier,
-                                     Digits dest) {
+MOZ_ALWAYS_INLINE BigInt::Digit BigInt::multiplyDigits(ConstDigits src,
+                                                       Digit multiplier,
+                                                       Digits dest) {
   dest = dest.First(src.size());
   Digit carry = 0;
   for (size_t i = 0; i < src.size(); i++) {
@@ -863,8 +864,8 @@ BigInt::Digit BigInt::multiplyDigits(ConstDigits src, Digit multiplier,
   return carry;
 }
 
-BigInt::Digit BigInt::multiplyAccumulateDigits(ConstDigits src,
-                                               Digit multiplier, Digits acc) {
+MOZ_ALWAYS_INLINE BigInt::Digit BigInt::multiplyAccumulateDigits(
+    ConstDigits src, Digit multiplier, Digits acc) {
   acc = acc.First(src.size());
   Digit carry = 0;
   for (size_t i = 0; i < src.size(); i++) {
@@ -873,8 +874,9 @@ BigInt::Digit BigInt::multiplyAccumulateDigits(ConstDigits src,
   return carry;
 }
 
-void BigInt::schoolbookMultiplyDigits(ConstDigits a, ConstDigits b,
-                                      Digits result) {
+MOZ_ALWAYS_INLINE void BigInt::schoolbookMultiplyDigitsInline(ConstDigits a,
+                                                              ConstDigits b,
+                                                              Digits result) {
   
   
   if (a.size() < b.size()) {
@@ -887,6 +889,42 @@ void BigInt::schoolbookMultiplyDigits(ConstDigits a, ConstDigits b,
     result[i + a.size()] =
         b[i] ? multiplyAccumulateDigits(a, b[i], result.From(i)) : 0;
   }
+}
+
+template <size_t M, size_t N>
+MOZ_ALWAYS_INLINE void BigInt::fixedMultiplyDigits(ConstDigits x, ConstDigits y,
+                                                   Digits z) {
+  MOZ_RELEASE_ASSERT(x.size() == M && y.size() == N && z.size() == M + N);
+  schoolbookMultiplyDigitsInline(x, y, z);
+}
+
+MOZ_NEVER_INLINE void BigInt::schoolbookMultiplyDigitsOutOfLine(ConstDigits a,
+                                                                ConstDigits b,
+                                                                Digits result) {
+  schoolbookMultiplyDigitsInline(a, b, result);
+}
+
+inline void BigInt::schoolbookMultiplyDigits(ConstDigits a, ConstDigits b,
+                                             Digits result) {
+  if (a.size() < b.size()) {
+    std::swap(a, b);
+  }
+  MOZ_RELEASE_ASSERT(!b.empty());
+  
+  
+  static constexpr void (*SmallProducts[4][4])(ConstDigits, ConstDigits,
+                                               Digits) = {
+      {fixedMultiplyDigits<1, 1>},
+      {fixedMultiplyDigits<2, 1>, fixedMultiplyDigits<2, 2>},
+      {fixedMultiplyDigits<3, 1>, fixedMultiplyDigits<3, 2>,
+       fixedMultiplyDigits<3, 3>},
+      {fixedMultiplyDigits<4, 1>, fixedMultiplyDigits<4, 2>,
+       fixedMultiplyDigits<4, 3>, fixedMultiplyDigits<4, 4>}};
+  if (a.size() <= std::size(SmallProducts)) {
+    SmallProducts[a.size() - 1][b.size() - 1](a, b, result);
+    return;
+  }
+  schoolbookMultiplyDigitsOutOfLine(a, b, result);
 }
 
 
