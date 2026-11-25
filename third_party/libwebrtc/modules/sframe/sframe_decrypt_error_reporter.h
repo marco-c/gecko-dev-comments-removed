@@ -15,6 +15,8 @@
 #include <optional>
 
 #include "absl/base/nullability.h"
+#include "api/ref_counted_base.h"
+#include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
 #include "api/sframe/sframe_decryptor_interface.h"
 #include "rtc_base/system/no_unique_address.h"
@@ -25,8 +27,12 @@ namespace webrtc {
 
 
 
-class SframeDecryptErrorReporter {
+class SframeDecryptErrorReporter final
+    : public RefCountedNonVirtual<SframeDecryptErrorReporter> {
  public:
+  static absl_nonnull scoped_refptr<SframeDecryptErrorReporter> Create(
+      absl_nonnull SframeDecryptErrorCallback error_callback);
+
   explicit SframeDecryptErrorReporter(
       absl_nonnull SframeDecryptErrorCallback error_callback);
 
