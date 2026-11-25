@@ -28,18 +28,12 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.utils.Settings
-import org.mozilla.fenix.utils.toHexColor
-import org.mozilla.fenix.wallpapers.LegacyWallpaperMigration.Companion.TURNING_RED_PANDA_WALLPAPER_CARD_COLOR_DARK
-import org.mozilla.fenix.wallpapers.LegacyWallpaperMigration.Companion.TURNING_RED_PANDA_WALLPAPER_CARD_COLOR_LIGHT
-import org.mozilla.fenix.wallpapers.LegacyWallpaperMigration.Companion.TURNING_RED_PANDA_WALLPAPER_NAME
-import org.mozilla.fenix.wallpapers.LegacyWallpaperMigration.Companion.TURNING_RED_WALLPAPER_TEXT_COLOR
 
 class WallpapersUseCasesTest {
 
@@ -69,7 +63,6 @@ class WallpapersUseCasesTest {
             every { shouldMigrateLegacyWallpaperCardColors } returns false
             every { shouldMigrateLegacyWallpaperCardColors = any() } just Runs
         }
-    private lateinit var mockMigrationHelper: LegacyWallpaperMigration
 
     private val mockMetadataFetcher = mockk<WallpaperMetadataFetcher>()
     private val mockDownloader =
@@ -82,19 +75,6 @@ class WallpapersUseCasesTest {
         }
 
     private val mockFolder: File by lazy { temporaryFolder.newFolder() }
-    private val downloadWallpaper: (Wallpaper) -> Unit = {}
-
-    @Before
-    fun setup() {
-        mockMigrationHelper =
-            spyk(
-                LegacyWallpaperMigration(
-                    storageRootDirectory = mockFolder,
-                    settings = mockSettings,
-                    downloadWallpaper,
-                )
-            )
-    }
 
     @Test
     fun `WHEN retrieving users wallpaper choice THEN appstore is updated with wallpaper lacking metadata`() = runTest {
@@ -107,7 +87,7 @@ class WallpapersUseCasesTest {
         every { mockSettings.currentWallpaperCardColorLight } returns cardColorLight
         every { mockSettings.currentWallpaperCardColorDark } returns cardColorDark
         val chosenWallpaper =
-            Wallpaper.Default.copy(
+            Wallpaper.Solid.copy(
                 name = name,
                 textColor = textColor,
                 cardColorLight = cardColorLight,
@@ -120,7 +100,7 @@ class WallpapersUseCasesTest {
     }
 
     @Test
-    fun `WHEN initializing THEN the default wallpaper is not downloaded`() = runTest {
+    fun `WHEN initializing THEN the solid wallpaper is not downloaded`() = runTest {
         val fakeRemoteWallpapers =
             listOf("first", "second", "third").map { name ->
                 makeFakeRemoteWallpaper(TimeRelation.LATER, name)
@@ -135,17 +115,16 @@ class WallpapersUseCasesTest {
                 mockDownloader,
                 mockFileManager,
                 mockMetadataFetcher,
-                mockMigrationHelper,
                 mockSettings,
                 "en-US",
             )
             .invoke()
 
-        coVerify(exactly = 0) { mockDownloader.downloadWallpaper(Wallpaper.Default) }
+        coVerify(exactly = 0) { mockDownloader.downloadWallpaper(Wallpaper.Solid) }
     }
 
     @Test
-    fun `WHEN initializing THEN default wallpaper is included in available wallpapers`() = runTest {
+    fun `WHEN initializing THEN the solid wallpaper is included in available wallpapers`() = runTest {
         val fakeRemoteWallpapers =
             listOf("first", "second", "third").map { name ->
                 makeFakeRemoteWallpaper(TimeRelation.LATER, name)
@@ -160,13 +139,12 @@ class WallpapersUseCasesTest {
                 mockDownloader,
                 mockFileManager,
                 mockMetadataFetcher,
-                mockMigrationHelper,
                 mockSettings,
                 "en-US",
             )
             .invoke()
 
-        assertTrue(appStore.state.wallpaperState.availableWallpapers.contains(Wallpaper.Default))
+        assertTrue(appStore.state.wallpaperState.availableWallpapers.contains(Wallpaper.Solid))
     }
 
     @Test
@@ -191,7 +169,6 @@ class WallpapersUseCasesTest {
                     mockDownloader,
                     mockFileManager,
                     mockMetadataFetcher,
-                    mockMigrationHelper,
                     mockSettings,
                     "en-US",
                 )
@@ -199,7 +176,7 @@ class WallpapersUseCasesTest {
 
             val expectedFilteredWallpaper = fakeExpiredRemoteWallpapers[0]
             assertFalse(appStore.state.wallpaperState.availableWallpapers.contains(expectedFilteredWallpaper))
-            coVerify { mockFileManager.clean(Wallpaper.Default, fakeRemoteWallpapers) }
+            coVerify { mockFileManager.clean(Wallpaper.Solid, fakeRemoteWallpapers) }
         }
 
     @Test
@@ -221,7 +198,6 @@ class WallpapersUseCasesTest {
                     mockDownloader,
                     mockFileManager,
                     mockMetadataFetcher,
-                    mockMigrationHelper,
                     mockSettings,
                     "en-US",
                 )
@@ -230,42 +206,6 @@ class WallpapersUseCasesTest {
             val expectedWallpaper = expiredWallpaper.copy(thumbnailFileState = Wallpaper.ImageFileState.Downloaded)
             assertTrue(appStore.state.wallpaperState.availableWallpapers.contains(expectedWallpaper))
             assertEquals(expiredWallpaper, appStore.state.wallpaperState.currentWallpaper)
-        }
-
-    @Test
-    fun `GIVEN wallpapers that expired and an expired one is selected and card colors have not been migrated WHEN invoking initialize use case THEN migrate card colors`() =
-        runTest {
-            val fakeRemoteWallpapers =
-                listOf("first", "second", "third").map { name ->
-                    makeFakeRemoteWallpaper(TimeRelation.LATER, name)
-                }
-            val expiredWallpaper = makeFakeRemoteWallpaper(TimeRelation.BEFORE, TURNING_RED_PANDA_WALLPAPER_NAME)
-            val allWallpapers = listOf(expiredWallpaper) + fakeRemoteWallpapers
-            every { mockSettings.currentWallpaperName } returns TURNING_RED_PANDA_WALLPAPER_NAME
-            every { mockSettings.shouldMigrateLegacyWallpaperCardColors } returns true
-            every { mockSettings.currentWallpaperTextColor } returns TURNING_RED_WALLPAPER_TEXT_COLOR.toHexColor()
-            coEvery { mockFileManager.lookupExpiredWallpaper(any()) } returns expiredWallpaper
-            coEvery { mockMetadataFetcher.downloadWallpaperList() } returns allWallpapers
-            coEvery { mockDownloader.downloadThumbnail(any()) } returns Wallpaper.ImageFileState.Downloaded
-
-            WallpapersUseCases.DefaultInitializeWallpaperUseCase(
-                    appStore,
-                    mockDownloader,
-                    mockFileManager,
-                    mockMetadataFetcher,
-                    mockMigrationHelper,
-                    mockSettings,
-                    "en-US",
-                )
-                .invoke()
-
-            verify { mockMigrationHelper.migrateExpiredWallpaperCardColors() }
-            verify {
-                mockSettings.currentWallpaperCardColorLight = TURNING_RED_PANDA_WALLPAPER_CARD_COLOR_LIGHT.toHexColor()
-            }
-            verify {
-                mockSettings.currentWallpaperCardColorDark = TURNING_RED_PANDA_WALLPAPER_CARD_COLOR_DARK.toHexColor()
-            }
         }
 
     @Test
@@ -285,14 +225,13 @@ class WallpapersUseCasesTest {
                     mockDownloader,
                     mockFileManager,
                     mockMetadataFetcher,
-                    mockMigrationHelper,
                     mockSettings,
                     locale,
                 )
                 .invoke()
 
             assertEquals(
-                listOf(Wallpaper.EdgeToEdge, Wallpaper.Default),
+                listOf(Wallpaper.Gradient, Wallpaper.Solid),
                 appStore.state.wallpaperState.availableWallpapers,
             )
         }
@@ -314,7 +253,6 @@ class WallpapersUseCasesTest {
                     mockDownloader,
                     mockFileManager,
                     mockMetadataFetcher,
-                    mockMigrationHelper,
                     mockSettings,
                     "en-US",
                 )
@@ -342,7 +280,6 @@ class WallpapersUseCasesTest {
                     mockDownloader,
                     mockFileManager,
                     mockMetadataFetcher,
-                    mockMigrationHelper,
                     mockSettings,
                     "en-US",
                 )
@@ -378,7 +315,6 @@ class WallpapersUseCasesTest {
                     mockDownloader,
                     mockFileManager,
                     mockMetadataFetcher,
-                    mockMigrationHelper,
                     mockSettings,
                     "en-US",
                 )
@@ -405,13 +341,12 @@ class WallpapersUseCasesTest {
                     mockDownloader,
                     mockFileManager,
                     mockMetadataFetcher,
-                    mockMigrationHelper,
                     mockSettings,
                     "en-US",
                 )
                 .invoke()
 
-            assertTrue(appStore.state.wallpaperState.currentWallpaper == Wallpaper.Default)
+            assertTrue(appStore.state.wallpaperState.currentWallpaper == Wallpaper.Solid)
         }
 
     @Test
@@ -433,14 +368,13 @@ class WallpapersUseCasesTest {
                     mockDownloader,
                     mockFileManager,
                     mockMetadataFetcher,
-                    mockMigrationHelper,
                     mockSettings,
                     "en-US",
                 )
                 .invoke()
 
             val expectedWallpapers =
-                (listOf(Wallpaper.EdgeToEdge, Wallpaper.Default) + possibleWallpapers).map {
+                (listOf(Wallpaper.Gradient, Wallpaper.Solid) + possibleWallpapers).map {
                     it.copy(thumbnailFileState = Wallpaper.ImageFileState.Downloaded)
                 }
             assertEquals(selectedWallpaper, appStore.state.wallpaperState.currentWallpaper)
@@ -665,7 +599,7 @@ class WallpapersUseCasesTest {
         }
 
     @Test
-    fun `WHEN loading the wallpapers list THEN EdgeToEdge is in the list`() = runTest {
+    fun `WHEN loading the wallpapers list THEN the gradient wallpaper is in the list`() = runTest {
         every { mockSettings.currentWallpaperName } returns ""
         coEvery { mockFileManager.lookupExpiredWallpaper(any()) } returns null
         coEvery { mockMetadataFetcher.downloadWallpaperList() } returns emptyList()
@@ -675,25 +609,24 @@ class WallpapersUseCasesTest {
                 mockDownloader,
                 mockFileManager,
                 mockMetadataFetcher,
-                mockMigrationHelper,
                 mockSettings,
                 "en-US",
             )
             .invoke()
 
         assertEquals(
-            listOf(Wallpaper.EdgeToEdge, Wallpaper.Default),
+            listOf(Wallpaper.Gradient, Wallpaper.Solid),
             appStore.state.wallpaperState.availableWallpapers,
         )
     }
 
     @Test
-    fun `WHEN EdgeToEdge wallpaper is persisted THEN EdgeToEdge wallpaper is selected`() = runTest {
-        every { mockSettings.currentWallpaperName } returns Wallpaper.EDGE_TO_EDGE
+    fun `WHEN the gradient wallpaper is persisted THEN the gradient wallpaper is selected`() = runTest {
+        every { mockSettings.currentWallpaperName } returns Wallpaper.GRADIENT
 
         WallpapersUseCases.DefaultFetchCurrentWallpaperUseCase(mockSettings, appStore).invoke()
 
-        assertEquals(Wallpaper.EdgeToEdge, appStore.state.wallpaperState.currentWallpaper)
+        assertEquals(Wallpaper.Gradient, appStore.state.wallpaperState.currentWallpaper)
     }
 
     private enum class TimeRelation {
