@@ -1665,6 +1665,16 @@ nsXULAppInfo::GetDesktopEnvironment(nsACString& aDesktopEnvironment) {
 }
 
 NS_IMETHODIMP
+nsXULAppInfo::GetIsGnomeDesktopEnvironment(bool* aResult) {
+#ifdef MOZ_WIDGET_GTK
+  *aResult = IsGnomeDesktopEnvironment();
+#else
+  *aResult = false;
+#endif
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsXULAppInfo::GetIsWayland(bool* aResult) {
 #ifdef MOZ_WIDGET_GTK
   *aResult = GdkIsWaylandDisplay();
@@ -5042,10 +5052,8 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
     
     
     
-    ProcessSerialNumber psn;
-    if (::GetCurrentProcess(&psn) == noErr) {
-      ::SetFrontProcess(&psn);
-    }
+    
+    ActivateMacAppAfterLaunch();
   }
 #endif
 
@@ -6378,6 +6386,13 @@ nsresult XREMain::XRE_mainRun() {
       }
     }
 
+#if defined(MOZ_SANDBOX) && defined(XP_WIN)
+    
+    
+    
+    mozilla::SandboxBroker::CacheGeckoDirs();
+#endif
+
     
     
     
@@ -6497,16 +6512,6 @@ nsresult XREMain::XRE_mainRun() {
         return NS_ERROR_OMNIJAR_OR_DIR_MISSING;
       }
     }
-
-#if defined(MOZ_SANDBOX) && defined(XP_WIN)
-    
-    
-    
-    
-    
-    
-    mozilla::SandboxBroker::GeckoDependentInitialize();
-#endif
 
     nsCOMPtr<nsIFile> workingDir;
     rv = NS_GetSpecialDirectory(NS_OS_CURRENT_WORKING_DIR,
@@ -6633,6 +6638,9 @@ nsresult XREMain::XRE_mainRun() {
 #endif
 
 #if defined(MOZ_WIDGET_GTK)
+      nsAppShell::InitLaunchActivationToken(mXDGActivationToken.IsEmpty()
+                                                ? mDesktopStartupID
+                                                : mXDGActivationToken);
       
       
       for (const auto& name : kStartupTokenNames) {
@@ -7231,16 +7239,8 @@ bool XRE_UseNativeEventProcessing() {
 namespace mozilla {
 
 uint32_t GetMaxWebProcessCount() {
-  
-  
-  if (Preferences::GetInt("dom.ipc.multiOptOut", 0) >=
-      nsIXULRuntime::E10S_MULTI_EXPERIMENT) {
-    return 1;
-  }
-
-  const char* optInPref = "dom.ipc.processCount";
-  uint32_t optInPrefValue = Preferences::GetInt(optInPref, 1);
-  return std::max(1u, optInPrefValue);
+  int32_t processCount = Preferences::GetInt("dom.ipc.processCount", 1);
+  return static_cast<uint32_t>(std::max(1, processCount));
 }
 
 const char* PlatformBuildID() { return gToolkitBuildID; }

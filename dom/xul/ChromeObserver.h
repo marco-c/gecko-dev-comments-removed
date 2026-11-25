@@ -24,12 +24,13 @@ class ChromeObserver final : public nsStubMutationObserver {
   NS_DECL_NSIMUTATIONOBSERVER_NODEWILLBEDESTROYED
 
  protected:
-  nsIWidget* GetWindowWidget();
+  already_AddRefed<nsIWidget> GetWindowWidget();
   void SetHideTitlebarSeparator(bool);
   void HideWindowChrome(bool aShouldHide);
   void SetCustomTitlebar(bool);
   void SetMica(bool);
   void RecomputeIcon(Element&);
+  void UpdateWindowClass(Element&);
   ~ChromeObserver() = default;
   
   Document* MOZ_NON_OWNING_REF mDocument;

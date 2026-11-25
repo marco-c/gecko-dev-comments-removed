@@ -269,6 +269,7 @@ class nsWindow : public nsIWidget {
   void SetIcon(const nsAString& aIconSpec) override;
   void SetWindowClass(const nsAString& xulWinType, const nsAString& xulWinClass,
                       const nsAString& xulWinName) override;
+  void UpdateWindowClass(const nsAString& aXulWinClass) override;
   LayoutDeviceIntPoint WidgetToScreenOffset() override;
   DesktopIntPoint WidgetToScreenOffsetUnscaled();
   void CaptureRollupEvents(bool aDoCapture) override;
@@ -566,6 +567,11 @@ class nsWindow : public nsIWidget {
   virtual void DisableVSyncSource() {}
   virtual void WatchHiddenVSyncSource() {}
 
+  virtual bool IsFullscreenSupported() { return true; };
+
+  virtual void StartWindowDrag(int aX, int aY, int aTime);
+  virtual void ResizeWindowDrag(GdkWindowEdge aEdge, GdkEventButton* aEvent);
+
   
   void DispatchActivateEvent(void);
   void DispatchDeactivateEvent(void);
@@ -626,8 +632,6 @@ class nsWindow : public nsIWidget {
 
   void CreateAndPutGdkScrollEvent(mozilla::LayoutDeviceIntPoint aPoint,
                                   double aDeltaX, double aDeltaY);
-
-  bool IsFullscreenSupported();
 
   nsCString mGtkWindowAppClass;
   nsCString mGtkWindowAppName;
@@ -794,6 +798,11 @@ class nsWindow : public nsIWidget {
   
   
   bool mWaitingToSessionRestore : 1;
+
+  
+  
+  
+  bool mWaitingToFocusRestore : 1;
 
   
   void InitDragEvent(mozilla::WidgetDragEvent& aEvent);

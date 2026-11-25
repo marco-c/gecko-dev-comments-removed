@@ -427,7 +427,8 @@ nsWindow::nsWindow()
       mNeedsToRetryCapturingMouse(false),
       mX11HiddenPopupPositioned(false),
       mPopupTemporaryHidden(false),
-      mWaitingToSessionRestore(false) {
+      mWaitingToSessionRestore(false),
+      mWaitingToFocusRestore(false) {
   SetSafeWindowSize(mSizeConstraints.mMaxSize);
 
   if (!gGlobalsInitialized) {
@@ -1296,6 +1297,11 @@ void nsWindow::SetFocus(Raise aRaise, mozilla::dom::CallerType aCallerType) {
     if (StaticPrefs::mozilla_widget_raise_on_setfocus_AtStartup() &&
         toplevelWindow->mIsShown && toplevelWindow->mShell &&
         !gtk_window_is_active(GTK_WINDOW(toplevelWindow->mShell))) {
+      if (toplevelWindow->mWaitingToFocusRestore) {
+        LOG("  toplevel waits to focus restore, not activated [%p]",
+            toplevelWindow.get());
+        return;
+      }
       LOG("  toplevel is visible but not active, requesting activation [%p]",
           toplevelWindow.get());
 
@@ -2677,6 +2683,15 @@ void nsWindow::EmulateResizeDrag(GdkEventMotion* aEvent) {
   gtk_window_resize(GTK_WINDOW(mShell), size.width, size.height);
 }
 
+void nsWindow::StartWindowDrag(int aX, int aY, int aTime) {
+  gdk_window_begin_move_drag(GetToplevelGdkWindow(), 1, aX, aY, aTime);
+}
+
+void nsWindow::ResizeWindowDrag(GdkWindowEdge aEdge, GdkEventButton* aEvent) {
+  gdk_window_begin_resize_drag(GetToplevelGdkWindow(), aEdge, aEvent->button,
+                               aEvent->x_root, aEvent->y_root, aEvent->time);
+}
+
 void nsWindow::OnMotionNotifyEvent(GdkEventMotion* aEvent) {
   mLastMouseCoordinates.Set(aEvent);
 
@@ -2713,17 +2728,7 @@ void nsWindow::OnMotionNotifyEvent(GdkEventMotion* aEvent) {
 #endif
 
     if (dragWindow) {
-#ifdef MOZ_WAYLAND
-      if (AsWaylandToplevel() && AsWaylandToplevel()->PIPMove()) {
-        
-        
-        
-        GdkSeatUngrab(GdkDeviceGetSeat(GdkGetPointer()));
-        return;
-      }
-#endif
-      gdk_window_begin_move_drag(dragWindow, 1, aEvent->x_root, aEvent->y_root,
-                                 aEvent->time);
+      StartWindowDrag(aEvent->x_root, aEvent->y_root, aEvent->time);
       return;
     }
   }
@@ -3016,17 +3021,7 @@ void nsWindow::OnButtonPressEvent(GdkEventButton* aEvent) {
     if (mAspectResizer) {
       return;
     }
-#ifdef MOZ_WAYLAND
-    if (AsWaylandToplevel() && AsWaylandToplevel()->PIPResize(*edge)) {
-      
-      
-      
-      GdkSeatUngrab(GdkDeviceGetSeat(GdkGetPointer()));
-      return;
-    }
-#endif
-    gdk_window_begin_resize_drag(GetToplevelGdkWindow(), *edge, aEvent->button,
-                                 aEvent->x_root, aEvent->y_root, aEvent->time);
+    ResizeWindowDrag(*edge, aEvent);
     return;
   }
 
@@ -4088,23 +4083,11 @@ gboolean nsWindow::OnTouchEvent(GdkEventTouch* aEvent) {
       if (mWindowShouldStartDragging &&
           is_drag_threshold_exceeded((GdkEvent*)aEvent)) {
         mWindowShouldStartDragging = false;
-        if (auto* topLevel = GetToplevelGdkWindow()) {
-          LOG("  start window dragging window\n");
-
-          bool moved = false;
-#ifdef MOZ_WAYLAND
-          if (AsWaylandToplevel()) {
-            moved = AsWaylandToplevel()->PIPMove();
-          }
-#endif
-          if (!moved) {
-            gdk_window_begin_move_drag(topLevel, 1, aEvent->x_root,
-                                       aEvent->y_root, aEvent->time);
-          }
-          
-          
-          msg = eTouchCancel;
-        }
+        LOG("  start window dragging window\n");
+        StartWindowDrag(aEvent->x_root, aEvent->y_root, aEvent->time);
+        
+        
+        msg = eTouchCancel;
       }
       break;
     case GDK_TOUCH_END:
@@ -4796,6 +4779,15 @@ void nsWindow::SetWindowClass(const nsAString& xulWinType,
   RefreshWindowClass();
 }
 
+void nsWindow::UpdateWindowClass(const nsAString& aXulWinClass) {
+  if (!mShell) {
+    return;
+  }
+
+  CopyUTF16toUTF8(aXulWinClass, mGtkWindowAppClass);
+  RefreshWindowClass();
+}
+
 nsAutoCString nsWindow::GetDebugTag() const {
   nsAutoCString tag;
   tag.AppendPrintf("[%p]", this);
@@ -5175,7 +5167,19 @@ void nsWindow::SetUrgencyHint(GtkWidget* top_window, bool state) {
   if (!window) {
     return;
   }
+#ifdef MOZ_WAYLAND
   
+  
+  
+  if (GdkIsWaylandDisplay()) {
+    if (state) {
+      if (auto* toplevel = AsWaylandToplevel()) {
+        toplevel->RequestAttention();
+      }
+    }
+    return;
+  }
+#endif
   gdk_window_set_urgency_hint(window, state);
 }
 
@@ -5358,22 +5362,6 @@ void nsWindow::KioskLockOnMonitor() {
 
   LOG("nsWindow::KioskLockOnMonitor() locked on %d\n", monitor);
   sGdkWindowFullscreenOnMonitor(GetToplevelGdkWindow(), monitor);
-}
-
-bool nsWindow::IsFullscreenSupported() {
-#if defined(MOZ_X11)
-  if (GdkIsX11Display()) {
-    GdkScreen* screen = gtk_widget_get_screen(mShell);
-    GdkAtom atom = gdk_atom_intern("_NET_WM_STATE_FULLSCREEN", FALSE);
-    return gdk_x11_screen_supports_net_wm_hint(screen, atom);
-  }
-#endif
-#if defined(MOZ_WAYLAND)
-  if (auto* window = AsWaylandToplevel()) {
-    return !window->IsPipWindow();
-  }
-#endif
-  return true;
 }
 
 nsresult nsWindow::MakeFullScreen(bool aFullScreen) {
@@ -7893,7 +7881,11 @@ void nsWindow::SessionRestoreFinished() {
   GList* toplevels = gtk_window_list_toplevels();
   for (GList* item = toplevels; item; item = item->next) {
     nsWindow* window = FromGtkWidget(GTK_WIDGET(item->data));
-    if (window && window->mWaitingToSessionRestore) {
+    if (!window) {
+      continue;
+    }
+    window->mWaitingToFocusRestore = false;
+    if (window->mWaitingToSessionRestore) {
       waitingWindows.AppendElement(window);
     }
   }
@@ -7909,12 +7901,17 @@ void nsWindow::SessionRestoreFinished() {
     }
   }
 
-  if (!gFocusRequestWindow) {
-    return;
+  if (gFocusRequestWindow) {
+    gFocusRequestWindow->SetFocus(gFocusRequestWindowRaise,
+                                  mozilla::dom::CallerType::System);
+    gFocusRequestWindow = nullptr;
   }
-  gFocusRequestWindow->SetFocus(gFocusRequestWindowRaise,
-                                mozilla::dom::CallerType::System);
-  gFocusRequestWindow = nullptr;
+
+  
+  
+  if (nsGTKToolkit* toolkit = nsGTKToolkit::GetToolkit()) {
+    toolkit->SetActivationToken(""_ns);
+  }
 }
 
 

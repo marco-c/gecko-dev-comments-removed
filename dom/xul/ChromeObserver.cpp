@@ -19,8 +19,7 @@ namespace mozilla::dom {
 
 NS_IMPL_ISUPPORTS(ChromeObserver, nsIMutationObserver)
 
-ChromeObserver::ChromeObserver(Document* aDocument)
-    : nsStubMutationObserver(), mDocument(aDocument) {}
+ChromeObserver::ChromeObserver(Document* aDocument) : mDocument(aDocument) {}
 
 void ChromeObserver::Init() {
   mDocument->AddMutationObserver(this);
@@ -29,13 +28,10 @@ void ChromeObserver::Init() {
     return;
   }
   nsAutoScriptBlocker scriptBlocker;
-  uint32_t attributeCount = rootElement->GetAttrCount();
-  for (uint32_t i = 0; i < attributeCount; i++) {
-    BorrowedAttrInfo info = rootElement->GetAttrInfoAt(i);
+  uint32_t i = 0;
+  while (BorrowedAttrInfo info = rootElement->GetAttrInfoAt(i++)) {
     const nsAttrName* name = info.mName;
-    if (name->LocalName() == nsGkAtoms::customtitlebar) {
-      
-      
+    if (name->Equals(nsGkAtoms::windowclass)) {
       
       continue;
     }
@@ -44,21 +40,20 @@ void ChromeObserver::Init() {
   }
 }
 
-nsIWidget* ChromeObserver::GetWindowWidget() {
+already_AddRefed<nsIWidget> ChromeObserver::GetWindowWidget() {
   
   if (mDocument && mDocument->IsRootDisplayDocument()) {
     nsCOMPtr<nsISupports> container = mDocument->GetContainer();
     if (nsCOMPtr<nsIBaseWindow> baseWindow = do_QueryInterface(container)) {
       nsCOMPtr<nsIWidget> mainWidget = baseWindow->GetMainWidget();
-      return mainWidget;
+      return mainWidget.forget();
     }
   }
   return nullptr;
 }
 
 void ChromeObserver::SetHideTitlebarSeparator(bool aState) {
-  nsIWidget* mainWidget = GetWindowWidget();
-  if (mainWidget) {
+  if (RefPtr mainWidget = GetWindowWidget()) {
     
     
     mainWidget->SetHideTitlebarSeparator(aState);
@@ -89,6 +84,9 @@ void ChromeObserver::AttributeChanged(dom::Element* aElement,
   if (aName == nsGkAtoms::icon) {
     RecomputeIcon(*aElement);
   }
+  if (aName == nsGkAtoms::windowclass && aModType != AttrModType::Removal) {
+    UpdateWindowClass(*aElement);
+  }
   if (aName == nsGkAtoms::localedir) {
     
     
@@ -113,6 +111,14 @@ void ChromeObserver::RecomputeIcon(Element& aElement) {
   }
 }
 
+void ChromeObserver::UpdateWindowClass(Element& aElement) {
+  if (RefPtr mainWidget = GetWindowWidget()) {
+    nsAutoString value;
+    aElement.GetAttr(nsGkAtoms::windowclass, value);
+    mainWidget->UpdateWindowClass(value);
+  }
+}
+
 void ChromeObserver::SetMica(bool aEnable) {
   if (RefPtr mainWidget = GetWindowWidget()) {
     mainWidget->SetMicaBackdrop(aEnable);
@@ -120,7 +126,7 @@ void ChromeObserver::SetMica(bool aEnable) {
 }
 
 void ChromeObserver::SetCustomTitlebar(bool aCustomTitlebar) {
-  if (nsIWidget* mainWidget = GetWindowWidget()) {
+  if (RefPtr mainWidget = GetWindowWidget()) {
     
     
     nsContentUtils::AddScriptRunner(NewRunnableMethod<bool>(

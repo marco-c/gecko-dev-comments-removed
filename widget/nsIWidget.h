@@ -1584,6 +1584,13 @@ class nsIWidget : public nsSupportsWeakReference {
                               const nsAString& xulWinClass,
                               const nsAString& xulWinName) {}
 
+  
+
+
+
+
+  virtual void UpdateWindowClass(const nsAString& aXulWinClass) {}
+
   virtual void SetIsEarlyBlankWindow(bool) {}
 
   

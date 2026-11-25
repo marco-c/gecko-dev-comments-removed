@@ -11,6 +11,7 @@ let lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
+  setTimeout: "resource://gre/modules/Timer.sys.mjs",
   TaskbarTabsUtils:
     "moz-src:///browser/components/taskbartabs/TaskbarTabsUtils.sys.mjs",
 });
@@ -20,9 +21,20 @@ XPCOMUtils.defineLazyServiceGetters(lazy, {
   WinTaskbar: ["@mozilla.org/windows-taskbar;1", Ci.nsIWinTaskbar],
 });
 
+// How long applyWindowClass waits on GNOME Shell. GNOME Shell reloads its
+// desktop entries 5 seconds after the applications folders stop changing. The
+// rest is a safety margin. 0 turns the wait off, e.g. to test a GNOME Shell fix
+// for https://gitlab.gnome.org/GNOME/gnome-shell/-/merge_requests/4175.
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "gnomeShellDelayMs",
+  "browser.taskbarTabs.gnomeShellDelayMs",
+  7000
+);
+
 ChromeUtils.defineLazyGetter(lazy, "logConsole", () => {
   return console.createInstance({
-    prefix: "TaskbarTabs",
+    logModule: "TaskbarTabs",
     maxLogLevel: "Warn",
   });
 });
@@ -36,6 +48,9 @@ export class TaskbarTabsWindowManager {
   #openWindows = new Map();
   // Map from the tab browser permanent key to originating window ID.
   #tabOriginMap = new WeakMap();
+  // Whether existing windows are being raised before opening a new window for
+  // the same Taskbar Tab. Their focus doesn't count towards usage time.
+  #isRaisingWindows = false;
 
   /**
    * Moves an existing browser tab into a Taskbar Tab.
@@ -59,10 +74,10 @@ export class TaskbarTabsWindowManager {
     );
     extraOptions.setPropertyAsAString("taskbartab", aTaskbarTab.id);
     if (AppConstants.platform === "linux") {
-      extraOptions.setPropertyAsAString(
-        "taskbartabclass",
-        getLinuxWindowClass(aTaskbarTab)
-      );
+      let windowClass = getInitialLinuxWindowClass(aTaskbarTab);
+      if (windowClass) {
+        extraOptions.setPropertyAsAString("taskbartabclass", windowClass);
+      }
     }
 
     let args = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
@@ -91,10 +106,10 @@ export class TaskbarTabsWindowManager {
     );
     extraOptions.setPropertyAsAString("taskbartab", aTaskbarTab.id);
     if (AppConstants.platform === "linux") {
-      extraOptions.setPropertyAsAString(
-        "taskbartabclass",
-        getLinuxWindowClass(aTaskbarTab)
-      );
+      let windowClass = getInitialLinuxWindowClass(aTaskbarTab);
+      if (windowClass) {
+        extraOptions.setPropertyAsAString("taskbartabclass", windowClass);
+      }
     }
 
     let userContextId = Cc["@mozilla.org/supports-PRUint32;1"].createInstance(
@@ -113,7 +128,71 @@ export class TaskbarTabsWindowManager {
     args.appendElement(null);
     args.appendElement(Services.scriptSecurityManager.getSystemPrincipal());
 
+    // Linux window managers only allow a single window to be activated per
+    // user interaction, so the existing windows can't be raised there.
+    if (AppConstants.platform === "win") {
+      this.#focusWindowsForTaskbarTab(aTaskbarTab);
+    }
     return await this.#openWindow(aTaskbarTab, args, aIcon);
+  }
+
+  /**
+   * On Linux, gives the windows of a Taskbar Tab their own window class once
+   * pinning has created its desktop entry. Until then, they open with
+   * Firefox's window class; see getInitialLinuxWindowClass.
+   *
+   * On GNOME Shell, this waits until it has had time to load the new desktop
+   * entry. Elsewhere, it happens right away.
+   *
+   * @param {TaskbarTab} aTaskbarTab - The Taskbar Tab whose desktop entry was
+   * just created.
+   * @param {function(): boolean} aIsRegistered - Returns whether the Taskbar
+   * Tab is still registered. If it was removed in the meantime, its desktop
+   * entry is gone, so its windows keep Firefox's window class.
+   */
+  applyWindowClass(aTaskbarTab, aIsRegistered) {
+    if (AppConstants.platform !== "linux") {
+      return;
+    }
+
+    let apply = () => {
+      if (!aIsRegistered()) {
+        return;
+      }
+      let windowClass = getLinuxWindowClass(aTaskbarTab);
+      for (let win of this.getWindowsForId(aTaskbarTab.id)) {
+        win.document.documentElement.setAttribute("windowclass", windowClass);
+      }
+    };
+
+    if (Services.appinfo.isGnomeDesktopEnvironment && lazy.gnomeShellDelayMs) {
+      lazy.setTimeout(apply, lazy.gnomeShellDelayMs);
+    } else {
+      apply();
+    }
+  }
+
+  /**
+   * Raises the windows already open for a Taskbar Tab, keeping their order, so
+   * that a new window opened afterwards ends up on top of them.
+   *
+   * @param {TaskbarTab} aTaskbarTab - The Taskbar Tab whose windows to raise.
+   */
+  #focusWindowsForTaskbarTab(aTaskbarTab) {
+    let existingWindows = this.getWindowsForId(aTaskbarTab.id).filter(
+      win => !win.isCloaked
+    );
+
+    // Windows activates and focuses each window synchronously within focus().
+    // Raise the least recently used window first to keep their order.
+    this.#isRaisingWindows = true;
+    try {
+      for (let win of existingWindows.reverse()) {
+        win.focus();
+      }
+    } finally {
+      this.#isRaisingWindows = false;
+    }
   }
 
   /**
@@ -208,11 +287,11 @@ export class TaskbarTabsWindowManager {
   #attachWindowFocusTelemetry(aWindow) {
     let timerId = null;
 
-    function focused() {
-      if (timerId == null) {
+    const focused = () => {
+      if (timerId == null && !this.#isRaisingWindows) {
         timerId = Glean.webApp.usageTime.start();
       }
-    }
+    };
 
     function blur() {
       if (timerId != null) {
@@ -322,6 +401,24 @@ export class TaskbarTabsWindowManager {
   }
 
   /**
+   * Returns the windows associated to a Taskbar Tab, most recently used first,
+   * with minimized windows last.
+   *
+   * @param {string} aId - The Taskbar Tab ID.
+   * @returns {DOMWindow[]} The windows associated to the Taskbar Tab ID.
+   */
+  getWindowsForId(aId) {
+    let openWindows = this.#openWindows.get(aId);
+    if (!openWindows) {
+      return [];
+    }
+
+    return lazy.BrowserWindowTracker.getOrderedWindows().filter(
+      win => !win.closed && openWindows.has(getWindowId(win))
+    );
+  }
+
+  /**
    * Utility function to mock `nsIWindowsUIUtils`.
    *
    * @param {nsIWindowsUIUtils} mock - A mock of nsIWindowsUIUtils.
@@ -362,6 +459,29 @@ function getTabId(aTab) {
  */
 function getWindowId(aWindow) {
   return aWindow.docShell.outerWindowID;
+}
+
+/**
+ * Returns the window class to open a Taskbar Tab window with, or null to use
+ * Firefox's.
+ *
+ * Windows only get their own class once the desktop entry exists, and
+ * applyWindowClass gives it to the windows opened before. This is needed for
+ * GNOME Shell, which takes a few seconds to load a new desktop entry. A window
+ * whose class doesn't match any entry is assigned to another app, such as
+ * Firefox, and GNOME Shell only looks at it again if the class changes. Other
+ * desktops go through the same steps, without the wait, so that this works the
+ * same everywhere. See bug 2021458 and
+ * https://gitlab.gnome.org/GNOME/gnome-shell/-/merge_requests/4175.
+ *
+ * @param {TaskbarTab} aTaskbarTab - The Taskbar Tab the window is for.
+ * @returns {?string} The window class, or null.
+ */
+function getInitialLinuxWindowClass(aTaskbarTab) {
+  if (!aTaskbarTab.shortcutRelativePath) {
+    return null;
+  }
+  return getLinuxWindowClass(aTaskbarTab);
 }
 
 function getLinuxWindowClass(aTaskbarTab) {
