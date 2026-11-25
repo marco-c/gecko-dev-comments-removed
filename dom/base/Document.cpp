@@ -1092,7 +1092,7 @@ void ExternalResourceMap::Traverse(
   
   
   for (const auto& entry : mMap) {
-    ExternalResourceMap::ExternalResource* resource = entry.GetWeak();
+    ExternalResourceMap::ExternalResource* resource = entry.GetRawPtr();
 
     NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(*aCallback,
                                        "mExternalResourceMap.mMap entry"
@@ -1653,7 +1653,7 @@ Document::Document(const char* aContentType,
           InteractiveWidgetUtils::DefaultInteractiveWidgetMode()),
       mHeaderData(nullptr),
       mLanguageFromCharset(nullptr),
-      mServoRestyleRootDirtyBits(0),
+      mServoRestyleRootDirtyBits(NodeStyleFlags(0)),
       mThrowOnDynamicMarkupInsertionCounter(0),
       mIgnoreOpensDuringUnloadCounter(0),
       mSavedResolution(1.0f),
@@ -2892,7 +2892,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
     NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb,
                                        "mUntranslatedL10nProtoElements key");
     cb.NoteXPCOMChild(entry.GetKey());
-    CycleCollectionNoteChild(cb, entry.GetWeak(),
+    CycleCollectionNoteChild(cb, entry.GetRawPtr(),
                              "mUntranslatedL10nProtoElements value");
   }
 
@@ -7153,6 +7153,18 @@ void Document::GetReferrer(nsACString& aReferrer) const {
   }
 
   URLDecorationStripper::StripTrackingIdentifiers(referrer, aReferrer);
+}
+
+bool Document::IsCookieAverse() const {
+  
+  if (!GetInnerWindow()) {
+    return true;
+  }
+
+  
+  
+  
+  return !net::CookieCommons::IsSchemeSupported(NodePrincipal());
 }
 
 void Document::GetCookie(nsAString& aCookie, ErrorResult& aRv) {

@@ -263,11 +263,13 @@ void nsHTMLFramesetFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
       
       
       for (; child; child = child->GetNextSibling()) {
-        child->UnsetFlags(NODE_DESCENDANTS_NEED_FRAMES | NODE_NEEDS_FRAME);
+        child->UnsetStyleFlags(NodeStyleFlags::DescendantsNeedFrames |
+                               NodeStyleFlags::NeedsFrame);
       }
       break;
     }
-    child->UnsetFlags(NODE_DESCENDANTS_NEED_FRAMES | NODE_NEEDS_FRAME);
+    child->UnsetStyleFlags(NodeStyleFlags::DescendantsNeedFrames |
+                           NodeStyleFlags::NeedsFrame);
 
     
     

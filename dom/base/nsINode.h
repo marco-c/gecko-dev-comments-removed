@@ -154,71 +154,87 @@ enum : uint32_t {
   NODE_IS_IN_SHADOW_TREE = NODE_FLAG_BIT(5),
 
   
-  
-  NODE_NEEDS_FRAME = NODE_FLAG_BIT(6),
+  NODE_HAS_ACCESSKEY = NODE_FLAG_BIT(6),
+
+  NODE_HAS_BEEN_IN_UA_WIDGET = NODE_FLAG_BIT(7),
 
   
-  
-  
-  NODE_DESCENDANTS_NEED_FRAMES = NODE_FLAG_BIT(7),
+  NODE_HAS_NONCE_AND_HEADER_CSP = NODE_FLAG_BIT(8),
+
+  NODE_KEEPS_DOMARENA = NODE_FLAG_BIT(9),
+
+  NODE_MAY_HAVE_ELEMENT_CHILDREN = NODE_FLAG_BIT(10),
+
+  NODE_HAS_SCHEDULED_SELECTION_CHANGE_EVENT = NODE_FLAG_BIT(11),
 
   
-  NODE_HAS_ACCESSKEY = NODE_FLAG_BIT(8),
-
-  NODE_HAS_BEEN_IN_UA_WIDGET = NODE_FLAG_BIT(9),
-
-  
-  NODE_HAS_NONCE_AND_HEADER_CSP = NODE_FLAG_BIT(10),
-
-  NODE_KEEPS_DOMARENA = NODE_FLAG_BIT(11),
-
-  NODE_MAY_HAVE_ELEMENT_CHILDREN = NODE_FLAG_BIT(12),
-
-  NODE_HAS_SCHEDULED_SELECTION_CHANGE_EVENT = NODE_FLAG_BIT(13),
-
-  
-  NODE_TYPE_SPECIFIC_BITS_OFFSET = 14
+  NODE_TYPE_SPECIFIC_BITS_OFFSET = 12
 };
 
 
-enum class NodeSelectorFlags : uint32_t {
+
+
+enum class NodeStyleFlags : uint32_t {
   
-  HasEmptySelector = 1 << 0,
+  
+  
+  
+  HasSlowSelector = 1 << 0,
 
   
   
   
   
-  HasSlowSelector = 1 << 1,
+  
+  
+  
+  HasSlowSelectorLaterSiblings = 1 << 1,
 
   
-  
-  HasEdgeChildSelector = 1 << 2,
-
-  
-  
-  
-  
-  
-  
-  
-  HasSlowSelectorLaterSiblings = 1 << 3,
-
-  
-  HasSlowSelectorNth = 1 << 4,
+  HasSlowSelectorNth = 1 << 2,
 
   
   
   
   
-  HasSlowSelectorNthOf = 1 << 5,
+  HasSlowSelectorNthOf = 1 << 3,
 
   
   HasSlowSelectorNthAll = HasSlowSelectorNthOf | HasSlowSelectorNth,
 
   
   
-  MayHaveTreeCountingFunction = 1 << 6,
+  HasEdgeChildSelector = 1 << 4,
+
+  
+  HasEmptySelector = 1 << 5,
+
+  
+  RelativeSelectorAnchor = 1 << 6,
+
+  
+  
+  RelativeSelectorAnchorNonSubject = 1 << 7,
+
+  
+  RelativeSelectorSearchDirectionSibling = 1 << 8,
+
+  
+  RelativeSelectorSearchDirectionAncestor = 1 << 9,
+
+  
+  
+  RelativeSelectorSearchDirectionAncestorSibling =
+      RelativeSelectorSearchDirectionSibling |
+      RelativeSelectorSearchDirectionAncestor,
+
+  
+  
+  MayHaveTreeCountingFunction = 1 << 10,
+
+  
+  
+  ContainerQueryWithUnparsedAttr = 1 << 11,
 
   
   
@@ -232,30 +248,31 @@ enum class NodeSelectorFlags : uint32_t {
       AllSimpleRestyleFlagsForAppend | HasSlowSelectorLaterSiblings,
 
   
-  RelativeSelectorAnchor = 1 << 7,
+  
+  HasSnapshot = 1 << 12,
 
   
   
-  RelativeSelectorAnchorNonSubject = 1 << 8,
-
   
-  RelativeSelectorSearchDirectionSibling = 1 << 9,
-
   
-  RelativeSelectorSearchDirectionAncestor = 1 << 10,
+  HandledSnapshot = 1 << 13,
 
   
   
-  RelativeSelectorSearchDirectionAncestorSibling =
-      RelativeSelectorSearchDirectionSibling |
-      RelativeSelectorSearchDirectionAncestor,
+  
+  NeedsFrame = 1 << 14,
 
   
   
-  ContainerQueryWithUnparsedAttr = 1 << 11,
+  
+  
+  DescendantsNeedFrames = 1 << 15,
+
+  
+  HasDirtyDescendants = 1 << 16,
 };
 
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(NodeSelectorFlags);
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(NodeStyleFlags);
 
 enum class BatchRemovalOrder {
   FrontToBack,
@@ -1878,13 +1895,11 @@ class nsINode : public mozilla::dom::EventTarget {
 #endif
 
   void SetFlags(FlagsType aFlagsToSet) {
-    NS_ASSERTION(
-        !(aFlagsToSet &
-          (NODE_IS_NATIVE_ANONYMOUS_ROOT | NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE |
-           NODE_DESCENDANTS_NEED_FRAMES | NODE_NEEDS_FRAME |
-           NODE_HAS_BEEN_IN_UA_WIDGET)) ||
-            IsContent(),
-        "Flag only permitted on nsIContent nodes");
+    NS_ASSERTION(!(aFlagsToSet & (NODE_IS_NATIVE_ANONYMOUS_ROOT |
+                                  NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE |
+                                  NODE_HAS_BEEN_IN_UA_WIDGET)) ||
+                     IsContent(),
+                 "Flag only permitted on nsIContent nodes");
     nsWrapperCache::SetFlags(aFlagsToSet);
   }
 
@@ -3210,8 +3225,33 @@ class nsINode : public mozilla::dom::EventTarget {
 #undef TOUCH_EVENT
 #undef EVENT
 
-  NodeSelectorFlags GetSelectorFlags() const {
-    return static_cast<NodeSelectorFlags>(mSelectorFlags.Get());
+  NodeStyleFlags GetStyleFlags() const {
+    return static_cast<NodeStyleFlags>(mStyleFlags.Get());
+  }
+
+  bool HasStyleFlag(NodeStyleFlags aFlag) const {
+    return !!(GetStyleFlags() & aFlag);
+  }
+
+  bool HasAnyOfStyleFlags(NodeStyleFlags aFlags) const {
+    return !!(GetStyleFlags() & aFlags);
+  }
+
+  bool HasAllStyleFlags(NodeStyleFlags aFlags) const {
+    return (GetStyleFlags() & aFlags) == aFlags;
+  }
+
+  void SetStyleFlags(NodeStyleFlags aFlags) {
+    MOZ_ASSERT(NS_IsMainThread());
+    MOZ_ASSERT_IF(aFlags & (NodeStyleFlags::NeedsFrame |
+                            NodeStyleFlags::DescendantsNeedFrames),
+                  IsContent());
+    mStyleFlags.Set(mStyleFlags.Get() | static_cast<uint32_t>(aFlags));
+  }
+
+  void UnsetStyleFlags(NodeStyleFlags aFlags) {
+    MOZ_ASSERT(NS_IsMainThread());
+    mStyleFlags.Set(mStyleFlags.Get() & ~static_cast<uint32_t>(aFlags));
   }
 
   void AriaNotify(const nsAString& aAnnouncement,
@@ -3234,7 +3274,7 @@ class nsINode : public mozilla::dom::EventTarget {
   uint32_t mBoolFlags;
 #endif
 
-  mozilla::RustCell<uint32_t> mSelectorFlags{0};
+  mozilla::RustCell<uint32_t> mStyleFlags{0};
 
   uint32_t mChildCount;
 

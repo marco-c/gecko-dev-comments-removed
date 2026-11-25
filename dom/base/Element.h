@@ -168,54 +168,41 @@ already_AddRefed<mozilla::dom::ContentList> NS_GetContentList(
 
 enum : uint32_t {
   
-  ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO = ELEMENT_FLAG_BIT(0),
-
   
-  
-  ELEMENT_HAS_SNAPSHOT = ELEMENT_FLAG_BIT(2),
-
-  
-  
-  
-  
-  ELEMENT_HANDLED_SNAPSHOT = ELEMENT_FLAG_BIT(3),
-
-  
-  
-  ELEMENT_IS_DATALIST_OR_HAS_DATALIST_ANCESTOR = ELEMENT_FLAG_BIT(4),
+  ELEMENT_IS_DATALIST_OR_HAS_DATALIST_ANCESTOR = ELEMENT_FLAG_BIT(0),
 
   
   
   
-  ELEMENT_PROCESSED_BY_LCP_FOR_TEXT = ELEMENT_FLAG_BIT(5),
+  ELEMENT_PROCESSED_BY_LCP_FOR_TEXT = ELEMENT_FLAG_BIT(1),
 
   
   
   
   
   
-  ELEMENT_PARSER_HAD_DUPLICATE_ATTR_ERROR = ELEMENT_FLAG_BIT(6),
+  ELEMENT_PARSER_HAD_DUPLICATE_ATTR_ERROR = ELEMENT_FLAG_BIT(2),
 
   
   
-  ELEMENT_IN_CONTENT_IDENTIFIER_FOR_LCP = ELEMENT_FLAG_BIT(7),
+  ELEMENT_IN_CONTENT_IDENTIFIER_FOR_LCP = ELEMENT_FLAG_BIT(3),
 
   
   
-  ELEMENT_CUSTOM_ELEMENT_REGISTRY_LOW_BIT = ELEMENT_FLAG_BIT(8),
+  ELEMENT_CUSTOM_ELEMENT_REGISTRY_LOW_BIT = ELEMENT_FLAG_BIT(4),
   ELEMENT_CUSTOM_ELEMENT_REGISTRY_MASK =
-      ELEMENT_FLAG_BIT(8) | ELEMENT_FLAG_BIT(9),
+      ELEMENT_FLAG_BIT(4) | ELEMENT_FLAG_BIT(5),
 
   
   
-  ELEMENT_HAS_EDIT_CONTEXT = ELEMENT_FLAG_BIT(10),
+  ELEMENT_HAS_EDIT_CONTEXT = ELEMENT_FLAG_BIT(6),
 
   
   
-  ELEMENT_ON_PARSER_STACK = ELEMENT_FLAG_BIT(11),
+  ELEMENT_ON_PARSER_STACK = ELEMENT_FLAG_BIT(7),
 
   
-  ELEMENT_TYPE_SPECIFIC_BITS_OFFSET = NODE_TYPE_SPECIFIC_BITS_OFFSET + 12
+  ELEMENT_TYPE_SPECIFIC_BITS_OFFSET = NODE_TYPE_SPECIFIC_BITS_OFFSET + 8
 };
 
 #undef ELEMENT_FLAG_BIT
@@ -604,8 +591,9 @@ class Element : public FragmentOrElement {
 
   Directionality GetComputedDirectionality() const;
 
-  static const uint32_t kAllServoDescendantBits =
-      ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO | NODE_DESCENDANTS_NEED_FRAMES;
+  static constexpr NodeStyleFlags kAllServoDescendantBits =
+      NodeStyleFlags::HasDirtyDescendants |
+      NodeStyleFlags::DescendantsNeedFrames;
 
   
 
@@ -621,15 +609,15 @@ class Element : public FragmentOrElement {
   void NoteDescendantsNeedFramesForServo();
 
   bool HasDirtyDescendantsForServo() const {
-    return HasFlag(ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO);
+    return HasStyleFlag(NodeStyleFlags::HasDirtyDescendants);
   }
 
   void SetHasDirtyDescendantsForServo() {
-    SetFlags(ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO);
+    SetStyleFlags(NodeStyleFlags::HasDirtyDescendants);
   }
 
   void UnsetHasDirtyDescendantsForServo() {
-    UnsetFlags(ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO);
+    UnsetStyleFlags(NodeStyleFlags::HasDirtyDescendants);
   }
 
   bool HasServoData() const { return !!mServoData.Get(); }

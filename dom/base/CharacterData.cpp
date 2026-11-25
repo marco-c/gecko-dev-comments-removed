@@ -233,9 +233,11 @@ nsresult CharacterData::SetTextInternal(
   }
 
   Document* document = GetComposedDoc();
-  mozAutoDocUpdate updateBatch(document, aNotify);
-
+  
+  
+  Maybe<mozAutoDocUpdate> updateBatch;
   if (aNotify) {
+    updateBatch.emplace(document, true);
     CharacterDataChangeInfo info = {
         aOffset == textLength,   aOffset, endOffset, aLength,
         aMutationEffectOnScript, aDetails};
@@ -377,8 +379,8 @@ nsresult CharacterData::BindToTree(BindContext& aContext, nsINode& aParent) {
   MOZ_ASSERT(!IsInComposedDoc(), "Already have a document.  Unbind first!");
   
   
-  MOZ_ASSERT(!GetParentNode() || &aParent == GetParentNode(),
-             "Already have a parent.  Unbind first!");
+  MOZ_DIAGNOSTIC_ASSERT(!GetParentNode() || &aParent == GetParentNode(),
+                        "Already have a different parent.  Unbind first!");
 
   const bool hadParent = !!GetParentNode();
 
@@ -405,7 +407,8 @@ nsresult CharacterData::BindToTree(BindContext& aContext, nsINode& aParent) {
   if (connected) {
     
     
-    UnsetFlags(NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES);
+    UnsetStyleFlags(NodeStyleFlags::NeedsFrame |
+                    NodeStyleFlags::DescendantsNeedFrames);
     if (mBuffer.IsBidi()) {
       aContext.OwnerDoc().SetBidiEnabled();
     }

@@ -356,7 +356,7 @@ class RestyleManager {
 
 
   void RestyleSiblingsForNthOf(dom::Element* aChild,
-                               NodeSelectorFlags aParentFlags);
+                               NodeStyleFlags aParentFlags);
 
   
 
@@ -482,7 +482,7 @@ class RestyleManager {
 
   ServoStyleSet* StyleSet() const { return PresContext()->StyleSet(); }
 
-  void RestyleWholeContainer(nsINode* aContainer, NodeSelectorFlags);
+  void RestyleWholeContainer(nsINode* aContainer, NodeStyleFlags);
   void RestylePreviousSiblings(nsIContent* aStartingSibling);
   void RestyleSiblingsStartingWith(nsIContent* aStartingSibling);
   void RecascadeForTreeCountingFunctions(nsINode* aContainer);

@@ -769,7 +769,7 @@ static bool WillConstructFrame(const dom::Element& aElement) {
       
       return needsFrame && !frame->IsLeaf();
     }
-    needsFrame |= content->HasFlag(NODE_NEEDS_FRAME);
+    needsFrame |= content->HasStyleFlag(NodeStyleFlags::NeedsFrame);
   }
   return needsFrame;
 }

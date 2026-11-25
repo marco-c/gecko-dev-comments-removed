@@ -1879,29 +1879,46 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                              bool aItemAllowsTextPathChild);
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool WipeInsertionParent(nsContainerFrame* aFrame);
+
+
+
+
+
+
+
+
+
+
+  bool MaybeRecreateForInsertionParent(nsContainerFrame* aInsertionParent);
 
   
-  
-  
-  
-  
-  
-  
-  bool WipeContainingBlock(nsFrameConstructorState& aState,
-                           nsIFrame* aContainingBlock, nsIFrame* aFrame,
-                           FrameConstructionItemList& aItems, bool aIsAppend,
-                           nsIFrame* aPrevSibling);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  bool MaybeRecreateForInsertedChildren(nsFrameConstructorState& aState,
+                                        nsIFrame* aContainingBlock,
+                                        nsIFrame* aInsertionParent,
+                                        FrameConstructionItemList& aItems,
+                                        bool aIsAppend, nsIFrame* aPrevSibling);
 
   void ReframeContainingBlock(nsIFrame* aFrame);
 

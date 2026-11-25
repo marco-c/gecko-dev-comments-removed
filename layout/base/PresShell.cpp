@@ -3060,7 +3060,7 @@ void PresShell::SlotAssignmentWillChange(Element& aElement,
                !Servo_Element_IsDisplayNone(aNewSlot)) {
       
       aNewSlot->NoteDescendantsNeedFramesForServo();
-      aElement.SetFlags(NODE_NEEDS_FRAME);
+      aElement.SetStyleFlags(NodeStyleFlags::NeedsFrame);
       
       
       aNewSlot->SetHasDirtyDescendantsForServo();
@@ -4570,9 +4570,7 @@ static inline void AssertFrameTreeIsSane(const PresShell& aPresShell) {
 }
 
 void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
-  
-  
-  MOZ_DIAGNOSTIC_ASSERT(!mForbiddenToFlush, "This is bad!");
+  MOZ_RELEASE_ASSERT(!mForbiddenToFlush, "This is bad!");
 
   
   RefPtr<PresShell> kungFuDeathGrip = this;

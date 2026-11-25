@@ -103,8 +103,8 @@ void RestyleManager::ContentAppended(nsIContent* aFirstNewContent) {
   StyleSet()->MaybeInvalidateForElementAppend(*aFirstNewContent);
 
   auto* container = aFirstNewContent->GetParentNode();
-  const auto selectorFlags = container->GetSelectorFlags() &
-                             NodeSelectorFlags::AllSimpleRestyleFlagsForAppend;
+  const auto selectorFlags = container->GetStyleFlags() &
+                             NodeStyleFlags::AllSimpleRestyleFlagsForAppend;
   if (!selectorFlags) {
     return;
   }
@@ -112,7 +112,7 @@ void RestyleManager::ContentAppended(nsIContent* aFirstNewContent) {
   
   MOZ_ASSERT(container->IsElement() || container->IsShadowRoot());
 
-  if (selectorFlags & NodeSelectorFlags::HasEmptySelector) {
+  if (selectorFlags & NodeStyleFlags::HasEmptySelector) {
     
     bool wasEmpty = true;  
     for (nsIContent* cur = container->GetFirstChild(); cur != aFirstNewContent;
@@ -132,13 +132,13 @@ void RestyleManager::ContentAppended(nsIContent* aFirstNewContent) {
     }
   }
 
-  if (selectorFlags & NodeSelectorFlags::HasSlowSelector) {
+  if (selectorFlags & NodeStyleFlags::HasSlowSelector) {
     RestyleWholeContainer(container, selectorFlags);
     
     return;
   }
 
-  if (selectorFlags & NodeSelectorFlags::HasEdgeChildSelector) {
+  if (selectorFlags & NodeStyleFlags::HasEdgeChildSelector) {
     
     for (nsIContent* cur = aFirstNewContent->GetPreviousSibling(); cur;
          cur = cur->GetPreviousSibling()) {
@@ -153,7 +153,7 @@ void RestyleManager::ContentAppended(nsIContent* aFirstNewContent) {
     }
   }
 
-  if (selectorFlags & NodeSelectorFlags::MayHaveTreeCountingFunction) {
+  if (selectorFlags & NodeStyleFlags::MayHaveTreeCountingFunction) {
     RecascadeForTreeCountingFunctions(container);
   }
 }
@@ -205,8 +205,8 @@ void RestyleManager::RestyleSiblingsStartingWith(nsIContent* aStartingSibling) {
 }
 
 void RestyleManager::RecascadeForTreeCountingFunctions(nsINode* aContainer) {
-  MOZ_ASSERT(aContainer->GetSelectorFlags() &
-             NodeSelectorFlags::MayHaveTreeCountingFunction);
+  MOZ_ASSERT(aContainer->GetStyleFlags() &
+             NodeStyleFlags::MayHaveTreeCountingFunction);
 
   for (nsIContent* child = aContainer->GetFirstChild(); child;
        child = child->GetNextSibling()) {
@@ -225,14 +225,14 @@ void RestyleManager::RecascadeForTreeCountingFunctions(nsINode* aContainer) {
 }
 
 void RestyleManager::RestyleWholeContainer(nsINode* aContainer,
-                                           NodeSelectorFlags aSelectorFlags) {
+                                           NodeStyleFlags aSelectorFlags) {
   if (!mRestyledAsWholeContainer.EnsureInserted(aContainer)) {
     return;
   }
   if (auto* containerElement = Element::FromNode(aContainer)) {
     PostRestyleEvent(containerElement, RestyleHint::RestyleSubtree(),
                      nsChangeHint(0));
-    if (aSelectorFlags & NodeSelectorFlags::HasSlowSelectorNthAll) {
+    if (aSelectorFlags & NodeStyleFlags::HasSlowSelectorNthAll) {
       StyleSet()->MaybeInvalidateRelativeSelectorForNthDependencyFromSibling(
           containerElement->GetFirstElementChild(),
            false);
@@ -249,8 +249,8 @@ void RestyleManager::RestyleForEmptyChange(Element* aContainer) {
   
   
   nsIContent* grandparent = aContainer->GetParent();
-  if (!grandparent || !(grandparent->GetSelectorFlags() &
-                        NodeSelectorFlags::HasSlowSelectorLaterSiblings)) {
+  if (!grandparent || !(grandparent->GetStyleFlags() &
+                        NodeStyleFlags::HasSlowSelectorLaterSiblings)) {
     return;
   }
   RestyleSiblingsStartingWith(aContainer->GetNextSibling());
@@ -258,8 +258,8 @@ void RestyleManager::RestyleForEmptyChange(Element* aContainer) {
 
 void RestyleManager::MaybeRestyleForEdgeChildChange(nsINode* aContainer,
                                                     nsIContent* aChangedChild) {
-  MOZ_ASSERT(aContainer->GetSelectorFlags() &
-             NodeSelectorFlags::HasEdgeChildSelector);
+  MOZ_ASSERT(aContainer->GetStyleFlags() &
+             NodeStyleFlags::HasEdgeChildSelector);
   MOZ_ASSERT(aChangedChild->GetParent() == aContainer);
   
   bool passedChild = false;
@@ -348,9 +348,9 @@ void RestyleManager::CharacterDataChanged(
   MOZ_ASSERT(parent, "How were we notified of a stray node?");
 
   const auto slowSelectorFlags =
-      parent->GetSelectorFlags() & NodeSelectorFlags::AllSimpleRestyleFlags;
-  if (!(slowSelectorFlags & (NodeSelectorFlags::HasEmptySelector |
-                             NodeSelectorFlags::HasEdgeChildSelector))) {
+      parent->GetStyleFlags() & NodeStyleFlags::AllSimpleRestyleFlags;
+  if (!(slowSelectorFlags & (NodeStyleFlags::HasEmptySelector |
+                             NodeStyleFlags::HasEdgeChildSelector))) {
     
     return;
   }
@@ -405,7 +405,7 @@ void RestyleManager::CharacterDataChanged(
     return;
   }
 
-  if (slowSelectorFlags & NodeSelectorFlags::HasEmptySelector) {
+  if (slowSelectorFlags & NodeStyleFlags::HasEmptySelector) {
     if (!HasAnySignificantSibling(parent->AsElement(), aContent)) {
       
       RestyleForEmptyChange(parent->AsElement());
@@ -413,7 +413,7 @@ void RestyleManager::CharacterDataChanged(
     }
   }
 
-  if (slowSelectorFlags & NodeSelectorFlags::HasEdgeChildSelector) {
+  if (slowSelectorFlags & NodeStyleFlags::HasEdgeChildSelector) {
     MaybeRestyleForEdgeChildChange(parent, aContent);
   }
 }
@@ -429,7 +429,7 @@ void RestyleManager::RestyleForInsertOrChange(nsIContent* aChild) {
   MOZ_ASSERT(container);
 
   const auto selectorFlags =
-      container->GetSelectorFlags() & NodeSelectorFlags::AllSimpleRestyleFlags;
+      container->GetStyleFlags() & NodeStyleFlags::AllSimpleRestyleFlags;
   if (!selectorFlags) {
     return;
   }
@@ -440,7 +440,7 @@ void RestyleManager::RestyleForInsertOrChange(nsIContent* aChild) {
   
   MOZ_ASSERT(container->IsElement() || container->IsShadowRoot());
 
-  if (selectorFlags & NodeSelectorFlags::HasEmptySelector &&
+  if (selectorFlags & NodeStyleFlags::HasEmptySelector &&
       container->IsElement()) {
     
     
@@ -455,15 +455,15 @@ void RestyleManager::RestyleForInsertOrChange(nsIContent* aChild) {
     }
   }
 
-  if (selectorFlags & NodeSelectorFlags::HasSlowSelector) {
+  if (selectorFlags & NodeStyleFlags::HasSlowSelector) {
     RestyleWholeContainer(container, selectorFlags);
     
     return;
   }
 
-  if (selectorFlags & NodeSelectorFlags::HasSlowSelectorLaterSiblings) {
+  if (selectorFlags & NodeStyleFlags::HasSlowSelectorLaterSiblings) {
     
-    if (selectorFlags & NodeSelectorFlags::HasSlowSelectorNthAll) {
+    if (selectorFlags & NodeStyleFlags::HasSlowSelectorNthAll) {
       StyleSet()->MaybeInvalidateRelativeSelectorForNthDependencyFromSibling(
           aChild->GetNextElementSibling(),  true);
     } else {
@@ -471,11 +471,11 @@ void RestyleManager::RestyleForInsertOrChange(nsIContent* aChild) {
     }
   }
 
-  if (selectorFlags & NodeSelectorFlags::HasEdgeChildSelector) {
+  if (selectorFlags & NodeStyleFlags::HasEdgeChildSelector) {
     MaybeRestyleForEdgeChildChange(container, aChild);
   }
 
-  if (selectorFlags & NodeSelectorFlags::MayHaveTreeCountingFunction) {
+  if (selectorFlags & NodeStyleFlags::MayHaveTreeCountingFunction) {
     RecascadeForTreeCountingFunctions(container);
   }
 }
@@ -520,7 +520,7 @@ void RestyleManager::ContentWillBeRemoved(nsIContent* aOldChild,
   }
 
   const auto selectorFlags =
-      container->GetSelectorFlags() & NodeSelectorFlags::AllSimpleRestyleFlags;
+      container->GetStyleFlags() & NodeStyleFlags::AllSimpleRestyleFlags;
   if (!selectorFlags) {
     return;
   }
@@ -529,8 +529,7 @@ void RestyleManager::ContentWillBeRemoved(nsIContent* aOldChild,
   const bool containerIsElement = container->IsElement();
   MOZ_ASSERT(containerIsElement || container->IsShadowRoot());
 
-  if (selectorFlags & NodeSelectorFlags::HasEmptySelector &&
-      containerIsElement) {
+  if (selectorFlags & NodeStyleFlags::HasEmptySelector && containerIsElement) {
     
     bool isEmpty = true;  
     for (nsIContent* child = container->GetFirstChild(); child;
@@ -557,8 +556,8 @@ void RestyleManager::ContentWillBeRemoved(nsIContent* aOldChild,
   
   
   const bool restyleWholeContainer =
-      (selectorFlags & NodeSelectorFlags::HasSlowSelector) ||
-      (selectorFlags & NodeSelectorFlags::HasSlowSelectorLaterSiblings &&
+      (selectorFlags & NodeStyleFlags::HasSlowSelector) ||
+      (selectorFlags & NodeStyleFlags::HasSlowSelectorLaterSiblings &&
        !aOldChild->GetPreviousSibling());
 
   if (restyleWholeContainer) {
@@ -567,9 +566,9 @@ void RestyleManager::ContentWillBeRemoved(nsIContent* aOldChild,
     return;
   }
 
-  if (selectorFlags & NodeSelectorFlags::HasSlowSelectorLaterSiblings) {
+  if (selectorFlags & NodeStyleFlags::HasSlowSelectorLaterSiblings) {
     
-    if (selectorFlags & NodeSelectorFlags::HasSlowSelectorNthAll) {
+    if (selectorFlags & NodeStyleFlags::HasSlowSelectorNthAll) {
       Element* nextSibling = aOldChild->GetNextElementSibling();
       StyleSet()->MaybeInvalidateRelativeSelectorForNthDependencyFromSibling(
           nextSibling,  true);
@@ -578,7 +577,7 @@ void RestyleManager::ContentWillBeRemoved(nsIContent* aOldChild,
     }
   }
 
-  if (selectorFlags & NodeSelectorFlags::HasEdgeChildSelector) {
+  if (selectorFlags & NodeStyleFlags::HasEdgeChildSelector) {
     const nsIContent* nextSibling = aOldChild->GetNextSibling();
     
     bool reachedFollowingSibling = false;
@@ -628,7 +627,7 @@ void RestyleManager::ContentWillBeRemoved(nsIContent* aOldChild,
     }
   }
 
-  if (selectorFlags & NodeSelectorFlags::MayHaveTreeCountingFunction) {
+  if (selectorFlags & NodeStyleFlags::MayHaveTreeCountingFunction) {
     RecascadeForTreeCountingFunctions(container);
   }
 }
@@ -1695,7 +1694,7 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
     
     size_t lazyRangeStart = i;
     while (i < aChangeList.Length() && aChangeList[i].mContent &&
-           aChangeList[i].mContent->HasFlag(NODE_NEEDS_FRAME) &&
+           aChangeList[i].mContent->HasStyleFlag(NodeStyleFlags::NeedsFrame) &&
            (i == lazyRangeStart ||
             NextSiblingWhichMayHaveFrame(aChangeList[i - 1].mContent) ==
                 aChangeList[i].mContent)) {
@@ -1716,8 +1715,9 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
       }
     }
     for (size_t j = lazyRangeStart; j < i; ++j) {
-      MOZ_ASSERT(!aChangeList[j].mContent->GetPrimaryFrame() ||
-                 !aChangeList[j].mContent->HasFlag(NODE_NEEDS_FRAME));
+      MOZ_ASSERT(
+          !aChangeList[j].mContent->GetPrimaryFrame() ||
+          !aChangeList[j].mContent->HasStyleFlag(NodeStyleFlags::NeedsFrame));
     }
     if (i == aChangeList.Length()) {
       break;
@@ -2566,15 +2566,15 @@ void RestyleManager::ClearServoDataFromSubtree(Element* aElement,
 
   if (MOZ_LIKELY(aIncludeRoot == IncludeRoot::Yes)) {
     aElement->ClearServoData();
-    MOZ_ASSERT(!aElement->HasAnyOfFlags(Element::kAllServoDescendantBits |
-                                        NODE_NEEDS_FRAME));
+    MOZ_ASSERT(!aElement->HasAnyOfStyleFlags(Element::kAllServoDescendantBits |
+                                             NodeStyleFlags::NeedsFrame));
     MOZ_ASSERT(aElement != aElement->OwnerDoc()->GetServoRestyleRoot());
   }
 }
 
 
 void RestyleManager::ClearRestyleStateFromSubtree(Element* aElement) {
-  if (aElement->HasAnyOfFlags(Element::kAllServoDescendantBits)) {
+  if (aElement->HasAnyOfStyleFlags(Element::kAllServoDescendantBits)) {
     StyleChildrenIterator it(aElement);
     for (nsIContent* n = it.GetNextChild(); n; n = it.GetNextChild()) {
       if (n->IsElement()) {
@@ -2585,7 +2585,7 @@ void RestyleManager::ClearRestyleStateFromSubtree(Element* aElement) {
 
   bool wasRestyled = false;
   (void)Servo_TakeChangeHint(aElement, &wasRestyled);
-  aElement->UnsetFlags(Element::kAllServoDescendantBits);
+  aElement->UnsetStyleFlags(Element::kAllServoDescendantBits);
 }
 
 
@@ -2903,7 +2903,7 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
 
   
   
-  if (aElement->HasFlag(NODE_NEEDS_FRAME)) {
+  if (aElement->HasStyleFlag(NodeStyleFlags::NeedsFrame)) {
     changeHint |= nsChangeHint_ReconstructFrame;
     MOZ_ASSERT(!styleFrame);
   }
@@ -3068,9 +3068,10 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
   }
 
   const bool traverseElementChildren =
-      aElement->HasAnyOfFlags(Element::kAllServoDescendantBits);
+      aElement->HasAnyOfStyleFlags(Element::kAllServoDescendantBits);
   const bool traverseTextChildren =
-      wasRestyled || aElement->HasFlag(NODE_DESCENDANTS_NEED_FRAMES);
+      wasRestyled ||
+      aElement->HasStyleFlag(NodeStyleFlags::DescendantsNeedFrames);
   bool recreatedAnyContext = wasRestyled;
   if (traverseElementChildren || traverseTextChildren) {
     StyleChildrenIterator it(aElement);
@@ -3128,7 +3129,7 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
     }
   }
 
-  aElement->UnsetFlags(Element::kAllServoDescendantBits);
+  aElement->UnsetStyleFlags(Element::kAllServoDescendantBits);
   return recreatedAnyContext;
 }
 
@@ -3136,7 +3137,7 @@ bool RestyleManager::ProcessPostTraversalForText(
     nsIContent* aTextNode, TextPostTraversalState& aPostTraversalState,
     ServoRestyleState& aRestyleState, ServoPostTraversalFlags aFlags) {
   
-  if (aTextNode->HasFlag(NODE_NEEDS_FRAME)) {
+  if (aTextNode->HasStyleFlag(NodeStyleFlags::NeedsFrame)) {
     aPostTraversalState.ChangeList().AppendChange(
         nullptr, aTextNode, nsChangeHint_ReconstructFrame);
     return true;
@@ -3179,7 +3180,8 @@ bool RestyleManager::ProcessPostTraversalForText(
 
 void RestyleManager::ClearSnapshots() {
   for (auto iter = mSnapshots.Iter(); !iter.Done(); iter.Next()) {
-    iter.Key()->UnsetFlags(ELEMENT_HAS_SNAPSHOT | ELEMENT_HANDLED_SNAPSHOT);
+    iter.Key()->UnsetStyleFlags(NodeStyleFlags::HasSnapshot |
+                                NodeStyleFlags::HandledSnapshot);
     iter.Remove();
   }
 }
@@ -3197,11 +3199,11 @@ ServoElementSnapshot& RestyleManager::SnapshotFor(Element& aElement) {
   
   
   
-  MOZ_ASSERT(!aElement.HasFlag(ELEMENT_HANDLED_SNAPSHOT));
+  MOZ_ASSERT(!aElement.HasStyleFlag(NodeStyleFlags::HandledSnapshot));
 
   ServoElementSnapshot* snapshot =
       mSnapshots.GetOrInsertNew(&aElement, aElement);
-  aElement.SetFlags(ELEMENT_HAS_SNAPSHOT);
+  aElement.SetStyleFlags(NodeStyleFlags::HasSnapshot);
 
   
   aElement.NoteDirtyForServo();
@@ -3423,7 +3425,7 @@ void RestyleManager::ProcessAllPendingAttributeAndStateInvalidations() {
   for (const auto& key : mSnapshots.Keys()) {
     
     
-    if (key->HasFlag(ELEMENT_HAS_SNAPSHOT)) {
+    if (key->HasStyleFlag(NodeStyleFlags::HasSnapshot)) {
       Servo_ProcessInvalidations(StyleSet()->RawData(), key, &mSnapshots);
     }
   }
@@ -3488,8 +3490,8 @@ void RestyleManager::ElementStateChanged(Element* aElement,
 
   const bool hasData = aElement->HasServoData();
   if (!hasData &&
-      !(aElement->GetSelectorFlags() &
-        NodeSelectorFlags::RelativeSelectorSearchDirectionAncestorSibling)) {
+      !(aElement->GetStyleFlags() &
+        NodeStyleFlags::RelativeSelectorSearchDirectionAncestorSibling)) {
     return;
   }
 
@@ -3515,8 +3517,8 @@ void RestyleManager::CustomStatesWillChange(Element& aElement) {
   
   
   if (!aElement.HasServoData() &&
-      !(aElement.GetSelectorFlags() &
-        NodeSelectorFlags::RelativeSelectorSearchDirectionAncestorSibling)) {
+      !(aElement.GetStyleFlags() &
+        NodeStyleFlags::RelativeSelectorSearchDirectionAncestorSibling)) {
     return;
   }
 
@@ -3536,8 +3538,8 @@ void RestyleManager::MaybeRestyleForNthOfCustomState(ServoStyleSet& aStyleSet,
                                                      nsAtom* aState) {
   const auto* parentNode = aChild.GetParentNode();
   MOZ_ASSERT(parentNode);
-  const auto parentFlags = parentNode->GetSelectorFlags();
-  if (!(parentFlags & NodeSelectorFlags::HasSlowSelectorNthOf)) {
+  const auto parentFlags = parentNode->GetStyleFlags();
+  if (!(parentFlags & NodeStyleFlags::HasSlowSelectorNthOf)) {
     return;
   }
 
@@ -3551,8 +3553,8 @@ void RestyleManager::MaybeRestyleForNthOfState(ServoStyleSet& aStyleSet,
                                                ElementState aChangedBits) {
   const auto* parentNode = aChild->GetParentNode();
   MOZ_ASSERT(parentNode);
-  const auto parentFlags = parentNode->GetSelectorFlags();
-  if (!(parentFlags & NodeSelectorFlags::HasSlowSelectorNthOf)) {
+  const auto parentFlags = parentNode->GetStyleFlags();
+  if (!(parentFlags & NodeStyleFlags::HasSlowSelectorNthOf)) {
     return;
   }
 
@@ -3656,8 +3658,8 @@ void RestyleManager::TakeSnapshotForAttributeChange(Element& aElement,
   
   
   if (!aElement.HasServoData() &&
-      !(aElement.GetSelectorFlags() &
-        NodeSelectorFlags::RelativeSelectorSearchDirectionAncestorSibling)) {
+      !(aElement.GetStyleFlags() &
+        NodeStyleFlags::RelativeSelectorSearchDirectionAncestorSibling)) {
     return;
   }
 
@@ -3764,7 +3766,7 @@ void RestyleManager::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
 }
 
 void RestyleManager::RestyleSiblingsForNthOf(Element* aChild,
-                                             NodeSelectorFlags aParentFlags) {
+                                             NodeStyleFlags aParentFlags) {
   StyleSet()->RestyleSiblingsForNthOf(*aChild,
                                       static_cast<uint32_t>(aParentFlags));
 }
@@ -3774,8 +3776,8 @@ void RestyleManager::MaybeRestyleForNthOfAttribute(
     const nsAttrValue* aOldValue) {
   const auto* parentNode = aChild->GetParentNode();
   MOZ_ASSERT(parentNode);
-  const auto parentFlags = parentNode->GetSelectorFlags();
-  if (!(parentFlags & NodeSelectorFlags::HasSlowSelectorNthOf)) {
+  const auto parentFlags = parentNode->GetStyleFlags();
+  if (!(parentFlags & NodeStyleFlags::HasSlowSelectorNthOf)) {
     return;
   }
   if (!aChild->HasServoData()) {
@@ -3807,7 +3809,7 @@ void RestyleManager::MaybeRestyleForNthOfAttribute(
 void RestyleManager::MaybeRestyleForRelativeSelectorAttribute(
     Element* aElement, int32_t aNameSpaceID, nsAtom* aAttribute,
     const nsAttrValue* aOldValue) {
-  if (!aElement->HasFlag(ELEMENT_HAS_SNAPSHOT)) {
+  if (!aElement->HasStyleFlag(NodeStyleFlags::HasSnapshot)) {
     return;
   }
   auto& styleSet = *StyleSet();
@@ -3830,7 +3832,7 @@ void RestyleManager::MaybeRestyleForRelativeSelectorAttribute(
 
 void RestyleManager::MaybeRestyleForRelativeSelectorState(
     ServoStyleSet& aStyleSet, Element* aElement, ElementState aChangedBits) {
-  if (!aElement->HasFlag(ELEMENT_HAS_SNAPSHOT)) {
+  if (!aElement->HasStyleFlag(NodeStyleFlags::HasSnapshot)) {
     return;
   }
   aStyleSet.MaybeInvalidateRelativeSelectorStateDependency(
