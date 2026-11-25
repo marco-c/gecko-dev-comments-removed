@@ -354,6 +354,14 @@ function TargetMixin(parentClass) {
       return this._url;
     }
 
+    get urlOrigin() {
+      const parsedURL = URL.parse(this._url);
+      if (!parsedURL) {
+        return null;
+      }
+      return parsedURL.origin;
+    }
+
     get isWorkerTarget() {
       
       return (
