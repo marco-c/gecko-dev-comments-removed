@@ -501,6 +501,7 @@ static bool XPCShellInterruptCallback(JSContext* cx) {
 
   MOZ_ASSERT(js::IsFunctionObject(&callback.toObject()));
 
+  js::AutoAllowScriptInInterrupt allowScript(cx);
   JSAutoRealm ar(cx, &callback.toObject());
   RootedValue rv(cx);
   if (!JS_CallFunctionValue(cx, nullptr, callback,
@@ -726,7 +727,8 @@ static bool ProcessFile(AutoJSAPI& jsapi, const char* filename, FILE* file,
     }
     ungetc(ch, file);
 
-    JS::UniqueChars filenameUtf8 = JS::EncodeNarrowToUtf8(jsapi.cx(), filename);
+    JS::UniqueChars filenameUtf8 =
+        JS::EncodeNarrowToUtf8(jsapi.cx(), filename ? filename : "-");
     if (!filenameUtf8) {
       return false;
     }
@@ -1301,7 +1303,7 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
     
     if (aShellData->sandboxBrokerServices) {
       SandboxBroker::Initialize(aShellData->sandboxBrokerServices, binDirPath);
-      SandboxBroker::GeckoDependentInitialize();
+      SandboxBroker::CacheGeckoDirs();
     } else {
       NS_WARNING(
           "Failed to initialize broker services, sandboxed "
