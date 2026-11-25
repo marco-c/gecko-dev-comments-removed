@@ -24,7 +24,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 ChromeUtils.defineLazyGetter(lazy, "logConsole", () => {
   return console.createInstance({
-    prefix: "TaskbarTabs",
+    logModule: "TaskbarTabs",
     maxLogLevel: "Warn",
   });
 });
@@ -71,6 +71,9 @@ export const TaskbarTabs = new (class {
    */
   async getTaskbarTabTitleInfo(aId) {
     let taskbarTab = await this.getTaskbarTab(aId);
+    if (!taskbarTab) {
+      throw new Error(`Taskbar Tab Id ${aId} is invalid.`);
+    }
     return {
       name: taskbarTab.name,
       userContextId: taskbarTab.userContextId,
@@ -231,7 +234,7 @@ export const TaskbarTabs = new (class {
     if (created) {
       // Don't wait for pinning to complete. (This is separate so we can call
       // it with the newly-created window.)
-      this.#pinTaskbarTab(taskbarTab, icon, win);
+      this.#pinTaskbarTab(taskbarTab, icon, { window: win });
     }
 
     return {
