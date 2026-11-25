@@ -322,7 +322,7 @@ void CanonicalBrowsingContext::ReplacedBy(
 
   if (!GetLanguageOverride().IsEmpty()) {
     
-    txn.SetLanguageOverride(GetLanguageOverride());
+    txn.SetLanguageOverrideInternal(GetLanguageOverride());
   }
   if (!GetTimezoneOverride().IsEmpty()) {
     

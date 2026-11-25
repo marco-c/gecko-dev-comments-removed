@@ -176,6 +176,12 @@ interface BrowsingContext {
   [SetterThrows] attribute boolean isAppTab;
 
   /**
+   * Whether this top level browsing context is shown in a Mini Window. Web
+   * content may not move or resize such a window.
+   */
+  [SetterThrows] attribute boolean isMiniWindow;
+
+  /**
    * Sets whether this is BC has siblings **at the toplevel** (e.g. in a tabbed
    * browser environment). Used to determine if web content can resize the top
    * window. Never set correctly for non-top BCs.
@@ -251,7 +257,9 @@ interface BrowsingContext {
   // Enable media query medium override, for DevTools.
   [SetterThrows] attribute DOMString mediumOverride;
 
-  // Language emulation for WebDriver BiDi and DevTools.
+  // Language emulation for WebDriver BiDi and DevTools. Settable only from the
+  // parent process on a top-level browsing context, to a structurally valid
+  // BCP 47 language tag; the empty string resets the override.
   [SetterThrows] attribute UTF8String languageOverride;
 
   // Timezone emulation for WebDriver BiDi and DevTools per browsing context.
