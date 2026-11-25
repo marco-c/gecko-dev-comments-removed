@@ -304,6 +304,8 @@ class NSSSocketControl final : public CommonSocketControl {
   bool mPreliminaryHandshakeDone;  
 
   nsresult ActivateSSL();
+  void RecordTokenResumption(const nsACString& aOutcome);
+  bool HasResumptionOutcomeToRecord() const;
 
   nsCString mEsniTxt;
   nsCString mEchConfig;
@@ -312,7 +314,8 @@ class NSSSocketControl final : public CommonSocketControl {
   bool mFalseStartCallbackCalled;
   bool mFalseStarted;
   bool mIsFullHandshake;
-  bool mDrewResumptionToken;
+  bool mTriedResumptionToken;
+  bool mTokenRestored;  
   bool mNotedTimeUntilReady;
   EchExtensionStatus mEchExtensionStatus;  
 
