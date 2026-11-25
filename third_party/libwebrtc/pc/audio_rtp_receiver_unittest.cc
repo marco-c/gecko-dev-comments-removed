@@ -293,6 +293,26 @@ TEST(AudioRtpReceiver, OnChangedNotificationsAfterConstruction) {
   worker_thread->BlockingCall([&]() { receiver->SetMediaChannel(nullptr); });
 }
 
+
+
+TEST(AudioRtpReceiver, OnChangedBeforeSetupWithChannelFromConstructor) {
+  test::RunLoop loop;
+
+  std::unique_ptr<Thread> worker_thread = Thread::Create();
+  worker_thread->Start();
+  MockVoiceMediaReceiveChannelInterface receive_channel;
+  auto receiver = make_ref_counted<AudioRtpReceiver>(
+      worker_thread.get(), std::string(), std::vector<std::string>(),
+      nullptr, &receive_channel);
+
+  EXPECT_CALL(receive_channel, SetDefaultOutputVolume(kVolumeMuted)).Times(1);
+  receiver->track()->set_enabled(false);
+  worker_thread->BlockingCall([] {});
+
+  EXPECT_CALL(receive_channel, SetDefaultOutputVolume(kVolumeMuted)).Times(1);
+  worker_thread->BlockingCall([&]() { receiver->SetMediaChannel(nullptr); });
+}
+
 class FakeRtpReceiverObserver : public RtpReceiverObserverInterface {
  public:
   void OnFirstPacketReceived(MediaType media_type) override {}
