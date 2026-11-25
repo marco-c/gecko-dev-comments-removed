@@ -416,9 +416,8 @@ export class LoginManagerParent extends JSWindowActorParent {
 
   #onFormSubmit() {
     Services.obs.notifyObservers(
-      null,
-      "passwordmgr-form-submission-detected",
-      this.origin
+      this.manager.documentPrincipal,
+      "passwordmgr-form-submission-detected"
     );
   }
 
@@ -1691,6 +1690,8 @@ export class LoginManagerParent extends JSWindowActorParent {
       }
 
       case "PasswordManager:DeleteLogin": {
+        // Prompts return focus to the field; only the reopen below may show it.
+        this.sendAsyncMessage("PasswordManager:removalPending");
         try {
           await this.#confirmLoginRemoval(data?.loginGuid, flowId);
         } catch (ex) {
