@@ -2039,7 +2039,7 @@ STDMETHODIMP TSFTextStore::GetTextExt(TsViewCookie vcView, LONG acpStart,
   WidgetQueryContentEvent queryTextRectEvent(true, eQueryTextRect, mWidget);
   mWidget->InitEvent(queryTextRectEvent);
 
-  WidgetQueryContentEvent::Options options;
+  QueryContentOptions options;
   int64_t startOffset = acpStart;
   if (mComposition.isSome()) {
     
@@ -3833,7 +3833,7 @@ void TSFTextStore::CreateNativeCaret() {
   queryCaretRectEvent.mNeedsToFlushLayout = false;
   mWidget->InitEvent(queryCaretRectEvent);
 
-  WidgetQueryContentEvent::Options options;
+  QueryContentOptions options;
   
   
   int64_t caretOffset = selectionForTSF->HasRange()
