@@ -444,16 +444,6 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
   static void schoolbookMultiplyDigits(ConstDigits a, ConstDigits b,
                                        Digits result);
   
-  
-  static void schoolbookMultiplyDigitsInline(ConstDigits a, ConstDigits b,
-                                             Digits result);
-  static void schoolbookMultiplyDigitsOutOfLine(ConstDigits a, ConstDigits b,
-                                                Digits result);
-  
-  
-  template <size_t M, size_t N = M>
-  static void fixedMultiplyDigits(ConstDigits x, ConstDigits y, Digits z);
-  
   static Digit inplaceSubDigits(Digits x, ConstDigits y);
   
   static Digit inplaceAddDigits(Digits x, ConstDigits y);
