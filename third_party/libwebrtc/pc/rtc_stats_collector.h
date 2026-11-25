@@ -77,6 +77,7 @@ struct RtpTransceiverStatsInfo {
 
 
 
+
 struct TransceiverReferences {
   scoped_refptr<RtpTransceiver> transceiver;
   std::vector<scoped_refptr<RtpReceiverInternal>> receivers;
@@ -122,10 +123,8 @@ class RTCStatsCollector {
   
   
   
-  
   void CancelPendingRequestAndGetShutdownTasks(
-      ScopedOperationsBatcher& network_tasks,
-      ScopedOperationsBatcher& worker_tasks);
+      ScopedOperationsBatcher& network_tasks);
 
   
   void OnSctpDataChannelStateChanged(int channel_id,
@@ -169,7 +168,7 @@ class RTCStatsCollector {
     std::optional<AudioDeviceModule::Stats> audio_device_stats;
   };
 
-  struct WorkerThreadResult {
+  struct MediaStatsResult {
     StatsGatheringResults results;
     std::vector<std::vector<RtpParameters>> sender_parameters;
     std::vector<TransceiverReferences> transceiver_references;
@@ -289,8 +288,9 @@ class RTCStatsCollector {
   
   
   
-  absl::AnyInvocable<WorkerThreadResult()>
-  PrepareTransceiverStatsInfosAndCallStats_s_w();
+  absl::AnyInvocable<MediaStatsResult()>
+  PrepareTransceiverStatsInfosAndCallStats_s_n(
+      std::set<std::string>& transport_names);
 
   
   void ProducePartialResultsOnSignalingThread(
@@ -301,7 +301,7 @@ class RTCStatsCollector {
       scoped_refptr<PendingTaskSafetyFlag> signaling_safety,
       Timestamp timestamp,
       std::set<std::string> transport_names,
-      StatsGatheringResults results);
+      absl::AnyInvocable<MediaStatsResult()> gather_task);
   
   void OnNetworkReportReady(scoped_refptr<RTCStatsReport> network_report,
                             std::vector<DataChannelStats> data_channel_stats);
@@ -317,7 +317,6 @@ class RTCStatsCollector {
   const Environment env_;
   const bool stats_timestamp_with_environment_clock_;
   TaskQueueBase* const signaling_thread_;
-  Thread* const worker_thread_;
   Thread* const network_thread_;
 
   std::vector<RequestInfo> requests_ RTC_GUARDED_BY(signaling_thread_);
@@ -355,7 +354,6 @@ class RTCStatsCollector {
   };
   InternalRecord internal_record_;
   const scoped_refptr<PendingTaskSafetyFlag> signaling_safety_;
-  const scoped_refptr<PendingTaskSafetyFlag> worker_safety_;
   const scoped_refptr<PendingTaskSafetyFlag> network_safety_;
 
   std::unique_ptr<CollectionContext> collection_context_

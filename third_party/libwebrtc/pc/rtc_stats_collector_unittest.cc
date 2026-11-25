@@ -4123,20 +4123,18 @@ TEST(RTCStatsCollectorSafetyTest, CancelPendingRequestReturnsImmediately) {
   
   wrapper.stats_collector().GetStatsReport(callback);
   ScopedOperationsBatcher network_tasks(worker_and_network.get());
-  ScopedOperationsBatcher worker_tasks(worker_and_network.get());
 
   
   
   
   wrapper.stats_collector().CancelPendingRequestAndGetShutdownTasks(
-      network_tasks, worker_tasks);
+      network_tasks);
 
   
   blocker.Set();
 
   
   network_tasks.Run();
-  worker_tasks.Run();
 }
 
 
@@ -4154,13 +4152,11 @@ TEST(RTCStatsCollectorSafetyTest, NetworkThreadSafetyPreventsCallback) {
   
   
   ScopedOperationsBatcher network_tasks(pc->network_thread());
-  ScopedOperationsBatcher worker_tasks(pc->worker_thread());
   wrapper.stats_collector().CancelPendingRequestAndGetShutdownTasks(
-      network_tasks, worker_tasks);
+      network_tasks);
   
   
   network_tasks.Run();
-  worker_tasks.Run();
   
   
   wrapper.stats_collector().GetStatsReport(callback);
