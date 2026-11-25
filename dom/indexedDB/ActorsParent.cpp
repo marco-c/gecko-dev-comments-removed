@@ -12317,7 +12317,7 @@ QuotaClient::~QuotaClient() {
 
 nsresult QuotaClient::AsyncDeleteFile(DatabaseFileManager* aFileManager,
                                       int64_t aFileId) {
-  AssertIsOnBackgroundThread();
+  MOZ_RELEASE_ASSERT(IsOnBackgroundThread());
 
   if (IsShuttingDownOnBackgroundThread()) {
     
@@ -16536,7 +16536,7 @@ Result<DatabaseSpec, nsresult> OpenDatabaseOp::MetadataToSpec() const {
                     [](const auto& objectStoreEntry)
                         -> mozilla::Result<ObjectStoreSpec, nsresult> {
                       FullObjectStoreMetadata* metadata =
-                          objectStoreEntry.GetWeak();
+                          objectStoreEntry.GetRawPtr();
                       MOZ_ASSERT(objectStoreEntry.GetKey());
                       MOZ_ASSERT(metadata);
 
@@ -16548,7 +16548,7 @@ Result<DatabaseSpec, nsresult> OpenDatabaseOp::MetadataToSpec() const {
                                         metadata->mIndexes,
                                         [](const auto& indexEntry) {
                                           FullIndexMetadata* indexMetadata =
-                                              indexEntry.GetWeak();
+                                              indexEntry.GetRawPtr();
                                           MOZ_ASSERT(indexEntry.GetKey());
                                           MOZ_ASSERT(indexMetadata);
 
