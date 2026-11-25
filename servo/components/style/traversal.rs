@@ -145,7 +145,9 @@ pub trait DomTraversal<E: TElement>: Sync {
                 &mut SelectorCaches::default(),
             );
 
-            if invalidation_result.has_invalidated_siblings() {
+            if invalidation_result.has_invalidated_siblings_or_sibling_descendants() {
+                
+                
                 let actual_root = root.as_node().parent_element_or_host().expect(
                     "How in the world can you invalidate \
                          siblings without a parent?",
