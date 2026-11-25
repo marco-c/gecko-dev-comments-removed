@@ -335,14 +335,16 @@ TEST(FrameCadenceAdapterTest, RepeatsFramesDelayed) {
   time_controller.AdvanceTime(TimeDelta::Seconds(1));
 }
 
-TEST(FrameCadenceAdapterTest, SetsIsRepeatFrameFlag) {
+TEST(FrameCadenceAdapterTest, SetsRepeatMode) {
   MockCallback callback;
   GlobalSimulatedTimeController time_controller(Timestamp::Millis(47892223));
   FieldTrials no_field_trials = CreateTestFieldTrials();
   auto adapter = CreateAdapter(no_field_trials, time_controller.GetClock());
   adapter->Initialize(&callback);
   adapter->SetZeroHertzModeEnabled(
-      FrameCadenceAdapterInterface::ZeroHertzModeParams{});
+      FrameCadenceAdapterInterface::ZeroHertzModeParams{.num_simulcast_layers =
+                                                            1});
+  adapter->UpdateLayerStatus(0, true);
   adapter->OnConstraintsChanged(
       VideoTrackSourceConstraints{.min_fps = 0, .max_fps = 1});
 
@@ -351,6 +353,7 @@ TEST(FrameCadenceAdapterTest, SetsIsRepeatFrameFlag) {
   adapter->OnFrame(frame);
   EXPECT_CALL(callback, OnFrame)
       .WillOnce([&](Timestamp, bool, const VideoFrame& frame) {
+        EXPECT_EQ(frame.repeat_mode(), VideoFrame::RepeatMode::kNone);
         EXPECT_FALSE(frame.is_repeat_frame());
       });
   time_controller.AdvanceTime(TimeDelta::Seconds(1));
@@ -359,6 +362,21 @@ TEST(FrameCadenceAdapterTest, SetsIsRepeatFrameFlag) {
   
   EXPECT_CALL(callback, OnFrame)
       .WillOnce([&](Timestamp, bool, const VideoFrame& frame) {
+        EXPECT_EQ(frame.repeat_mode(),
+                  VideoFrame::RepeatMode::kQualityConvergence);
+        EXPECT_TRUE(frame.is_repeat_frame());
+      });
+  
+  
+  
+  adapter->UpdateLayerQualityConvergence(0, true);
+  time_controller.AdvanceTime(TimeDelta::Seconds(1));
+  Mock::VerifyAndClearExpectations(&callback);
+
+  
+  EXPECT_CALL(callback, OnFrame)
+      .WillOnce([&](Timestamp, bool, const VideoFrame& frame) {
+        EXPECT_EQ(frame.repeat_mode(), VideoFrame::RepeatMode::kKeepAlive);
         EXPECT_TRUE(frame.is_repeat_frame());
       });
   time_controller.AdvanceTime(TimeDelta::Seconds(1));
@@ -369,6 +387,7 @@ TEST(FrameCadenceAdapterTest, SetsIsRepeatFrameFlag) {
   adapter->OnFrame(new_frame);
   EXPECT_CALL(callback, OnFrame)
       .WillOnce([&](Timestamp, bool, const VideoFrame& frame) {
+        EXPECT_EQ(frame.repeat_mode(), VideoFrame::RepeatMode::kNone);
         EXPECT_FALSE(frame.is_repeat_frame());
       });
   time_controller.AdvanceTime(TimeDelta::Seconds(1));

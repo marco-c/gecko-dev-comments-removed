@@ -34,6 +34,23 @@ class RTC_EXPORT VideoFrame {
   
   static constexpr uint16_t kNotSetId = 0;
 
+  
+  
+  
+  
+  enum class RepeatMode {
+    
+    kNone,
+    
+    
+    
+    kQualityConvergence,
+    
+    
+    
+    kKeepAlive,
+  };
+
   struct RTC_EXPORT UpdateRect {
     int offset_x = 0;
     int offset_y = 0;
@@ -122,6 +139,9 @@ class RTC_EXPORT VideoFrame {
     Builder& set_id(uint16_t id);
     Builder& set_update_rect(const std::optional<UpdateRect>& update_rect);
     Builder& set_packet_infos(RtpPacketInfos packet_infos);
+    Builder& set_repeat_mode(RepeatMode repeat_mode);
+    
+    
     Builder& set_is_repeat_frame(bool is_repeat_frame);
     Builder& set_content_type(VideoContentType content_type);
 
@@ -138,7 +158,7 @@ class RTC_EXPORT VideoFrame {
     RenderParameters render_parameters_;
     std::optional<UpdateRect> update_rect_;
     RtpPacketInfos packet_infos_;
-    bool is_repeat_frame_ = false;
+    RepeatMode repeat_mode_ = RepeatMode::kNone;
     std::optional<VideoContentType> content_type_;
   };
 
@@ -286,9 +306,15 @@ class RTC_EXPORT VideoFrame {
     processing_time_ = processing_time;
   }
 
-  bool is_repeat_frame() const { return is_repeat_frame_; }
+  
+  RepeatMode repeat_mode() const { return repeat_mode_; }
+  void set_repeat_mode(RepeatMode repeat_mode) { repeat_mode_ = repeat_mode; }
+  bool is_repeat_frame() const { return repeat_mode_ != RepeatMode::kNone; }
+  
+  
   void set_is_repeat_frame(bool is_repeat_frame) {
-    is_repeat_frame_ = is_repeat_frame;
+    repeat_mode_ =
+        is_repeat_frame ? RepeatMode::kQualityConvergence : RepeatMode::kNone;
   }
 
   std::optional<VideoContentType> content_type() const { return content_type_; }
@@ -309,7 +335,7 @@ class RTC_EXPORT VideoFrame {
              const RenderParameters& render_parameters,
              const std::optional<UpdateRect>& update_rect,
              RtpPacketInfos packet_infos,
-             bool is_repeat_frame,
+             RepeatMode repeat_mode,
              std::optional<VideoContentType> content_type)
       : id_(id),
         video_frame_buffer_(buffer),
@@ -323,7 +349,7 @@ class RTC_EXPORT VideoFrame {
         render_parameters_(render_parameters),
         update_rect_(update_rect),
         packet_infos_(std::move(packet_infos)),
-        is_repeat_frame_(is_repeat_frame),
+        repeat_mode_(repeat_mode),
         content_type_(content_type) {}
 
   uint16_t id_;
@@ -357,11 +383,7 @@ class RTC_EXPORT VideoFrame {
   
   
   std::optional<ProcessingTime> processing_time_;
-  
-  
-  
-  
-  bool is_repeat_frame_;
+  RepeatMode repeat_mode_;
   
   
   std::optional<VideoContentType> content_type_;
