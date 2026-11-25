@@ -3205,6 +3205,17 @@ ServoElementSnapshot& RestyleManager::SnapshotFor(Element& aElement) {
       mSnapshots.GetOrInsertNew(&aElement, aElement);
   aElement.SetStyleFlags(NodeStyleFlags::HasSnapshot);
 
+  if (aElement.GetAssignedSlot()) {
+    
+    
+    
+    
+    Element* host = aElement.GetParentElement();
+    MOZ_ASSERT(host && host->GetShadowRoot());
+    host->SetStyleFlags(NodeStyleFlags::MayHaveSlottedSnapshots);
+    host->NoteDirtyForServo();
+  }
+
   
   aElement.NoteDirtyForServo();
   return *snapshot;

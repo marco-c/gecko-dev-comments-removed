@@ -270,6 +270,10 @@ enum class NodeStyleFlags : uint32_t {
 
   
   HasDirtyDescendants = 1 << 16,
+
+  
+  
+  MayHaveSlottedSnapshots = 1 << 17,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(NodeStyleFlags);

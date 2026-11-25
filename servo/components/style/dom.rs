@@ -608,6 +608,17 @@ pub trait TElement:
 
     
     
+    fn may_have_slotted_snapshots(&self) -> bool {
+        true
+    }
+
+    
+    
+    
+    unsafe fn unset_may_have_slotted_snapshots(&self) {}
+
+    
+    
     fn random_seed(&self) -> u64 {
         
         self.opaque().to_ptr().as_ptr() as u64
