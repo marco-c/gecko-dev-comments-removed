@@ -83,6 +83,8 @@ class MOZ_RAII AutoBoolPref {
 };
 
 constexpr auto kUrlHashesEnabledPrefName = "security.csp.url-hashes.enabled";
+constexpr auto kStrictDynamicUrlEnabledPrefName =
+    "security.csp.strict-dynamic-url.enabled";
 
 nsresult runTest(
     uint32_t aExpectedPolicyCount,  
@@ -333,6 +335,59 @@ TEST(CSPParser, Keywords)
 
 
 
+TEST(CSPParser, KeywordsStrictDynamicUrl)
+{
+  static const PolicyTest policies[] = {
+      
+    { "script-src 'strict-dynamic-url'",
+      "script-src 'strict-dynamic-url'" },
+    { "script-src 'nonce-foo' 'strict-dynamic-url' 'unsafe-inline' https:",
+      "script-src 'nonce-foo' 'strict-dynamic-url' 'unsafe-inline' https:" },
+    { "script-src 'strict-dynamic' 'strict-dynamic-url'",
+      "script-src 'strict-dynamic' 'strict-dynamic-url'" },
+    { "script-src 'url-sha256-abc' 'strict-dynamic-url'",
+      "script-src 'url-sha256-abc' 'strict-dynamic-url'" },
+    { "default-src 'sha256-siVR8' 'strict-dynamic-url' https:",
+      "default-src 'sha256-siVR8' 'strict-dynamic-url' https:" },
+    
+    
+    { "img-src 'strict-dynamic-url'",
+      "img-src 'strict-dynamic-url'" },
+      
+  };
+
+  static const PolicyTest policiesWithoutPrefs[] = {
+      
+    { "script-src 'strict-dynamic-url'",
+      "script-src 'none'" },
+    { "script-src 'nonce-foo' 'strict-dynamic-url' 'unsafe-inline' https:",
+      "script-src 'nonce-foo' 'unsafe-inline' https:" },
+    { "script-src 'strict-dynamic' 'strict-dynamic-url'",
+      "script-src 'strict-dynamic'" },
+    { "script-src 'url-sha256-abc' 'strict-dynamic-url'",
+      "script-src 'none'" },
+    { "default-src 'sha256-siVR8' 'strict-dynamic-url' https:",
+      "default-src 'sha256-siVR8' https:" },
+    { "img-src 'strict-dynamic-url'",
+      "img-src 'none'" },
+      
+  };
+
+  {
+    AutoBoolPref strictDynamicUrl(kStrictDynamicUrlEnabledPrefName, true);
+    AutoBoolPref urlHashes(kUrlHashesEnabledPrefName, true);
+    ASSERT_NS_SUCCEEDED(runTestSuite(policies, std::size(policies), 1));
+  }
+  {
+    AutoBoolPref strictDynamicUrl(kStrictDynamicUrlEnabledPrefName, false);
+    AutoBoolPref urlHashes(kUrlHashesEnabledPrefName, false);
+    ASSERT_NS_SUCCEEDED(
+        runTestSuite(policiesWithoutPrefs, std::size(policiesWithoutPrefs), 1));
+  }
+}
+
+
+
 TEST(CSPParser, IgnoreUpperLowerCasePolicies)
 {
   static const PolicyTest policies[] = {
@@ -404,6 +459,39 @@ TEST(CSPParser, IgnoreUpperLowerCaseUrlHashes)
   }
   {
     AutoBoolPref pref(kUrlHashesEnabledPrefName, false);
+    ASSERT_NS_SUCCEEDED(
+        runTestSuite(policiesWithoutPref, std::size(policiesWithoutPref), 1));
+  }
+}
+
+
+
+TEST(CSPParser, IgnoreUpperLowerCaseStrictDynamicUrl)
+{
+  static const PolicyTest policies[] = {
+      
+    { "script-src 'STRICT-DYNAMIC-URL'",
+      "script-src 'strict-dynamic-url'" },
+    { "script-src 'Strict-Dynamic-Url'",
+      "script-src 'strict-dynamic-url'" },
+      
+  };
+
+  static const PolicyTest policiesWithoutPref[] = {
+      
+    { "script-src 'STRICT-DYNAMIC-URL'",
+      "script-src 'none'" },
+    { "script-src 'Strict-Dynamic-Url'",
+      "script-src 'none'" },
+      
+  };
+
+  {
+    AutoBoolPref pref(kStrictDynamicUrlEnabledPrefName, true);
+    ASSERT_NS_SUCCEEDED(runTestSuite(policies, std::size(policies), 1));
+  }
+  {
+    AutoBoolPref pref(kStrictDynamicUrlEnabledPrefName, false);
     ASSERT_NS_SUCCEEDED(
         runTestSuite(policiesWithoutPref, std::size(policiesWithoutPref), 1));
   }
