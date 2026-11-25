@@ -1390,6 +1390,7 @@ interface GleanImpl {
     collectData: GleanTimingDistribution;
     collectSessionHistory: GleanTimingDistribution;
     corruptFile: Record<"false"|"true", GleanCounter>;
+    emptySessionWrite: GleanEventWithExtras<{ closed_windows?: string|number, is_final_write?: string|boolean, prev_size_bytes?: string|number, prev_tabs?: string|number, prev_windows?: string|number, run_state?: string, size_bytes?: string|number, windows?: string|number }>;
     fileSizeBytes: GleanMemoryDistribution;
     manualRestoreDurationUntilEagerTabsRestored: GleanTimingDistribution;
     newTabOnRestoreEnabled: GleanBoolean;
@@ -1406,10 +1407,12 @@ interface GleanImpl {
     startupInitSession: GleanTimingDistribution;
     startupOnloadInitialWindow: GleanTimingDistribution;
     startupSessionAutoRestored: GleanEventWithExtras<{ new_tab_action?: string }>;
-    startupSessionAvailability: GleanEventWithExtras<{ clean?: string, clean_backup?: string, format?: string, origin?: string, recovery?: string, recovery_backup?: string, restarted_by_os?: string|boolean, resume_from_crash?: string|boolean, resume_session_once?: string|boolean, resuming_after_os_restart?: string|boolean, startup_page_is_resume?: string|boolean, upgrade_backup?: string }>;
+    startupSessionAvailability: GleanEventWithExtras<{ clean?: string, clean_backup?: string, closed_windows?: string|number, format?: string, origin?: string, recovery?: string, recovery_backup?: string, restarted_by_os?: string|boolean, resume_from_crash?: string|boolean, resume_session_once?: string|boolean, resuming_after_os_restart?: string|boolean, startup_page_is_resume?: string|boolean, tabs?: string|number, upgrade_backup?: string, windows?: string|number }>;
     startupSessionDecision: GleanEventWithExtras<{ action?: string, init_error?: string, interstitial_reason?: string, permanent_private?: string|boolean, previous_session_crashed?: string|boolean, resume_reason?: string, session_type?: string }>;
     startupSessionOutcome: GleanEventWithExtras<{ outcome?: string }>;
     startupTimeline: Record<"sessionRestoreInitialized"|"sessionRestoreRestoring", GleanQuantity>;
+    tabGroupIntegrityChecked: Record<"closed_group"|"closed_window_group"|"closed_window_grouped_tab"|"open_window_group"|"open_window_grouped_tab"|"saved_group", GleanCounter>;
+    tabGroupIntegrityProblems: Record<"closed_group_without_tabs"|"closed_window_check_failed"|"closed_window_group_without_tabs"|"closed_window_tab_missing_group"|"last_session_check_failed"|"open_window_check_failed"|"open_window_group_without_tabs"|"open_window_tab_missing_group"|"saved_group_not_object"|"saved_group_stale_restore_flag"|"saved_group_without_tabs"|"saved_groups_check_failed", GleanCounter>;
     windowFeaturesMismatchIgnored: GleanEventWithExtras<{ entry_point?: string, existing_features?: string, requested_features?: string }>;
     writeAttempts: GleanCounter;
     writeFailure: GleanEventWithExtras<{ cause?: string, is_final_write?: string|boolean, session_written?: string|boolean, step?: string }>;
