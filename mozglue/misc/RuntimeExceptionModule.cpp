@@ -9,17 +9,7 @@
 
 #if defined(XP_WIN)
 #  include <windows.h>
-#  if defined(__MINGW32__) || defined(__MINGW64__)
-
-typedef HANDLE HREPORT;
-#    define WerReportSubmit(a, b, c, d) \
-      WerReportSubmit(a, b, c, WER_SUBMIT_RESULT* pSubmitResult)
-#    define WER_MAX_PREFERRED_MODULES_BUFFER 256
-#  endif               
 #  include <werapi.h>  
-#  if defined(__MINGW32__) || defined(__MINGW64__)
-#    undef WerReportSubmit
-#  endif  
 #  include <stdlib.h>
 #endif
 

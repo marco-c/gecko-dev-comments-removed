@@ -18,7 +18,7 @@
 #include <bit>
 #include <windows.h>
 
-#if (NTDDI_VERSION < NTDDI_WIN10_RS4) || defined(__MINGW32__)
+#if (NTDDI_VERSION < NTDDI_WIN10_RS4)
 WINBASEAPI
 PVOID WINAPI VirtualAlloc2(HANDLE Process, PVOID BaseAddress, SIZE_T Size,
                            ULONG AllocationType, ULONG PageProtection,

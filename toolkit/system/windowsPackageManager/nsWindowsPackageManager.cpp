@@ -2,17 +2,16 @@
 
 
 
-
 #include "nsWindowsPackageManager.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/Logging.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
+#include <wrl.h>
+#include <windows.management.deployment.h>
 #ifndef __MINGW32__
 #  include "nsProxyRelease.h"
 #  include <comutil.h>
-#  include <wrl.h>
 #  include <windows.applicationmodel.store.h>
-#  include <windows.management.deployment.h>
 #  include <windows.services.store.h>
 #endif  
 #include "nsError.h"
@@ -23,12 +22,12 @@
 #include "nsXPCOMCID.h"
 #include "json/json.h"
 
-#ifndef __MINGW32__  
 using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Wrappers;
 using namespace ABI::Windows;
 using namespace ABI::Windows::Foundation;
 using namespace ABI::Windows::Management;
+#ifndef __MINGW32__  
 using namespace ABI::Windows::Services::Store;
 #endif
 
@@ -46,9 +45,6 @@ NS_IMPL_ISUPPORTS(nsWindowsPackageManager, nsIWindowsPackageManager)
 NS_IMETHODIMP
 nsWindowsPackageManager::FindUserInstalledPackages(
     const nsTArray<nsString>& aNamePrefixes, nsTArray<nsString>& aPackages) {
-#ifdef __MINGW32__
-  return NS_ERROR_NOT_IMPLEMENTED;
-#else
   ComPtr<IInspectable> pmInspectable;
   ComPtr<Deployment::IPackageManager> pm;
   HRESULT hr = RoActivateInstance(
@@ -103,14 +99,10 @@ nsWindowsPackageManager::FindUserInstalledPackages(
     hr = iterator->MoveNext(&hasCurrent);
   }
   return NS_OK;
-#endif  
 }
 
 NS_IMETHODIMP
 nsWindowsPackageManager::GetInstalledDate(uint64_t* ts) {
-#ifdef __MINGW32__
-  return NS_ERROR_NOT_IMPLEMENTED;
-#else
   ComPtr<ApplicationModel::IPackageStatics> pkgStatics;
   HRESULT hr = RoGetActivationFactory(
       HStringReference(RuntimeClass_Windows_ApplicationModel_Package).Get(),
@@ -139,7 +131,6 @@ nsWindowsPackageManager::GetInstalledDate(uint64_t* ts) {
 
   *ts = installedDate.UniversalTime;
   return NS_OK;
-#endif  
 }
 
 static HRESULT RejectOnMainThread(

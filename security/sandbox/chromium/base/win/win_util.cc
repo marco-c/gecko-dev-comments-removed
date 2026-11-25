@@ -96,10 +96,6 @@
 #else
 #include <intsafe.h>
 #include <processthreadsapi.h>
-#if defined(__MINGW32__)
-
-#define USHORT_MAX 65535
-#endif  
 #endif  
 
 namespace base {

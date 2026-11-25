@@ -30,12 +30,6 @@ struct StyleFontWidth;
 struct StyleFontWeight;
 }  
 
-
-#ifdef __MINGW32__
-#  undef min
-#  undef max
-#endif
-
 #undef ERROR /* defined by Windows.h, conflicts with some generated bindings \
                 code when this gets indirectly included via shared font list \
               */

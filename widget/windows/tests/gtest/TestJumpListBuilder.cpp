@@ -8,12 +8,6 @@
 #include <shobjidl.h>
 #include <windows.h>
 
-#ifdef __MINGW32__
-
-#  include <propsys.h>
-PSSTDAPI PropVariantToString(REFPROPVARIANT propvar, PWSTR psz, UINT cch);
-#endif
-
 #include "JumpListBuilder.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"

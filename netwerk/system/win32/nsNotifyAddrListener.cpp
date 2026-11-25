@@ -18,6 +18,7 @@
 #include <objbase.h>
 #include <winsock2.h>
 #include <ws2ipdef.h>
+#include <ws2tcpip.h>
 #include <tcpmib.h>
 #include <iphlpapi.h>
 #include <netioapi.h>
@@ -48,19 +49,9 @@
 #include "nsThreadPool.h"
 #include "nsThreadUtils.h"
 
-#if defined(__MINGW32__) || defined(__MINGW64__)
-BOOLEAN IN6_IS_ADDR_LOOPBACK(const struct in6_addr* a) {
-  auto words = a->s6_words;
-  return (words[0] == 0) && (words[1] == 0) && (words[2] == 0) &&
-         (words[3] == 0) && (words[4] == 0) && (words[5] == 0) &&
-         (words[6] == 0) && (words[7] == 0x0100);
-}
-
-#  define IN6_IS_ADDR_LINKLOCAL(_addr)         \
-    ((((const uint8_t*)(_addr))[0] == 0xfe) && \
-     ((((const uint8_t*)(_addr))[1] & 0xc0) == 0x80))
-
-#endif  
+#ifdef MOZ_ENTERPRISE
+#  include "nsNetworkInterface_win.h"
+#endif
 
 using namespace mozilla;
 
@@ -474,6 +465,9 @@ nsNotifyAddrListener::CheckAdaptersAddresses(void) {
   PIP_ADAPTER_ADDRESSES adapterList = (PIP_ADAPTER_ADDRESSES)moz_xmalloc(len);
 
   ULONG flags = GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_ANYCAST;
+#ifdef MOZ_ENTERPRISE
+  flags |= GAA_FLAG_INCLUDE_GATEWAYS;
+#endif
   if (!StaticPrefs::network_notify_resolvers()) {
     flags |= GAA_FLAG_SKIP_DNS_SERVER;
   }
@@ -502,6 +496,9 @@ nsNotifyAddrListener::CheckAdaptersAddresses(void) {
 
   nsTArray<nsCString> dnsSuffixList;
   nsTArray<mozilla::net::NetAddr> resolvers;
+#ifdef MOZ_ENTERPRISE
+  nsTArray<mozilla::net::NetworkInterface> networkInterfaces;
+#endif
   uint32_t platformDNSIndications = NONE_DETECTED;
   bool hasNonLocalIPv6 = false;
   if (ret == ERROR_SUCCESS) {
@@ -518,6 +515,10 @@ nsNotifyAddrListener::CheckAdaptersAddresses(void) {
           nsDependentString(adapter->Description).Find(u"VMnet") != kNotFound) {
         continue;
       }
+
+#ifdef MOZ_ENTERPRISE
+      networkInterfaces.AppendElement(WinNetworkInterface(adapter));
+#endif
 
       LOG(("Adapter %s type: %lu",
            NS_ConvertUTF16toUTF8(adapter->FriendlyName).get(),
@@ -681,6 +682,9 @@ nsNotifyAddrListener::CheckAdaptersAddresses(void) {
     MutexAutoLock lock(mMutex);
     mDnsSuffixList = std::move(dnsSuffixList);
     mDNSResolvers = std::move(resolvers);
+#ifdef MOZ_ENTERPRISE
+    mNetworkInterfaces = std::move(networkInterfaces);
+#endif
     mPlatformDNSIndications = platformDNSIndications;
   }
 
@@ -749,6 +753,18 @@ void nsNotifyAddrListener::CheckLinkStatus(void) {
                                                  : NS_NETWORK_LINK_DATA_DOWN);
     }
   }
+}
+
+NS_IMETHODIMP
+nsNotifyAddrListener::GetNetworkInterfaces(
+    nsTArray<RefPtr<nsINetworkInterface>>& aNetworkInterfaces) {
+#ifdef MOZ_ENTERPRISE
+  MutexAutoLock lock(mMutex);
+  return mozilla::net::nsNetworkInterface::GetNetworkInterfaces(
+      mNetworkInterfaces, aNetworkInterfaces);
+#else
+  return NS_ERROR_NOT_IMPLEMENTED;
+#endif
 }
 
 

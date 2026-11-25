@@ -38,25 +38,21 @@
 mozilla::LazyLogModule gTabletModeLog("TabletMode");
 extern mozilla::LazyLogModule gWindowsLog;
 
-
-
-
-#ifndef __MINGW32__
-
-#  include <inspectable.h>
-#  include <roapi.h>
-#  include <uiviewsettingsinterop.h>
-#  include <windows.ui.viewmanagement.h>
-
-#  pragma comment(lib, "runtimeobject.lib")
+#include <inspectable.h>
+#include <roapi.h>
+#include <uiviewsettingsinterop.h>
+#include <windows.ui.viewmanagement.h>
 
 using namespace ABI::Windows::UI;
 using namespace ABI::Windows::UI::ViewManagement;
 using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Wrappers;
 using namespace ABI::Windows::Foundation;
-using namespace ABI::Windows::ApplicationModel::DataTransfer;
 
+#ifndef __MINGW32__
+#  pragma comment(lib, "runtimeobject.lib")
+
+using namespace ABI::Windows::ApplicationModel::DataTransfer;
 #endif
 
 using namespace mozilla;
@@ -66,8 +62,10 @@ using namespace mozilla;
 enum class TabletModeState : uint8_t { Unknown, Off, On };
 static TabletModeState sInTabletModeState = TabletModeState::Unknown;
 
-WindowsUIUtils::WindowsUIUtils() = default;
-WindowsUIUtils::~WindowsUIUtils() = default;
+
+
+
+static Maybe<bool> sIsTabletCapable = Nothing();
 
 NS_IMPL_ISUPPORTS(WindowsUIUtils, nsIWindowsUIUtils)
 
@@ -186,9 +184,31 @@ bool WindowsUIUtils::GetInWin11TabletMode() {
     return false;
   }
   if (sInTabletModeState == TabletModeState::Unknown) {
-    UpdateInWin11TabletMode();
+    UpdateInWin11TabletMode(TabletModeUpdateReason::LazyQuery);
   }
   return sInTabletModeState == TabletModeState::On;
+}
+
+
+
+
+static bool GetIsWin11TabletCapable() {
+  MOZ_DIAGNOSTIC_ASSERT(IsWin11OrLater());
+  if (sIsTabletCapable.isNothing()) {
+    WindowsUIUtils::UpdateInWin11TabletMode(
+        WindowsUIUtils::TabletModeUpdateReason::LazyQuery);
+  }
+  return sIsTabletCapable.valueOr(false);
+}
+
+bool WindowsUIUtils::GetIsTabletCapable() {
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+  
+  
+  if (!IsWin11OrLater()) {
+    return true;
+  }
+  return GetIsWin11TabletCapable();
 }
 
 NS_IMETHODIMP
@@ -200,6 +220,12 @@ WindowsUIUtils::GetInWin10TabletMode(bool* aResult) {
 NS_IMETHODIMP
 WindowsUIUtils::GetInWin11TabletMode(bool* aResult) {
   *aResult = GetInWin11TabletMode();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+WindowsUIUtils::GetIsTabletCapable(bool* aResult) {
+  *aResult = GetIsTabletCapable();
   return NS_OK;
 }
 
@@ -462,7 +488,6 @@ void WindowsUIUtils::UpdateInWin10TabletMode() {
   
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
 
-#ifndef __MINGW32__
   nsresult rv;
   nsCOMPtr<nsIWindowMediator> winMediator(
       do_GetService(NS_WINDOWMEDIATOR_CONTRACTID, &rv));
@@ -521,13 +546,7 @@ void WindowsUIUtils::UpdateInWin10TabletMode() {
                                          ? u"win10-tablet-mode"
                                          : u"normal-mode");
   }
-#endif
 }
-
-
-
-
-static Maybe<bool> sIsTabletCapable = Nothing();
 
 
 
@@ -541,7 +560,7 @@ static Maybe<bool> sIsTabletCapable = Nothing();
     MOZ_GUID_GPIOBUTTONS_LAPTOPSLATE_INTERFACE, 0x317fc439, 0x3f77, 0x41c8,
     0xb0, 0x9e, 0x08, 0xad, 0x63, 0x27, 0x2a, 0xa3);
 
-void WindowsUIUtils::UpdateInWin11TabletMode() {
+void WindowsUIUtils::UpdateInWin11TabletMode(TabletModeUpdateReason aReason) {
   
   
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
@@ -722,6 +741,10 @@ void WindowsUIUtils::UpdateInWin11TabletMode() {
       return;
     }
   } else if (sIsTabletCapable == Some(false)) {
+    if (aReason == TabletModeUpdateReason::LazyQuery) {
+      sInTabletModeState = TabletModeState::Off;
+      return;
+    }
     
     
     
