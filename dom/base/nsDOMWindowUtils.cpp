@@ -48,6 +48,7 @@
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
+#include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/PCompositorBridgeTypes.h"
 #include "mozilla/layers/TouchActionHelper.h"
 #include "mozilla/media/MediaUtils.h"
@@ -426,6 +427,13 @@ nsDOMWindowUtils::GetDocumentMetadata(const nsAString& aName,
 NS_IMETHODIMP
 nsDOMWindowUtils::UpdateLayerTree() {
   FlushLayoutWithoutThrottledAnimations();
+  
+  
+  
+  if (RefPtr<layers::ImageBridgeChild> imageBridge =
+          layers::ImageBridgeChild::GetSingleton()) {
+    imageBridge->WaitFlushTasks();
+  }
   if (RefPtr<PresShell> ps = GetPresShell()) {
     nsAutoScriptBlocker scriptBlocker;
     RefPtr renderer = ps->GetWindowRenderer();
@@ -1048,8 +1056,8 @@ nsDOMWindowUtils::SendNativeTouchpadPinch(uint32_t aEventPhase, float aScale,
   NS_DispatchToMainThread(NativeInputRunnable::Create(
       NewRunnableMethod<nsIWidget::TouchpadGesturePhase, float,
                         LayoutDeviceIntPoint, int32_t>(
-          "nsIWidget::SynthesizeNativeTouchPadPinch", widget,
-          &nsIWidget::SynthesizeNativeTouchPadPinch,
+          "nsIWidget::SynthesizeNativeTouchpadPinch", widget,
+          &nsIWidget::SynthesizeNativeTouchpadPinch,
           (nsIWidget::TouchpadGesturePhase)aEventPhase, aScale,
           LayoutDeviceIntPoint(aScreenX, aScreenY), aModifierFlags)));
   return NS_OK;

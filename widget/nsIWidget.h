@@ -1810,10 +1810,10 @@ class nsIWidget : public nsSupportsWeakReference {
   
 
 
-  virtual nsresult SynthesizeNativeTouchPadPinch(
+  virtual nsresult SynthesizeNativeTouchpadPinch(
       TouchpadGesturePhase aEventPhase, float aScale,
       LayoutDeviceIntPoint aPoint, int32_t aModifierFlags) {
-    MOZ_CRASH("SynthesizeNativeTouchPadPinch not implemented on this platform");
+    MOZ_CRASH("SynthesizeNativeTouchpadPinch not implemented on this platform");
     return NS_ERROR_UNEXPECTED;
   }
 

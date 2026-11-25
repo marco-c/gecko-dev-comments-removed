@@ -527,7 +527,7 @@ class BrowserParent final : public PBrowserParent,
       const LayoutDeviceIntPoint& aPoint, const double& aPointerPressure,
       const uint32_t& aPointerOrientation, const Maybe<uint64_t>& aCallbackId);
 
-  mozilla::ipc::IPCResult RecvSynthesizeNativeTouchPadPinch(
+  mozilla::ipc::IPCResult RecvSynthesizeNativeTouchpadPinch(
       const TouchpadGesturePhase& aEventPhase, const float& aScale,
       const LayoutDeviceIntPoint& aPoint, const int32_t& aModifierFlags);
 
@@ -706,6 +706,9 @@ class BrowserParent final : public PBrowserParent,
   bool GetHasLayers();
   bool GetRenderLayers();
   void SetRenderLayers(bool aRenderLayers);
+  
+  uint64_t GetRenderLayersEpoch() const { return mRenderLayersEpoch; }
+  uint64_t NextRenderLayersEpoch() { return ++mRenderLayersEpoch; }
   bool GetPriorityHint();
   void SetPriorityHint(bool aPriorityHint);
   void PreserveLayers(bool aPreserveLayers);
@@ -978,6 +981,8 @@ class BrowserParent final : public PBrowserParent,
   nsIWidget::Cursor mCursor;
 
   nsTArray<nsString> mVerifyDropLinks;
+
+  uint64_t mRenderLayersEpoch = 0;
 
 #ifdef DEBUG
   int32_t mActiveSuppressDisplayportCount = 0;
