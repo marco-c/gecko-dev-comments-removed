@@ -30,8 +30,6 @@ class RtpPacketReceived;
 
 
 
-
-
 class RtpSinkValidator {
  public:
   virtual ~RtpSinkValidator() = default;
@@ -55,7 +53,6 @@ class RtpStreamReceiverController : public RtpStreamReceiverControllerInterface,
                                     public RecoveredPacketReceiver {
  public:
   RtpStreamReceiverController(TaskQueueBase* absl_nonnull network_thread,
-                              TaskQueueBase* absl_nonnull worker_thread,
                               RtpSinkValidator* absl_nonnull sink_validator);
   ~RtpStreamReceiverController() override;
 
@@ -73,15 +70,13 @@ class RtpStreamReceiverController : public RtpStreamReceiverControllerInterface,
   
   void OnRecoveredPacket(const RtpPacketReceived& packet) override;
 
+  
+  
   void DisconnectFromNetworkThread();
 
   bool IsEmpty() const;
 
  private:
-  
-  
-  
-  
   
   
   
@@ -114,13 +109,9 @@ class RtpStreamReceiverController : public RtpStreamReceiverControllerInterface,
   bool RemoveSink(const RtpPacketSinkInterface* sink);
 
   TaskQueueBase* const network_thread_;
-  TaskQueueBase* const worker_thread_;
   RtpSinkValidator* const sink_validator_;
   scoped_refptr<PendingTaskSafetyFlag> network_safety_ =
       PendingTaskSafetyFlag::CreateAttachedToTaskQueue(true, network_thread_);
-  scoped_refptr<PendingTaskSafetyFlag> worker_safety_ =
-      PendingTaskSafetyFlag::CreateAttachedToTaskQueue(true, worker_thread_);
-  
   
   
   

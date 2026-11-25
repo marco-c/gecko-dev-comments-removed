@@ -101,14 +101,17 @@ class CallTest : public ::testing::Test, public RtpPacketSinkInterface {
   
   void RunBaseTest(BaseTest* test);
 
-  CallConfig SendCallConfig(TaskQueueBase* worker_task_queue = nullptr) const;
-  CallConfig RecvCallConfig(TaskQueueBase* worker_task_queue = nullptr) const;
+  
+  
+  
+  CallConfig SendCallConfig(TaskQueueBase* network_task_queue = nullptr) const;
+  CallConfig RecvCallConfig(TaskQueueBase* network_task_queue = nullptr) const;
 
-  void CreateCalls(TaskQueueBase* worker_task_queue = nullptr);
+  void CreateCalls(TaskQueueBase* network_task_queue = nullptr);
   void CreateCalls(CallConfig sender_config, CallConfig receiver_config);
-  void CreateSenderCall(TaskQueueBase* worker_task_queue = nullptr);
+  void CreateSenderCall(TaskQueueBase* network_task_queue = nullptr);
   void CreateSenderCall(CallConfig config);
-  void CreateReceiverCall(TaskQueueBase* worker_task_queue = nullptr);
+  void CreateReceiverCall(TaskQueueBase* network_task_queue = nullptr);
   void CreateReceiverCall(CallConfig config);
   void DestroyCalls();
   Thread* network_thread() const { return network_thread_.get(); }
@@ -226,7 +229,8 @@ class CallTest : public ::testing::Test, public RtpPacketSinkInterface {
   void SetVideoEncoderConfig(const VideoEncoderConfig& config);
   VideoSendStream* GetVideoSendStream();
   FlexfecReceiveStream::Config* GetFlexFecConfig();
-  TaskQueueBase* task_queue() { return task_queue_.get(); }
+  
+  TaskQueueBase* task_queue() { return network_thread_.get(); }
 
   
   void OnRtpPacket(const RtpPacketReceived& packet) override;
@@ -302,7 +306,6 @@ class CallTest : public ::testing::Test, public RtpPacketSinkInterface {
   
   
   std::unique_ptr<TransportToNetworkPacketBridge> receive_transport_bridge_;
-  std::unique_ptr<TaskQueueBase, TaskQueueDeleter> task_queue_;
   std::vector<RtpExtension> rtp_extensions_;
   scoped_refptr<AudioProcessing> apm_send_;
   scoped_refptr<AudioProcessing> apm_recv_;

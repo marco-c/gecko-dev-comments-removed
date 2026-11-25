@@ -15,16 +15,24 @@
 #include <set>
 
 #include "call/rtp_packet_sink_interface.h"
+#include "call/rtp_stream_receiver_controller_interface.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
-#include "rtc_base/thread.h"
 #include "test/gtest.h"
+#include "test/run_loop.h"
 
 namespace webrtc {
 namespace {
 
+constexpr uint32_t kSsrc = 111;
+
 class FakeRtpPacketSink : public RtpPacketSinkInterface {
  public:
-  void OnRtpPacket(const RtpPacketReceived& packet) override {}
+  void OnRtpPacket(const RtpPacketReceived& packet) override { ++packets_; }
+
+  int packets() const { return packets_; }
+
+ private:
+  int packets_ = 0;
 };
 
 class TestRtpSinkValidator : public RtpSinkValidator {
@@ -39,80 +47,51 @@ class TestRtpSinkValidator : public RtpSinkValidator {
     return registered_sinks_.count(sink) > 0;
   }
 
+  bool IsEmpty() const { return registered_sinks_.empty(); }
+
  private:
   std::set<RtpPacketSinkInterface*> registered_sinks_;
 };
 
-TEST(RtpStreamReceiverControllerTest, PreventsStalePointerReuse) {
-  auto network_thread = Thread::Create();
-  network_thread->Start();
-  auto worker_thread = Thread::Create();
-  worker_thread->Start();
-
+TEST(RtpStreamReceiverControllerTest, DeliversPacketsToRegisteredSink) {
+  test::RunLoop loop;
   TestRtpSinkValidator validator;
-  std::unique_ptr<RtpStreamReceiverController> controller;
-  worker_thread->BlockingCall([&] {
-    controller = std::make_unique<RtpStreamReceiverController>(
-        network_thread.get(), worker_thread.get(), &validator);
-  });
+  RtpStreamReceiverController controller(loop.task_queue(), &validator);
+
+  FakeRtpPacketSink sink;
+  std::unique_ptr<RtpStreamReceiverInterface> receiver =
+      controller.CreateReceiver(kSsrc, &sink);
+
+  RtpPacketReceived packet;
+  packet.SetSsrc(kSsrc);
+  EXPECT_TRUE(validator.IsValidSink(controller.ResolveSink(packet)));
+  EXPECT_TRUE(controller.OnRtpPacket(packet));
+  EXPECT_EQ(sink.packets(), 1);
+}
+
+TEST(RtpStreamReceiverControllerTest, StopsDeliveringWhenReceiverIsDestroyed) {
+  test::RunLoop loop;
+  TestRtpSinkValidator validator;
+  RtpStreamReceiverController controller(loop.task_queue(), &validator);
+
+  FakeRtpPacketSink sink;
+  std::unique_ptr<RtpStreamReceiverInterface> receiver =
+      controller.CreateReceiver(kSsrc, &sink);
+  EXPECT_FALSE(controller.IsEmpty());
+  EXPECT_FALSE(validator.IsEmpty());
 
   
-  FakeRtpPacketSink sink1;
-  uint32_t ssrc1 = 111;
-  RtpPacketReceived packet1;
-  packet1.SetSsrc(ssrc1);
+  
+  
+  receiver.reset();
+  EXPECT_TRUE(controller.IsEmpty());
+  EXPECT_TRUE(validator.IsEmpty());
 
-  RtpPacketSinkInterface* resolved_sink1 = nullptr;
-
-  worker_thread->BlockingCall([&] {
-    
-    auto receiver1 = controller->CreateReceiver(ssrc1, &sink1);
-
-    
-    network_thread->BlockingCall(
-        [&] { resolved_sink1 = controller->ResolveSink(packet1); });
-
-    EXPECT_NE(resolved_sink1, nullptr);
-    
-    EXPECT_TRUE(validator.IsValidSink(resolved_sink1));
-
-    
-    
-    
-    receiver1.reset();
-
-    
-    EXPECT_FALSE(validator.IsValidSink(resolved_sink1));
-
-    
-    
-    uint32_t ssrc2 = 222;
-    RtpPacketReceived packet2;
-    packet2.SetSsrc(ssrc2);
-
-    RtpPacketSinkInterface* resolved_sink2 = nullptr;
-    auto receiver2 = controller->CreateReceiver(ssrc2, &sink1);
-
-    network_thread->BlockingCall(
-        [&] { resolved_sink2 = controller->ResolveSink(packet2); });
-
-    EXPECT_NE(resolved_sink2, nullptr);
-    EXPECT_TRUE(validator.IsValidSink(resolved_sink2));
-
-    
-    
-    
-    
-    EXPECT_NE(resolved_sink1, resolved_sink2);
-
-    
-    EXPECT_FALSE(validator.IsValidSink(resolved_sink1));
-    EXPECT_TRUE(validator.IsValidSink(resolved_sink2));
-  });
-
-  network_thread->BlockingCall(
-      [&] { controller->DisconnectFromNetworkThread(); });
-  worker_thread->BlockingCall([&] { controller.reset(); });
+  RtpPacketReceived packet;
+  packet.SetSsrc(kSsrc);
+  EXPECT_EQ(controller.ResolveSink(packet), nullptr);
+  EXPECT_FALSE(controller.OnRtpPacket(packet));
+  EXPECT_EQ(sink.packets(), 0);
 }
 
 }  
