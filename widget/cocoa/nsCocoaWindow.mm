@@ -1297,7 +1297,9 @@ NSView<mozView>* nsCocoaWindow::GetEditorView() {
   
   
   
-  queryContentState.mNeedsToFlushLayout = false;
+  QueryContentOptions options;
+  options.mNeedsToFlushLayout = false;
+  queryContentState.Init(options);
   DispatchWindowEvent(queryContentState);
   if (queryContentState.Succeeded() &&
       queryContentState.mReply->mFocusedWidget) {
