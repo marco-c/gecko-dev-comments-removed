@@ -6,7 +6,9 @@
 #include <ApplicationServices/ApplicationServices.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <CoreServices/CoreServices.h>
+#include <Foundation/Foundation.h>
 #include <IOKit/IOKitLib.h>
+#include <os/log.h>
 #include <string.h>
 #include <sys/mount.h>
 #include <sys/param.h>
@@ -29,6 +31,16 @@
 #ifdef MOZ_UPDATER
 #  include "nsUpdateDriver.h"
 #endif
+
+
+#import "dmgInstallProtocol.h"
+
+#ifndef MOZ_RUNINIT
+#  define MOZ_RUNINIT __attribute__((annotate("moz_global_var")))
+#endif
+
+MOZ_RUNINIT static const os_log_t runFromDMGLogger =
+    os_log_create("org.mozilla.firefox", "runFromDMG");
 
 
 
@@ -57,22 +69,21 @@ static bool AskUserIfWeShouldLaunchExistingInstall() {
 
   ErrorResult rv;
   nsAutoCString mozTitle, mozMessage, mozLaunchExisting, mozLaunchFromDMG;
-  l10n->FormatValueSync("prompt-to-launch-existing-app-title"_ns, {}, mozTitle,
+  l10n->FormatValueSync("prompt-to-launch-existing-app-title"_ns, mozTitle, rv);
+  if (rv.Failed()) {
+    return false;
+  }
+  l10n->FormatValueSync("prompt-to-launch-existing-app-message"_ns, mozMessage,
                         rv);
   if (rv.Failed()) {
     return false;
   }
-  l10n->FormatValueSync("prompt-to-launch-existing-app-message"_ns, {},
-                        mozMessage, rv);
-  if (rv.Failed()) {
-    return false;
-  }
-  l10n->FormatValueSync("prompt-to-launch-existing-app-yes-button"_ns, {},
+  l10n->FormatValueSync("prompt-to-launch-existing-app-yes-button"_ns,
                         mozLaunchExisting, rv);
   if (rv.Failed()) {
     return false;
   }
-  l10n->FormatValueSync("prompt-to-launch-existing-app-no-button"_ns, {},
+  l10n->FormatValueSync("prompt-to-launch-existing-app-no-button"_ns,
                         mozLaunchFromDMG, rv);
   if (rv.Failed()) {
     return false;
@@ -137,20 +148,19 @@ static bool AskUserIfWeShouldInstall() {
 
   ErrorResult rv;
   nsAutoCString mozTitle, mozMessage, mozInstall, mozDontInstall;
-  l10n->FormatValueSync("prompt-to-install-title"_ns, {}, mozTitle, rv);
+  l10n->FormatValueSync("prompt-to-install-title"_ns, mozTitle, rv);
   if (rv.Failed()) {
     return false;
   }
-  l10n->FormatValueSync("prompt-to-install-message"_ns, {}, mozMessage, rv);
+  l10n->FormatValueSync("prompt-to-install-message"_ns, mozMessage, rv);
   if (rv.Failed()) {
     return false;
   }
-  l10n->FormatValueSync("prompt-to-install-yes-button"_ns, {}, mozInstall, rv);
+  l10n->FormatValueSync("prompt-to-install-yes-button"_ns, mozInstall, rv);
   if (rv.Failed()) {
     return false;
   }
-  l10n->FormatValueSync("prompt-to-install-no-button"_ns, {}, mozDontInstall,
-                        rv);
+  l10n->FormatValueSync("prompt-to-install-no-button"_ns, mozDontInstall, rv);
   if (rv.Failed()) {
     return false;
   }
@@ -197,10 +207,19 @@ static bool AskUserIfWeShouldInstall() {
   
   
   
+  
+  
   __block NSInteger result = -1;
   dispatch_async(dispatch_get_main_queue(), ^{
     result = [alert runModal];
-    [NSApp stop:nil];
+
+    
+    
+    
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+      [NSApp stop:nil];
+    });
   });
 
   [NSApp run];
@@ -223,11 +242,11 @@ static void ShowInstallFailedDialog() {
 
   ErrorResult rv;
   nsAutoCString mozTitle, mozMessage;
-  l10n->FormatValueSync("install-failed-title"_ns, {}, mozTitle, rv);
+  l10n->FormatValueSync("install-failed-title"_ns, mozTitle, rv);
   if (rv.Failed()) {
     return;
   }
-  l10n->FormatValueSync("install-failed-message"_ns, {}, mozMessage, rv);
+  l10n->FormatValueSync("install-failed-message"_ns, mozMessage, rv);
   if (rv.Failed()) {
     return;
   }
@@ -258,61 +277,130 @@ static void ShowInstallFailedDialog() {
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
-#ifdef MOZ_UPDATER
-bool LaunchElevatedDmgInstall(NSString* aBundlePath, NSArray* aArguments) {
-  NSTask* task = [[NSTask alloc] init];
-  [task setExecutableURL:[NSURL fileURLWithPath:aBundlePath]];
-  if (aArguments) {
-    [task setArguments:aArguments];
-  }
-  [task launchAndReturnError:nil];
 
-  bool didSucceed = InstallPrivilegedHelper();
-  [task waitUntilExit];
-  [task release];
+bool LaunchElevatedDmgInstall(NSString* aBundlePath, NSString* aDestPath) {
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+
+  os_log_info(runFromDMGLogger, "Launch elevated DMG Install");
+  bool didSucceed = InstallPrivilegedHelperWithId(
+      "org.mozilla.dmgInstallHelper", runFromDMGLogger);
+
+  os_log_info(runFromDMGLogger, "Installed helper: %s",
+              didSucceed ? "Yes" : "No");
   if (!didSucceed) {
-    AbortElevatedUpdate();
+    return false;
   }
 
-  return didSucceed;
+  NSXPCConnection* connection = [[[NSXPCConnection alloc]
+      initWithMachServiceName:@"org.mozilla.dmgInstallHelper"
+                      options:NSXPCConnectionPrivileged] autorelease];
+
+  if (connection == nil) {
+    os_log_error(runFromDMGLogger, "Failed connection");
+
+    return false;
+  }
+
+  __block BOOL remoteResult = NO;
+
+  NSXPCInterface* dmgInstaller =
+      [NSXPCInterface interfaceWithProtocol:@protocol(DMGInstallProtocol)];
+  connection.remoteObjectInterface = dmgInstaller;
+  connection.invalidationHandler = ^() {
+    os_log_error(runFromDMGLogger, "Connection invalidated");
+  };
+
+  connection.interruptionHandler = ^() {
+    os_log_error(runFromDMGLogger, "Connection interrupted");
+  };
+
+  [connection resume];
+
+  os_log_info(runFromDMGLogger, "Connection resumed");
+
+  id proxy = [connection synchronousRemoteObjectProxyWithErrorHandler:^(
+                             NSError* error) {
+    if (error != nil) {
+      remoteResult = NO;
+      os_log_error(runFromDMGLogger, "Remote proxy error: %{public}@", error);
+    }
+  }];
+
+  if (proxy == nil) {
+    os_log_error(runFromDMGLogger, "Failed to get proxy");
+
+    return false;
+  }
+
+  os_log_info(runFromDMGLogger, "Installing... %p", proxy);
+
+  [proxy
+      installDMGFromPath:aBundlePath
+               withReply:^(BOOL result) {
+                 os_log_info(runFromDMGLogger, "Got response: %s",
+                             result ? "success" : "failure");
+                 remoteResult = result;
+
+                 os_log_info(runFromDMGLogger, "Requesting helper terminate");
+
+                 [proxy terminateDMGInstallHelper];
+                 [connection invalidate];
+               }];
+
+  os_log_info(runFromDMGLogger, "Exiting: %s",
+              remoteResult ? "success" : "failure");
+  return remoteResult;
+
+  NS_OBJC_END_TRY_BLOCK_RETURN(false);
 }
-#endif
 
 
 
 static bool InstallFromPath(NSString* aBundlePath, NSString* aDestPath) {
+  os_log_info(runFromDMGLogger,
+              "Installing from path: %{public}@ to %{public}@", aBundlePath,
+              aDestPath);
   bool installSuccessful = false;
   NSFileManager* fileManager = [NSFileManager defaultManager];
-  if ([fileManager copyItemAtPath:aBundlePath toPath:aDestPath error:nil]) {
+
+  bool alwaysElevate = false;
+#ifdef DMG_INSTALL_HELPER_DEBUG
+  alwaysElevate = (getenv("MOZ_DMG_INSTALL_HELPER_ALWAYS_ELEVATE") != nullptr);
+  os_log_info(runFromDMGLogger, "Always elevate: %{public}s",
+              alwaysElevate ? "yes" : "no");
+#endif
+
+  if (!alwaysElevate && [fileManager copyItemAtPath:aBundlePath
+                                             toPath:aDestPath
+                                              error:nil]) {
     installSuccessful = true;
   }
 
-#ifdef MOZ_UPDATER
-  
-  
-  
-  
-  
+  os_log_info(runFromDMGLogger, "Unelevated installation: %s",
+              installSuccessful ? "success" : "failed");
+
   
   
   
   NSString* destDir = [aDestPath stringByDeletingLastPathComponent];
-  if (!installSuccessful && ![fileManager isWritableFileAtPath:destDir]) {
-    NSString* updaterBinPath = [NSString pathWithComponents:@[
-      aBundlePath, @"Contents", @"MacOS",
-      [NSString stringWithUTF8String:UPDATER_APP], @"Contents", @"MacOS",
-      [NSString stringWithUTF8String:UPDATER_BIN]
-    ]];
+  BOOL isWritable =
+      !alwaysElevate && [fileManager isWritableFileAtPath:destDir];
+  if (!installSuccessful && !isWritable) {
+    os_log_info(runFromDMGLogger, "Installing elevated");
 
-    NSArray* arguments = @[ @"-dmgInstall", aBundlePath, aDestPath ];
-    LaunchElevatedDmgInstall(updaterBinPath, arguments);
-    installSuccessful = [fileManager fileExistsAtPath:aDestPath];
+    installSuccessful = LaunchElevatedDmgInstall(aBundlePath, aDestPath);
+    if (!installSuccessful) {
+      os_log_error(runFromDMGLogger, "Elevated DMG install failed.");
+      return false;
+    }
   }
-#endif
 
   if (!installSuccessful) {
+    os_log_error(runFromDMGLogger, "Unknown install failure.");
     return false;
   }
+
+  os_log_info(runFromDMGLogger, "Installed successful");
 
   
   nsresult rv;
