@@ -110,11 +110,7 @@ internal object FakeHomepagePreview {
                     /* no op */
                 }
 
-                override fun onLongfoxEntryPointClicked() {
-                    /* no op */
-                }
-
-                override fun onLongfoxEntryPointShown() {
+                override fun onSportsWidgetRemoveClicked() {
                     /* no op */
                 }
             }

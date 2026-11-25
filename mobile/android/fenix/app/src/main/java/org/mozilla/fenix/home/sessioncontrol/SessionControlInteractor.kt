@@ -15,7 +15,6 @@ import org.mozilla.fenix.components.appstate.setup.checklist.ChecklistItem
 import org.mozilla.fenix.home.bookmarks.Bookmark
 import org.mozilla.fenix.home.bookmarks.controller.BookmarksController
 import org.mozilla.fenix.home.interactor.HomepageInteractor
-import org.mozilla.fenix.home.logo.LogoController
 import org.mozilla.fenix.home.logo.TrackingProtectionController
 import org.mozilla.fenix.home.pocket.PocketRecommendedStoriesCategory
 import org.mozilla.fenix.home.pocket.controller.PocketStoriesController
@@ -29,6 +28,7 @@ import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem.RecentHistoryGrou
 import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem.RecentHistoryHighlight
 import org.mozilla.fenix.home.recentvisits.controller.RecentVisitsController
 import org.mozilla.fenix.home.search.HomeSearchController
+import org.mozilla.fenix.home.sports.SportsWidgetController
 import org.mozilla.fenix.home.termsofuse.PrivacyNoticeBannerController
 import org.mozilla.fenix.home.toolbar.ToolbarController
 import org.mozilla.fenix.home.topsites.AddShortcutEntryPoint
@@ -129,12 +129,6 @@ interface SetupChecklistInteractor {
 interface TrackingProtectionInteractor {
     /** Invoked when the privacy report card is tapped. */
     fun onPrivacyReportTapped()
-
-    /** Invoked when the longfox entry point text is clicked. */
-    fun onLongfoxEntryPointClicked()
-
-    /** Invoked when the longfox entry point is shown. */
-    fun onLongfoxEntryPointShown()
 }
 
 /**
@@ -156,7 +150,7 @@ class SessionControlInteractor(
     private val topSiteController: TopSiteController,
     private val privacyNoticeBannerController: PrivacyNoticeBannerController,
     private val trackingProtectionController: TrackingProtectionController,
-    private val logoController: LogoController,
+    private val sportsWidgetController: SportsWidgetController,
 ) : HomepageInteractor {
 
     override fun onCollectionOpenTabClicked(tab: Tab) {
@@ -381,11 +375,7 @@ class SessionControlInteractor(
         trackingProtectionController.handleProtectionStatusPillClicked()
     }
 
-    override fun onLongfoxEntryPointClicked() {
-        logoController.handleLongfoxEntryPointClicked()
-    }
-
-    override fun onLongfoxEntryPointShown() {
-        logoController.handleLongfoxEntryPointShown()
+    override fun onSportsWidgetRemoveClicked() {
+        sportsWidgetController.handleSportsWidgetRemoved()
     }
 }

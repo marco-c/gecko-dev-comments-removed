@@ -12,7 +12,6 @@ import mozilla.components.concept.storage.HistoryMetadataKey
 import org.junit.Before
 import org.junit.Test
 import org.mozilla.fenix.home.bookmarks.controller.BookmarksController
-import org.mozilla.fenix.home.logo.LogoController
 import org.mozilla.fenix.home.logo.TrackingProtectionController
 import org.mozilla.fenix.home.pocket.controller.PocketStoriesController
 import org.mozilla.fenix.home.privatebrowsing.controller.PrivateBrowsingController
@@ -24,6 +23,7 @@ import org.mozilla.fenix.home.recentvisits.controller.RecentVisitsController
 import org.mozilla.fenix.home.search.HomeSearchController
 import org.mozilla.fenix.home.sessioncontrol.DefaultSessionControlController
 import org.mozilla.fenix.home.sessioncontrol.SessionControlInteractor
+import org.mozilla.fenix.home.sports.SportsWidgetController
 import org.mozilla.fenix.home.termsofuse.PrivacyNoticeBannerController
 import org.mozilla.fenix.home.toolbar.ToolbarController
 import org.mozilla.fenix.home.topsites.controller.TopSiteController
@@ -41,7 +41,7 @@ class RecentVisitsInteractorTest {
     private val topSiteController: TopSiteController = mockk(relaxed = true)
     private val privacyNoticeBannerController: PrivacyNoticeBannerController = mockk(relaxed = true)
     private val trackingProtectionController: TrackingProtectionController = mockk(relaxed = true)
-    private val logoController: LogoController = mockk(relaxed = true)
+    private val sportsWidgetController: SportsWidgetController = mockk(relaxed = true)
 
     private lateinit var interactor: SessionControlInteractor
 
@@ -61,7 +61,7 @@ class RecentVisitsInteractorTest {
                 topSiteController,
                 privacyNoticeBannerController,
                 trackingProtectionController,
-                logoController,
+                sportsWidgetController,
             )
     }
 

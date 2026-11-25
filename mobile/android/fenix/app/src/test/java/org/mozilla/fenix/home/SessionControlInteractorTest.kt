@@ -17,7 +17,6 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.home.bookmarks.Bookmark
 import org.mozilla.fenix.home.bookmarks.controller.BookmarksController
-import org.mozilla.fenix.home.logo.LogoController
 import org.mozilla.fenix.home.logo.TrackingProtectionController
 import org.mozilla.fenix.home.pocket.PocketRecommendedStoriesCategory
 import org.mozilla.fenix.home.pocket.controller.PocketStoriesController
@@ -30,6 +29,7 @@ import org.mozilla.fenix.home.recentvisits.controller.RecentVisitsController
 import org.mozilla.fenix.home.search.HomeSearchController
 import org.mozilla.fenix.home.sessioncontrol.DefaultSessionControlController
 import org.mozilla.fenix.home.sessioncontrol.SessionControlInteractor
+import org.mozilla.fenix.home.sports.SportsWidgetController
 import org.mozilla.fenix.home.termsofuse.PrivacyNoticeBannerController
 import org.mozilla.fenix.home.toolbar.ToolbarController
 import org.mozilla.fenix.home.topsites.AddShortcutEntryPoint
@@ -49,7 +49,7 @@ class SessionControlInteractorTest {
     private val topSiteController: TopSiteController = mockk(relaxed = true)
     private val privacyNoticeBannerController: PrivacyNoticeBannerController = mockk(relaxed = true)
     private val trackingProtectionController: TrackingProtectionController = mockk(relaxed = true)
-    private val logoController: LogoController = mockk(relaxed = true)
+    private val sportsWidgetController: SportsWidgetController = mockk(relaxed = true)
 
     // Note: the recent visits tests are handled in [RecentVisitsInteractorTest] and [RecentVisitsControllerTest]
     private val recentVisitsController: RecentVisitsController = mockk(relaxed = true)
@@ -72,7 +72,7 @@ class SessionControlInteractorTest {
                 topSiteController,
                 privacyNoticeBannerController,
                 trackingProtectionController,
-                logoController,
+                sportsWidgetController,
             )
     }
 
@@ -142,6 +142,12 @@ class SessionControlInteractorTest {
         val tabId = "tabId"
         interactor.onRecentTabClicked(tabId)
         verify { recentTabController.handleRecentTabClicked(tabId) }
+    }
+
+    @Test
+    fun `WHEN onSportsWidgetRemoveClicked is called THEN handleSportsWidgetRemoved is called`() {
+        interactor.onSportsWidgetRemoveClicked()
+        verify { sportsWidgetController.handleSportsWidgetRemoved() }
     }
 
     @Test
