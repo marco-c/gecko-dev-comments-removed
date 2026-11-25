@@ -23,7 +23,7 @@ const lazy = /** @type {any} */ ({});
 ChromeUtils.defineLazyGetter(lazy, "console", () => {
   return console.createInstance({
     maxLogLevelPref: "toolkit.telemetry.translations.logLevel",
-    prefix: "TranslationsTelemetry",
+    logModule: "TranslationsTelemetry",
   });
 });
 
@@ -624,6 +624,20 @@ class FullPageTranslationsPanelTelemetry {
       });
       TranslationsTelemetry.logEventToConsole(
         FullPageTranslationsPanelTelemetry.onCancelButton
+      );
+    });
+  }
+
+  /**
+   * Records activation of the full-page panel's translations companion button.
+   */
+  static onCompanionButton() {
+    FullPageTranslationsPanelTelemetry.#withRateLimits(({ flowId }) => {
+      Glean.translationsPanel.companionButton.record({
+        flow_id: flowId,
+      });
+      TranslationsTelemetry.logEventToConsole(
+        FullPageTranslationsPanelTelemetry.onCompanionButton
       );
     });
   }
