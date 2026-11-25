@@ -980,7 +980,8 @@ void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
 webrtc::VideoReceiveStreamInterface* Call::CreateVideoReceiveStream(
     webrtc::VideoReceiveStreamInterface::Config configuration) {
   TRACE_EVENT0("webrtc", "Call::CreateVideoReceiveStream");
-  RTC_DCHECK_RUN_ON(worker_thread_);
+  RTC_DCHECK_RUN_ON(network_thread_);
+  RTC_DCHECK_RUN_ON(worker_thread_);  
 
   EnsureStarted();
 
@@ -991,10 +992,6 @@ webrtc::VideoReceiveStreamInterface* Call::CreateVideoReceiveStream(
 
   
   
-  
-  
-  
-  
   VideoReceiveStream2* receive_stream = new VideoReceiveStream2(
       env_, this, num_cpu_cores_, transport_send_->packet_router(),
       std::move(configuration), call_stats_.get(),
@@ -1003,8 +1000,6 @@ webrtc::VideoReceiveStreamInterface* Call::CreateVideoReceiveStream(
           MaybeCreateVideoJitterTiming(env_,
                                        config_.video_jitter_timing_factory)),
       &nack_periodic_processor_, decode_sync_.get());
-  
-  
   receive_stream->RegisterWithTransport(&video_receiver_controller_);
   video_receive_streams_.insert(receive_stream);
 
@@ -1018,11 +1013,11 @@ webrtc::VideoReceiveStreamInterface* Call::CreateVideoReceiveStream(
 void Call::DestroyVideoReceiveStream(
     webrtc::VideoReceiveStreamInterface* receive_stream) {
   TRACE_EVENT0("webrtc", "Call::DestroyVideoReceiveStream");
-  RTC_DCHECK_RUN_ON(worker_thread_);
+  RTC_DCHECK_RUN_ON(network_thread_);
+  RTC_DCHECK_RUN_ON(worker_thread_);  
   RTC_DCHECK(receive_stream != nullptr);
   VideoReceiveStream2* receive_stream_impl =
       static_cast<VideoReceiveStream2*>(receive_stream);
-  
   receive_stream_impl->UnregisterFromTransport();
   video_receive_streams_.erase(receive_stream_impl);
   ConfigureSync(receive_stream_impl->sync_group());
