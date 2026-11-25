@@ -60,8 +60,16 @@ add_task(function test_expandSurfaceUrlTokens() {
       {
         component: "Cards",
         items: [
-          { title: "Image", href: knownToken, image: imageToken },
-          { title: "Bad image", href: knownToken, image: "https://evil/x" },
+          {
+            title: "Image",
+            href: knownToken,
+            image: { src: imageToken, alt_text: "Example image" },
+          },
+          {
+            title: "Bad image",
+            href: knownToken,
+            image: { src: image },
+          },
         ],
       },
       {
@@ -83,7 +91,11 @@ add_task(function test_expandSurfaceUrlTokens() {
         {
           component: "Cards",
           items: [
-            { title: "Image", href: known, image },
+            {
+              title: "Image",
+              href: known,
+              image: { src: image, alt_text: "Example image" },
+            },
             { title: "Bad image", href: known },
           ],
         },
@@ -92,6 +104,75 @@ add_task(function test_expandSurfaceUrlTokens() {
       dataModel: { links: [] },
     },
     "known tokens expand; unknown links and hallucinated tokens are removed"
+  );
+});
+
+add_task(function test_expandSurfaceUrlTokens_allowedLinks() {
+  const tokenizer = new UrlTokenizer();
+  const seen = "https://example.com/article";
+  const unseen = "https://example.org/unseen";
+  const image = "https://example.org/image.png";
+  const seenToken = tokenizer.formatToken(seen);
+  const unseenToken = tokenizer.formatToken(unseen);
+  const imageToken = tokenizer.formatToken(image);
+
+  const surface = {
+    items: [
+      { title: "Seen", href: seenToken, image: imageToken },
+      { title: "Unseen", href: unseenToken },
+    ],
+  };
+
+  Assert.deepEqual(
+    AITab.expandSurfaceUrlTokens(surface, tokenizer, new Set([seen])),
+    { items: [{ title: "Seen", href: seen, image }] },
+    "an item linking to a URL outside allowedLinks is dropped"
+  );
+  Assert.deepEqual(
+    AITab.expandSurfaceUrlTokens(surface, tokenizer),
+    {
+      items: [
+        { title: "Seen", href: seen, image },
+        { title: "Unseen", href: unseen },
+      ],
+    },
+    "without allowedLinks any URL from the prompt may be linked"
+  );
+});
+
+add_task(function test_expandSurfaceUrlTokens_rejects_unknown_image_token() {
+  const tokenizer = new UrlTokenizer();
+
+  Assert.deepEqual(
+    AITab.expandSurfaceUrlTokens(
+      {
+        title: "Keep the containing item",
+        image: {
+          src: "§url_token: UNKNOWN_IMAGE_1§",
+          alt_text: "Example image",
+        },
+      },
+      tokenizer
+    ),
+    { title: "Keep the containing item" },
+    "an unknown image token removes the image and preserves its containing item"
+  );
+});
+
+add_task(function test_expandSurfaceUrlTokens_rejects_image_token_in_text() {
+  const tokenizer = new UrlTokenizer();
+  const token = tokenizer.formatToken("https://example.com/image.png");
+
+  Assert.deepEqual(
+    AITab.expandSurfaceUrlTokens(
+      {
+        title: "Keep the containing item",
+        image: { src: `Image: ${token}`, alt_text: "Example image" },
+      },
+      tokenizer
+    ),
+    { title: "Keep the containing item" },
+    "an image source must contain exactly one known token without extra text"
   );
 });
 
@@ -104,13 +185,26 @@ add_task(function test_tokenizeSurfaceUrls_round_trips() {
           {
             title: "Image",
             href: "https://example.com/article",
-            image: "https://example.com/image.png",
+            image: {
+              src: "https://example.com/image.png",
+              alt_text: "Example image",
+            },
           },
         ],
       },
       { component: "Text", text: "Read https://example.com/article now." },
+      {
+        component: "TextBlock",
+        lead: "A bound image",
+        image: { path: "/hero" },
+      },
     ],
-    dataModel: {},
+    dataModel: {
+      hero: {
+        src: "https://example.com/hero.png",
+        alt_text: "Hero image",
+      },
+    },
   };
 
   const tokenizer = new UrlTokenizer();
