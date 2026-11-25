@@ -91,23 +91,12 @@ EncodeSupportSet CanCreateWMFEncoder(const EncoderConfig& aConfig) {
     }
     
     
-    auto canEncode = [&](MFTEncoder::HWPreference aPreference) {
-      EncoderConfig config = aConfig;
-      RefPtr<IMFMediaType> inputType = CreateInputType(config);
-      RefPtr<IMFMediaType> outputType = CreateOutputType(config);
-      auto encoder = MakeRefPtr<MFTEncoder>(aPreference);
-      return inputType && outputType &&
-             SUCCEEDED(encoder->Create(CodecToSubtype(aConfig.mCodec),
-                                       aConfig.mSize,
-                                       aConfig.mCodecSpecific)) &&
-             SUCCEEDED(encoder->SetModes(config)) &&
-             SUCCEEDED(encoder->CheckMediaTypes(inputType, outputType));
-    };
-    
-    
     if (aConfig.mHardwarePreference != HardwarePreference::RequireSoftware) {
       if (CanUseWMFHwEncoder(aConfig)) {
-        if (canEncode(MFTEncoder::HWPreference::HardwareOnly)) {
+        auto hwEnc =
+            MakeRefPtr<MFTEncoder>(MFTEncoder::HWPreference::HardwareOnly);
+        if (SUCCEEDED(hwEnc->Create(CodecToSubtype(aConfig.mCodec),
+                                    aConfig.mSize, aConfig.mCodecSpecific))) {
           supports += EncodeSupport::HardwareEncode;
         }
       } else {
@@ -120,7 +109,10 @@ EncodeSupportSet CanCreateWMFEncoder(const EncoderConfig& aConfig) {
     
     if (aConfig.mHardwarePreference != HardwarePreference::RequireHardware &&
         aConfig.mCodec == CodecType::H264 && !XRE_IsGPUProcess()) {
-      if (canEncode(MFTEncoder::HWPreference::SoftwareOnly)) {
+      auto swEnc =
+          MakeRefPtr<MFTEncoder>(MFTEncoder::HWPreference::SoftwareOnly);
+      if (SUCCEEDED(swEnc->Create(CodecToSubtype(aConfig.mCodec), aConfig.mSize,
+                                  aConfig.mCodecSpecific))) {
         supports += EncodeSupport::SoftwareEncode;
       }
     }
