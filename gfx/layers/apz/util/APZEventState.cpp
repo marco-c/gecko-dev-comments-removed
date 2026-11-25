@@ -150,20 +150,6 @@ void APZEventState::ProcessLongTap(PresShell* aPresShell,
     return;
   }
 
-  
-  
-  
-  
-  
-  
-  if (mPendingTouchPreventedResponse) {
-    APZES_LOG("Sending response %d for pending guid: %s block id: %" PRIu64
-              " due to long tap\n",
-              false, ToString(mPendingTouchPreventedGuid).c_str(),
-              mPendingTouchPreventedBlockId);
-    mContentReceivedInputBlockCallback(mPendingTouchPreventedBlockId, false);
-  }
-
 #ifdef XP_WIN
   
   
