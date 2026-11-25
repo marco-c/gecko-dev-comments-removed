@@ -1367,6 +1367,10 @@ void nsBidiPresUtils::TraverseFrames(nsIFrame* aCurrentFrame,
                 aBpd->mCurrentTraverseLine.GetLine()->MarkDirty();
               }
               ResolveParagraphWithinBlock(aBpd);
+              
+              
+              
+              aBpd->mPrevContent = content;
 
               if (!nextSibling && !createdContinuation) {
                 break;
