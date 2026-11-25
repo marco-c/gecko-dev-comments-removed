@@ -25,7 +25,6 @@ class HTMLOptGroupElement final : public nsGenericHTMLElement {
 
   
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
-  nsresult BindToTree(BindContext&, nsINode& aParent) override;
 
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
@@ -46,22 +45,11 @@ class HTMLOptGroupElement final : public nsGenericHTMLElement {
   }
 
   
-  
-  void GetRenderedLabel(nsAString& aLabel) const;
-
-  
   HTMLSelectElement* GetSelect() const;
 
  protected:
   virtual ~HTMLOptGroupElement();
   JSObject* WrapNode(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
-
-  void SetupShadowTree();
-  Text* GetLabelText() const;
-  void GetSlotNameFor(const ShadowRoot&, const nsIContent&,
-                      nsAString&) const override;
-  void OnChildBeforeSlotted(ShadowRoot&, nsIContent&) override;
-  void OnChildUnslotted(ShadowRoot&, nsIContent&) override;
 };
 
 }  

@@ -9489,46 +9489,6 @@ void nsContentUtils::GetNodeTextContent(const nsINode* aNode, bool aDeep,
   }
 }
 
-void nsContentUtils::GetHTMLAwareTextContent(const Element& aElement,
-                                             AltText aAltText,
-                                             nsAString& aResult) {
-  
-  
-  nsAutoString text;
-
-  
-  for (nsIContent* child = aElement.GetFirstChild(); child;) {
-    
-    if (child->IsHTMLElement(nsGkAtoms::script) ||
-        child->IsSVGElement(nsGkAtoms::script)) {
-      child = child->GetNextNonChildNode(&aElement);
-      continue;
-    }
-    
-    if (Text* textChild = child->GetAsText()) {
-      textChild->AppendTextTo(text);
-    } else if (child->IsHTMLElement(nsGkAtoms::img)) {
-      
-      if (aAltText == AltText::Include) {
-        if (const nsAttrValue* alt =
-                child->AsElement()->GetParsedAttr(nsGkAtoms::alt)) {
-          DOMString value;
-          alt->ToString(value);
-          text.Append(value);
-        }
-      }
-      
-      child = child->GetNextNonChildNode(&aElement);
-      continue;
-    }
-    child = child->GetNextNode(&aElement);
-  }
-
-  
-  text.CompressWhitespace(true, true);
-  aResult = std::move(text);
-}
-
 void nsContentUtils::DestroyMatchString(void* aData) {
   if (aData) {
     nsString* matchString = static_cast<nsString*>(aData);
