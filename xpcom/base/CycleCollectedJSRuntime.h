@@ -6,6 +6,7 @@
 #define mozilla_CycleCollectedJSRuntime_h
 
 #include "js/TypeDecls.h"
+#include "js/friend/CycleCollector.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
 #include "mozilla/CycleCollectedJSContext.h"
@@ -546,6 +547,9 @@ class CycleCollectedJSRuntime {
   
   
   void PrepareWaitingZonesForGC(JS::GCReason aReason);
+
+  virtual void ClearWhiteJSWeakReferences(
+      JS::ShouldClearWeakRefTargetCallback aCallback, void* aData);
 
   
   

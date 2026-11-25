@@ -2116,6 +2116,13 @@ void CycleCollectedJSRuntime::PrepareWaitingZonesForGC(JS::GCReason aReason) {
   }
 }
 
+void CycleCollectedJSRuntime::ClearWhiteJSWeakReferences(
+    JS::ShouldClearWeakRefTargetCallback aCallback, void* aData) {
+  
+  
+  JS::MaybeClearWeakRefTargets(mJSRuntime, aCallback, aData);
+}
+
 
 void CycleCollectedJSRuntime::OnZoneDestroyed(JS::GCContext* aGcx,
                                               JS::Zone* aZone) {
