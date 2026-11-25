@@ -18,6 +18,7 @@
 #include "js/experimental/CTypes.h"  
 #include "js/friend/ErrorMessages.h"  
 #include "jsfriendapi.h"
+#include "mozilla/AbstractThread.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/CycleCollectedJSContext.h"
@@ -2144,7 +2145,7 @@ uint32_t RuntimeService::ClampedHardwareConcurrency(bool aRFPHardcoded,
     return 4;
   }
 
-  return std::min(uint32_t(unclampedHardwareConcurrency),
+  return std::min(unclampedHardwareConcurrency.load(),
                   StaticPrefs::dom_maxHardwareConcurrency());
 }
 
@@ -2404,17 +2405,27 @@ WorkerThreadPrimaryRunnable::Run() {
           
           
           
-          MOZ_KnownLive(mWorkerPrivate)->DoRunLoop(cx);
           
-          
-          MOZ_ASSERT(!JS_IsExceptionPending(cx));
+          AutoXPCOMThreadWrapper abstractThread(
+              TailDispatchPolicy::ConsistentOrdering);
+
+          {
+            
+            
+            
+            
+            MOZ_KnownLive(mWorkerPrivate)->DoRunLoop(cx);
+            
+            
+            MOZ_ASSERT(!JS_IsExceptionPending(cx));
+          }
+
+          mWorkerPrivate->ShutdownModuleLoader();
+
+          mWorkerPrivate->RunShutdownTasks();
+
+          BackgroundChild::CloseForCurrentThread();
         }
-
-        mWorkerPrivate->ShutdownModuleLoader();
-
-        mWorkerPrivate->RunShutdownTasks();
-
-        BackgroundChild::CloseForCurrentThread();
 
         PROFILER_CLEAR_JS_CONTEXT();
       }
