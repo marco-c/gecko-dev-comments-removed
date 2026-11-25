@@ -59,6 +59,9 @@ class MFTEncoder final {
                  const EncoderConfig::CodecSpecific& aCodecSpecific);
   HRESULT Destroy();
   HRESULT SetMediaTypes(IMFMediaType* aInputType, IMFMediaType* aOutputType);
+  
+  
+  HRESULT CheckMediaTypes(IMFMediaType* aInputType, IMFMediaType* aOutputType);
   HRESULT SetModes(const EncoderConfig& aConfig);
   HRESULT SetBitrate(UINT32 aBitsPerSec);
   bool IsHardwareAccelerated() const;
@@ -182,6 +185,10 @@ class MFTEncoder final {
   
   using AsyncMFTResult = Result<bool, HRESULT>;
   AsyncMFTResult AttemptEnableAsync();
+  
+  
+  AsyncMFTResult NegotiateMediaTypes(IMFMediaType* aInputType,
+                                     IMFMediaType* aOutputType);
   HRESULT GetStreamIDs();
   GUID MatchInputSubtype(IMFMediaType* aInputType);
   HRESULT SendMFTMessage(MFT_MESSAGE_TYPE aMsg, ULONG_PTR aData);
