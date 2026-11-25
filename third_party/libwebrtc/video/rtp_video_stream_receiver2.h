@@ -519,7 +519,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   int64_t last_completed_picture_id_ = 0;
 
   scoped_refptr<RtpVideoStreamReceiverFrameTransformerDelegate>
-      frame_transformer_delegate_;
+      frame_transformer_delegate_ RTC_GUARDED_BY(worker_queue_);
 
   SeqNumUnwrapper<uint16_t> rtp_seq_num_unwrapper_
       RTC_GUARDED_BY(worker_queue_);
