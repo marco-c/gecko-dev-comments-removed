@@ -41,6 +41,10 @@ namespace gc {
 
 void MarkSymbolForWeakMapReadBarrier(JS::Zone* zone, JS::Symbol* sym);
 
+void ShouldWeakMappingEntryBeBlack(JSObject* map, Cell* key, Cell* delegate,
+                                   Cell* value, bool* keyShouldBeBlack,
+                                   bool* valueShouldBeBlack);
+
 #if defined(JS_GC_ZEAL) || defined(DEBUG)
 
 bool CheckWeakMapMapMarking(const WeakMapBase* map);
@@ -169,6 +173,10 @@ class WeakMapBase : public SlimLinkedListElement<WeakMapBase> {
   
   static void traceAllMappings(WeakMapTracer* tracer);
 
+  
+  
+  static void fixAllGrayMappings(JSRuntime* rt);
+
 #if defined(JS_GC_ZEAL)
   
   static bool saveZoneMarkedWeakMaps(JS::Zone* zone,
@@ -202,6 +210,10 @@ class WeakMapBase : public SlimLinkedListElement<WeakMapBase> {
   
   virtual bool traceNurseryEntriesOnMinorGC(JSTracer* trc) = 0;
   virtual bool sweepAfterMinorGC() = 0;
+
+  
+  
+  virtual bool fixGrayMappings() = 0;
 
   
   
@@ -609,6 +621,7 @@ class WeakMap : public WeakMapBase {
   
   
   void traceMappings(WeakMapTracer* tracer) override;
+  bool fixGrayMappings() override;
 
   bool traceNurseryEntriesOnMinorGC(JSTracer* trc) override;
   bool sweepAfterMinorGC() override;
