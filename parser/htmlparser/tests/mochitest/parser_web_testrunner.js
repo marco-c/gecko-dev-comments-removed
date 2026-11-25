@@ -143,5 +143,12 @@ function loadNextTestFile() {
   }
 }
 
-addLoadEvent(loadNextTestFile);
+addLoadEvent(async function () {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.navigation.navigationRateLimit.count", 0]],
+  });
+  loadNextTestFile();
+});
 SimpleTest.waitForExplicitFinish();
