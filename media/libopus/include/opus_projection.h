@@ -120,10 +120,19 @@ typedef struct OpusProjectionDecoder OpusProjectionDecoder;
 
 
 
+
 OPUS_EXPORT OPUS_WARN_UNUSED_RESULT opus_int32 opus_projection_ambisonics_encoder_get_size(
     int channels,
     int mapping_family
 );
+
+
+
+
+
+
+
+
 
 
 
@@ -167,6 +176,8 @@ OPUS_EXPORT OPUS_WARN_UNUSED_RESULT OpusProjectionEncoder *opus_projection_ambis
     int application,
     int *error
 ) OPUS_ARG_NONNULL(4) OPUS_ARG_NONNULL(5);
+
+
 
 
 
