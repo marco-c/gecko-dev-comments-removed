@@ -58,6 +58,24 @@
 #import "sdk/objc/native/api/audio_device_module.h"
 #endif
 
+namespace {
+
+
+
+dispatch_queue_t ThreadTeardownQueue() {
+  static dispatch_queue_t queue = dispatch_queue_create(
+      "org.webrtc.RTCPeerConnectionFactory.teardown", DISPATCH_QUEUE_SERIAL);
+  return queue;
+}
+
+
+dispatch_group_t ThreadTeardownGroup() {
+  static dispatch_group_t group = dispatch_group_create();
+  return group;
+}
+
+}  
+
 @implementation RTC_OBJC_TYPE (RTCPeerConnectionFactory) {
   std::optional<webrtc::Environment> _env;
   std::unique_ptr<webrtc::Thread> _networkThread;
@@ -244,6 +262,46 @@
   }
   webrtc::EnableMedia(dependencies);
   return [self initWithNativeDependencies:dependencies];
+}
+
+- (void)dealloc {
+  if (_signalingThread == nullptr || _networkThread == nullptr ||
+      (!_signalingThread->IsCurrent() && !_networkThread->IsCurrent())) {
+    
+    
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  dispatch_group_t group = ThreadTeardownGroup();
+  dispatch_group_enter(group);
+  webrtc::Thread *signalingThread = _signalingThread.release();
+  webrtc::Thread *networkThread = _networkThread.release();
+  signalingThread->PostTask([nativeFactory = std::move(_nativeFactory),
+                             signalingThread,
+                             networkThread,
+                             group]() mutable {
+    
+    nativeFactory = nullptr;
+    dispatch_async(ThreadTeardownQueue(), ^{
+      
+      
+      delete signalingThread;
+      delete networkThread;
+      dispatch_group_leave(group);
+    });
+  });
+}
+
++ (BOOL)waitForThreadTeardownForTesting:(NSTimeInterval)timeout {
+  dispatch_time_t deadline = dispatch_time(
+      DISPATCH_TIME_NOW, static_cast<int64_t>(timeout * NSEC_PER_SEC));
+  return dispatch_group_wait(ThreadTeardownGroup(), deadline) == 0;
 }
 
 - (RTC_OBJC_TYPE(RTCRtpCapabilities) *)rtpSenderCapabilitiesForKind:

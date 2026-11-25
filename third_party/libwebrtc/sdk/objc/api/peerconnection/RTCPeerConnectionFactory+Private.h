@@ -32,6 +32,13 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, readonly) webrtc::Thread* workerThread;
 @property(nonatomic, readonly) webrtc::Thread* networkThread;
 
+
+
+
+
+
++ (BOOL)waitForThreadTeardownForTesting:(NSTimeInterval)timeout;
+
 @end
 
 NS_ASSUME_NONNULL_END

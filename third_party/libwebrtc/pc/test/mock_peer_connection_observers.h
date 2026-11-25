@@ -311,6 +311,20 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
   scoped_refptr<MediaStreamInterface> last_removed_stream_;
 };
 
+
+
+
+class NullPeerConnectionObserver : public PeerConnectionObserver {
+ public:
+  void OnSignalingChange(
+      PeerConnectionInterface::SignalingState ) override {}
+  void OnDataChannel(
+      scoped_refptr<DataChannelInterface> ) override {}
+  void OnIceGatheringChange(
+      PeerConnectionInterface::IceGatheringState ) override {}
+  void OnIceCandidate(const IceCandidate* ) override {}
+};
+
 class MockCreateSessionDescriptionObserver
     : public CreateSessionDescriptionObserver {
  public:
