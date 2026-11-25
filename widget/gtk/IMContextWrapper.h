@@ -5,11 +5,13 @@
 #ifndef IMContextWrapper_h_
 #define IMContextWrapper_h_
 
+#include <fmt/format.h>
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
 
 #include "mozilla/ContentData.h"
 #include "mozilla/EventForwards.h"
+#include "mozilla/GRefPtr.h"
 #include "mozilla/GUniquePtr.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TextEventDispatcherListener.h"
@@ -263,6 +265,54 @@ class IMContextWrapper final : public TextEventDispatcherListener {
 
   
   GdkEventKey* mHandlingKeyEvent = nullptr;
+
+  
+  
+  
+  enum class ResetIMEReason : uint8_t {
+    
+    FocusChange,
+    
+    Request,
+    
+    SelectionChange,
+  };
+  friend auto format_as(ResetIMEReason aReason) {
+    switch (aReason) {
+      case ResetIMEReason::Request:
+        return "Reset";
+      case ResetIMEReason::SelectionChange:
+        return "SelectionChange";
+      case ResetIMEReason::FocusChange:
+        return "FocusChange";
+    }
+    return "<Illegal value>";
+  }
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  ResetIMEReason aReason) {
+    return aStream << format_as(aReason);
+  }
+
+  class ResettingIMContextData {
+   public:
+    ResettingIMContextData(GtkIMContext* aContext, ResetIMEReason aReason)
+        : mContext(aContext), mReason(aReason) {}
+    bool operator==(const GtkIMContext* aContext) const {
+      return mContext == aContext;
+    }
+
+    ResetIMEReason Reason() const { return mReason; }
+    void MaybeSetNewReason(ResetIMEReason aNewReason) {
+      if (aNewReason > mReason) {
+        mReason = aNewReason;
+      }
+    }
+
+   private:
+    const RefPtr<GtkIMContext> mContext;
+    ResetIMEReason mReason;
+  };
+  nsTArray<ResettingIMContextData> mResettingIMContexts;
 
   
 
@@ -563,6 +613,16 @@ class IMContextWrapper final : public TextEventDispatcherListener {
       mOffset = UINT32_MAX;
       mLength = UINT32_MAX;
     }
+
+    friend auto format_as(const Range& aRange) {
+      return aRange.IsValid() ? fmt::format("{{ mOffset={}, mLength={} }}",
+                                            aRange.mOffset, aRange.mLength)
+                              : "{ IsValid()=false }";
+    }
+    friend std::ostream& operator<<(std::ostream& aStream,
+                                    const Range& aRange) {
+      return aStream << format_as(aRange);
+    }
   };
 
   
@@ -688,8 +748,7 @@ class IMContextWrapper final : public TextEventDispatcherListener {
   
   
   
-  
-  bool mPendingResettingIMContext;
+  bool mResetIMContextAfterCompositionEnd = false;
   
   
   bool mRetrieveSurroundingSignalReceived;
@@ -798,7 +857,7 @@ class IMContextWrapper final : public TextEventDispatcherListener {
 
 
 
-  void ResetIME();
+  void MaybeResetIME(ResetIMEReason);
 
   
   void GetCompositionString(GtkIMContext* aContext,
