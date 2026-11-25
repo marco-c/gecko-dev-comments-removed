@@ -642,7 +642,7 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
       "resource://testing-common/content-task.js"_ns,
 
       
-      "resource://gre/modules/translations/cld-worker.js"_ns,
+      "moz-src:///toolkit/components/translations/cld2/cld-worker.js"_ns,
 
       
       
@@ -657,7 +657,7 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
       "resource://devtools/shared/performance-new/symbolication.sys.mjs"_ns,
 
       
-      "resource://devtools/client/shared/vendor/source-map/lib/wasm.js"_ns,
+      "resource://devtools/client/shared/vendor/source-map/lib/mappings-glue-browser.mjs"_ns,
 
       
       "debugger"_ns,
