@@ -794,7 +794,11 @@ class Inspector extends EventEmitter {
     }
 
     const walker = rootNodeFront.walkerFront;
-    const cssSelectors = this.selectionCssSelectors;
+    
+    
+    const cssSelectors = rootNodeFront.targetFront.isTopLevel
+      ? this.selectionCssSelectors
+      : [];
     
     const defaultNodeSelectors = [
       
@@ -1869,6 +1873,7 @@ class Inspector extends EventEmitter {
     this.#selectionCssSelectors = {
       selectors: cssSelectors,
       url: this.currentTarget.url,
+      urlOrigin: this.currentTarget.urlOrigin,
     };
   }
 
@@ -1876,10 +1881,16 @@ class Inspector extends EventEmitter {
 
 
 
+
   get selectionCssSelectors() {
     if (
       this.#selectionCssSelectors &&
-      this.#selectionCssSelectors.url === this.currentTarget.url
+      ((this.#selectionCssSelectors.urlOrigin &&
+        this.#selectionCssSelectors.urlOrigin ===
+          this.currentTarget.urlOrigin) ||
+        
+        
+        this.#selectionCssSelectors.url === this.currentTarget.url)
     ) {
       return this.#selectionCssSelectors.selectors;
     }
