@@ -80,6 +80,9 @@ class PrefetchRecordParent final : public PPrefetchRecordParent,
   const nsTArray<Maybe<nsString>>& Tags() const { return mTags; }
   const nsString& NoVarySearchHint() const { return mNoVarySearchHint; }
   bool IsEligibleForPrefetch() const { return mIsEligibleForPrefetch; }
+  bool FinalResponseHadNetworkTransfer() const {
+    return mFinalResponseHadNetworkTransfer;
+  }
 
   
   mozilla::ipc::IPCResult RecvCancel();
@@ -130,7 +133,7 @@ class PrefetchRecordParent final : public PPrefetchRecordParent,
   bool IsReferrerPolicySufficientlyStrict() const;
   void ReleaseCacheToken();
   bool MatchesNoVarySearchHint(nsIURI* aURL) const;
-  void AccumulateTransferSize(nsIRequest* aRequest);
+  uint64_t AccumulateTransferSize(nsIRequest* aRequest);
   void RecordDataUsage();
 
   
@@ -165,6 +168,7 @@ class PrefetchRecordParent final : public PPrefetchRecordParent,
 
   
   uint64_t mTransferSize = 0;
+  bool mFinalResponseHadNetworkTransfer = false;
 
  protected:
   ~PrefetchRecordParent() = default;

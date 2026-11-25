@@ -32,11 +32,6 @@ class PerformanceTimingData final : public CacheablePerformanceTimingData {
   friend class PerformanceTiming;
   friend struct IPC::ParamTraits<mozilla::dom::PerformanceTimingData>;
 
-  
-  
-  
-  static constexpr uint64_t kLocalCacheTransferSize = 0;
-
  public:
   PerformanceTimingData() = default;  
   
@@ -69,11 +64,14 @@ class PerformanceTimingData final : public CacheablePerformanceTimingData {
                                     nsITimedChannel* aChannel);
 
  private:
-  void SetTransferSizeFromHttpChannel(nsIHttpChannel* aHttpChannel);
+  void SetHasTransferredDataFromHttpChannel(nsIHttpChannel* aHttpChannel);
   void SetServedFromCacheFromHttpChannel(nsIHttpChannel* aHttpChannel);
 
  public:
-  uint64_t TransferSize() const { return mTransferSize; }
+  bool HasTransferredData() const { return mHasTransferredData; }
+  void SetHasTransferredData(bool aHasTransferredData) {
+    mHasTransferredData = aHasTransferredData;
+  }
 
   
   
@@ -208,7 +206,7 @@ class PerformanceTimingData final : public CacheablePerformanceTimingData {
 
   DOMHighResTimeStamp mFetchStart = 0;
 
-  uint64_t mTransferSize = 0;
+  bool mHasTransferredData = false;
 
   bool mServedFromCache = false;
 
@@ -424,7 +422,7 @@ DEFINE_IPC_SERIALIZER_WITH_FIELDS(
     mRequestStart, mResponseStart, mFirstInterimResponseStart,
     mFinalResponseHeadersStart, mCacheReadStart, mResponseEnd, mCacheReadEnd,
     mWorkerStart, mWorkerRequestStart, mWorkerResponseEnd, mZeroTime,
-    mFetchStart, mEncodedBodySize, mTransferSize, mDecodedBodySize,
+    mFetchStart, mEncodedBodySize, mHasTransferredData, mDecodedBodySize,
     mResponseStatus, mRedirectCount, mContentType, mAllRedirectsSameOrigin,
     mAllRedirectsPassTAO, mSecureConnection, mBodyInfoAccessAllowed,
     mTimingAllowed, mInitialized, mServedFromCache, mRenderBlockingStatus);

@@ -658,6 +658,8 @@ void DocumentLoadListener::ActivateFromPrefetch(
 
   nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
   loadInfo->SetActivatedFromNavigationalPrefetch(true);
+  loadInfo->SetNavigationalPrefetchHadNetworkTransfer(
+      aRec->FinalResponseHadNetworkTransfer());
 
   
   

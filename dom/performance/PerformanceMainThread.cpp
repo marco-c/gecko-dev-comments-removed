@@ -701,9 +701,13 @@ void PerformanceMainThread::UpdateNavigationTimingEntry() {
   }
 
   
-  if (mDOMTiming && mDOMTiming->WasActivatedFromNavigationalPrefetch() &&
+  if (httpChannel && mDOMTiming &&
+      mDOMTiming->WasActivatedFromNavigationalPrefetch() &&
       mDocEntry->ServedFromCache()) {
     mDocEntry->SetDeliveryType(u"navigational-prefetch"_ns);
+    nsCOMPtr<nsILoadInfo> loadInfo = httpChannel->LoadInfo();
+    mDocEntry->SetHasTransferredData(
+        loadInfo->GetNavigationalPrefetchHadNetworkTransfer());
   }
 }
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_PerformanceNavigationTiming_h_
 #define mozilla_dom_PerformanceNavigationTiming_h_
 
@@ -76,6 +74,10 @@ class PerformanceNavigationTiming final : public PerformanceResourceTiming {
 
   NavigationTimingType Type() const;
   uint16_t RedirectCount() const;
+
+  void SetHasTransferredData(bool aHasTransferredData) {
+    mTimingData->SetHasTransferredData(aHasTransferredData);
+  }
 
   void UpdatePropertiesFromHttpChannel(nsIHttpChannel* aHttpChannel,
                                        nsITimedChannel* aChannel);
