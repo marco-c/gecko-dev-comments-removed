@@ -148,6 +148,7 @@ class SctpDataChannel : public DataChannelInterface {
   
   static absl_nonnull scoped_refptr<SctpDataChannel> Create(
       WeakPtr<SctpDataChannelControllerInterface> controller,
+      int internal_id,
       absl::string_view label,
       bool connected_to_transport,
       const InternalDataChannelInit& config,
@@ -243,13 +244,10 @@ class SctpDataChannel : public DataChannelInterface {
     return id_n_;
   }
 
-  
-  
-  static void ResetInternalIdAllocatorForTesting(int new_value);
-
  protected:
   SctpDataChannel(const InternalDataChannelInit& config,
                   WeakPtr<SctpDataChannelControllerInterface> controller,
+                  int internal_id,
                   absl::string_view label,
                   bool connected_to_transport,
                   std::optional<int> max_message_size,
