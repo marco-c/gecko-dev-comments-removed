@@ -145,6 +145,24 @@ async function testCRLiteEnforced() {
 
   
   
+  for (let usage of [
+    Ci.nsIX509CertDB.verifyUsageTLSClient,
+    Ci.nsIX509CertDB.verifyUsageEmailSigner,
+    Ci.nsIX509CertDB.verifyUsageEmailRecipient,
+  ]) {
+    clearOCSPCache();
+    ocspResponder = getOCSPResponder(["non-ev-root-path-ee"]);
+    await checkCertErrorGeneric(
+      gCertDB,
+      certFromFile("non-ev-root-path-ee"),
+      PRErrorCodeSuccess,
+      usage
+    );
+    await stopOCSPResponder(ocspResponder);
+  }
+
+  
+  
   Services.prefs.setBoolPref("security.OCSP.require", false);
   info("Setting security.OCSP.require to false");
   let evroot = certFromFile("evroot");
@@ -249,7 +267,7 @@ add_task(async function () {
 
   loadCert("evroot", "CTu,,");
   loadCert("test-oid-path-int", ",,");
-  loadCert("non-evroot-ca", "CTu,,");
+  loadCert("non-evroot-ca", "CTu,C,");
   loadCert("non-ev-root-path-int", ",,");
 
   await testOff();
