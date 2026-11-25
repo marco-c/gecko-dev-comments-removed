@@ -15,7 +15,6 @@
 #include "GUniquePtr.h"
 #include "WindowSurfaceX11Image.h"
 #include "WindowSurfaceX11SHM.h"
-#include "gfxXlibSurface.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
@@ -402,4 +401,10 @@ void nsWindowX11::OnMapNative() {
   SetCompositorHint(GTK_WIDGET_COMPOSITED_ENABLED);
 
   XFlush(DefaultXDisplay());
+}
+
+bool nsWindowX11::IsFullscreenSupported() {
+  GdkScreen* screen = gtk_widget_get_screen(mShell);
+  GdkAtom atom = gdk_atom_intern("_NET_WM_STATE_FULLSCREEN", FALSE);
+  return gdk_x11_screen_supports_net_wm_hint(screen, atom);
 }

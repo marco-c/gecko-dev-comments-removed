@@ -8,8 +8,7 @@
 
 #include <glib.h>
 
-#include "gfxImageSurface.h"
-#include "mozilla/gfx/Types.h"
+#include "mozilla/gfx/2D.h"
 #include "mozilla/widget/WindowSurface.h"
 
 class nsWindow;
@@ -28,7 +27,7 @@ class WindowSurfaceCairo : public WindowSurface {
   bool IsFallback() const override { return true; }
 
  private:
-  RefPtr<gfxImageSurface> mImageSurface;
+  RefPtr<gfx::DataSourceSurface> mImageSurface;
   RefPtr<nsWindow> mWidget;
 };
 
