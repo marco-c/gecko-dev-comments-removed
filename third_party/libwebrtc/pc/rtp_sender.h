@@ -302,7 +302,7 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   
   RtpSenderBase(const Environment& env,
                 Thread* signaling_thread,
-                Thread* worker_thread,
+                Thread* network_thread,
                 absl::string_view id,
                 MediaType media_type,
                 SetStreamsObserver* set_streams_observer,
@@ -324,7 +324,7 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   virtual void SetSend() = 0;
   
   virtual void ClearSend() = 0;
-  virtual void ClearSend_w(uint32_t ssrc) RTC_RUN_ON(worker_thread_) = 0;
+  virtual void ClearSend_n(uint32_t ssrc) RTC_RUN_ON(network_thread_) = 0;
 
   
   
@@ -352,12 +352,12 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   
   
   
-  std::optional<RtpParameters> ApplyInitParameters_w(
-      std::optional<uint32_t> ssrc) RTC_RUN_ON(worker_thread_);
+  std::optional<RtpParameters> ApplyInitParameters_n(
+      std::optional<uint32_t> ssrc) RTC_RUN_ON(network_thread_);
 
   const Environment env_;
   TaskQueueBase* const signaling_thread_;
-  Thread* const worker_thread_;
+  Thread* const network_thread_;
   
   
   uint32_t ssrc_ RTC_GUARDED_BY(signaling_thread_) = 0;
@@ -389,8 +389,9 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   
   
   
-  MediaSendChannelInterface* media_channel_ RTC_GUARDED_BY(worker_thread_) =
+  MediaSendChannelInterface* media_channel_ RTC_GUARDED_BY(network_thread_) =
       nullptr;
+  
   
   scoped_refptr<MediaStreamTrackInterface> track_;
 
@@ -421,14 +422,14 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   scoped_refptr<VideoEncoderFactory::EncoderSelectorInterface>
       encoder_selector_;
 
-  scoped_refptr<PendingTaskSafetyFlag> worker_safety_;
+  scoped_refptr<PendingTaskSafetyFlag> network_safety_;
   ScopedTaskSafety signaling_safety_;
 
   absl::AnyInvocable<RTCError()> enable_sframe_at_owner_
       RTC_GUARDED_BY(signaling_thread_);
 
   std::optional<SframeEncryptionConfig> sframe_encryption_config_
-      RTC_GUARDED_BY(worker_thread_);
+      RTC_GUARDED_BY(network_thread_);
 };
 
 
@@ -483,7 +484,7 @@ class AudioRtpSender : public DtmfProviderInterface, public RtpSenderBase {
   static scoped_refptr<AudioRtpSender> Create(
       const Environment& env,
       Thread* signaling_thread,
-      Thread* worker_thread,
+      Thread* network_thread,
       absl::string_view id,
       LegacyStatsCollectorInterface* stats,
       SetStreamsObserver* set_streams_observer,
@@ -512,7 +513,7 @@ class AudioRtpSender : public DtmfProviderInterface, public RtpSenderBase {
  protected:
   AudioRtpSender(const Environment& env,
                  Thread* signaling_thread,
-                 Thread* worker_thread,
+                 Thread* network_thread,
                  absl::string_view id,
                  LegacyStatsCollectorInterface* legacy_stats,
                  SetStreamsObserver* set_streams_observer,
@@ -524,7 +525,7 @@ class AudioRtpSender : public DtmfProviderInterface, public RtpSenderBase {
 
   void SetSend() override;
   void ClearSend() override;
-  void ClearSend_w(uint32_t ssrc) RTC_RUN_ON(worker_thread_) override;
+  void ClearSend_n(uint32_t ssrc) RTC_RUN_ON(network_thread_) override;
 
   
   void AttachTrack() RTC_RUN_ON(signaling_thread_) override;
@@ -534,7 +535,7 @@ class AudioRtpSender : public DtmfProviderInterface, public RtpSenderBase {
 
  private:
   VoiceMediaSendChannelInterface* voice_media_channel()
-      RTC_RUN_ON(worker_thread_) {
+      RTC_RUN_ON(network_thread_) {
     return media_channel_->AsVoiceSendChannel();
   }
   scoped_refptr<AudioTrackInterface> audio_track() const
@@ -566,7 +567,7 @@ class VideoRtpSender : public RtpSenderBase {
   static scoped_refptr<VideoRtpSender> Create(
       const Environment& env,
       Thread* signaling_thread,
-      Thread* worker_thread,
+      Thread* network_thread,
       absl::string_view id,
       SetStreamsObserver* set_streams_observer,
       absl::AnyInvocable<RTCError()> enable_sframe_at_owner,
@@ -591,7 +592,7 @@ class VideoRtpSender : public RtpSenderBase {
  protected:
   VideoRtpSender(const Environment& env,
                  Thread* signaling_thread,
-                 Thread* worker_thread,
+                 Thread* network_thread,
                  absl::string_view id,
                  SetStreamsObserver* set_streams_observer,
                  absl::AnyInvocable<RTCError()> enable_sframe_at_owner,
@@ -604,14 +605,14 @@ class VideoRtpSender : public RtpSenderBase {
 
   void SetSend() override;
   void ClearSend() override;
-  void ClearSend_w(uint32_t ssrc) RTC_RUN_ON(worker_thread_) override;
+  void ClearSend_n(uint32_t ssrc) RTC_RUN_ON(network_thread_) override;
 
   
   void AttachTrack() RTC_RUN_ON(signaling_thread_) override;
 
  private:
   VideoMediaSendChannelInterface* video_media_channel()
-      RTC_RUN_ON(worker_thread_) {
+      RTC_RUN_ON(network_thread_) {
     return media_channel_->AsVideoSendChannel();
   }
   scoped_refptr<VideoTrackInterface> video_track() const

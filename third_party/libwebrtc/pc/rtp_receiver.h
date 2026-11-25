@@ -167,41 +167,41 @@ class RtpReceiverBase : public RtpReceiverInternal {
   void Stop() override;
 
  protected:
-  RtpReceiverBase(Thread* worker_thread,
+  RtpReceiverBase(Thread* network_thread,
                   absl::AnyInvocable<RTCError()> enable_sframe_at_owner,
                   MediaReceiveChannelInterface* media_channel,
                   Clock* clock = Clock::GetRealTimeClock());
   ~RtpReceiverBase() override;
 
   void set_media_channel(MediaReceiveChannelInterface* media_channel)
-      RTC_RUN_ON(worker_thread_);
+      RTC_RUN_ON(network_thread_);
 
   
-  const scoped_refptr<PendingTaskSafetyFlag>& worker_thread_safety() const {
-    return worker_thread_safety_;
+  const scoped_refptr<PendingTaskSafetyFlag>& network_thread_safety() const {
+    return network_thread_safety_;
   }
 
   RTC_NO_UNIQUE_ADDRESS SequenceChecker signaling_thread_checker_;
-  Thread* const worker_thread_;
+  Thread* const network_thread_;
   SourceTracker source_tracker_ RTC_GUARDED_BY(signaling_thread_checker_);
-  std::optional<uint32_t> signaled_ssrc_ RTC_GUARDED_BY(worker_thread_);
+  std::optional<uint32_t> signaled_ssrc_ RTC_GUARDED_BY(network_thread_);
   
   std::optional<uint32_t> signaled_ssrc_s_
       RTC_GUARDED_BY(signaling_thread_checker_);
   scoped_refptr<FrameDecryptorInterface> frame_decryptor_
-      RTC_GUARDED_BY(worker_thread_);
+      RTC_GUARDED_BY(network_thread_);
   scoped_refptr<FrameTransformerInterface> frame_transformer_
-      RTC_GUARDED_BY(worker_thread_);
+      RTC_GUARDED_BY(network_thread_);
 
  private:
-  const scoped_refptr<PendingTaskSafetyFlag> worker_thread_safety_;
+  const scoped_refptr<PendingTaskSafetyFlag> network_thread_safety_;
   
   
   
   
   std::optional<uint32_t> unsignaled_ssrc_s_
       RTC_GUARDED_BY(signaling_thread_checker_);
-  MediaReceiveChannelInterface* media_channel_ RTC_GUARDED_BY(worker_thread_);
+  MediaReceiveChannelInterface* media_channel_ RTC_GUARDED_BY(network_thread_);
   RtpReceiverObserverInterface* observer_
       RTC_GUARDED_BY(&signaling_thread_checker_) = nullptr;
   bool received_first_packet_ RTC_GUARDED_BY(&signaling_thread_checker_) =

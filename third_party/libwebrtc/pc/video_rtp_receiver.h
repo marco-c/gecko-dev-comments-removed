@@ -44,7 +44,7 @@ class VideoRtpReceiver : public RtpReceiverBase {
  public:
   
   
-  VideoRtpReceiver(Thread* worker_thread,
+  VideoRtpReceiver(Thread* network_thread,
                    absl::string_view receiver_id,
                    std::vector<std::string> streams_ids,
                    absl::AnyInvocable<RTCError()> enable_sframe_at_owner,
@@ -55,7 +55,7 @@ class VideoRtpReceiver : public RtpReceiverBase {
   
   
   VideoRtpReceiver(
-      Thread* worker_thread,
+      Thread* network_thread,
       absl::string_view receiver_id,
       const std::vector<scoped_refptr<MediaStreamInterface>>& streams,
       absl::AnyInvocable<RTCError()> enable_sframe_at_owner,
@@ -105,20 +105,21 @@ class VideoRtpReceiver : public RtpReceiverBase {
  private:
   absl::AnyInvocable<void() &&> GetRestartFunctionForMediaChannel(
       std::optional<uint32_t> ssrc) RTC_RUN_ON(&signaling_thread_checker_);
-  void GetRestartFunctionForMediaChannel_w(
+  void GetRestartFunctionForMediaChannel_n(
       std::optional<uint32_t> ssrc,
-      MediaSourceInterface::SourceState state) RTC_RUN_ON(worker_thread_);
-  void SetSink(VideoSinkInterface<VideoFrame>* sink) RTC_RUN_ON(worker_thread_);
-  void SetMediaChannel_w(MediaReceiveChannelInterface* media_channel)
-      RTC_RUN_ON(worker_thread_);
+      MediaSourceInterface::SourceState state) RTC_RUN_ON(network_thread_);
+  void SetSink(VideoSinkInterface<VideoFrame>* sink)
+      RTC_RUN_ON(network_thread_);
+  void SetMediaChannel_n(MediaReceiveChannelInterface* media_channel)
+      RTC_RUN_ON(network_thread_);
   VideoMediaReceiveChannelInterface* video_media_channel() const
-      RTC_RUN_ON(worker_thread_);
+      RTC_RUN_ON(network_thread_);
 
   
   void OnGenerateKeyFrame();
   void OnEncodedSinkEnabled(bool enable);
 
-  void SetEncodedSinkEnabled(bool enable) RTC_RUN_ON(worker_thread_);
+  void SetEncodedSinkEnabled(bool enable) RTC_RUN_ON(network_thread_);
 
   class SourceCallback : public VideoRtpTrackSource::Callback {
    public:
@@ -146,12 +147,12 @@ class VideoRtpReceiver : public RtpReceiverBase {
       RTC_GUARDED_BY(&signaling_thread_checker_);
   
   
-  JitterBufferDelay delay_ RTC_GUARDED_BY(worker_thread_);
+  JitterBufferDelay delay_ RTC_GUARDED_BY(network_thread_);
 
   
   
-  bool saved_generate_keyframe_ RTC_GUARDED_BY(worker_thread_) = false;
-  bool saved_encoded_sink_enabled_ RTC_GUARDED_BY(worker_thread_) = false;
+  bool saved_generate_keyframe_ RTC_GUARDED_BY(network_thread_) = false;
+  bool saved_encoded_sink_enabled_ RTC_GUARDED_BY(network_thread_) = false;
 };
 
 }  
