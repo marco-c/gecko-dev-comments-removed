@@ -57,6 +57,15 @@ async function activateSupportLinkAndVerifyTelemetry(
   win,
   useKeyboard = false
 ) {
+  
+  
+  
+  await BrowserTestUtils.waitForMutationCondition(
+    supportLink,
+    { childList: true },
+    () => supportLink.textContent
+  );
+
   let linkClickPromise = BrowserTestUtils.waitForNewTab(gBrowser, null, true);
 
   if (useKeyboard) {
