@@ -37,72 +37,131 @@ add_setup(async function () {
 });
 
 
+
 add_task(async function noResults() {
-  
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "doesn't match anything",
+  await BrowserTestUtils.withNewTab("about:blank", async () => {
+    
+    
+    let value = "doesn't match anything";
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value,
+    });
+    await UrlbarTestUtils.enterSearchMode(window, {
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
+    });
+
+    Assert.equal(
+      UrlbarTestUtils.getResultCount(window),
+      1,
+      "Only the heuristic since no bookmark matches"
+    );
+    await assertSearchHeuristic(0, value);
+
+    
+    await assertEnterLoadsSERP(value);
   });
-  await UrlbarTestUtils.enterSearchMode(window, {
-    source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
-  });
-
-  Assert.equal(
-    UrlbarTestUtils.getResultCount(window),
-    0,
-    "Zero results since no bookmark matches"
-  );
-
-  
-  let promise = waitForLoadStartOrTimeout();
-  EventUtils.synthesizeKey("KEY_Enter");
-  await Assert.rejects(promise, /timed out/, "Nothing should have loaded");
-
-  await UrlbarTestUtils.promisePopupClose(window);
 });
 
 
 
-add_task(async function localNoHeuristic() {
-  
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "bookmark",
+add_task(async function localSearchHeuristic() {
+  await BrowserTestUtils.withNewTab("about:blank", async () => {
+    
+    let value = "bookmark";
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value,
+    });
+    await UrlbarTestUtils.enterSearchMode(window, {
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
+    });
+
+    Assert.equal(
+      UrlbarTestUtils.getResultCount(window),
+      2,
+      "There should be two results"
+    );
+    await assertSearchHeuristic(0, value);
+
+    let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
+    Assert.equal(
+      result.source,
+      UrlbarShared.RESULT_SOURCE.BOOKMARKS,
+      "Result source should be BOOKMARKS"
+    );
+    Assert.equal(
+      result.type,
+      UrlbarShared.RESULT_TYPE.URL,
+      "Result type should be URL"
+    );
+    Assert.equal(
+      result.url,
+      "https://example.com/bookmark",
+      "Result URL is our bookmark URL"
+    );
+    Assert.ok(!result.heuristic, "Result should not be heuristic");
+
+    
+    await assertEnterLoadsSERP(value);
   });
-  await UrlbarTestUtils.enterSearchMode(window, {
-    source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
-  });
+});
 
-  Assert.equal(
-    UrlbarTestUtils.getResultCount(window),
-    1,
-    "There should be one result"
-  );
 
-  let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
-  Assert.equal(
-    result.source,
-    UrlbarShared.RESULT_SOURCE.BOOKMARKS,
-    "Result source should be BOOKMARKS"
-  );
-  Assert.equal(
-    result.type,
-    UrlbarShared.RESULT_TYPE.URL,
-    "Result type should be URL"
-  );
-  Assert.equal(
-    result.url,
-    "https://example.com/bookmark",
-    "Result URL is our bookmark URL"
-  );
-  Assert.ok(!result.heuristic, "Result should not be heuristic");
 
-  
-  let promise = waitForLoadStartOrTimeout();
-  EventUtils.synthesizeKey("KEY_Enter");
-  await Assert.rejects(promise, /timed out/, "Nothing should have loaded");
+add_task(async function localUrlHeuristic() {
+  for (let closeView of [false, true]) {
+    info(`Pressing Enter with the view ${closeView ? "closed" : "open"}`);
+    await BrowserTestUtils.withNewTab("about:blank", async () => {
+      await UrlbarTestUtils.promiseAutocompleteResultPopup({
+        window,
+        value: "example.com/edited",
+      });
+      await UrlbarTestUtils.enterSearchMode(window, {
+        source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
+      });
 
-  await UrlbarTestUtils.promisePopupClose(window);
+      Assert.equal(
+        UrlbarTestUtils.getResultCount(window),
+        1,
+        "Only the heuristic since no bookmark matches"
+      );
+      let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+      Assert.equal(
+        result.type,
+        UrlbarShared.RESULT_TYPE.URL,
+        "Result type should be URL"
+      );
+      Assert.equal(
+        result.url,
+        
+        "http://example.com/edited",
+        "Result URL is the typed URL"
+      );
+      Assert.ok(result.heuristic, "Result should be heuristic");
+
+      if (closeView) {
+        await UrlbarTestUtils.promisePopupClose(window);
+      }
+
+      
+      let loadPromise = BrowserTestUtils.browserLoaded(
+        gBrowser.selectedBrowser
+      );
+      EventUtils.synthesizeKey("KEY_Enter");
+      await loadPromise;
+      Assert.equal(
+        gBrowser.currentURI.host,
+        "example.com",
+        "The typed URL's host should have loaded"
+      );
+      Assert.equal(
+        gBrowser.currentURI.filePath,
+        "/edited",
+        "The typed URL's path should have loaded"
+      );
+    });
+  }
 });
 
 
@@ -340,3 +399,40 @@ add_task(async function remoteUrlNavigationEnabled() {
 
   await SpecialPowers.popPrefEnv();
 });
+
+async function assertSearchHeuristic(index, query) {
+  let result = await UrlbarTestUtils.getDetailsOfResultAt(window, index);
+  Assert.equal(
+    result.type,
+    UrlbarShared.RESULT_TYPE.SEARCH,
+    "Result type should be SEARCH"
+  );
+  Assert.ok(result.heuristic, "Result should be heuristic");
+  Assert.equal(
+    result.searchParams.engine,
+    "Test",
+    "searchParams.engine should be the default engine"
+  );
+  Assert.equal(
+    result.searchParams.query,
+    query,
+    "searchParams.query should be our query"
+  );
+}
+
+async function assertEnterLoadsSERP(query) {
+  let loadPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  EventUtils.synthesizeKey("KEY_Enter");
+  await loadPromise;
+  let url = new URL(gBrowser.currentURI.spec);
+  Assert.equal(
+    url.origin + url.pathname,
+    "https://example.com/",
+    "The default engine's SERP should have loaded"
+  );
+  Assert.equal(
+    url.searchParams.get("q"),
+    query,
+    "The SERP should be for our query"
+  );
+}

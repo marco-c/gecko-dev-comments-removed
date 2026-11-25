@@ -1152,12 +1152,18 @@ ${
         : 0) + (this._wwwIsTrimmed ? "www.".length : 0);
     const previousSelectionStart = this.selectionStart + offset;
     const previousSelectionEnd = this.selectionEnd + offset;
+    const wasAllSelected = this.#allTextSelected;
 
     this.setValue(value, { allowTrim: true, valueIsTyped: !valid });
     this.toggleAttribute("usertyping", !valid && value);
 
     if (this.focused && value != previousUntrimmedValue) {
-      if (
+      if (wasAllSelected && !isReverting && !dueToTabSwitch) {
+        // If all text was previously selected, select the new text too. This
+        // behavior is consistent with other browsers. Notably this is the case
+        // when a custom new-tab page loads a new URL.
+        this.inputField.select();
+      } else if (
         previousSelectionStart != previousSelectionEnd &&
         value.substring(previousSelectionStart, previousSelectionEnd) ===
           previousUntrimmedValue.substring(
@@ -1362,7 +1368,7 @@ ${
     if (
       !result &&
       this._resultForCurrentValue?.type == UrlbarShared.RESULT_TYPE.URL &&
-      UrlbarShared.navigationInSearchModeEnabled(this.#sapName)
+      UrlbarShared.navigationInSearchModeEnabled(this.#sapName, this.searchMode)
     ) {
       return null;
     }
@@ -1597,11 +1603,15 @@ ${
       return;
     }
 
-    // When the user hits enter in a local search mode and there's no selected
-    // result or one-off, don't do anything.
+    // When the user hits enter in a local search mode where navigation isn't
+    // enabled and there's no selected result or one-off, don't do anything.
     if (
       this.searchMode &&
       !this.searchMode.engineName &&
+      !UrlbarShared.navigationInSearchModeEnabled(
+        this.#sapName,
+        this.searchMode
+      ) &&
       !result &&
       !oneOffParams
     ) {
