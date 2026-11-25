@@ -1125,7 +1125,6 @@ scoped_refptr<RTCStatsReport> RTCStatsCollector::CreateReportFilteredBySelector(
     scoped_refptr<const RTCStatsReport> report,
     scoped_refptr<RtpSenderInternal> sender_selector,
     scoped_refptr<RtpReceiverInternal> receiver_selector) {
-  RTC_DCHECK_RUN_ON(signaling_thread_);
   std::vector<std::string> rtpstream_ids;
   if (filter_by_sender_selector) {
     
@@ -1252,7 +1251,10 @@ RTCStatsCollector::RTCStatsCollector(PeerConnectionInternal* pc,
   RTC_DCHECK_GE(cache_lifetime_us_, 0);
 }
 
-RTCStatsCollector::~RTCStatsCollector() = default;
+RTCStatsCollector::~RTCStatsCollector() {
+  RTC_DCHECK_RUN_ON(signaling_thread_);
+  signaling_safety_->SetNotAlive();
+}
 
 void RTCStatsCollector::GetStatsReport(
     scoped_refptr<RTCStatsCollectorCallback> callback) {
@@ -1323,9 +1325,9 @@ void RTCStatsCollector::GetStatsReportInternal(
     
     
     
-    signaling_thread_->PostTask(
-        SafeTask(signaling_safety_, [this, request = std::move(request),
-                                     report = cached_report_]() mutable {
+    signaling_thread_->PostTask(SafeTask(
+        signaling_safety_,
+        [request = std::move(request), report = cached_report_]() mutable {
           DeliverReport(request, report);
         }));
     return;
@@ -1535,16 +1537,23 @@ void RTCStatsCollector::OnNetworkReportReady(
                        "report", cached_report_->ToJson());
 
   
+  
+  
+  scoped_refptr<const RTCStatsReport> cached_report = cached_report_;
+  scoped_refptr<PendingTaskSafetyFlag> signaling_safety = signaling_safety_;
+  
   auto requests = std::move(requests_);
   for (const RequestInfo& request : requests) {
-    DeliverReport(request, cached_report_);
+    if (!signaling_safety->alive()) {
+      break;
+    }
+    DeliverReport(request, cached_report);
   }
 }
 
 void RTCStatsCollector::DeliverReport(
     const RequestInfo& request,
     const scoped_refptr<const RTCStatsReport>& report) {
-  RTC_DCHECK_RUN_ON(signaling_thread_);
   if (request.filter_mode() == RequestInfo::FilterMode::kAll) {
     request.callback()->OnStatsDelivered(report);
   } else {
