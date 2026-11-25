@@ -178,6 +178,11 @@ void L10nMutations::ResumeObserving() { mObserving = true; }
 
 void L10nMutations::WillRefresh(mozilla::TimeStamp aTime) {
   StopRefreshObserver();
+  
+  
+  
+  RefPtr<Document> doc = GetDocument();
+  nsAutoMicroTaskForDocument mt(doc);
   FlushPendingTranslations();
 }
 
