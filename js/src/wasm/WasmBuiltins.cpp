@@ -810,6 +810,12 @@ void wasm::HandleExceptionWasm(JSContext* cx, JitFrameIter& iter,
   iter.asWasm().setIsLeavingFrames();
 
   
+  
+  
+  
+  cx->setRealmForJitExceptionHandler(iter.asWasm().instance()->realm());
+
+  
   Rooted<WasmExceptionObject*> wasmExn(cx,
                                        GetOrWrapWasmException(activation, cx));
 
