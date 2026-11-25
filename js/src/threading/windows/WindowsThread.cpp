@@ -83,9 +83,7 @@ ThreadId ThreadId::ThisThreadId() {
 void ThisThread::SetName(const char* name) {
   MOZ_RELEASE_ASSERT(name);
 
-#ifdef _MSC_VER
-  
-  
+#ifdef HAVE_SEH_EXCEPTIONS
   static const DWORD THREAD_NAME_EXCEPTION = 0x406D1388;
   static const DWORD THREAD_NAME_INFO_TYPE = 0x1000;
 
