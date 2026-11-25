@@ -12,92 +12,14 @@
 #ifndef mozilla_FStream_h
 #define mozilla_FStream_h
 
-#if defined(__MINGW32__) && defined(__GLIBCXX__)
-#  include <fcntl.h>
-
-#  include <ext/stdio_filebuf.h>
-#  include <istream>
-#  include <ostream>
-
-#  include "mozilla/UniquePtr.h"
-#else
-#  if defined(XP_WIN)
-#    include "mozilla/Char16.h"
-#  endif
-#  include <fstream>
+#if defined(XP_WIN)
+#  include "mozilla/Char16.h"
 #endif
+#include <fstream>
 
 namespace mozilla {
 
-#if defined(__MINGW32__) && defined(__GLIBCXX__)
-
-
-class IFStream : public std::istream {
- public:
-  explicit IFStream(char16ptr_t filename, openmode mode = in);
-
-  std::filebuf* rdbuf() const { return mFileBuf.get(); }
-
-  bool is_open() const { return mFileBuf && mFileBuf->is_open(); }
-  void open(char16ptr_t filename, openmode mode = in);
-  void close() { mFileBuf && mFileBuf->close(); }
-
- private:
-  UniquePtr<std::filebuf> mFileBuf;
-};
-
-inline IFStream::IFStream(char16ptr_t filename, openmode mode)
-    : std::istream(nullptr) {
-  open(filename, mode);
-}
-
-inline void IFStream::open(char16ptr_t filename, openmode mode) {
-  int fmode = _O_RDONLY;
-  if (mode & binary) {
-    fmode |= _O_BINARY;
-  } else {
-    fmode |= _O_TEXT;
-  }
-  int fd = _wopen(filename, fmode);
-  mFileBuf = std::make_unique<__gnu_cxx::stdio_filebuf<char>>(fd, mode);
-  std::istream::rdbuf(mFileBuf.get());
-}
-
-class OFStream : public std::ostream {
- public:
-  explicit OFStream(char16ptr_t filename, openmode mode = out);
-
-  std::filebuf* rdbuf() const { return mFileBuf.get(); }
-
-  bool is_open() const { return mFileBuf && mFileBuf->is_open(); }
-  void open(char16ptr_t filename, openmode mode = out);
-  void close() { mFileBuf && mFileBuf->close(); }
-
- private:
-  UniquePtr<std::filebuf> mFileBuf;
-};
-
-inline OFStream::OFStream(char16ptr_t filename, openmode mode)
-    : std::ostream(nullptr) {
-  open(filename, mode);
-}
-
-inline void OFStream::open(char16ptr_t filename, openmode mode) {
-  int fmode = _O_WRONLY;
-  if (mode & binary) {
-    fmode |= _O_BINARY;
-  } else {
-    fmode |= _O_TEXT;
-  }
-  if (mode & trunc) {
-    fmode |= _O_CREAT | _O_TRUNC;
-  }
-  int fd = _wopen(filename, fmode);
-  mFileBuf = std::make_unique<__gnu_cxx::stdio_filebuf<char>>(fd, mode);
-  std::ostream::rdbuf(mFileBuf.get());
-}
-
-#elif defined(XP_WIN)
+#if defined(XP_WIN)
 class IFStream : public std::ifstream {
  public:
   explicit IFStream(char16ptr_t filename, openmode mode = in)

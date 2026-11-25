@@ -31,15 +31,8 @@
 #    define MOZ_THROW_NORETURN __attribute__((__noreturn__))
 #  endif
 
-
-
-#  ifdef __MINGW32__
-#    define MOZ_THROW_INLINE MOZ_ALWAYS_INLINE_EVEN_DEBUG
-#    define MOZ_THROW_EXPORT
-#  else
-#    define MOZ_THROW_INLINE MOZ_ALWAYS_INLINE
-#    define MOZ_THROW_EXPORT MOZ_EXPORT
-#  endif
+#  define MOZ_THROW_INLINE MOZ_ALWAYS_INLINE
+#  define MOZ_THROW_EXPORT MOZ_EXPORT
 
 namespace std {
 
