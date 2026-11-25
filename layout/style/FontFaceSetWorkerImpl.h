@@ -10,6 +10,7 @@
 
 namespace mozilla::dom {
 class ThreadSafeWorkerRef;
+class WorkerFontVisibilityProvider;
 class WorkerPrivate;
 
 class FontFaceSetWorkerImpl final : public FontFaceSetImpl {
@@ -64,6 +65,10 @@ class FontFaceSetWorkerImpl final : public FontFaceSetImpl {
   
   
   Maybe<ClientInfo> mClientInfo MOZ_GUARDED_BY(mMutex);
+
+  
+  RefPtr<WorkerFontVisibilityProvider> mFontVisibilityProvider
+      MOZ_GUARDED_BY(mMutex);
 };
 
 }  

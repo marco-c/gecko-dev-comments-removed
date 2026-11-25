@@ -143,10 +143,40 @@ class MOZ_CAPABILITY("mutex") SharedMutex {
 
 nsString ComputeWorkerPrivateId();
 
+class WorkerPrivate;
+
+
+
+class WorkerFontVisibilityProvider final : public FontVisibilityProvider {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WorkerFontVisibilityProvider)
+
+  
+  
+  explicit WorkerFontVisibilityProvider(const WorkerPrivate& aWorkerPrivate);
+
+  FONT_VISIBILITY_PROVIDER_IMPL
+
+  void SetShouldResistFingerprinting(bool aValue) {
+    mShouldResistFingerprinting = aValue;
+  }
+
+ private:
+  ~WorkerFontVisibilityProvider() = default;
+
+  Atomic<bool, Relaxed> mShouldResistFingerprinting;
+  const Maybe<RFPTargetSet> mOverriddenFingerprintingSettings;
+  const bool mIsChrome;
+  const bool mIsPrivateBrowsing;
+  const uint64_t mWindowID;
+  const nsCOMPtr<nsICookieJarSettings> mCookieJarSettings;
+  const Maybe<FontVisibility> mInheritedFontVisibility;
+  const FontVisibility mFontVisibility;
+};
+
 class WorkerPrivate final
     : public RelativeTimeline,
-      public SupportsCheckedUnsafePtr<CheckIf<DiagnosticAssertEnabled>>,
-      public FontVisibilityProvider {
+      public SupportsCheckedUnsafePtr<CheckIf<DiagnosticAssertEnabled>> {
  public:
   
   
@@ -222,7 +252,16 @@ class WorkerPrivate final
 
   NS_INLINE_DECL_REFCOUNTING(WorkerPrivate)
 
-  FONT_VISIBILITY_PROVIDER_IMPL
+  FontVisibility GetFontVisibility() const {
+    return mFontVisibilityProvider->GetFontVisibility();
+  }
+  WorkerFontVisibilityProvider* GetFontVisibilityProvider() const {
+    return mFontVisibilityProvider;
+  }
+  bool ShouldResistFingerprinting(RFPTarget aTarget) const;
+  bool IsPrivateBrowsing() const {
+    return mLoadInfo.mOriginAttributes.IsPrivateBrowsing();
+  }
 
   static already_AddRefed<WorkerPrivate> Constructor(
       JSContext* aCx, const nsAString& aScriptURL, bool aIsChromeWorker,
@@ -1458,6 +1497,7 @@ class WorkerPrivate final
   class EventTarget;
   friend class EventTarget;
   friend class AutoSyncLoopHolder;
+  friend class WorkerFontVisibilityProvider;
 
   class MemoryReporter;
   friend class MemoryReporter;
@@ -1823,7 +1863,7 @@ class WorkerPrivate final
 
   RefPtr<WorkerParentRef> mParentRef;
 
-  FontVisibility mFontVisibility;
+  const RefPtr<WorkerFontVisibilityProvider> mFontVisibilityProvider;
 };
 
 class AutoSyncLoopHolder {
