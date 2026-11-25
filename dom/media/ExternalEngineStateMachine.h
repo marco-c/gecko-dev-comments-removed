@@ -339,6 +339,8 @@ class ExternalEngineStateMachine final
 
   void NotifyAudibleStateChangeIfNeeded();
 
+  void ApplyPendingCDMProxy();
+
   UniquePtr<ExternalPlaybackEngine> mEngine;
 
   bool mHasEnoughAudio = false;
@@ -356,7 +358,7 @@ class ExternalEngineStateMachine final
 #endif
 
   
-  MozPromiseHolder<SetCDMPromise> mSetCDMProxyPromise;
+  RefPtr<CDMProxy> mPendingCDMProxy;
   MozPromiseRequestHolder<SetCDMPromise> mSetCDMProxyRequest;
 
   
@@ -366,6 +368,9 @@ class ExternalEngineStateMachine final
 
   
   gfx::IntSize mVideoDisplay;
+
+  
+  gfx::IntSize mLastFrameDisplay;
 
   
   nsCString mKeySystem;
