@@ -62,10 +62,9 @@ async function testResendRequest() {
 
   
   
-  
   is(
     firstResend.originalResource.requestHeaders.headers.length,
-    firstResend.newResource.requestHeaders.headers.length - 1,
+    firstResend.newResource.requestHeaders.headers.length,
     "The no of headers are the same"
   );
 
@@ -131,9 +130,8 @@ async function testResendRequest() {
 
 async function resendRequestAndWaitForNewRequest(monitor, originalRequestItem) {
   const { document, store, windowRequire, connector } = monitor.panelWin;
-  const { getSelectedRequest, getDisplayedRequests } = windowRequire(
-    "devtools/client/netmonitor/src/selectors/index"
-  );
+  const { getSelectedRequest, getDisplayedRequests, getRequestById } =
+    windowRequire("devtools/client/netmonitor/src/selectors/index");
 
   info("Select the request to resend");
   const expectedNoOfRequestsAfterResend =
@@ -203,7 +201,7 @@ async function testOldEditAndResendPanel() {
 
   store.dispatch(Actions.selectRequest(origItemId));
   await waitForRequestData(
-    store,
+    monitor,
     ["requestHeaders", "requestPostData"],
     origItemId
   );

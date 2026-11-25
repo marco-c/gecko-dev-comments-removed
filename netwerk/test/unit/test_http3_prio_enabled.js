@@ -32,7 +32,9 @@ add_task(async function setup() {
 
 
 async function test_http3_prio_enabled(incremental) {
-  await test_flag_priority("enabled (none)", null, "u=4", null, false); 
+  
+  
+  await test_flag_priority("enabled (none)", null, "u=4", null, true); 
   await test_flag_priority(
     "enabled (urgent_start)",
     Ci.nsIClassOfService.UrgentStart,

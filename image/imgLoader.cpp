@@ -2538,9 +2538,7 @@ nsresult imgLoader::LoadImage(
       if (aUseUrgentStartForChannel && !aLinkPreload) {
         cos->AddClassFlags(nsIClassOfService::UrgentStart);
       }
-      if (StaticPrefs::image_priority_incremental()) {
-        cos->SetIncremental(true);
-      }
+      cos->SetIncremental(true);
 
       if (StaticPrefs::network_http_tailing_enabled() &&
           aContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON) {
@@ -2605,6 +2603,19 @@ nsresult imgLoader::LoadImage(
   if (!*_retval) {
     
     
+    const auto* perfData = request->GetPerfData();
+    if (perfData && aLoadingDocument &&
+        !request->CanReuseWithoutValidation(aLoadingDocument)) {
+      nsAutoCString spec;
+      aURI->GetSpec(spec);
+      TimeStamp now = TimeStamp::Now();
+      SharedSubResourceCacheUtils::AddPerformanceEntryForCache(
+          NS_ConvertUTF8toUTF16(spec), nsString(initiatorType), *perfData, now,
+          now, aLoadingDocument);
+    }
+
+    
+    
     
     
     
@@ -2613,6 +2624,8 @@ nsresult imgLoader::LoadImage(
     
     
     request->SetLoadId(aLoadingDocument);
+    request->SetInnerWindowID(
+        aLoadingDocument ? aLoadingDocument->InnerWindowID() : 0);
 
     LOG_MSG(gImgLog, "imgLoader::LoadImage", "creating proxy request.");
     rv = CreateNewProxyForRequest(request, aURI, aLoadGroup, aLoadingDocument,

@@ -329,6 +329,30 @@ static bool isSecureOrTrustworthyURL(nsIURI* aURI) {
           nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackURL(aURI));
 }
 
+
+
+
+static bool DefaultIncremental(ExtContentPolicyType aType) {
+  if (!StaticPrefs::network_http_priority_incremental_by_default()) {
+    return false;
+  }
+  switch (aType) {
+    case ExtContentPolicyType::TYPE_STYLESHEET:
+    case ExtContentPolicyType::TYPE_SCRIPT:
+    case ExtContentPolicyType::TYPE_JSON:
+    case ExtContentPolicyType::TYPE_TEXT:
+    case ExtContentPolicyType::TYPE_FONT:
+    case ExtContentPolicyType::TYPE_UA_FONT:
+    case ExtContentPolicyType::TYPE_XSLT:
+    case ExtContentPolicyType::TYPE_DTD:
+    case ExtContentPolicyType::TYPE_WEB_MANIFEST:
+    case ExtContentPolicyType::TYPE_WEB_IDENTITY:
+      return false;
+    default:
+      return true;
+  }
+}
+
 nsresult HttpBaseChannel::Init(nsIURI* aURI, uint32_t aCaps,
                                nsProxyInfo* aProxyInfo,
                                uint32_t aProxyResolveFlags, nsIURI* aProxyURI,
@@ -394,6 +418,8 @@ nsresult HttpBaseChannel::Init(nsIURI* aURI, uint32_t aCaps,
         break;
     }
   }
+
+  mClassOfService.SetIncremental(DefaultIncremental(contentPolicyType));
 
   RefPtr<mozilla::dom::BrowsingContext> browsingContext;
   mLoadInfo->GetBrowsingContext(getter_AddRefs(browsingContext));
@@ -5509,7 +5535,7 @@ nsresult HttpBaseChannel::SetupReplacementChannel(nsIURI* newURI,
   nsCOMPtr<nsIWritablePropertyBag> bag(do_QueryInterface(newChannel));
   if (bag) {
     for (const auto& entry : mPropertyHash) {
-      bag->SetProperty(entry.GetKey(), entry.GetWeak());
+      bag->SetProperty(entry.GetKey(), entry.GetRawPtr());
     }
   }
 
