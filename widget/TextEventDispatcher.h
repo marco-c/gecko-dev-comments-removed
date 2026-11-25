@@ -538,6 +538,18 @@ class TextEventDispatcher final {
   
 
 
+  Maybe<QueryContentResult> QueryTextRectArray(uint32_t aOffset,
+                                               uint32_t aLength) const;
+
+  
+
+
+  Maybe<QueryContentResult> QueryTextRectArray(
+      int64_t aOffset, uint32_t aLength, const QueryContentOptions&) const;
+
+  
+
+
   [[nodiscard]] bool IsBatching() const { return !!mBatching; }
 
   
