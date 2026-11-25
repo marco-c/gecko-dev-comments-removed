@@ -6,6 +6,7 @@
 
 #include "gc/GCInternals.h"
 #include "gc/Zone.h"
+#include "js/friend/CycleCollector.h"  
 #include "js/PropertyAndElement.h"  
 #include "js/Proxy.h"
 #include "jsapi-tests/tests.h"
@@ -64,7 +65,7 @@ BEGIN_TEST(testGCGrayMarking) {
   AutoGCParameter param2(cx, JSGC_PER_ZONE_GC_ENABLED, true);
 
   bool ok = TestMarking() && TestJSWeakMaps() && TestInternalWeakMaps() &&
-            TestCCWs() && TestGrayUnmarking();
+            TestCCWs() && TestGrayUnmarking() && TestFixWeakMappingGrayBits();
 
   global1 = nullptr;
   global2 = nullptr;
@@ -310,13 +311,13 @@ bool TestJSWeakMapWithGrayUnmarking(MarkKeyOrDelegate markKey,
   return true;
 }
 
+#endif  
+
 static void MaybeExposeObject(JSObject* object, CellColor color) {
   if (color == CellColor::Black) {
     JS::ExposeObjectToActiveJS(object);
   }
 }
-
-#endif  
 
 bool CreateJSWeakMapObjects(JSObject** weakMapOut, JSObject** keyOut,
                             JSObject** valueOut) {
@@ -595,6 +596,76 @@ bool TestGrayUnmarking() {
   CHECK(count == length);
 
   grayRoots.grayRoot1 = nullptr;
+
+  return true;
+}
+
+bool TestFixWeakMappingGrayBits() {
+  for (auto keyOrDelegateColor : MarkedCellColors) {
+    for (auto mapColor : MarkedCellColors) {
+      for (auto markKeyOrDelegate : {MarkKey, MarkDelegate}) {
+        CHECK(TestFixWeakMappingGrayBits(markKeyOrDelegate, mapColor,
+                                         keyOrDelegateColor));
+      }
+    }
+  }
+
+  return true;
+}
+
+bool CheckWeakMappingGrayBitsResult(bool expected) {
+#if defined(JS_GC_ZEAL) || defined(DEBUG)
+  CHECK(js::CheckWeakMappingGrayBits(cx->runtime()) == expected);
+#endif
+  return true;
+}
+
+bool TestFixWeakMappingGrayBits(MarkKeyOrDelegate markKey,
+                                CellColor weakMapColor,
+                                CellColor keyOrDelegateColor) {
+  
+  
+  
+
+  CHECK(CheckWeakMappingGrayBitsResult(true));
+
+  JSObject* weakMap;
+  JSObject* key;
+  JSObject* value;
+  CHECK(CreateJSWeakMapObjects(&weakMap, &key, &value));
+
+  JSObject* delegate = UncheckedUnwrapWithoutExpose(key);
+  JSObject* keyOrDelegate = markKey ? key : delegate;
+
+  grayRoots.grayRoot1 = weakMap;
+  grayRoots.grayRoot2 = keyOrDelegate;
+  JS_GC(cx);
+  CHECK(weakMap->color() == CellColor::Gray);
+  CHECK(key->color() == CellColor::Gray);
+  CHECK(delegate->color() == CellColor::Gray);
+  CHECK(value->color() == CellColor::Gray);
+  CHECK(CheckWeakMappingGrayBitsResult(true));
+
+  MaybeExposeObject(weakMap, weakMapColor);
+  MaybeExposeObject(keyOrDelegate, keyOrDelegateColor);
+  CHECK(weakMap->color() == weakMapColor);
+  CHECK(keyOrDelegate->color() == keyOrDelegateColor);
+  CHECK(value->color() == CellColor::Gray);
+
+  
+  
+  CellColor expected = std::min(weakMapColor, keyOrDelegateColor);
+  bool needsFixing = expected == CellColor::Black;
+  CHECK(CheckWeakMappingGrayBitsResult(!needsFixing));
+
+  js::FixWeakMappingGrayBits(cx->runtime());
+  CHECK(weakMap->color() == weakMapColor);
+  CHECK(keyOrDelegate->color() == keyOrDelegateColor);
+  CHECK(key->color() == (markKey ? keyOrDelegateColor : expected));
+  CHECK(value->color() == expected);
+  CHECK(CheckWeakMappingGrayBitsResult(true));
+
+  ClearGrayRoots();
 
   return true;
 }
