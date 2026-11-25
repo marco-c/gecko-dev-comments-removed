@@ -3437,7 +3437,8 @@ void RestyleManager::ProcessAllPendingAttributeAndStateInvalidations() {
     
     
     if (key->HasStyleFlag(NodeStyleFlags::HasSnapshot)) {
-      Servo_ProcessInvalidations(StyleSet()->RawData(), key, &mSnapshots);
+      Servo_ProcessSnapshotInvalidations(StyleSet()->RawData(), key,
+                                         &mSnapshots);
     }
   }
   ClearSnapshots();
