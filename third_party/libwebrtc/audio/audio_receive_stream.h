@@ -86,15 +86,11 @@ class AudioReceiveStreamImpl final : public webrtc::AudioReceiveStreamInterface,
   
   
   
-  
-  
   ~AudioReceiveStreamImpl() override;
 
   
-  
   void RegisterWithTransport(
       RtpStreamReceiverControllerInterface* receiver_controller);
-  
   
   
   void UnregisterFromTransport();
@@ -152,15 +148,15 @@ class AudioReceiveStreamImpl final : public webrtc::AudioReceiveStreamInterface,
   internal::AudioState* audio_state() const;
 
   const Environment env_;
-  RTC_NO_UNIQUE_ADDRESS SequenceChecker worker_thread_checker_;
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker network_thread_checker_;
   webrtc::AudioReceiveStreamInterface::Config config_;
   const scoped_refptr<webrtc::AudioState> audio_state_;
   const std::unique_ptr<voe::ChannelReceiveInterface> channel_receive_;
 
-  bool playing_ RTC_GUARDED_BY(worker_thread_checker_) = false;
+  bool playing_ RTC_GUARDED_BY(network_thread_checker_) = false;
 
   std::unique_ptr<RtpStreamReceiverInterface> rtp_stream_receiver_
-      RTC_GUARDED_BY(worker_thread_checker_);
+      RTC_GUARDED_BY(network_thread_checker_);
 };
 }  
 
