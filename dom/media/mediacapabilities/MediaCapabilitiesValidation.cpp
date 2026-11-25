@@ -187,9 +187,19 @@ static ValidationResult CheckMIMETypeValidity(
   
   
   
+  
+  
+  
+  
+  const bool isMediaSourceMPEGAudio =
+      aMediaType.is<MediaDecodingType>() &&
+      aMediaType.as<MediaDecodingType>() == MediaDecodingType::Media_source &&
+      (mimetype == MEDIAMIMETYPE("audio/mpeg") ||
+       mimetype == MEDIAMIMETYPE("audio/aac"));
   const size_t numParams = aMime.GetParameterCount();
-  if (IsSingleCodecType(aMime) && numParams != 0 &&
-      !IsMediaTypeWebRTC(aMediaType)) {
+  if (((IsSingleCodecType(aMime) && !IsMediaTypeWebRTC(aMediaType)) ||
+       isMediaSourceMPEGAudio) &&
+      numParams != 0) {
     ValidationResult err = Err(ValidationError::SingleCodecHasParams);
     LOG(
         ("[Invalid MIME Validity #2, {}] Rejecting '{}' (single codec type "
@@ -200,7 +210,7 @@ static ValidationResult CheckMIMETypeValidity(
 
   
   
-  if (IsContainerType(aMime)) {
+  if (IsContainerType(aMime) && !isMediaSourceMPEGAudio) {
     
     
     if ((numParams != 1) || !aMime.HaveCodecs()) {
