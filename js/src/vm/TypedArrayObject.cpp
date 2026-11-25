@@ -13,10 +13,14 @@
 #include "mozilla/PodOperations.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/SIMD.h"
+#include "mozilla/SSE.h"
 #include "mozilla/TextUtils.h"
 
 #include <algorithm>
 #include <charconv>
+#ifdef __x86_64__
+#  include <immintrin.h>
+#endif
 #include <iterator>
 #include <limits>
 #include <numeric>
@@ -175,8 +179,8 @@ bool TypedArrayObject::ensureHasBuffer(JSContext* cx,
       RemoveCellMemory(tarray, nbytes, MemoryUse::TypedArrayElements);
     }
 
-    tarray->setFixedSlot(TypedArrayObject::DATA_SLOT,
-                         PrivateValue(buffer->dataPointer()));
+    tarray->setFixedSlotTyped(TypedArrayObject::DATA_SLOT,
+                              PrivateValue(buffer->dataPointer()));
   }
 
   MOZ_ASSERT(tarray->elements() == buffer->dataPointer());
@@ -186,7 +190,8 @@ bool TypedArrayObject::ensureHasBuffer(JSContext* cx,
   
   MOZ_ALWAYS_TRUE(buffer->addView(cx, tarray));
 
-  tarray->setFixedSlot(TypedArrayObject::BUFFER_SLOT, ObjectValue(*buffer));
+  tarray->setFixedSlotTyped(TypedArrayObject::BUFFER_SLOT,
+                            ObjectValue(*buffer));
 
   return true;
 }
@@ -296,7 +301,7 @@ size_t FixedLengthTypedArrayObject::objectMoved(JSObject* obj, JSObject* old) {
           &buf, newObj, nbytes, nbytes, MemoryUse::TypedArrayElements,
           ArrayBufferContentsArena);
   if (result == Nursery::BufferMoved) {
-    newObj->setReservedSlot(DATA_SLOT, PrivateValue(buf));
+    newObj->setReservedSlotTyped(DATA_SLOT, PrivateValue(buf));
 
     
     
@@ -978,7 +983,7 @@ class FixedLengthTypedArrayObjectTemplate
 
     
     
-    MOZ_ASSERT(tarray->getReservedSlot(DATA_SLOT).isUndefined());
+    MOZ_ASSERT(tarray->getReservedSlotTyped(DATA_SLOT).isUndefined());
 
     return tarray;
   }
@@ -1000,10 +1005,10 @@ class FixedLengthTypedArrayObjectTemplate
     
     
     
-    obj->initFixedSlot(BUFFER_SLOT, ObjectValue(*buffer));
-    obj->initFixedSlot(LENGTH_SLOT, PrivateValue(size_t(0)));
-    obj->initFixedSlot(BYTEOFFSET_SLOT, PrivateValue(size_t(0)));
-    obj->initFixedSlot(DATA_SLOT, UndefinedValue());
+    obj->initFixedSlotTyped(BUFFER_SLOT, ObjectValue(*buffer));
+    obj->initFixedSlotTyped(LENGTH_SLOT, PrivateValue(size_t(0)));
+    obj->initFixedSlotTyped(BYTEOFFSET_SLOT, PrivateValue(size_t(0)));
+    obj->initFixedSlotTyped(DATA_SLOT, UndefinedValue());
 
     return obj;
   }
@@ -1011,10 +1016,11 @@ class FixedLengthTypedArrayObjectTemplate
   static void initTypedArraySlots(FixedLengthTypedArrayObject* tarray,
                                   int32_t len) {
     MOZ_ASSERT(len >= 0);
-    tarray->initFixedSlot(TypedArrayObject::BUFFER_SLOT, JS::FalseValue());
-    tarray->initFixedSlot(TypedArrayObject::LENGTH_SLOT, PrivateValue(len));
-    tarray->initFixedSlot(TypedArrayObject::BYTEOFFSET_SLOT,
-                          PrivateValue(size_t(0)));
+    tarray->initFixedSlotTyped(TypedArrayObject::BUFFER_SLOT, JS::FalseValue());
+    tarray->initFixedSlotTyped(TypedArrayObject::LENGTH_SLOT,
+                               PrivateValue(len));
+    tarray->initFixedSlotTyped(TypedArrayObject::BYTEOFFSET_SLOT,
+                               PrivateValue(size_t(0)));
 
 #ifdef DEBUG
     if (len == 0) {
@@ -1028,7 +1034,7 @@ class FixedLengthTypedArrayObjectTemplate
   static void initTypedArrayData(FixedLengthTypedArrayObject* tarray, void* buf,
                                  size_t nbytes, gc::AllocKind allocKind) {
     if (buf) {
-      InitReservedSlot(tarray, TypedArrayObject::DATA_SLOT, buf, nbytes,
+      InitReservedSlot(tarray, TypedArrayObject::DATA_SLOT.index(), buf, nbytes,
                        MemoryUse::TypedArrayElements);
     } else {
 #ifdef DEBUG
@@ -1038,7 +1044,7 @@ class FixedLengthTypedArrayObjectTemplate
 #endif
 
       void* data = tarray->fixedData(FIXED_DATA_START);
-      tarray->initReservedSlot(DATA_SLOT, PrivateValue(data));
+      tarray->initReservedSlotTyped(DATA_SLOT, PrivateValue(data));
       memset(data, 0, nbytes);
     }
   }
@@ -1164,20 +1170,21 @@ class ResizableTypedArrayObjectTemplate
       return nullptr;
     }
 
-    tarray->initFixedSlot(TypedArrayObject::BUFFER_SLOT, JS::FalseValue());
-    tarray->initFixedSlot(TypedArrayObject::LENGTH_SLOT,
-                          PrivateValue(size_t(0)));
-    tarray->initFixedSlot(TypedArrayObject::BYTEOFFSET_SLOT,
-                          PrivateValue(size_t(0)));
-    tarray->initFixedSlot(AUTO_LENGTH_SLOT, BooleanValue(false));
-    tarray->initFixedSlot(ResizableTypedArrayObject::INITIAL_LENGTH_SLOT,
-                          PrivateValue(size_t(0)));
-    tarray->initFixedSlot(ResizableTypedArrayObject::INITIAL_BYTE_OFFSET_SLOT,
-                          PrivateValue(size_t(0)));
+    tarray->initFixedSlotTyped(TypedArrayObject::BUFFER_SLOT, JS::FalseValue());
+    tarray->initFixedSlotTyped(TypedArrayObject::LENGTH_SLOT,
+                               PrivateValue(size_t(0)));
+    tarray->initFixedSlotTyped(TypedArrayObject::BYTEOFFSET_SLOT,
+                               PrivateValue(size_t(0)));
+    tarray->initFixedSlotTyped(AUTO_LENGTH_SLOT, BooleanValue(false));
+    tarray->initFixedSlotTyped(ResizableTypedArrayObject::INITIAL_LENGTH_SLOT,
+                               PrivateValue(size_t(0)));
+    tarray->initFixedSlotTyped(
+        ResizableTypedArrayObject::INITIAL_BYTE_OFFSET_SLOT,
+        PrivateValue(size_t(0)));
 
     
     
-    MOZ_ASSERT(tarray->getReservedSlot(DATA_SLOT).isUndefined());
+    MOZ_ASSERT(tarray->getReservedSlotTyped(DATA_SLOT).isUndefined());
 
     return tarray;
   }
@@ -1254,15 +1261,15 @@ class ImmutableTypedArrayObjectTemplate
       return nullptr;
     }
 
-    tarray->initFixedSlot(TypedArrayObject::BUFFER_SLOT, JS::FalseValue());
-    tarray->initFixedSlot(TypedArrayObject::LENGTH_SLOT,
-                          PrivateValue(size_t(0)));
-    tarray->initFixedSlot(TypedArrayObject::BYTEOFFSET_SLOT,
-                          PrivateValue(size_t(0)));
+    tarray->initFixedSlotTyped(TypedArrayObject::BUFFER_SLOT, JS::FalseValue());
+    tarray->initFixedSlotTyped(TypedArrayObject::LENGTH_SLOT,
+                               PrivateValue(size_t(0)));
+    tarray->initFixedSlotTyped(TypedArrayObject::BYTEOFFSET_SLOT,
+                               PrivateValue(size_t(0)));
 
     
     
-    MOZ_ASSERT(tarray->getReservedSlot(DATA_SLOT).isUndefined());
+    MOZ_ASSERT(tarray->getReservedSlotTyped(DATA_SLOT).isUndefined());
 
     return tarray;
   }
@@ -5643,6 +5650,85 @@ static bool uint8array_setFromHex(JSContext* cx, unsigned argc, Value* vp) {
                                                                          args);
 }
 
+#ifdef __x86_64__
+
+
+
+
+
+
+
+[[gnu::target("avx2")]]
+static size_t ToBase64AVX2(const uint8_t* src, size_t length, Latin1Char* dest,
+                           const char (&base64Chars)[65]) {
+  
+  
+  const __m256i shuffle = _mm256_broadcastsi128_si256(
+      _mm_setr_epi8(1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 9, 11, 10));
+
+  
+  
+  const char upper = base64Chars[0];
+  const char lower = base64Chars[26] - 26;
+  const char digit = base64Chars[52] - 52;
+  const __m256i offsets = _mm256_broadcastsi128_si256(_mm_setr_epi8(
+      upper, lower, digit, digit, digit, digit, digit, digit, digit, digit,
+      digit, digit, base64Chars[62] - 62, base64Chars[63] - 63, 0, 0));
+
+  size_t encoded = 0;
+  for (; length - encoded >= 28; encoded += 24, dest += 32) {
+    __m256i in = _mm256_set_m128i(
+        _mm_loadu_si128(reinterpret_cast<const __m128i*>(src + encoded + 12)),
+        _mm_loadu_si128(reinterpret_cast<const __m128i*>(src + encoded)));
+    in = _mm256_shuffle_epi8(in, shuffle);
+
+    __m256i hi = _mm256_and_si256(in, _mm256_set1_epi32(0x0fc0fc00));
+    __m256i lo = _mm256_and_si256(in, _mm256_set1_epi32(0x003f03f0));
+    __m256i values =
+        _mm256_or_si256(_mm256_mulhi_epu16(hi, _mm256_set1_epi32(0x04000040)),
+                        _mm256_mullo_epi16(lo, _mm256_set1_epi32(0x01000010)));
+
+    __m256i index = _mm256_subs_epu8(values, _mm256_set1_epi8(51));
+    index =
+        _mm256_sub_epi8(index, _mm256_cmpgt_epi8(values, _mm256_set1_epi8(25)));
+    __m256i chars =
+        _mm256_add_epi8(values, _mm256_shuffle_epi8(offsets, index));
+
+    _mm256_storeu_si256(reinterpret_cast<__m256i*>(dest), chars);
+  }
+  return encoded;
+}
+
+
+
+
+
+
+
+
+[[gnu::target("avx512vbmi")]]
+static size_t ToBase64AVX512(const uint8_t* src, size_t length,
+                             Latin1Char* dest, const char (&base64Chars)[65]) {
+  
+  
+  const __m512i shuffle = _mm512_setr_epi32(
+      0x01020001, 0x04050304, 0x07080607, 0x0a0b090a, 0x0d0e0c0d, 0x10110f10,
+      0x13141213, 0x16171516, 0x191a1819, 0x1c1d1b1c, 0x1f201e1f, 0x22232122,
+      0x25262425, 0x28292728, 0x2b2c2a2b, 0x2e2f2d2e);
+  const __m512i shifts = _mm512_set1_epi64(0x3036242a1016040a);
+  const __m512i lookup = _mm512_loadu_si512(base64Chars);
+
+  size_t encoded = 0;
+  for (; length - encoded >= 64; encoded += 48, dest += 64) {
+    __m512i in = _mm512_loadu_si512(src + encoded);
+    in = _mm512_permutexvar_epi8(shuffle, in);
+    __m512i values = _mm512_multishift_epi64_epi8(shifts, in);
+    _mm512_storeu_si512(dest, _mm512_permutexvar_epi8(values, lookup));
+  }
+  return encoded;
+}
+#endif
+
 template <typename Ops>
 static void ToBase64(TypedArrayObject* tarray, size_t length, Alphabet alphabet,
                      OmitPadding omitPadding, mozilla::Range<Latin1Char> out) {
@@ -5670,6 +5756,26 @@ static void ToBase64(TypedArrayObject* tarray, size_t length, Alphabet alphabet,
   
   auto data = Ops::extract(tarray).template cast<uint8_t*>();
   auto toRead = length;
+
+#ifdef __x86_64__
+  if constexpr (std::is_same_v<Ops, UnsharedOps>) {
+    auto encodeBlocks = [&](auto* toBase64) {
+      MOZ_RELEASE_ASSERT(out.end() - outPtr >= toRead / 3 * 4);
+      size_t encoded =
+          toBase64(data.unwrapUnshared(), toRead, outPtr.get(), base64Chars);
+      data = data + encoded;
+      toRead -= encoded;
+      outPtr += encoded / 3 * 4;
+    };
+
+    if (mozilla::supports_avx512vbmi()) {
+      encodeBlocks(ToBase64AVX512);
+    }
+    if (mozilla::supports_avx2()) {
+      encodeBlocks(ToBase64AVX2);
+    }
+  }
+#endif
 
   if (toRead >= 12) {
     
