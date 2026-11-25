@@ -63,6 +63,8 @@ var gExceptionPaths = [
   "resource://pdf.js/web/wasm/openjpeg_nowasm_fallback.js",
   "resource://pdf.js/web/wasm/jbig2_nowasm_fallback.js",
   "resource://pdf.js/web/wasm/hellbox_nowasm_fallback.js",
+  
+  "resource://pdf.js/build/pdf.worker.",
 
   
   
@@ -86,9 +88,6 @@ var gExceptionPaths = [
 
   
   "resource://nimbus/schemas/",
-
-  
-  "resource://normandy/schemas/",
 
   
   "chrome://browser/content/asrouter/schemas/",
@@ -340,7 +339,14 @@ var allowlist = [
   },
 
   
-  { file: "moz-src:///browser/components/widgets/WidgetGenerator.sys.mjs" },
+  {
+    file: "moz-src:///browser/components/widgets/WidgetGenerator.sys.mjs",
+  },
+
+  
+  {
+    file: "chrome://browser/content/aiwindow/components/smartwindow-digest-form.mjs",
+  },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {
