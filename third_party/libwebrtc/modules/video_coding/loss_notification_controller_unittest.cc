@@ -10,9 +10,8 @@
 
 #include "modules/video_coding/loss_notification_controller.h"
 
-#include <stdint.h>
-
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <optional>
 #include <string>
@@ -367,6 +366,23 @@ TEST_F(LossNotificationControllerTest,
   receive(false, 12, {});
   receive(false, 13, {11, 12});
   EXPECT_FALSE(LastLossNotification());
+}
+
+TEST_F(LossNotificationControllerTest, RepeatedAssembledFrameIsIgnored) {
+  OnReceivedPacket(CreatePacket(true, true, 100, 0, true));
+  OnAssembledFrame(100, 0, false);
+
+  
+  OnAssembledFrame(100, 0, false);
+
+  
+  OnReceivedPacket(CreatePacket(true, true, 101, 0, true));
+  OnAssembledFrame(101, 0, false);
+
+  
+  
+  OnReceivedPacket(CreatePacket(true, true, 105, 1, false, {0}));
+  ExpectLossNotification(100, 105, true);
 }
 
 class LossNotificationControllerTestDecodabilityFlag
