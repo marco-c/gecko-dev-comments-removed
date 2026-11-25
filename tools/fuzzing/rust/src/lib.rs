@@ -246,8 +246,11 @@ pub extern "C" fn fuzz_rkv_calls(raw_data: *const u8, size: libc::size_t) -> lib
 
         let mut writer = env.write().unwrap();
 
+        
+        
         match store.delete(&mut writer, key) {
             Ok(_) => {}
+            Err(rkv::StoreError::KeyValuePairNotFound) => {}
             Err(err) => panic_with_err(err),
         };
 
