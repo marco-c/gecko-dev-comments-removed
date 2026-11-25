@@ -27,8 +27,17 @@ type UrlbarResult = import("../content/UrlbarResult.mjs").UrlbarResult;
 
 
 
-
 type UrlbarSapName = "newtab_searchbar" | "searchbar" | "smartbar" | "urlbar";
+
+
+
+
+
+type UrlbarTelemetrySapName =
+  | UrlbarSapName
+  | "handoff"
+  | "urlbar_newtab"
+  | "urlbar_addonpage";
 
 
 
