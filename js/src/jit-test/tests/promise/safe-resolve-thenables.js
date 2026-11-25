@@ -4,6 +4,7 @@
 
 
 
+
 {
   const {promise} = Promise.withResolvers();
 
@@ -186,4 +187,58 @@
   promise.then(v => { settled = v; });
   drainJobQueue();
   assertEq(settled, "cross-realm");
+}
+
+
+
+
+{
+  const {promise} = Promise.withResolvers();
+  const log = [];
+  const thenable = {
+    then(onFulfilled) {
+      log.push("original-then");
+      onFulfilled(1);
+    },
+  };
+
+  safeResolvePromise(promise, thenable);
+  thenable.then = onFulfilled => {
+    log.push("replacement-then");
+    onFulfilled(2);
+  };
+
+  let settled;
+  promise.then(v => { settled = v; });
+  drainJobQueue();
+  assertEq(log.join(","), "original-then");
+  assertEq(settled, 1);
+}
+
+
+
+
+{
+  const {promise} = Promise.withResolvers();
+  const log = [];
+  const thenable = {
+    get then() {
+      log.push("getter");
+      return onFulfilled => onFulfilled(1);
+    },
+  };
+
+  safeResolvePromise(promise, thenable);
+  Object.defineProperty(thenable, "then", {
+    value: onFulfilled => {
+      log.push("replacement-then");
+      onFulfilled(2);
+    },
+  });
+
+  let settled;
+  promise.then(v => { settled = v; });
+  drainJobQueue();
+  assertEq(log.join(","), "replacement-then");
+  assertEq(settled, 2);
 }

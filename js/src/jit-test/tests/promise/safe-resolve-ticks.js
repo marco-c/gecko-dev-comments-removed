@@ -7,6 +7,8 @@
 
 
 
+
+
 function measure(installResolution) {
   const {promise} = Promise.withResolvers();
 
@@ -27,14 +29,14 @@ function measure(installResolution) {
 
 
 
-function measureNormal() {
+function measureNormal(resolution) {
   const {promise, resolve} = Promise.withResolvers();
 
   let ticksAtFulfill = -1;
   let tick = 0;
   promise.then(() => { ticksAtFulfill = tick; });
 
-  resolve({ then(onFulfilled) { onFulfilled("normal"); } });
+  resolve(resolution);
 
   let pending = Promise.resolve();
   for (let i = 0; i < 6; i++) {
@@ -47,12 +49,25 @@ function measureNormal() {
 
 
 {
-  const baseline = measureNormal();
+  const baseline =
+      measureNormal({ then(onFulfilled) { onFulfilled("normal"); } });
   const safe = measure(p => {
     safeResolvePromise(p, { then(onFulfilled) { onFulfilled("safe"); } });
   });
   assertEq(safe, baseline,
            "SafeResolve(thenable) settles at the same tick as resolve(thenable)");
+}
+
+
+
+{
+  const makeThenable = value => ({
+    get then() { return onFulfilled => onFulfilled(value); },
+  });
+  const baseline = measureNormal(makeThenable("normal"));
+  const safe = measure(p => safeResolvePromise(p, makeThenable("safe")));
+  assertEq(safe, baseline,
+           "SafeResolve(getter thenable) settles at the same tick as resolve()");
 }
 
 
