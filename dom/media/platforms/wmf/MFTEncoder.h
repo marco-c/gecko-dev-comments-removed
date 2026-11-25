@@ -22,6 +22,7 @@
 #include "nsDeque.h"
 #include "nsISupportsImpl.h"
 #include "nsTArray.h"
+#include "nsTHashMap.h"
 
 namespace mozilla {
 
@@ -205,6 +206,9 @@ class MFTEncoder final {
   MFT_OUTPUT_STREAM_INFO mOutputStreamInfo;
   bool mOutputStreamProvidesSample;
   bool mOutputTimeIsEndTime = false;
+  
+  
+  nsTHashMap<LONGLONG, LONGLONG> mInputDurations;
 
   State mState = State::Uninited;
   bool mIsRealtime = false;
