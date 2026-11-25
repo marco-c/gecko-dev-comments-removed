@@ -629,17 +629,10 @@ class LogMessage {
   static bool LogThreads(bool enabled = true);
 
   
-  
-  
-  
-  static bool SetLogQueueNames(bool enabled);
-
-  
   static void LogTimestamps(bool on = true);
   
   
   static void LogToDebug(LoggingSeverity min_sev);
-  static LoggingSeverity GetLogToDebug();
   
   static void SetLogToStderr(bool log_to_stderr);
   
@@ -653,9 +646,6 @@ class LogMessage {
   
   
   static void RemoveLogToStream(LogSink* stream);
-  
-  
-  static int GetLogToStream(LogSink* stream = nullptr);
   
   
   static int GetMinLogSeverity();
@@ -695,17 +685,12 @@ class LogMessage {
   inline static bool LogThreads(bool enabled = true) {
     return false;
   }
-  inline static bool SetLogQueueNames(bool enable) { return false; }
 
   inline static void LogTimestamps(bool on = true) {}
   inline static void LogToDebug(LoggingSeverity min_sev) {}
-  inline static LoggingSeverity GetLogToDebug() {
-    return LoggingSeverity::LS_INFO;
-  }
   inline static void SetLogToStderr(bool log_to_stderr) {}
   inline static void AddLogToStream(LogSink* stream, LoggingSeverity min_sev) {}
   inline static void RemoveLogToStream(LogSink* stream) {}
-  inline static int GetLogToStream(LogSink* stream = nullptr) { return 0; }
   inline static int GetMinLogSeverity() { return 0; }
   static constexpr bool IsNoop(LoggingSeverity severity) { return true; }
   template <LoggingSeverity S>
@@ -741,9 +726,7 @@ class LogMessage {
   static LogSink* streams_;
 
   
-  static bool log_thread_;
   static bool log_timestamp_;
-  static bool log_queue_name_;
 
   
   static bool log_to_stderr_;
