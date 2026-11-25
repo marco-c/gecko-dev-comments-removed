@@ -41,16 +41,16 @@ let CONTENT = {};
 
 // The card details message for each combination of the details a card has.
 const CARD_DETAILS_L10N_IDS = {
-  name: "credit-card-doorhanger-card-details-name",
+  name: "credit-card-doorhanger-card-details-name-2",
   expiration: "credit-card-doorhanger-card-details-expiration",
   "security-code": "credit-card-doorhanger-card-details-security-code",
-  "name-expiration": "credit-card-doorhanger-card-details-name-expiration",
+  "name-expiration": "credit-card-doorhanger-card-details-name-expiration-2",
   "name-security-code":
-    "credit-card-doorhanger-card-details-name-security-code",
+    "credit-card-doorhanger-card-details-name-security-code-2",
   "expiration-security-code":
     "credit-card-doorhanger-card-details-expiration-security-code",
   "name-expiration-security-code":
-    "credit-card-doorhanger-card-details-name-expiration-security-code",
+    "credit-card-doorhanger-card-details-name-expiration-security-code-2",
 };
 
 /**
@@ -1131,6 +1131,13 @@ export class CreditCardSaveDoorhanger extends AutofillDoorhanger {
       lazy.log.error(`No card details message for "${key}"`);
       return;
     }
+    if (name && !line.querySelector(".card-name")) {
+      // Lets a long name be cut off on its own.
+      const nameItem = this.doc.createElement("span");
+      nameItem.className = "card-name";
+      nameItem.setAttribute("data-l10n-name", "name");
+      line.replaceChildren(nameItem);
+    }
     this.doc.l10n.setAttributes(line, l10nId, args);
   }
 
@@ -1171,7 +1178,7 @@ export class CreditCardSaveDoorhanger extends AutofillDoorhanger {
     const button = this.doc.createElement("moz-button");
     button.className = "payments-doorhanger-options-button";
     button.setAttribute("type", "icon");
-    button.setAttribute("iconsrc", "chrome://global/skin/icons/edit.svg");
+    button.setAttribute("iconsrc", "chrome://global/skin/icons/settings.svg");
     this.doc.l10n.setAttributes(
       button,
       "credit-card-doorhanger-options-button"
