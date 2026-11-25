@@ -4,6 +4,10 @@ This document contains guidelines defining how CSS inside the Firefox
 codebase should be written, it is notably relevant for Firefox front-end
 engineers.
 
+:::{note}
+If you work with an AI agent, the in-tree {doc}`desktop-theme </ai-agent-tools/skills/desktop-theme/SKILL>` skill applies these guidelines when it writes, reviews or debugs CSS.
+:::
+
 ## Basics
 
 Here are some basic tips that can optimize reviews if you are changing
@@ -293,6 +297,17 @@ fails `browser_parsable_css.js` unless an entry in that test's
 anything fails the test too, on the platforms the entry applies to.
 
 ### Using variables
+
+#### Prefer design tokens over hard-coded values
+
+Use a token from the design system (`toolkit/themes/shared/design-system`) for
+a color, size, space, border radius or font size wherever one fits. Tokens keep
+the UI consistent and let a style change across the board.
+The
+[design tokens page](https://firefoxux.github.io/firefox-desktop-components/?path=/docs/docs-design-tokens--docs)
+in Storybook lists them and says how they are generated. The
+[stylelint-plugin-mozilla/use-design-tokens](../lint/linters/stylelint-plugin-mozilla/rules/use-design-tokens.md)
+rule reports a literal value where a token is expected.
 
 #### Use the variable according to its naming
 
