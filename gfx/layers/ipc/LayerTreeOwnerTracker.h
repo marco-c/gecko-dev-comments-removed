@@ -8,9 +8,9 @@
 #include <functional>
 #include <map>
 
-#include "LayersTypes.h"    
-#include "base/process.h"   
-#include "mozilla/Mutex.h"  
+#include "LayersTypes.h"          
+#include "mozilla/Mutex.h"        
+#include "mozilla/ProcessType.h"  
 
 namespace mozilla {
 
@@ -42,27 +42,26 @@ class LayerTreeOwnerTracker final {
 
 
 
-  void Map(LayersId aLayersId, base::ProcessId aProcessId);
+  void Map(LayersId aLayersId, GeckoChildID aChildID);
 
   
 
 
-  void Unmap(LayersId aLayersId, base::ProcessId aProcessId);
+  void Unmap(LayersId aLayersId, GeckoChildID aChildID);
 
   
 
 
-  bool IsMapped(LayersId aLayersId, base::ProcessId aProcessId);
+  bool IsMapped(LayersId aLayersId, GeckoChildID aChildID);
 
-  void Iterate(
-      const std::function<void(LayersId aLayersId, base::ProcessId aProcessId)>&
-          aCallback);
+  void Iterate(const std::function<void(LayersId aLayersId,
+                                        GeckoChildID aChildID)>& aCallback);
 
  private:
   LayerTreeOwnerTracker();
 
   mozilla::Mutex mLayerIdsLock MOZ_UNANNOTATED;
-  std::map<LayersId, base::ProcessId> mLayerIds;
+  std::map<LayersId, GeckoChildID> mLayerIds;
 };
 
 }  

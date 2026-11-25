@@ -5,7 +5,7 @@
 #ifndef mozilla_layout_RemoteLayerTreeOwner_h
 #define mozilla_layout_RemoteLayerTreeOwner_h
 
-#include "base/process.h"
+#include "mozilla/ProcessType.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/layers/LayersTypes.h"
@@ -59,7 +59,7 @@ class RemoteLayerTreeOwner final {
  private:
   
   
-  base::ProcessId mTabProcessId = 0;
+  GeckoChildID mTabChildID = kInvalidGeckoChildID;
   
   LayersId mLayersId;
   

@@ -137,11 +137,11 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   
   
   
-  void UnmapLayerTreeId(LayersId aLayersId, base::ProcessId aOwningId);
+  void UnmapLayerTreeId(LayersId aLayersId, GeckoChildID aOwningId);
 
   
   
-  bool IsLayerTreeIdMapped(LayersId aLayersId, base::ProcessId aRequestingId);
+  bool IsLayerTreeIdMapped(LayersId aLayersId, GeckoChildID aRequestingId);
 
   
   
@@ -162,7 +162,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   
   
   bool AllocateAndConnectLayerTreeId(PCompositorBridgeChild* aCompositorBridge,
-                                     base::ProcessId aOtherPid,
+                                     GeckoChildID aOtherChildID,
                                      LayersId aEmbedderLayersId,
                                      LayersId* aOutLayersId,
                                      CompositorOptions* aOutCompositorOptions);
