@@ -1569,7 +1569,7 @@ nsresult ContentEventHandler::OnQueryTextContent(
       domRangeAndAdjustedOffset.mAdjustedOffset, textInRange,
       OffsetAndDataFor::EditorString);
 
-  if (aEvent->mInput.mWithFontRanges) {
+  if (aEvent->mWithFontRanges) {
     uint32_t fontRangeLength;
     if (NS_WARN_IF(NS_FAILED(GenerateFlatFontRanges(
             domRangeAndAdjustedOffset.mRange, aEvent->mReply->mFontRanges,
@@ -2443,7 +2443,7 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
       
       
       WidgetQueryContentEvent queryTextRectEvent(eQueryTextRect, *aEvent);
-      QueryContentOptions options(*aEvent);
+      WidgetQueryContentEvent::Options options(*aEvent);
       queryTextRectEvent.InitForQueryTextRect(offset, 1, options);
       if (NS_WARN_IF(NS_FAILED(OnQueryTextRect(&queryTextRectEvent))) ||
           NS_WARN_IF(queryTextRectEvent.Failed())) {
@@ -2936,7 +2936,7 @@ nsresult ContentEventHandler::OnQueryCaretRect(
 
   
   WidgetQueryContentEvent queryTextRectEvent(eQueryTextRect, *aEvent);
-  QueryContentOptions options(*aEvent);
+  WidgetQueryContentEvent::Options options(*aEvent);
   queryTextRectEvent.InitForQueryTextRect(aEvent->mInput.mOffset, 1, options);
   if (NS_WARN_IF(NS_FAILED(OnQueryTextRect(&queryTextRectEvent))) ||
       NS_WARN_IF(queryTextRectEvent.Failed())) {
@@ -3119,7 +3119,7 @@ nsresult ContentEventHandler::OnQueryCharacterAtPoint(
 
   WidgetQueryContentEvent queryTextRectEvent(true, eQueryTextRect,
                                              aEvent->mWidget);
-  QueryContentOptions options(*aEvent);
+  WidgetQueryContentEvent::Options options(*aEvent);
   queryTextRectEvent.InitForQueryTextRect(offsetOrError.inspect(), 1, options);
   if (NS_WARN_IF(NS_FAILED(OnQueryTextRect(&queryTextRectEvent))) ||
       NS_WARN_IF(queryTextRectEvent.Failed())) {
