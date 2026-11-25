@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2026-11-20T15:37:37.274227+00:00'
+updated_at: '2026-11-24T10:01:40.732794+00:00'
 export:
   path: ./docs/mots/index.md
   format: md
@@ -97,6 +97,10 @@ people:
     bmo_id: 555858
     name: Andi
     nick: andi
+  - &andip
+    bmo_id: 742676
+    name: Andi Pieper
+    nick: andip
   - &annaweine
     bmo_id: 697976
     name: Anna Weine
@@ -199,6 +203,10 @@ people:
   - bmo_id: 560379
     name: Bryce Seager van Dyk
     nick: bryce
+  - &bsmth
+    bmo_id: 711767
+    name: Brian Thomas Smith
+    nick: bsmth
   - bmo_id: 596517
     name: Brian Stack
     nick: bstack
@@ -214,8 +222,7 @@ people:
     bmo_id: 478411
     name: Byron Campen
     nick: bwc
-  - &bytesized
-    bmo_id: 563604
+  - bmo_id: 563604
     name: Robin Steuber
     nick: bytesized
   - &calixte
@@ -233,8 +240,7 @@ people:
     bmo_id: 525693
     name: Nazım Can Altınova
     nick: canova
-  - &cdupuis
-    bmo_id: 760375
+  - bmo_id: 760375
     name: Chris DuPuis
     nick: cdupuis
   - &charlie
@@ -408,6 +414,10 @@ people:
     bmo_id: 710281
     name: Fred Chasen
     nick: fchasen
+  - &fiji
+    bmo_id: 512518
+    name: Florian Dieminger
+    nick: fiji
   - bmo_id: 417695
     name: Nick Fitzgerald
     nick: fitzgen
@@ -447,6 +457,10 @@ people:
     bmo_id: 151147
     name: Gian-Carlo Pascutto
     nick: gcp
+  - &gerardmajax
+    bmo_id: 41385
+    name: Alexandre Lissy
+    nick: gerard-majax
   - &Gijs
     bmo_id: 159069
     name: ''
@@ -634,6 +648,10 @@ people:
     bmo_id: 324370
     name: Joel Maher
     nick: jmaher
+  - &jmendez
+    bmo_id: 780585
+    name: Jonathan Mendez
+    nick: jmendez
   - &jnicol
     bmo_id: 541747
     name: Jamie Nicol
@@ -654,6 +672,10 @@ people:
     bmo_id: 621062
     name: Josh Groves
     nick: josh
+  - &jporter
+    bmo_id: 781157
+    name: Josh Porter
+    nick: jporter
   - &jprickett
     bmo_id: 708280
     name: Jason Prickett
@@ -698,6 +720,10 @@ people:
     bmo_id: 656418
     name: Julian Gaibler
     nick: Julian
+  - &julienw
+    bmo_id: 364883
+    name: Julien Wajsberg
+    nick: julienw
   - &jwatt
     bmo_id: 32767
     name: Jonathan Watt
@@ -865,6 +891,10 @@ people:
     bmo_id: 585815
     name: Micah Tigley
     nick: micah
+  - &michael
+    bmo_id: 735724
+    name: Michael van Straten
+    nick: michael
   - bmo_id: 547538
     name: Miko Mynttinen
     nick: mikokm
@@ -880,6 +910,10 @@ people:
     bmo_id: 7313
     name: Mike Kaply
     nick: mkaply
+  - &mkolodziej
+    bmo_id: 798663
+    name: Marcin Kołodziej
+    nick: mkolodziej
   - &molly
     bmo_id: 550257
     name: Molly Howell
@@ -1395,6 +1429,26 @@ modules:
     meta:
       components:
         - 'Testing :: Code Coverage'
+
+  - machine_name: content_analysis
+    name: Content Analysis
+    description: Data loss prevention (DLP) integration, sending content to a local
+      analysis agent or an in-process rules engine before it leaves the browser.
+    includes:
+      - toolkit/components/contentanalysis/**/*
+      - browser/components/contentanalysis/**/*
+      - third_party/content_analysis_sdk/**/*
+      - toolkit/locales/en-US/toolkit/contentanalysis/**/*
+    excludes: []
+    owners:
+      - *gstoll
+      - *handyman
+    peers:
+      - *jmendez
+    meta:
+      components:
+        - Firefox::Data Loss Prevention
+      review_group: dlp-reviewers
 
   - name: 'Core: Accessibility'
     description: Support for platform accessibility APIs. Accessibility APIs are used
@@ -3796,16 +3850,22 @@ modules:
         includes:
           - toolkit/mozapps/update/**/*
         owners:
-          - *cdupuis
+          - *spohl
         peers:
-          - *bytesized
+          - *yannis
         machine_name: application_update
         meta:
+          components:
+            - Toolkit::Application Update
           owners_emeritus:
-            - Robin Steuber
-          peers_emeritus:
-            - Adam Gashlin
+            - Robert Strong
             - Molly Howell
+            - Robin Steuber
+            - Chris DuPuis
+          peers_emeritus:
+            - *mossop
+            - Brian Bondy
+            - Adam Gashlin
           review_group: application-update-reviewers
 
 
@@ -3899,28 +3959,18 @@ modules:
           - *Gijs
         machine_name: download_manager
 
-      - name: Enterprise Policies
-        description: System policies for controlling Firefox.
-        includes:
-          - browser/components/enterprisepolicies/**/*
-        meta: {}
-        owners:
-          - *mkaply
-        peers: []
-        machine_name: enterprise_policies
-
       - name: Experiments/Rollouts
         description: Desktop clients for our experiments and off-train deployments
           systems.
         includes:
           - browser/components/nimbus/**/*
-          - toolkit/components/normandy/**/*
           - toolkit/components/nimbus/**/*
         meta:
           owners_emeritus:
             - Michael Cooper
           peers_emeritus:
             - Daniel Thorn
+            - Gijs Kruitbosch
           components:
             - Firefox::Normandy
             - Firefox::Nimbus Desktop Client
@@ -3929,7 +3979,6 @@ modules:
         owners:
           - *beth
         peers:
-          - *Gijs
           - *emcminn
           - *charlie
           - *aminomancer
@@ -4308,13 +4357,19 @@ modules:
             - Firefox::Installer
           review_group: browser-installer-reviewers
           owners_emeritus:
+            - Robert Strong
             - Molly Howell
+            - Chris DuPuis
           peers_emeritus:
+            - Benjamin Smedberg
+            - *jimm
+            - Brian Bondy
             - *agashlin
             - *nalexander
         owners:
-          - *cdupuis
-        peers: []
+          - *yannis
+        peers:
+          - *spohl
         machine_name: windows_installer
     machine_name: desktop_firefox
 
@@ -4367,7 +4422,7 @@ modules:
         - Daisuke Akatsuka
         - Yulia Startsev
         - Logan Smyth
-        - Julien Wajsberg
+        - *julienw
         - Razvan Caliman
         - Micah Tigley
         - Nick Fitzgerald
@@ -4442,6 +4497,91 @@ modules:
         peers:
           - *calu
           - *jdelorenzo
+
+  - machine_name: firefox_enterprise
+    name: Firefox Enterprise
+    description: Firefox Enterprise builds, including Felt, device posture reporting,
+      enterprise policies and the management console.
+    includes: []
+    excludes: []
+    owners:
+      - *fiji
+      - *mkaply
+    peers: []
+    meta:
+      components:
+        - Enterprise Products::General
+    submodules:
+
+      - machine_name: enterprise_console
+        name: Enterprise Console
+        description: Management console and services backing Firefox Enterprise deployments.
+        includes:
+          - https://github.com/mozilla/enterprise-console
+        meta:
+          components:
+            - Enterprise Products::Console
+            - Enterprise Products::Services
+        owners:
+          - *fiji
+        peers:
+          - *julienw
+          - *michael
+          - *andip
+
+      - machine_name: enterprise_policies
+        name: Enterprise Policies
+        description: System policies for controlling Firefox.
+        includes:
+          - browser/components/enterprisepolicies/**/*
+          - toolkit/components/enterprisepolicies/**/*
+        meta:
+          components:
+            - Firefox::Enterprise Policies
+          review_group: enterprise-reviewers
+        owners:
+          - *mkaply
+        peers:
+          - *jmendez
+          - *janika
+          - *bsmth
+          - *gerardmajax
+      - machine_name: enterprise_firefox
+        name: Firefox
+        description: Enterprise-specific code in the Firefox client, including Felt
+          and device posture reporting.
+        includes:
+          - browser/components/enterprise/**/*
+          - browser/components/FeltURLHandler.sys.mjs
+          - browser/branding/enterprise/**/*
+          - browser/locales/en-US/browser/enterprise/**/*
+          - browser/locales/en-US/chrome/overrides/enterprise.properties
+          - dom/locales/en-US/chrome/enterprise.properties
+          - dom/system/android/AndroidImeiProvider.*
+          - dom/system/linux/ModemManagerImeiProvider.*
+          - dom/system/mac/DummyImeiProvider.*
+          - dom/system/tests/xpcshell/**/*
+          - dom/system/windows/MobileBroadbandImeiProvider.*
+          - services/fxaccounts/EnterpriseAccountsStorage.sys.mjs
+          - testing/enterprise/**/*
+          - toolkit/components/enterprise/**/*
+          - toolkit/components/felt/**/*
+          - toolkit/locales/en-US/crashreporter/crashreporter-enterprise.ftl
+          - toolkit/locales/en-US/toolkit/enterprise/**/*
+          - xpcom/system/nsIImeiProvider.idl
+        meta:
+          components:
+            - Enterprise Products::Firefox
+          review_group: enterprise-reviewers
+        owners:
+          - *mkaply
+          - *gerardmajax
+        peers:
+          - *jporter
+          - *janika
+          - *jmendez
+          - *mkolodziej
+          - *gcp
 
   - machine_name: focus_android
     name: Focus for Android
@@ -5082,5 +5222,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: 3916ff027566cfe076f055be8eaa9bd8f2581ff1
-  export: 00df996ce5271fd63eaeaa40baf66d562d020460
+  config: 1182da9eb3624b7c8220c9832b651188ffadf901
+  export: 3a0bcda482ec0f228bdc0102bf2978a9c1399d31
