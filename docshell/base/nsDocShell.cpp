@@ -11257,22 +11257,13 @@ nsresult nsDocShell::AddState(JS::Handle<JS::Value> aData,
 
   
   Maybe<AutoRestore<uint32_t>> loadTypeResetter;
-  if (StaticPrefs::
-          docshell_shistory_sameDocumentNavigationOverridesLoadType() &&
-      !document->NodePrincipal()->IsURIInPrefList(
-          "docshell.shistory.sameDocumentNavigationOverridesLoadType."
-          "forceDisable")) {
+  if (JustStartedNetworkLoad() ||
+      (StaticPrefs::
+           docshell_shistory_sameDocumentNavigationOverridesLoadType() &&
+       !document->NodePrincipal()->IsURIInPrefList(
+           "docshell.shistory.sameDocumentNavigationOverridesLoadType."
+           "forceDisable"))) {
     loadTypeResetter.emplace(mLoadType);
-  }
-
-  
-  
-  
-  if (JustStartedNetworkLoad()) {
-    if (!loadTypeResetter.isSome()) {
-      loadTypeResetter.emplace(mLoadType);
-    }
-    aReplace = true;
   }
 
   
@@ -11406,7 +11397,13 @@ nsresult nsDocShell::UpdateURLAndHistory(
   
   
   MOZ_ASSERT(aHistoryHandling != NavigationHistoryBehavior::Auto);
-  bool isReplace = aHistoryHandling == NavigationHistoryBehavior::Replace;
+
+  
+  
+  
+  
+  bool isReplace = aHistoryHandling == NavigationHistoryBehavior::Replace ||
+                   aDocument->IsInitialDocument() || !mActiveEntry;
 
   
   aDocument->DoNotifyPossibleTitleChange();
@@ -11414,7 +11411,6 @@ nsresult nsDocShell::UpdateURLAndHistory(
   
   
   
-  NS_ENSURE_TRUE(mActiveEntry || isReplace, NS_ERROR_FAILURE);
 
   
   
