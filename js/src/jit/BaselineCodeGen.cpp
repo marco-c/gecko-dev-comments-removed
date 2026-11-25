@@ -980,10 +980,12 @@ bool BaselineCodeGen<Handler>::emitStackCheck(RetAddrEntry::Kind kind,
   Label skipCall;
   if (handler.mustIncludeSlotsInStackCheck()) {
     
+    Label underflow;
     masm.moveStackPtrTo(scratch1);
-    subtractScriptSlotsSize(scratch1, scratch2);
+    subtractScriptSlotsSize(scratch1, scratch2, &underflow);
     masm.branchPtr(Assembler::BelowOrEqual, AbsoluteAddress(stackLimitAddr),
                    scratch1, &skipCall);
+    masm.bind(&underflow);
   } else {
     masm.branchStackPtrRhs(Assembler::BelowOrEqual,
                            AbsoluteAddress(stackLimitAddr), &skipCall);
@@ -1109,14 +1111,17 @@ bool BaselineInterpreterCodeGen::emitHandleCodeCoverageAtPrologue() {
 
 template <>
 void BaselineCompilerCodeGen::subtractScriptSlotsSize(Register reg,
-                                                      Register scratch) {
+                                                      Register scratch,
+                                                      Label* underflow) {
   uint32_t slotsSize = handler.script()->nslots() * sizeof(Value);
+  masm.branchPtr(Assembler::Below, reg, Imm32(slotsSize), underflow);
   masm.subPtr(Imm32(slotsSize), reg);
 }
 
 template <>
 void BaselineInterpreterCodeGen::subtractScriptSlotsSize(Register reg,
-                                                         Register scratch) {
+                                                         Register scratch,
+                                                         Label* underflow) {
   
   MOZ_ASSERT(reg != scratch);
   loadScript(scratch);
@@ -1127,6 +1132,7 @@ void BaselineInterpreterCodeGen::subtractScriptSlotsSize(Register reg,
   static_assert(sizeof(Value) == 8,
                 "shift by 3 below assumes Value is 8 bytes");
   masm.lshiftPtr(Imm32(3), scratch);
+  masm.branchPtr(Assembler::Below, reg, scratch, underflow);
   masm.subPtr(scratch, reg);
 }
 
@@ -6683,6 +6689,11 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
   Register scratch1 = regs.takeAny();
   masm.loadFunctionArgCount(callee, scratch1);
 
+  
+  Label vmResume, done;
+  masm.branch32(Assembler::Above, scratch1, Imm32(JIT_ARGS_LENGTH_MAX),
+                &vmResume);
+
   static_assert(sizeof(Value) == 8);
 #ifndef JS_CODEGEN_NONE
   static_assert(JitStackAlignment == 16 || JitStackAlignment == 8);
@@ -6788,6 +6799,27 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
     masm.switchToBaselineFrameRealm(R2.scratchReg());
   }
   restoreInterpreterPCReg();
+  masm.jump(&done);
+
+  masm.bind(&vmResume);
+  {
+    masm.unboxInt32(frame.addressOfStackValue(-1), R2.scratchReg());
+    masm.loadValue(frame.addressOfStackValue(-2), R1);
+    masm.unboxObject(frame.addressOfStackValue(-3), R0.scratchReg());
+
+    prepareVMCall();
+    pushArg(R2.scratchReg());
+    pushArg(R1);
+    pushArg(R0.scratchReg());
+
+    using Fn = bool (*)(JSContext*, HandleObject, HandleValue, int32_t,
+                        MutableHandleValue);
+    if (!callVM<Fn, jit::ResumeGeneratorFromJit>()) {
+      return false;
+    }
+  }
+
+  masm.bind(&done);
   frame.popn(3);
   frame.push(R0);
   return true;
