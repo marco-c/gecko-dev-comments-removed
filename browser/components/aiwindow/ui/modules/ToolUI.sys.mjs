@@ -5,6 +5,7 @@
  */
 
 import { isSmartPageURL } from "chrome://browser/content/aiwindow/modules/TrustedInternalURLs.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 /**
  * @import { ChatConversation } from "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs"
@@ -47,9 +48,7 @@ import { isSmartPageURL } from "chrome://browser/content/aiwindow/modules/Truste
  * @property {string} [mode] - Smart Window mode for telemetry
  */
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   AIWindow:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
@@ -62,13 +61,12 @@ ChromeUtils.defineESModuleGetters(lazy, {
   SmartWindowTelemetry:
     "moz-src:///browser/components/aiwindow/ui/modules/SmartWindowTelemetry.sys.mjs",
   URILoadingHelper: "resource:///modules/URILoadingHelper.sys.mjs",
-});
-
-ChromeUtils.defineLazyGetter(lazy, "console", function () {
-  return console.createInstance({
-    logModule: "ToolUI",
-    maxLogLevelPref: "browser.smartwindow.toolUI.logLevel",
-  });
+  console() {
+    return console.createInstance({
+      logModule: "ToolUI",
+      maxLogLevelPref: "browser.smartwindow.toolUI.logLevel",
+    });
+  },
 });
 
 /**
@@ -324,7 +322,7 @@ export class ToolUI {
     selected,
     reason = "user_action",
   }) {
-    const { conversation, mode } = context;
+    const { conversation, mode, message } = context;
 
     lazy.ToolUITelemetry.recordBrowserActionPromptResponse({
       location: mode,
@@ -332,6 +330,9 @@ export class ToolUI {
       message_seq: conversation.messageCount,
       action: actionType,
       prompt_type: PROMPT_TYPES.SAFETY_CONFIRMATION,
+      entrypoint: message?.toolUIData?.isResumeActivity
+        ? "resume"
+        : "browser_action",
       response,
       selected,
       reason,
@@ -1249,6 +1250,7 @@ export class ToolUI {
       ...telemetryData,
       action: actionType,
       prompt_type: PROMPT_TYPES.SAFETY_CONFIRMATION,
+      entrypoint: toolUIData.isResumeActivity ? "resume" : "browser_action",
       reason,
       candidates: tabs.length,
       preselected: 0, // we currently don't preselect any tabs

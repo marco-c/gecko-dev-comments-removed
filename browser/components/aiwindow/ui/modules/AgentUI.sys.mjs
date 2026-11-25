@@ -29,10 +29,9 @@ import {
   AGENT_COMMANDS,
   parseAgentCommand,
 } from "chrome://browser/content/aiwindow/modules/AgentCommands.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   MonitorAgent:
     "moz-src:///browser/components/aiwindow/models/agents/MonitorAgent.sys.mjs",
   MonitorUIUtils:
@@ -49,20 +48,13 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs",
   isAllowedWatchUrl:
     "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs",
+  console: () =>
+    console.createInstance({
+      logModule: "AgentUI",
+      maxLogLevelPref: "browser.smartwindow.agentUI.logLevel",
+    }),
+  l10n: () => new Localization(["preview/aiWindow.ftl"], true),
 });
-
-ChromeUtils.defineLazyGetter(lazy, "console", () =>
-  console.createInstance({
-    logModule: "AgentUI",
-    maxLogLevelPref: "browser.smartwindow.agentUI.logLevel",
-  })
-);
-
-ChromeUtils.defineLazyGetter(
-  lazy,
-  "l10n",
-  () => new Localization(["preview/aiWindow.ftl"], true)
-);
 
 /**
  * uiType values rendered as agent cards in chat
@@ -121,6 +113,11 @@ const MONITOR_OUTCOME_DESCRIPTIONS = Object.freeze({
 
 // Most entries kept in a monitor's log. The "created" entry is always kept.
 const MAX_MONITOR_LOG_ENTRIES = 10;
+
+const MONITOR_STATUS_L10N_IDS = Object.freeze({
+  watching: "smartwindow-agent-monitor-status-watching",
+  paused: "smartwindow-agent-monitor-status-paused",
+});
 
 /**
  * Handles interactive updates from agent cards embedded in chat
@@ -940,9 +937,7 @@ export class AgentUI {
    */
   static #statusForKind(kind) {
     return {
-      label: lazy.l10n.formatValueSync(
-        `smartwindow-agent-monitor-status-${kind}`
-      ),
+      label: lazy.l10n.formatValueSync(MONITOR_STATUS_L10N_IDS[kind]),
       kind,
     };
   }

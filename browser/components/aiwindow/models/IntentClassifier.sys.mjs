@@ -5,10 +5,9 @@
  */
 
 import { createEngine } from "chrome://global/content/ml/EngineProcess.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
 });
@@ -300,7 +299,7 @@ export const IntentClassifier = {
    * Gets the intent of the prompt using a text classification model.
    *
    * @param {string} query
-   * @returns {string} "search" | "chat"
+   * @returns {Promise<"search" | "chat">}
    */
   async getPromptIntent(query) {
     if (this.smartbarIntent) {

@@ -2,10 +2,12 @@
 
 
 
-const lazy = {};
 const { topChromeWindow } = window.browsingContext;
 
-ChromeUtils.defineESModuleGetters(lazy, {
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+const lazy = XPCOMUtils.declareLazy({
   AboutWelcomeParent: "resource:///actors/AboutWelcomeParent.sys.mjs",
   AIWindow:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",

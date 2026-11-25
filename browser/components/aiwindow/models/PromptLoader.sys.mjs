@@ -4,6 +4,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+/**
+ * @import { PipelineOptions } from "chrome://global/content/ml/EngineProcess.sys.mjs"
+ */
+
 import {
   getRemoteRecords,
   selectMainConfig,
@@ -25,15 +29,19 @@ import {
 import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
 import { Conversation } from "moz-src:///browser/components/aiwindow/models/Conversation.sys.mjs";
 import { SmartWindowLocation } from "moz-src:///browser/components/aiwindow/models/SmartWindowLocation.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 /**
  * @typedef {import("moz-src:///browser/components/aiwindow/models/Utils.sys.mjs").InferenceParams} InferenceParams
  */
 
-const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   getSmartPageName:
     "chrome://browser/content/aiwindow/modules/TrustedInternalURLs.mjs",
+  MonitorUIUtils:
+    "moz-src:///browser/components/aiwindow/ui/modules/MonitorUIUtils.sys.mjs",
+  aitabEnabled: { pref: "browser.smartwindow.aitab.enabled" },
+  agentEnabled: { pref: "browser.smartwindow.agent.enabled" },
 });
 
 const CUSTOM_PROMPTS_PREF = "browser.smartwindow.customPrompts";
@@ -43,12 +51,19 @@ const MODEL_CHOICE_PREF = "browser.smartwindow.firstrun.modelChoice";
 // buildChatSystemPrompt throws rather than serve a partial prompt. Others are
 // optional (e.g. model-details is model-specific and has no generic record).
 const REQUIRED_CHAT_MODULES = new Set(["identity", "response-rules"]);
-// Chat modules that describe a feature behind a pref. They are assembled only
-// while the pref is on, so the model is never taught about a tool that
-// filterFeatureGatedTools (Chat.sys.mjs) will not give it. Same pref string as
-// AITAB_PREF in Tools.sys.mjs, kept local to avoid an import cycle.
+// Chat modules that describe a gated feature, each with the check that says
+// whether the feature is available. They are assembled only while it is, so
+// the model is never taught about something the user cannot use: a tool that
+// filterFeatureGatedTools (Chat.sys.mjs) will not give it, or a monitor
+// follow-up that would do nothing when clicked. The pages gate is the same
+// pref as AITAB_PREF in Tools.sys.mjs, kept local to avoid an import cycle.
+// The monitor gate matches AgentUI.tryHandleCommand.
 const GATED_CHAT_MODULES = new Map([
-  ["pages", "browser.smartwindow.aitab.enabled"],
+  ["pages", () => lazy.aitabEnabled],
+  [
+    "monitor",
+    () => lazy.agentEnabled && lazy.MonitorUIUtils.isMonitorRegionSupported(),
+  ],
 ]);
 // Browser-context fragments predate its params manifest. Without one at this
 // build's major, read the legacy 1.x "tab" fragment, which builds that do not
@@ -252,8 +267,8 @@ export async function buildChatSystemPrompt(model) {
   // the params record. Modules are selected by the major version it names.
   const sections = [];
   for (const entry of params.modules) {
-    const gatePref = GATED_CHAT_MODULES.get(entry.name);
-    if (gatePref && !Services.prefs.getBoolPref(gatePref, false)) {
+    const isAvailable = GATED_CHAT_MODULES.get(entry.name);
+    if (isAvailable && !isAvailable()) {
       continue;
     }
     const record = findModule(records, {
@@ -537,6 +552,8 @@ async function resolveInferenceModel(feature, config, opts = {}) {
  *
  * @param {string} feature
  * @param {object} [opts]
+ * @param {Partial<PipelineOptions>} [opts.onDeviceOptions] - Runs on device
+ *   with llama.cpp instead of the cloud endpoint.
  * @returns {Promise<{engine: openAIEngine, parameters: inferenceParams}>}
  */
 export async function buildEngineForFeature(feature, opts = {}) {
@@ -571,6 +588,7 @@ export async function buildEngineForFeature(feature, opts = {}) {
     feature,
     baseURL,
     apiKey,
+    onDeviceOptions: opts.onDeviceOptions,
   });
 
   return { engine, parameters };

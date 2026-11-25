@@ -25,8 +25,9 @@ export const MAX_MESSAGES_PER_CONVERSATION_FOR_JOURNEY_PROMPT = 3;
 let _savedLoadPromptDescriptor = null;
 let _savedGetConversationsByIdDescriptor = null;
 
-const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
+const lazy = XPCOMUtils.declareLazy({
   AuthProvider:
     "moz-src:///browser/components/aiwindow/models/AuthProvider.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
@@ -74,14 +75,12 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/ChatEnums.sys.mjs",
   JourneyStore:
     "moz-src:///browser/components/aiwindow/models/memories/journeys/JourneyStore.sys.mjs",
+  console: () =>
+    console.createInstance({
+      logModule: "JourneyManager",
+      maxLogLevelPref: "browser.smartwindow.memories.logLevel",
+    }),
 });
-
-ChromeUtils.defineLazyGetter(lazy, "console", () =>
-  console.createInstance({
-    logModule: "JourneyManager",
-    maxLogLevelPref: "browser.smartwindow.memories.logLevel",
-  })
-);
 
 /** Provides suggestions and conversations for resuming journeys. */
 export const JourneyManager = {
@@ -325,7 +324,9 @@ export const JourneyManager = {
    * @param {Set<string>} [options.excludeIds] - Journey (memory) IDs to exclude.
    * @param {number} [options.limit] - Maximum suggestions to return.
    * @returns {Promise<Array<object>>} Array of objects containing memory and
-   *   content with headline, status, and previewTabs
+   *   content with headline, status, and previewTabs, plus telemetryData with
+   *   raw lastVisitDate (ms), memoryCreatedAt (ms), memoryStrength, and
+   *   componentSummaryCount
    */
   async suggestJourneysToResume({
     excludeIds = new Set(),
@@ -365,6 +366,13 @@ export const JourneyManager = {
               headline,
               status,
               previewTabs: urls.map(({ url, title }) => ({ url, title })),
+            },
+            telemetryData: {
+              // Places stores visit dates in microseconds.
+              lastVisitDate: Math.floor(urls.at(-1).lastVisitDate / 1000),
+              memoryCreatedAt: memory.created_at,
+              memoryStrength: memory.strength,
+              componentSummaryCount: memory.component_summaries?.length ?? 0,
             },
           };
         })
