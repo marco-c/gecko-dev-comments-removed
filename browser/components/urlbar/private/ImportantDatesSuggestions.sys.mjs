@@ -235,6 +235,12 @@ export class ImportantDatesSuggestions extends SuggestProvider {
     });
   }
 
+  /**
+   * @param {UrlbarQueryContext} _queryContext
+   * @param {UrlbarParentController} controller
+   * @param {object} details
+   * @param {string} _searchString
+   */
   onEngagement(_queryContext, controller, details, _searchString) {
     switch (details.selType) {
       case "manage":
@@ -243,11 +249,7 @@ export class ImportantDatesSuggestions extends SuggestProvider {
       case "dismiss": {
         let { result } = details;
         lazy.QuickSuggest.dismissResult(result);
-        controller.removeResult(result, {
-          acknowledgeDismissalL10n: {
-            id: "firefox-suggest-dismissal-acknowledgment-one",
-          },
-        });
+        controller.removeResult(result);
         break;
       }
     }

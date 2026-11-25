@@ -109,6 +109,7 @@ export class UrlbarView {
     // This is used by autoOpen to avoid flickering results when reopening
     // previously abandoned searches.
     this.queryContextCache = new QueryContextCache(5);
+    UrlbarPrefs.addObserver(this);
 
     // We cache l10n strings to avoid Fluent's async lookup.
     this.#l10nCache = new L10nCache();
@@ -157,6 +158,7 @@ export class UrlbarView {
    */
   #canReuseResults(queryContext) {
     return (
+      !this.#resultsInvalidated &&
       queryContext.searchString == this.input.value &&
       queryContext.currentPage == this.#currentPage
     );
@@ -1039,6 +1041,7 @@ export class UrlbarView {
   onQueryResults(queryContext) {
     this.queryContextCache.put(queryContext);
     this.#queryContext = queryContext;
+    this.#resultsInvalidated = false;
 
     if (!this.isOpen) {
       this.clear();
@@ -1165,14 +1168,12 @@ export class UrlbarView {
    * and attempts to select the new result on the same row.
    *
    * @param {number} id The id of the UrlbarResult that has been removed.
-   * @param {object} [acknowledgeDismissalL10n]
-   *   The dismissal-acknowledgment l10n the dismissing provider set on the
-   *   result, supplied by the caller. It isn't read from this row's result
-   *   because the provider sets it after the results were serialized to this
-   *   process, so this row's result -- a query-time snapshot -- never received
-   *   it. Undefined when the row is removed without acknowledgment.
+   * @param {object} [options]
+   * @param {boolean} [options.acknowledgeDismissal]
+   *   Whether the result should be replaced with a dismissal-acknowledgment
+   *   tip.
    */
-  onQueryResultRemoved(id, acknowledgeDismissalL10n) {
+  onQueryResultRemoved(id, { acknowledgeDismissal = false } = {}) {
     let removedIndex = -1;
     let rowToRemove = null;
     for (let i = 0; i < this.#rows.children.length; i++) {
@@ -1189,9 +1190,10 @@ export class UrlbarView {
     }
 
     let { result } = rowToRemove;
-    if (acknowledgeDismissalL10n) {
-      // Replace the result's row with a dismissal acknowledgment tip.
-      this.#acknowledgeDismissal(result, acknowledgeDismissalL10n);
+    if (acknowledgeDismissal) {
+      this.#acknowledgeDismissal(result, {
+        id: "urlbar-feedback-acknowledgment",
+      });
       return;
     }
 
@@ -1246,6 +1248,27 @@ export class UrlbarView {
   }
 
   /**
+   * Called when a urlbar or urlbar related pref changes.
+   *
+   * @param {string} pref
+   *   The name of the pref. Relative to `browser.urlbar` for urlbar prefs.
+   */
+  onPrefChanged(pref) {
+    if (UrlbarPrefs.affectsResults(pref)) {
+      this.invalidateResults();
+    }
+  }
+
+  /**
+   * Discards the cached query contexts and marks the current results as stale,
+   * so that the view runs a new query the next time it opens.
+   */
+  invalidateResults() {
+    this.queryContextCache.clear();
+    this.#resultsInvalidated = true;
+  }
+
+  /**
    * Passes DOM events for the view to the on_<event type> methods.
    *
    * @param {Event} event
@@ -1284,6 +1307,7 @@ export class UrlbarView {
   #queryWasCancelled = false;
   /** @type {?number} */
   #removeStaleRowsTimer = null;
+  #resultsInvalidated = false;
   /** @type {?UrlbarResult} */
   #resultMenuResult = null;
   /** @type {WeakMap<UrlbarResult, UrlbarResultCommand[]>} */
@@ -3290,10 +3314,6 @@ export class UrlbarView {
         : { id: "urlbar-group-firefox-suggest" };
     }
 
-    if (row.result.isBestMatch) {
-      return { id: "urlbar-group-best-match" };
-    }
-
     // Show "Shortcuts" if there's another result before that group.
     if (
       row.result.providerName == "UrlbarProviderTopSites" &&
@@ -4213,7 +4233,6 @@ export class UrlbarView {
 
     if (UrlbarPrefs.get("groupLabels.enabled")) {
       idArgs.push({ id: "urlbar-group-firefox-suggest" });
-      idArgs.push({ id: "urlbar-group-best-match" });
     }
 
     let suggestSponsoredEnabled =
