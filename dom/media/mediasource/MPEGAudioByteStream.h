@@ -15,10 +15,37 @@
 
 namespace mozilla::mpeg_audio {
 
-static constexpr size_t kFrameHeaderSize = 4;
+
+enum class Format : uint8_t {
+  
+  MPEGAudio,
+  
+  ADTS,
+};
 
 
-static constexpr size_t kMaxFrameLength = 2881;
+static constexpr size_t kMPEGAudioHeaderSize = 4;
+
+static constexpr size_t kADTSHeaderSize = 7;
+
+
+static constexpr size_t kCRCSize = 2;
+
+
+constexpr size_t FrameHeaderSize(Format aFormat) {
+  return aFormat == Format::ADTS ? kADTSHeaderSize : kMPEGAudioHeaderSize;
+}
+
+
+
+static constexpr size_t kMaxMPEGAudioFrameLength = 2881;
+
+static constexpr size_t kMaxADTSFrameLength = 8191;
+
+constexpr size_t MaxFrameLength(Format aFormat) {
+  return aFormat == Format::ADTS ? kMaxADTSFrameLength
+                                 : kMaxMPEGAudioFrameLength;
+}
 
 
 struct FrameInfo {
@@ -30,17 +57,22 @@ struct FrameInfo {
   
   uint32_t mLength = 0;
   bool mIsMPEG1 = false;
+  
+  
+  uint32_t mHeaderLength = 0;
+  
+  uint8_t mObjectType = 0;
 
   
   bool HasSameConfig(const FrameInfo& aOther) const {
     return mSampleRate == aOther.mSampleRate && mChannels == aOther.mChannels &&
-           mLayer == aOther.mLayer;
+           mLayer == aOther.mLayer && mObjectType == aOther.mObjectType;
   }
 };
 
 
 
-Maybe<FrameInfo> ParseFrameHeader(Span<const uint8_t> aData);
+Maybe<FrameInfo> ParseFrameHeader(Format aFormat, Span<const uint8_t> aData);
 
 struct Unit {
   enum class Type : uint8_t {
@@ -74,7 +106,7 @@ struct Unit {
 
 
 
-Unit ParseUnit(Span<const uint8_t> aData, bool aConfirmSync,
+Unit ParseUnit(Format aFormat, Span<const uint8_t> aData, bool aConfirmSync,
                bool aHeaderOnly = false);
 
 }  

@@ -26,11 +26,13 @@ DDLoggedTypeDeclNameAndBase(MPEGAudioByteStreamDemuxer, MediaDataDemuxer);
 
 
 
+
 class MPEGAudioByteStreamDemuxer
     : public MediaDataDemuxer,
       public DecoderDoctorLifeLogger<MPEGAudioByteStreamDemuxer> {
  public:
-  explicit MPEGAudioByteStreamDemuxer(SourceBufferResource* aSource);
+  MPEGAudioByteStreamDemuxer(SourceBufferResource* aSource,
+                             mpeg_audio::Format aFormat);
 
   RefPtr<InitPromise> Init() override;
   uint32_t GetNumberTracks(TrackInfo::TrackType aType) const override;
@@ -40,6 +42,7 @@ class MPEGAudioByteStreamDemuxer
 
  private:
   const RefPtr<SourceBufferResource> mSource;
+  const mpeg_audio::Format mFormat;
   RefPtr<MPEGAudioByteStreamTrackDemuxer> mTrackDemuxer;
 };
 
@@ -49,7 +52,8 @@ class MPEGAudioByteStreamTrackDemuxer
     : public MediaTrackDemuxer,
       public DecoderDoctorLifeLogger<MPEGAudioByteStreamTrackDemuxer> {
  public:
-  explicit MPEGAudioByteStreamTrackDemuxer(SourceBufferResource* aSource);
+  MPEGAudioByteStreamTrackDemuxer(SourceBufferResource* aSource,
+                                  mpeg_audio::Format aFormat);
 
   bool Init();
 
@@ -75,6 +79,7 @@ class MPEGAudioByteStreamTrackDemuxer
   Result<Span<const uint8_t>, MediaResult> Peek(size_t aSize);
 
   const RefPtr<SourceBufferResource> mSource;
+  const mpeg_audio::Format mFormat;
   AudioInfo mInfo;
   mpeg_audio::FrameInfo mConfig;
   

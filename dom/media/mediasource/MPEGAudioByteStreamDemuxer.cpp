@@ -6,6 +6,7 @@
 
 #include <algorithm>
 
+#include "Adts.h"
 #include "MediaData.h"
 #include "TimeUnits.h"
 #include "mozilla/Casting.h"
@@ -27,9 +28,6 @@ using media::TimeIntervals;
 using media::TimeUnit;
 
 
-static constexpr size_t kMPEGAudioPeekSize = mpeg_audio::kMaxFrameLength;
-
-
 
 
 
@@ -48,14 +46,14 @@ static MediaResult InvalidMPEGAudioData() {
 }
 
 MPEGAudioByteStreamDemuxer::MPEGAudioByteStreamDemuxer(
-    SourceBufferResource* aSource)
-    : mSource(aSource) {
+    SourceBufferResource* aSource, mpeg_audio::Format aFormat)
+    : mSource(aSource), mFormat(aFormat) {
   DDLINKCHILD("source", aSource);
 }
 
 RefPtr<MediaDataDemuxer::InitPromise> MPEGAudioByteStreamDemuxer::Init() {
   if (!mTrackDemuxer) {
-    mTrackDemuxer = new MPEGAudioByteStreamTrackDemuxer(mSource);
+    mTrackDemuxer = new MPEGAudioByteStreamTrackDemuxer(mSource, mFormat);
     DDLINKCHILD("track demuxer", mTrackDemuxer.get());
   }
   if (!mTrackDemuxer->Init()) {
@@ -79,38 +77,51 @@ already_AddRefed<MediaTrackDemuxer> MPEGAudioByteStreamDemuxer::GetTrackDemuxer(
 }
 
 MPEGAudioByteStreamTrackDemuxer::MPEGAudioByteStreamTrackDemuxer(
-    SourceBufferResource* aSource)
-    : mSource(aSource) {
+    SourceBufferResource* aSource, mpeg_audio::Format aFormat)
+    : mSource(aSource), mFormat(aFormat) {
   DDLINKCHILD("source", aSource);
 }
 
 bool MPEGAudioByteStreamTrackDemuxer::Init() {
   
-  MOZ_ASSERT(mSource->GetCachedDataEnd(0) ==
-             int64_t(mpeg_audio::kFrameHeaderSize));
-  uint8_t header[mpeg_audio::kFrameHeaderSize];
+  const size_t headerSize = mpeg_audio::FrameHeaderSize(mFormat);
+  MOZ_ASSERT(mSource->GetCachedDataEnd(0) == int64_t(headerSize));
+  uint8_t header[mpeg_audio::kADTSHeaderSize];
+  static_assert(mpeg_audio::kADTSHeaderSize >=
+                mpeg_audio::kMPEGAudioHeaderSize);
   if (NS_FAILED(mSource->ReadFromCache(reinterpret_cast<char*>(header), 0,
-                                       sizeof(header)))) {
+                                       AssertedCast<uint32_t>(headerSize)))) {
     return false;
   }
-  Maybe<mpeg_audio::FrameInfo> frame = mpeg_audio::ParseFrameHeader(header);
+  Maybe<mpeg_audio::FrameInfo> frame =
+      mpeg_audio::ParseFrameHeader(mFormat, Span(header, headerSize));
   if (!frame) {
     return false;
   }
   mConfig = *frame;
-  mInfo.mMimeType = "audio/mpeg"_ns;
   mInfo.mRate = mConfig.mSampleRate;
   mInfo.mChannels = mConfig.mChannels;
   mInfo.mBitDepth = 16;
-  Mp3CodecSpecificData mp3CodecSpecificData;
-  mp3CodecSpecificData.mDecoderDelayFrames =
-      mConfig.mLayer == 3 ? kLayer3DecoderDelay : kLayer1And2DecoderDelay;
-  mInfo.mCodecSpecificConfig =
-      AudioCodecSpecificVariant{std::move(mp3CodecSpecificData)};
+  if (mFormat == mpeg_audio::Format::ADTS) {
+    mInfo.mMimeType = "audio/mp4a-latm"_ns;
+    mInfo.mProfile = mInfo.mExtendedProfile = mConfig.mObjectType;
+    ADTS::FrameHeader adtsHeader;
+    MOZ_ALWAYS_TRUE(adtsHeader.Parse(Span(header, headerSize)));
+    AudioCodecSpecificBinaryBlob blob;
+    ADTS::InitAudioSpecificConfig(adtsHeader, blob.mBinaryBlob);
+    mInfo.mCodecSpecificConfig = AudioCodecSpecificVariant{std::move(blob)};
+  } else {
+    mInfo.mMimeType = "audio/mpeg"_ns;
+    Mp3CodecSpecificData mp3CodecSpecificData;
+    mp3CodecSpecificData.mDecoderDelayFrames =
+        mConfig.mLayer == 3 ? kLayer3DecoderDelay : kLayer1And2DecoderDelay;
+    mInfo.mCodecSpecificConfig =
+        AudioCodecSpecificVariant{std::move(mp3CodecSpecificData)};
+  }
   
-  mOffset = sizeof(header);
-  MSE_DEBUG("layer={} rate={} channels={}", mConfig.mLayer, mInfo.mRate,
-            mInfo.mChannels);
+  mOffset = AssertedCast<int64_t>(headerSize);
+  MSE_DEBUG("layer={} object type={} rate={} channels={}", mConfig.mLayer,
+            mConfig.mObjectType, mInfo.mRate, mInfo.mChannels);
   return true;
 }
 
@@ -164,12 +175,14 @@ TimeIntervals MPEGAudioByteStreamTrackDemuxer::GetBuffered() {
 Result<RefPtr<MediaRawData>, MediaResult>
 MPEGAudioByteStreamTrackDemuxer::GetNextSample() {
   while (true) {
-    Span<const uint8_t> data = MOZ_TRY(Peek(kMPEGAudioPeekSize));
+    
+    const size_t peekSize = mpeg_audio::MaxFrameLength(mFormat);
+    Span<const uint8_t> data = MOZ_TRY(Peek(peekSize));
     const mpeg_audio::Unit unit =
-        mpeg_audio::ParseUnit(data,  false);
+        mpeg_audio::ParseUnit(mFormat, data,  false);
     switch (unit.mType) {
       case mpeg_audio::Unit::Type::NeedMoreData:
-        MOZ_ASSERT(data.Length() < kMPEGAudioPeekSize);
+        MOZ_ASSERT(data.Length() < peekSize);
         return RefPtr<MediaRawData>();
       case mpeg_audio::Unit::Type::Error:
         return Err(InvalidMPEGAudioData());
@@ -188,9 +201,15 @@ MPEGAudioByteStreamTrackDemuxer::GetNextSample() {
           MOZ_ASSERT_UNREACHABLE("Unexpected frame configuration");
           return Err(InvalidMPEGAudioData());
         }
+        
+        
+        const size_t payloadStart =
+            mFormat == mpeg_audio::Format::ADTS ? unit.mFrame.mHeaderLength : 0;
+        const Span<const uint8_t> payload =
+            data.FromTo(payloadStart, static_cast<size_t>(unit.mLength));
         RefPtr<MediaRawData> sample =
-            new MediaRawData(data.Elements(), unit.mLength);
-        if (sample->Size() != unit.mLength) {
+            new MediaRawData(payload.Elements(), payload.Length());
+        if (sample->Size() != payload.Length()) {
           return Err(MediaResult(NS_ERROR_OUT_OF_MEMORY, __func__));
         }
         sample->mOffset = mOffset;
