@@ -4172,7 +4172,6 @@ void CodeGenerator::visitOsrEntry(LOsrEntry* lir) {
   Register temp = ToRegister(lir->temp());
 
   
-  masm.flushBuffer();
   setOsrEntryOffset(masm.indirectTarget(TargetKind::Jump).offset());
 
   
