@@ -4125,7 +4125,9 @@ gboolean nsWindow::OnTouchEvent(GdkEventTouch* aEvent) {
     *event.mTouches.AppendElement() = std::move(touch);
   }
 
-  nsIWidget::ContentAndAPZEventStatus eventStatus = DispatchInputEvent(&event);
+  MultiTouchInput touchInput(event);
+  nsIWidget::ContentAndAPZEventStatus eventStatus =
+      DispatchTouchInput(touchInput);
 
   
   

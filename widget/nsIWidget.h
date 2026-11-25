@@ -1332,6 +1332,15 @@ class nsIWidget : public nsSupportsWeakReference {
   void ReceiveTouchSwipableDirections(uint64_t aInputBlockId,
                                       mozilla::SideBits aSwipableDirections);
 
+  
+  
+  struct ContentAndAPZEventStatus {
+    
+    
+    nsEventStatus mApzStatus = nsEventStatus_eIgnore;
+    nsEventStatus mContentStatus = nsEventStatus_eIgnore;
+  };
+
  protected:
   nsIWidget();
   virtual ~nsIWidget();
@@ -1392,7 +1401,7 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
 
-  void DispatchTouchInput(mozilla::MultiTouchInput& aInput);
+  ContentAndAPZEventStatus DispatchTouchInput(mozilla::MultiTouchInput& aInput);
 
   void MayStartSwipeForTouchInput(
       const mozilla::MultiTouchInput& aInput,
@@ -1524,15 +1533,6 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
   virtual bool DispatchWindowEvent(mozilla::WidgetGUIEvent& event);
-
-  
-  
-  struct ContentAndAPZEventStatus {
-    
-    
-    nsEventStatus mApzStatus = nsEventStatus_eIgnore;
-    nsEventStatus mContentStatus = nsEventStatus_eIgnore;
-  };
 
   
 
