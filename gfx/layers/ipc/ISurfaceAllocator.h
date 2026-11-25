@@ -10,6 +10,7 @@
 
 #include "gfxTypes.h"
 #include "mozilla/Atomics.h"  
+#include "mozilla/ProcessType.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/gfx/Point.h"  
 #include "mozilla/ipc/Shmem.h"
@@ -119,7 +120,7 @@ class HostIPCAllocator : public ISurfaceAllocator {
   
 
 
-  virtual base::ProcessId GetChildProcessId() = 0;
+  virtual GeckoChildID GetChildID() = 0;
 
   virtual void NotifyNotUsed(PTextureParent* aTexture,
                              uint64_t aTransactionId) = 0;

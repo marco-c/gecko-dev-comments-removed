@@ -38,8 +38,8 @@ RemoteTextureRecycleBin::RemoteTextureRecycleBin(bool aIsShared)
     : mIsShared(aIsShared) {}
 
 RemoteTextureOwnerClient::RemoteTextureOwnerClient(
-    const base::ProcessId aForPid)
-    : mForPid(aForPid) {}
+    const GeckoChildID aForChildID)
+    : mForChildID(aForChildID) {}
 
 bool RemoteTextureOwnerClient::IsRegistered(
     const RemoteTextureOwnerId aOwnerId) {
@@ -61,7 +61,7 @@ void RemoteTextureOwnerClient::RegisterTextureOwner(
     }
     recycleBin = mSharedRecycleBin;
   }
-  RemoteTextureMap::Get()->RegisterTextureOwner(aOwnerId, mForPid, recycleBin);
+  RemoteTextureMap::Get()->RegisterTextureOwner(aOwnerId, mForChildID, recycleBin);
 }
 
 void RemoteTextureOwnerClient::UnregisterTextureOwner(
@@ -71,14 +71,14 @@ void RemoteTextureOwnerClient::UnregisterTextureOwner(
     return;
   }
   mOwnerIds.erase(it);
-  RemoteTextureMap::Get()->UnregisterTextureOwner(aOwnerId, mForPid);
+  RemoteTextureMap::Get()->UnregisterTextureOwner(aOwnerId, mForChildID);
 }
 
 void RemoteTextureOwnerClient::UnregisterAllTextureOwners() {
   if (mOwnerIds.empty()) {
     return;
   }
-  RemoteTextureMap::Get()->UnregisterTextureOwners(mOwnerIds, mForPid);
+  RemoteTextureMap::Get()->UnregisterTextureOwners(mOwnerIds, mForChildID);
   mOwnerIds.clear();
   mSharedRecycleBin = nullptr;
 }
@@ -90,12 +90,12 @@ bool RemoteTextureOwnerClient::WaitForTxn(const RemoteTextureOwnerId aOwnerId,
   if (it == mOwnerIds.end() || !aTxnType || !aTxnId) {
     return false;
   }
-  return RemoteTextureMap::Get()->WaitForTxn(aOwnerId, mForPid, aTxnType,
+  return RemoteTextureMap::Get()->WaitForTxn(aOwnerId, mForChildID, aTxnType,
                                              aTxnId);
 }
 
 void RemoteTextureOwnerClient::ClearRecycledTextures() {
-  RemoteTextureMap::Get()->ClearRecycledTextures(mOwnerIds, mForPid,
+  RemoteTextureMap::Get()->ClearRecycledTextures(mOwnerIds, mForChildID,
                                                  mSharedRecycleBin);
 }
 
@@ -114,7 +114,7 @@ void RemoteTextureOwnerClient::NotifyContextLost(
   if (aOwnerIds->empty()) {
     return;
   }
-  RemoteTextureMap::Get()->NotifyContextLost(*aOwnerIds, mForPid);
+  RemoteTextureMap::Get()->NotifyContextLost(*aOwnerIds, mForChildID);
 }
 
 void RemoteTextureOwnerClient::NotifyContextRestored(
@@ -132,7 +132,7 @@ void RemoteTextureOwnerClient::NotifyContextRestored(
   if (aOwnerIds->empty()) {
     return;
   }
-  RemoteTextureMap::Get()->NotifyContextRestored(*aOwnerIds, mForPid);
+  RemoteTextureMap::Get()->NotifyContextRestored(*aOwnerIds, mForChildID);
 }
 
 void RemoteTextureOwnerClient::PushTexture(
@@ -147,7 +147,7 @@ void RemoteTextureOwnerClient::PushTexture(
     return;
   }
 
-  RemoteTextureMap::Get()->PushTexture(aTextureId, aOwnerId, mForPid,
+  RemoteTextureMap::Get()->PushTexture(aTextureId, aOwnerId, mForChildID,
                                        std::move(aTextureData), textureHost,
                                         nullptr);
 }
@@ -187,7 +187,7 @@ void RemoteTextureOwnerClient::PushTexture(
   }
 
   RemoteTextureMap::Get()->PushTexture(
-      aTextureId, aOwnerId, mForPid, std::move(textureData), textureHost,
+      aTextureId, aOwnerId, mForChildID, std::move(textureData), textureHost,
       SharedResourceWrapper::SharedSurface(aSharedSurface));
 }
 
@@ -226,7 +226,7 @@ void RemoteTextureOwnerClient::PushTexture(
   }
 
   RemoteTextureMap::Get()->PushTexture(
-      aTextureId, aOwnerId, mForPid, std::move(textureData), textureHost,
+      aTextureId, aOwnerId, mForChildID, std::move(textureData), textureHost,
       SharedResourceWrapper::SharedTexture(aSharedTexture));
 }
 
@@ -254,7 +254,7 @@ void RemoteTextureOwnerClient::PushDummyTexture(
     return;
   }
 
-  RemoteTextureMap::Get()->PushTexture(aTextureId, aOwnerId, mForPid,
+  RemoteTextureMap::Get()->PushTexture(aTextureId, aOwnerId, mForChildID,
                                        std::move(textureData), textureHost,
                                         nullptr);
 }
@@ -262,14 +262,14 @@ void RemoteTextureOwnerClient::PushDummyTexture(
 webgpu::FrontBufferSnapshot RemoteTextureOwnerClient::GetLatestBufferSnapshot(
     const RemoteTextureOwnerId aOwnerId) {
   MOZ_ASSERT(IsRegistered(aOwnerId));
-  return RemoteTextureMap::Get()->GetLatestBufferSnapshot(aOwnerId, mForPid);
+  return RemoteTextureMap::Get()->GetLatestBufferSnapshot(aOwnerId, mForChildID);
 }
 
 UniquePtr<TextureData> RemoteTextureOwnerClient::GetRecycledTextureData(
     const gfx::IntSize& aSize, gfx::SurfaceFormat aFormat,
     TextureType aTextureType, RemoteTextureOwnerId aOwnerId) {
   return RemoteTextureMap::Get()->GetRecycledTextureData(
-      aOwnerId, mForPid, mSharedRecycleBin, aSize, aFormat, aTextureType);
+      aOwnerId, mForChildID, mSharedRecycleBin, aSize, aFormat, aTextureType);
 }
 
 UniquePtr<TextureData>
@@ -296,7 +296,7 @@ RemoteTextureOwnerClient::GetRecycledSharedSurface(
     SurfaceDescriptor::Type aType, RemoteTextureOwnerId aOwnerId) {
   UniquePtr<SharedResourceWrapper> wrapper =
       RemoteTextureMap::Get()->RemoteTextureMap::GetRecycledSharedTexture(
-          aOwnerId, mForPid, mSharedRecycleBin, aSize, aFormat, aType);
+          aOwnerId, mForChildID, mSharedRecycleBin, aSize, aFormat, aType);
   if (!wrapper) {
     return nullptr;
   }
@@ -310,7 +310,7 @@ RemoteTextureOwnerClient::GetRecycledSharedTexture(
     SurfaceDescriptor::Type aType, RemoteTextureOwnerId aOwnerId) {
   UniquePtr<SharedResourceWrapper> wrapper =
       RemoteTextureMap::Get()->RemoteTextureMap::GetRecycledSharedTexture(
-          aOwnerId, mForPid, mSharedRecycleBin, aSize, aFormat, aType);
+          aOwnerId, mForChildID, mSharedRecycleBin, aSize, aFormat, aType);
   if (!wrapper) {
     return nullptr;
   }
@@ -336,7 +336,10 @@ void RemoteTextureMap::Shutdown() {
 bool RemoteTextureMap::RecycleTexture(
     const RefPtr<RemoteTextureRecycleBin>& aRecycleBin,
     TextureDataHolder& aHolder, bool aExpireOldTextures) {
-  if (!aHolder.mTextureData ||
+  
+  
+  if (!StaticPrefs::gfx_remote_texture_recycle_enabled() ||
+      !aHolder.mTextureData ||
       (aHolder.mTextureHost &&
        aHolder.mTextureHost->GetFlags() & TextureFlags::DUMMY_TEXTURE)) {
     return false;
@@ -376,16 +379,14 @@ bool RemoteTextureMap::RecycleTexture(
     
     recycled.mTextureData = std::move(aHolder.mTextureData);
   }
-  if (!StaticPrefs::gfx_remote_texture_recycle_disabled()) {
-    aRecycleBin->mRecycledTextures.push_back(std::move(recycled));
-  }
+  aRecycleBin->mRecycledTextures.push_back(std::move(recycled));
 
   return true;
 }
 
 void RemoteTextureMap::PushTexture(
     const RemoteTextureId aTextureId, const RemoteTextureOwnerId aOwnerId,
-    const base::ProcessId aForPid, UniquePtr<TextureData>&& aTextureData,
+    const GeckoChildID aForChildID, UniquePtr<TextureData>&& aTextureData,
     RefPtr<TextureHost>& aTextureHost,
     UniquePtr<SharedResourceWrapper>&& aResourceWrapper) {
   MOZ_RELEASE_ASSERT(aTextureHost);
@@ -397,7 +398,7 @@ void RemoteTextureMap::PushTexture(
   {
     MonitorAutoLock lock(mMonitor);
 
-    auto* owner = GetTextureOwner(lock, aOwnerId, aForPid);
+    auto* owner = GetTextureOwner(lock, aOwnerId, aForChildID);
     if (!owner) {
       MOZ_ASSERT_UNREACHABLE("unexpected to be called");
       return;
@@ -427,7 +428,7 @@ void RemoteTextureMap::PushTexture(
       
       
       
-      const auto key = std::pair(aForPid, aTextureId);
+      const auto key = std::pair(aForChildID, aTextureId);
       auto it = mRemoteTextureHostWrapperHolders.find(key);
       if (it != mRemoteTextureHostWrapperHolders.end()) {
         MOZ_ASSERT(!it->second->mRemoteTextureHost);
@@ -485,7 +486,7 @@ void RemoteTextureMap::PushTexture(
     }
   }
 
-  const auto info = RemoteTextureInfo(aTextureId, aOwnerId, aForPid);
+  const auto info = RemoteTextureInfo(aTextureId, aOwnerId, aForChildID);
   for (auto& callback : renderingReadyCallbacks) {
     callback(info);
   }
@@ -493,10 +494,10 @@ void RemoteTextureMap::PushTexture(
 
 bool RemoteTextureMap::RemoveTexture(const RemoteTextureId aTextureId,
                                      const RemoteTextureOwnerId aOwnerId,
-                                     const base::ProcessId aForPid) {
+                                     const GeckoChildID aForChildID) {
   MonitorAutoLock lock(mMonitor);
 
-  auto* owner = GetTextureOwner(lock, aOwnerId, aForPid);
+  auto* owner = GetTextureOwner(lock, aOwnerId, aForChildID);
   if (!owner) {
     return false;
   }
@@ -506,7 +507,7 @@ bool RemoteTextureMap::RemoveTexture(const RemoteTextureId aTextureId,
     auto& data = *it;
     if (data->mTextureId == aTextureId) {
       if (mRemoteTextureHostWrapperHolders.find(std::pair(
-              aForPid, aTextureId)) != mRemoteTextureHostWrapperHolders.end()) {
+              aForChildID, aTextureId)) != mRemoteTextureHostWrapperHolders.end()) {
         return false;
       }
       if (!RecycleTexture(owner->mRecycleBin, *data, false)) {
@@ -521,7 +522,7 @@ bool RemoteTextureMap::RemoveTexture(const RemoteTextureId aTextureId,
 }
 
 webgpu::FrontBufferSnapshot RemoteTextureMap::GetLatestBufferSnapshot(
-    const RemoteTextureOwnerId aOwnerId, const base::ProcessId aForPid) {
+    const RemoteTextureOwnerId aOwnerId, const GeckoChildID aForChildID) {
   
   CompositableTextureHostRef textureHostRef;
   RefPtr<TextureHost> releasingTexture;  
@@ -529,7 +530,7 @@ webgpu::FrontBufferSnapshot RemoteTextureMap::GetLatestBufferSnapshot(
   {
     MonitorAutoLock lock(mMonitor);
 
-    auto* owner = GetTextureOwner(lock, aOwnerId, aForPid);
+    auto* owner = GetTextureOwner(lock, aOwnerId, aForChildID);
     if (!owner) {
       MOZ_ASSERT_UNREACHABLE("unexpected to be called");
       return {};
@@ -611,11 +612,11 @@ webgpu::FrontBufferSnapshot RemoteTextureMap::GetLatestBufferSnapshot(
 }
 
 void RemoteTextureMap::RegisterTextureOwner(
-    const RemoteTextureOwnerId aOwnerId, const base::ProcessId aForPid,
+    const RemoteTextureOwnerId aOwnerId, const GeckoChildID aForChildID,
     const RefPtr<RemoteTextureRecycleBin>& aRecycleBin) {
   MonitorAutoLock lock(mMonitor);
 
-  const auto key = std::pair(aForPid, aOwnerId);
+  const auto key = std::pair(aForChildID, aOwnerId);
   auto it = mTextureOwners.find(key);
   if (it != mTextureOwners.end()) {
     MOZ_ASSERT_UNREACHABLE("unexpected to be called");
@@ -677,11 +678,11 @@ void RemoteTextureMap::KeepTextureDataAliveForTextureHostIfNecessary(
 UniquePtr<RemoteTextureMap::TextureOwner>
 RemoteTextureMap::UnregisterTextureOwner(
     MonitorAutoLock& aProofOfLock, const RemoteTextureOwnerId aOwnerId,
-    const base::ProcessId aForPid,
+    const GeckoChildID aForChildID,
     std::vector<RefPtr<TextureHost>>& aReleasingTextures,
     std::vector<std::function<void(const RemoteTextureInfo&)>>&
         aRenderingReadyCallbacks) {
-  const auto key = std::pair(aForPid, aOwnerId);
+  const auto key = std::pair(aForChildID, aOwnerId);
   auto it = mTextureOwners.find(key);
   if (it == mTextureOwners.end()) {
     MOZ_ASSERT_UNREACHABLE("unexpected to be called");
@@ -742,7 +743,7 @@ RemoteTextureMap::UnregisterTextureOwner(
 }
 
 void RemoteTextureMap::UnregisterTextureOwner(
-    const RemoteTextureOwnerId aOwnerId, const base::ProcessId aForPid) {
+    const RemoteTextureOwnerId aOwnerId, const GeckoChildID aForChildID) {
   UniquePtr<TextureOwner> releasingOwner;  
   std::vector<RefPtr<TextureHost>>
       releasingTextures;  
@@ -752,20 +753,20 @@ void RemoteTextureMap::UnregisterTextureOwner(
     MonitorAutoLock lock(mMonitor);
 
     releasingOwner = UnregisterTextureOwner(
-        lock, aOwnerId, aForPid, releasingTextures, renderingReadyCallbacks);
+        lock, aOwnerId, aForChildID, releasingTextures, renderingReadyCallbacks);
     if (releasingOwner) {
       mMonitor.Notify();
     }
   }
 
-  const auto info = RemoteTextureInfo(RemoteTextureId{0}, aOwnerId, aForPid);
+  const auto info = RemoteTextureInfo(RemoteTextureId{0}, aOwnerId, aForChildID);
   for (auto& callback : renderingReadyCallbacks) {
     callback(info);
   }
 }
 
 void RemoteTextureMap::UnregisterTextureOwners(
-    const RemoteTextureOwnerIdSet& aOwnerIds, const base::ProcessId aForPid) {
+    const RemoteTextureOwnerIdSet& aOwnerIds, const GeckoChildID aForChildID) {
   std::vector<UniquePtr<TextureOwner>>
       releasingOwners;  
   std::vector<RefPtr<TextureHost>>
@@ -778,11 +779,11 @@ void RemoteTextureMap::UnregisterTextureOwners(
 
     for (const auto& id : aOwnerIds) {
       if (auto releasingOwner = UnregisterTextureOwner(
-              lock, id, aForPid, releasingTextures, renderingReadyCallbacks)) {
+              lock, id, aForChildID, releasingTextures, renderingReadyCallbacks)) {
         releasingOwners.push_back(std::move(releasingOwner));
       }
       while (renderingReadyInfos.size() < renderingReadyCallbacks.size()) {
-        renderingReadyInfos.emplace_back(RemoteTextureId{0}, id, aForPid);
+        renderingReadyInfos.emplace_back(RemoteTextureId{0}, id, aForChildID);
       }
     }
 
@@ -796,35 +797,33 @@ void RemoteTextureMap::UnregisterTextureOwners(
   }
 }
 
-void RemoteTextureMap::ClearDestroyedProcess(const base::ProcessId aForPid) {
+void RemoteTextureMap::ClearDestroyedProcess(const GeckoChildID aForChildID) {
   std::vector<UniquePtr<WaitingTextureOwner>>
       releasingWaitingOwners;  
   {
     MonitorAutoLock lock(mMonitor);
 
     for (auto it = mWaitingTextureOwners.lower_bound(
-             std::pair(aForPid, RemoteTextureOwnerId{0}));
-         it != mWaitingTextureOwners.end() && it->first.first == aForPid;) {
+             std::pair(aForChildID, RemoteTextureOwnerId{0}));
+         it != mWaitingTextureOwners.end() && it->first.first == aForChildID;) {
       releasingWaitingOwners.push_back(std::move(it->second));
       it = mWaitingTextureOwners.erase(it);
     }
 
-    
-    
     for (auto it = mTextureOwnerConsumers.lower_bound(
-             std::pair(aForPid, RemoteTextureOwnerId{0}));
-         it != mTextureOwnerConsumers.end() && it->first.first == aForPid;) {
+             std::pair(aForChildID, RemoteTextureOwnerId{0}));
+         it != mTextureOwnerConsumers.end() && it->first.first == aForChildID;) {
       it = mTextureOwnerConsumers.erase(it);
     }
   }
 }
 
 already_AddRefed<RemoteTextureTxnScheduler>
-RemoteTextureMap::RegisterTxnScheduler(base::ProcessId aForPid,
+RemoteTextureMap::RegisterTxnScheduler(GeckoChildID aForChildID,
                                        RemoteTextureTxnType aType) {
   MonitorAutoLock lock(mMonitor);
 
-  const auto key = std::pair(aForPid, aType);
+  const auto key = std::pair(aForChildID, aType);
   auto it = mTxnSchedulers.find(key);
   if (it != mTxnSchedulers.end()) {
     RefPtr<RemoteTextureTxnScheduler> scheduler(it->second);
@@ -835,17 +834,17 @@ RemoteTextureMap::RegisterTxnScheduler(base::ProcessId aForPid,
   }
 
   RefPtr<RemoteTextureTxnScheduler> scheduler(
-      new RemoteTextureTxnScheduler(aForPid, aType));
+      new RemoteTextureTxnScheduler(aForChildID, aType));
   mTxnSchedulers.emplace(
       key, ThreadSafeWeakPtr<RemoteTextureTxnScheduler>(scheduler));
   return scheduler.forget();
 }
 
-void RemoteTextureMap::UnregisterTxnScheduler(base::ProcessId aForPid,
+void RemoteTextureMap::UnregisterTxnScheduler(GeckoChildID aForChildID,
                                               RemoteTextureTxnType aType) {
   MonitorAutoLock lock(mMonitor);
 
-  const auto key = std::pair(aForPid, aType);
+  const auto key = std::pair(aForChildID, aType);
   auto it = mTxnSchedulers.find(key);
   if (it == mTxnSchedulers.end()) {
     MOZ_ASSERT_UNREACHABLE("Remote texture txn scheduler does not exist.");
@@ -858,9 +857,10 @@ already_AddRefed<RemoteTextureTxnScheduler> RemoteTextureTxnScheduler::Create(
     mozilla::ipc::IProtocol* aProtocol) {
   if (auto* instance = RemoteTextureMap::Get()) {
     if (auto* toplevel = aProtocol->ToplevelProtocol()) {
-      auto pid = toplevel->OtherPidMaybeInvalid();
-      if (pid != base::kInvalidProcessId) {
-        return instance->RegisterTxnScheduler(pid, toplevel->GetProtocolId());
+      auto childID = toplevel->OtherChildIDMaybeInvalid();
+      if (childID != kInvalidGeckoChildID) {
+        return instance->RegisterTxnScheduler(childID,
+                                              toplevel->GetProtocolId());
       }
     }
   }
@@ -869,7 +869,7 @@ already_AddRefed<RemoteTextureTxnScheduler> RemoteTextureTxnScheduler::Create(
 
 RemoteTextureTxnScheduler::~RemoteTextureTxnScheduler() {
   NotifyTxn(std::numeric_limits<RemoteTextureTxnId>::max());
-  RemoteTextureMap::Get()->UnregisterTxnScheduler(mForPid, mType);
+  RemoteTextureMap::Get()->UnregisterTxnScheduler(mForChildID, mType);
 }
 
 void RemoteTextureTxnScheduler::NotifyTxn(RemoteTextureTxnId aTxnId) {
@@ -882,7 +882,7 @@ void RemoteTextureTxnScheduler::NotifyTxn(RemoteTextureTxnId aTxnId) {
     if (wait.mTxnId > aTxnId) {
       break;
     }
-    RemoteTextureMap::Get()->NotifyTxn(lock, wait.mOwnerId, mForPid);
+    RemoteTextureMap::Get()->NotifyTxn(lock, wait.mOwnerId, mForChildID);
   }
 }
 
@@ -898,7 +898,7 @@ bool RemoteTextureTxnScheduler::WaitForTxn(const MonitorAutoLock& aProofOfLock,
 }
 
 void RemoteTextureMap::ClearRecycledTextures(
-    const RemoteTextureOwnerIdSet& aOwnerIds, const base::ProcessId aForPid,
+    const RemoteTextureOwnerIdSet& aOwnerIds, const GeckoChildID aForChildID,
     const RefPtr<RemoteTextureRecycleBin>& aRecycleBin) {
   std::list<RemoteTextureRecycleBin::RecycledTextureHolder>
       releasingTextures;  
@@ -911,7 +911,7 @@ void RemoteTextureMap::ClearRecycledTextures(
     }
 
     for (const auto& id : aOwnerIds) {
-      const auto key = std::pair(aForPid, id);
+      const auto key = std::pair(aForChildID, id);
       auto it = mTextureOwners.find(key);
       if (it == mTextureOwners.end()) {
         MOZ_ASSERT_UNREACHABLE("unexpected to be called");
@@ -926,7 +926,7 @@ void RemoteTextureMap::ClearRecycledTextures(
 }
 
 void RemoteTextureMap::NotifyContextLost(
-    const RemoteTextureOwnerIdSet& aOwnerIds, const base::ProcessId aForPid) {
+    const RemoteTextureOwnerIdSet& aOwnerIds, const GeckoChildID aForChildID) {
   std::vector<
       std::pair<RemoteTextureInfo,
                 std::vector<std::function<void(const RemoteTextureInfo&)>>>>
@@ -936,7 +936,7 @@ void RemoteTextureMap::NotifyContextLost(
 
     bool changed = false;
     for (const auto& id : aOwnerIds) {
-      const auto key = std::pair(aForPid, id);
+      const auto key = std::pair(aForChildID, id);
       auto it = mTextureOwners.find(key);
       if (it == mTextureOwners.end()) {
         MOZ_ASSERT_UNREACHABLE("unexpected to be called");
@@ -950,7 +950,7 @@ void RemoteTextureMap::NotifyContextLost(
         
         
         auto& entry = renderingReadyCallbacks.emplace_back(
-            RemoteTextureInfo(owner->mLatestPushedTextureId, id, aForPid),
+            RemoteTextureInfo(owner->mLatestPushedTextureId, id, aForChildID),
             std::vector<std::function<void(const RemoteTextureInfo&)>>());
         GetAllRenderingReadyCallbacks(lock, owner.get(), entry.second);
       }
@@ -969,12 +969,12 @@ void RemoteTextureMap::NotifyContextLost(
 }
 
 void RemoteTextureMap::NotifyContextRestored(
-    const RemoteTextureOwnerIdSet& aOwnerIds, const base::ProcessId aForPid) {
+    const RemoteTextureOwnerIdSet& aOwnerIds, const GeckoChildID aForChildID) {
   MonitorAutoLock lock(mMonitor);
 
   bool changed = false;
   for (const auto& id : aOwnerIds) {
-    const auto key = std::pair(aForPid, id);
+    const auto key = std::pair(aForChildID, id);
     auto it = mTextureOwners.find(key);
     if (it == mTextureOwners.end()) {
       MOZ_ASSERT_UNREACHABLE("unexpected to be called");
@@ -1091,11 +1091,11 @@ bool RemoteTextureMap::WaitForRemoteTextureOwner(
   MOZ_ASSERT(aTextureHostWrapper);
 
   const auto& ownerId = aTextureHostWrapper->mOwnerId;
-  const auto& forPid = aTextureHostWrapper->mForPid;
+  const auto& forChildID = aTextureHostWrapper->mForChildID;
 
   MonitorAutoLock lock(mMonitor);
 
-  auto* owner = GetTextureOwner(lock, ownerId, forPid);
+  auto* owner = GetTextureOwner(lock, ownerId, forChildID);
   
   
   
@@ -1108,7 +1108,7 @@ bool RemoteTextureMap::WaitForRemoteTextureOwner(
         
         return false;
       }
-      if (IsTextureOwnerGone(lock, ownerId, forPid)) {
+      if (IsTextureOwnerGone(lock, ownerId, forChildID)) {
         
         return false;
       }
@@ -1116,7 +1116,7 @@ bool RemoteTextureMap::WaitForRemoteTextureOwner(
       if (status == CVStatus::Timeout) {
         return false;
       }
-      owner = GetTextureOwner(lock, ownerId, forPid);
+      owner = GetTextureOwner(lock, ownerId, forChildID);
     }
   }
   return true;
@@ -1133,14 +1133,14 @@ void RemoteTextureMap::GetRemoteTexture(
 
   const auto& textureId = aTextureHostWrapper->mTextureId;
   const auto& ownerId = aTextureHostWrapper->mOwnerId;
-  const auto& forPid = aTextureHostWrapper->mForPid;
+  const auto& forChildID = aTextureHostWrapper->mForChildID;
   const auto& size = aTextureHostWrapper->mSize;
 
   RefPtr<TextureHost> textureHost;
   {
     MonitorAutoLock lock(mMonitor);
 
-    auto* owner = GetTextureOwner(lock, ownerId, forPid);
+    auto* owner = GetTextureOwner(lock, ownerId, forChildID);
     if (!owner) {
       return;
     }
@@ -1166,7 +1166,7 @@ void RemoteTextureMap::GetRemoteTexture(
 
     
     if (textureId == owner->mLatestUsingTextureId) {
-      const auto key = std::pair(forPid, textureId);
+      const auto key = std::pair(forChildID, textureId);
       auto it = mRemoteTextureHostWrapperHolders.find(key);
       if (it != mRemoteTextureHostWrapperHolders.end() &&
           !it->second->mRemoteTextureHost) {
@@ -1185,8 +1185,8 @@ void RemoteTextureMap::GetRemoteTexture(
 
 void RemoteTextureMap::NotifyTxn(const MonitorAutoLock& aProofOfLock,
                                  const RemoteTextureOwnerId aOwnerId,
-                                 const base::ProcessId aForPid) {
-  if (auto* owner = GetTextureOwner(aProofOfLock, aOwnerId, aForPid)) {
+                                 const GeckoChildID aForChildID) {
+  if (auto* owner = GetTextureOwner(aProofOfLock, aOwnerId, aForChildID)) {
     if (!owner->mWaitForTxn) {
       MOZ_ASSERT_UNREACHABLE("Expected texture owner to wait for txn.");
       return;
@@ -1199,18 +1199,20 @@ void RemoteTextureMap::NotifyTxn(const MonitorAutoLock& aProofOfLock,
     }
     owner->mDeferUnregister->Dispatch(NS_NewRunnableFunction(
         "RemoteTextureMap::SetLastRemoteTextureUse::Runnable",
-        [aOwnerId, aForPid]() {
-          RemoteTextureMap::Get()->UnregisterTextureOwner(aOwnerId, aForPid);
+        [aOwnerId, aForChildID]() {
+          RemoteTextureMap::Get()->UnregisterTextureOwner(aOwnerId, aForChildID);
         }));
   }
 }
 
 bool RemoteTextureMap::WaitForTxn(const RemoteTextureOwnerId aOwnerId,
-                                  const base::ProcessId aForPid,
+                                  const GeckoChildID aForChildID,
                                   RemoteTextureTxnType aTxnType,
                                   RemoteTextureTxnId aTxnId) {
+  
+  RefPtr<RemoteTextureTxnScheduler> scheduler;
   MonitorAutoLock lock(mMonitor);
-  auto* owner = GetTextureOwner(lock, aOwnerId, aForPid);
+  auto* owner = GetTextureOwner(lock, aOwnerId, aForChildID);
   if (!owner) {
     return false;
   }
@@ -1223,10 +1225,10 @@ bool RemoteTextureMap::WaitForTxn(const RemoteTextureOwnerId aOwnerId,
     MOZ_ASSERT_UNREACHABLE("Texture owner already waiting for txn.");
     return false;
   }
-  const auto key = std::pair(aForPid, aTxnType);
+  const auto key = std::pair(aForChildID, aTxnType);
   auto it = mTxnSchedulers.find(key);
   if (it != mTxnSchedulers.end()) {
-    RefPtr<RemoteTextureTxnScheduler> scheduler(it->second);
+    scheduler = RefPtr<RemoteTextureTxnScheduler>(it->second);
     if (scheduler) {
       if (scheduler->WaitForTxn(lock, aOwnerId, aTxnId)) {
         owner->mWaitForTxn = true;
@@ -1260,27 +1262,27 @@ void RemoteTextureMap::ReleaseRemoteTextureHost(
 
 RefPtr<TextureHost> RemoteTextureMap::GetOrCreateRemoteTextureHostWrapper(
     const RemoteTextureId aTextureId, const RemoteTextureOwnerId aOwnerId,
-    const base::ProcessId aForPid, const gfx::IntSize& aSize,
+    const GeckoChildID aForChildID, const gfx::IntSize& aSize,
     const TextureFlags aFlags) {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   MonitorAutoLock lock(mMonitor);
 
-  const auto key = std::pair(aForPid, aTextureId);
+  const auto key = std::pair(aForChildID, aTextureId);
   auto it = mRemoteTextureHostWrapperHolders.find(key);
   if (it != mRemoteTextureHostWrapperHolders.end()) {
     return it->second->mRemoteTextureHostWrapper;
   }
 
-  auto wrapper = RemoteTextureHostWrapper::Create(aTextureId, aOwnerId, aForPid,
+  auto wrapper = RemoteTextureHostWrapper::Create(aTextureId, aOwnerId, aForChildID,
                                                   aSize, aFlags);
   auto wrapperHolder =
       std::make_unique<RemoteTextureHostWrapperHolder>(wrapper);
 
   mRemoteTextureHostWrapperHolders.emplace(key, std::move(wrapperHolder));
 
-  auto& consumers = mTextureOwnerConsumers[std::pair(aForPid, aOwnerId)];
+  auto& consumers = mTextureOwnerConsumers[std::pair(aForChildID, aOwnerId)];
   ++consumers.mWrapperCount;
-  if (GetTextureOwner(lock, aOwnerId, aForPid)) {
+  if (GetTextureOwner(lock, aOwnerId, aForChildID)) {
     consumers.mWasRegistered = true;
   }
 
@@ -1289,7 +1291,7 @@ RefPtr<TextureHost> RemoteTextureMap::GetOrCreateRemoteTextureHostWrapper(
 
 void RemoteTextureMap::UnregisterRemoteTextureHostWrapper(
     const RemoteTextureId aTextureId, const RemoteTextureOwnerId aOwnerId,
-    const base::ProcessId aForPid) {
+    const GeckoChildID aForChildID) {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
 
   std::vector<RefPtr<TextureHost>>
@@ -1297,7 +1299,7 @@ void RemoteTextureMap::UnregisterRemoteTextureHostWrapper(
   {
     MonitorAutoLock lock(mMonitor);
 
-    const auto key = std::pair(aForPid, aTextureId);
+    const auto key = std::pair(aForChildID, aTextureId);
     auto it = mRemoteTextureHostWrapperHolders.find(key);
     if (it == mRemoteTextureHostWrapperHolders.end()) {
       MOZ_ASSERT_UNREACHABLE("unexpected to be called");
@@ -1311,7 +1313,7 @@ void RemoteTextureMap::UnregisterRemoteTextureHostWrapper(
     mRemoteTextureHostWrapperHolders.erase(it);
 
     auto itConsumers =
-        mTextureOwnerConsumers.find(std::pair(aForPid, aOwnerId));
+        mTextureOwnerConsumers.find(std::pair(aForChildID, aOwnerId));
     if (itConsumers != mTextureOwnerConsumers.end() &&
         --itConsumers->second.mWrapperCount == 0) {
       mTextureOwnerConsumers.erase(itConsumers);
@@ -1329,18 +1331,18 @@ bool RemoteTextureMap::CheckRemoteTextureReady(
   MonitorAutoLock lock(mMonitor);
 
   if (!mRemoteTextureHostWrapperHolders.count(
-          std::pair(aInfo.mForPid, aInfo.mTextureId))) {
+          std::pair(aInfo.mForChildID, aInfo.mTextureId))) {
     
     return true;
   }
 
-  auto* owner = GetTextureOwner(lock, aInfo.mOwnerId, aInfo.mForPid);
+  auto* owner = GetTextureOwner(lock, aInfo.mOwnerId, aInfo.mForChildID);
   if (aInfo.mWaitForRemoteTextureOwner && !owner &&
-      !IsTextureOwnerGone(lock, aInfo.mOwnerId, aInfo.mForPid)) {
+      !IsTextureOwnerGone(lock, aInfo.mOwnerId, aInfo.mForChildID)) {
     
     
 
-    const auto key = std::pair(aInfo.mForPid, aInfo.mOwnerId);
+    const auto key = std::pair(aInfo.mForChildID, aInfo.mOwnerId);
     if (!mWaitingTextureOwners[key]) {
       auto waitingOwner = std::make_unique<WaitingTextureOwner>();
       mWaitingTextureOwners[key] = std::move(waitingOwner);
@@ -1380,7 +1382,7 @@ bool RemoteTextureMap::WaitRemoteTextureReady(const RemoteTextureInfo& aInfo) {
 
   MonitorAutoLock lock(mMonitor);
 
-  auto* owner = GetTextureOwner(lock, aInfo.mOwnerId, aInfo.mForPid);
+  auto* owner = GetTextureOwner(lock, aInfo.mOwnerId, aInfo.mForChildID);
   if (aInfo.mWaitForRemoteTextureOwner &&
       (!owner || (!owner->mLatestTextureHost &&
                   owner->mWaitingTextureDataHolders.empty()))) {
@@ -1391,9 +1393,9 @@ bool RemoteTextureMap::WaitRemoteTextureReady(const RemoteTextureInfo& aInfo) {
         
         return false;
       }
-      if (IsTextureOwnerGone(lock, aInfo.mOwnerId, aInfo.mForPid) ||
+      if (IsTextureOwnerGone(lock, aInfo.mOwnerId, aInfo.mForChildID) ||
           !mRemoteTextureHostWrapperHolders.count(
-              std::pair(aInfo.mForPid, aInfo.mTextureId))) {
+              std::pair(aInfo.mForChildID, aInfo.mTextureId))) {
         
         
         return false;
@@ -1402,7 +1404,7 @@ bool RemoteTextureMap::WaitRemoteTextureReady(const RemoteTextureInfo& aInfo) {
       if (status == CVStatus::Timeout) {
         return false;
       }
-      owner = GetTextureOwner(lock, aInfo.mOwnerId, aInfo.mForPid);
+      owner = GetTextureOwner(lock, aInfo.mOwnerId, aInfo.mForChildID);
     }
   }
 
@@ -1411,7 +1413,7 @@ bool RemoteTextureMap::WaitRemoteTextureReady(const RemoteTextureInfo& aInfo) {
     return false;
   }
 
-  const auto key = std::pair(aInfo.mForPid, aInfo.mTextureId);
+  const auto key = std::pair(aInfo.mForChildID, aInfo.mTextureId);
   auto it = mRemoteTextureHostWrapperHolders.find(key);
   if (it == mRemoteTextureHostWrapperHolders.end()) {
     MOZ_ASSERT_UNREACHABLE("unexpected to be called");
@@ -1441,7 +1443,7 @@ bool RemoteTextureMap::WaitRemoteTextureReady(const RemoteTextureInfo& aInfo) {
       return false;
     }
 
-    owner = GetTextureOwner(lock, aInfo.mOwnerId, aInfo.mForPid);
+    owner = GetTextureOwner(lock, aInfo.mOwnerId, aInfo.mForChildID);
     
     if (!owner || owner->mIsContextLost) {
       
@@ -1472,7 +1474,7 @@ void RemoteTextureMap::CancelRemoteTextureReadyCheck(
   {
     MonitorAutoLock lock(mMonitor);
 
-    const auto key = std::pair(aInfo.mForPid, aInfo.mOwnerId);
+    const auto key = std::pair(aInfo.mForChildID, aInfo.mOwnerId);
     auto itWaiting = mWaitingTextureOwners.find(key);
     if (itWaiting != mWaitingTextureOwners.end()) {
       cancel(itWaiting->second->mRenderingReadyCallbackHolders);
@@ -1481,7 +1483,7 @@ void RemoteTextureMap::CancelRemoteTextureReadyCheck(
       }
     }
 
-    if (auto* owner = GetTextureOwner(lock, aInfo.mOwnerId, aInfo.mForPid)) {
+    if (auto* owner = GetTextureOwner(lock, aInfo.mOwnerId, aInfo.mForChildID)) {
       cancel(owner->mRenderingReadyCallbackHolders);
     }
   }
@@ -1498,7 +1500,7 @@ void RemoteTextureMap::CancelRemoteTextureReadyCheck(
 }
 
 UniquePtr<TextureData> RemoteTextureMap::GetRecycledTextureData(
-    const RemoteTextureOwnerId aOwnerId, const base::ProcessId aForPid,
+    const RemoteTextureOwnerId aOwnerId, const GeckoChildID aForChildID,
     const RefPtr<RemoteTextureRecycleBin>& aRecycleBin,
     const gfx::IntSize& aSize, gfx::SurfaceFormat aFormat,
     TextureType aTextureType) {
@@ -1506,7 +1508,7 @@ UniquePtr<TextureData> RemoteTextureMap::GetRecycledTextureData(
 
   RefPtr<RemoteTextureRecycleBin> bin;
   if (aOwnerId.IsValid()) {
-    if (auto* owner = GetTextureOwner(lock, aOwnerId, aForPid)) {
+    if (auto* owner = GetTextureOwner(lock, aOwnerId, aForChildID)) {
       bin = owner->mRecycleBin;
     }
   } else {
@@ -1532,7 +1534,7 @@ UniquePtr<TextureData> RemoteTextureMap::GetRecycledTextureData(
 }
 
 UniquePtr<SharedResourceWrapper> RemoteTextureMap::GetRecycledSharedTexture(
-    const RemoteTextureOwnerId aOwnerId, const base::ProcessId aForPid,
+    const RemoteTextureOwnerId aOwnerId, const GeckoChildID aForChildID,
     const RefPtr<RemoteTextureRecycleBin>& aRecycleBin,
     const gfx::IntSize& aSize, const gfx::SurfaceFormat aFormat,
     SurfaceDescriptor::Type aType) {
@@ -1540,7 +1542,7 @@ UniquePtr<SharedResourceWrapper> RemoteTextureMap::GetRecycledSharedTexture(
 
   RefPtr<RemoteTextureRecycleBin> bin;
   if (aOwnerId.IsValid()) {
-    if (auto* owner = GetTextureOwner(lock, aOwnerId, aForPid)) {
+    if (auto* owner = GetTextureOwner(lock, aOwnerId, aForChildID)) {
       bin = owner->mRecycleBin;
     }
   } else {
@@ -1567,8 +1569,8 @@ UniquePtr<SharedResourceWrapper> RemoteTextureMap::GetRecycledSharedTexture(
 
 RemoteTextureMap::TextureOwner* RemoteTextureMap::GetTextureOwner(
     const MonitorAutoLock& aProofOfLock, const RemoteTextureOwnerId aOwnerId,
-    const base::ProcessId aForPid) {
-  const auto key = std::pair(aForPid, aOwnerId);
+    const GeckoChildID aForChildID) {
+  const auto key = std::pair(aForChildID, aOwnerId);
   auto it = mTextureOwners.find(key);
   if (it == mTextureOwners.end()) {
     return nullptr;
@@ -1578,11 +1580,11 @@ RemoteTextureMap::TextureOwner* RemoteTextureMap::GetTextureOwner(
 
 bool RemoteTextureMap::IsTextureOwnerGone(const MonitorAutoLock& aProofOfLock,
                                           const RemoteTextureOwnerId aOwnerId,
-                                          const base::ProcessId aForPid) {
-  if (GetTextureOwner(aProofOfLock, aOwnerId, aForPid)) {
+                                          const GeckoChildID aForChildID) {
+  if (GetTextureOwner(aProofOfLock, aOwnerId, aForChildID)) {
     return false;
   }
-  auto it = mTextureOwnerConsumers.find(std::pair(aForPid, aOwnerId));
+  auto it = mTextureOwnerConsumers.find(std::pair(aForChildID, aOwnerId));
   return it != mTextureOwnerConsumers.end() && it->second.mWasRegistered;
 }
 

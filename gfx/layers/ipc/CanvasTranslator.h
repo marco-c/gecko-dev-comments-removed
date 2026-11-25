@@ -164,9 +164,12 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
 
 
+
+
   already_AddRefed<gfx::DrawTarget> CreateDrawTarget(
       gfx::ReferencePtr aRefPtr, RemoteTextureOwnerId aTextureOwnerId,
-      const gfx::IntSize& aSize, gfx::SurfaceFormat aFormat);
+      const gfx::IntSize& aSize, gfx::SurfaceFormat aFormat,
+      bool aPreferAcceleration);
 
   already_AddRefed<gfx::DrawTarget> CreateDrawTarget(
       gfx::ReferencePtr aRefPtr, const gfx::IntSize& aSize,
@@ -560,7 +563,7 @@ class CanvasTranslator final : public gfx::InlineTranslator,
   
   
   gfx::BackendType mBackendType = gfx::BackendType::NONE;
-  base::ProcessId mOtherPid = base::kInvalidProcessId;
+  GeckoChildID mOtherChildID = kInvalidGeckoChildID;
   struct TextureInfo {
     gfx::ReferencePtr mRefPtr;
     UniquePtr<TextureData> mTextureData;
