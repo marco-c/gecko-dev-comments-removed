@@ -15,6 +15,7 @@ By default, the library is created in out_ios_libs/. (Change with -o.)
 import argparse
 import logging
 import os
+import pathlib
 import shutil
 import subprocess
 import sys
@@ -193,10 +194,7 @@ def BuildWebRTC(output_dir, target_environment, target_arch, flavor,
     gn_args.append('rtc_enable_objc_symbol_export=true')
     gn_args.append('use_siso=true')
     if use_remoteexec:
-        gn_args.extend([
-            'use_remoteexec=true',
-            'use_reclient=false',
-        ])
+        gn_args.append('use_remoteexec=true')
 
     args_string = ' '.join(gn_args + extra_gn_args)
     logging.info('Building WebRTC with args: %s', args_string)
@@ -227,6 +225,10 @@ def main():
     args = _ParseArgs()
 
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO)
+
+    if not pathlib.Path(args.output_dir).is_relative_to(SRC_DIR):
+        logging.error('--output-dir must be under %s.', SRC_DIR)
+        return 1
 
     if args.clean:
         _CleanArtifacts(args.output_dir)
