@@ -815,7 +815,7 @@ void nsWindowMemoryReporter::CheckForGhostWindows(
         
         
         mGhostWindowCount++;
-        if (aOutGhostIDs) {
+        if (aOutGhostIDs && window) {
           aOutGhostIDs->Insert(window->WindowID());
         }
       }
