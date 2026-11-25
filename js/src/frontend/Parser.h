@@ -1282,7 +1282,8 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
     size_t privateAccessors = 0;
 
     
-    bool hasOnlyInlinableFields = true;
+    
+    bool inlinedPrefixOpen = true;
     Vector<InlinedField, MemberInitializers::MaxInlinedFields,
            SystemAllocPolicy>
         inlinableFields;
