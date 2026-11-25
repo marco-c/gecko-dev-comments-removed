@@ -308,7 +308,9 @@ RefPtr<MediaDataDecoder::DecodePromise> MFMediaEngineVideoStream::Drain() {
     return MediaDataDecoder::DecodePromise::CreateAndResolve(std::move(outputs),
                                                              __func__);
   }
-  if (!IsDCompImageReady()) {
+  
+  
+  if (mRawDataQueueForGeneratingOutput.GetSize() > 0 && !IsDCompImageReady()) {
     LOGV("Waiting for dcomp image for draining");
     
     
