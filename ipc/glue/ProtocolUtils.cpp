@@ -463,7 +463,7 @@ bool IProtocol::SetManagerAndRegister(IRefCountedProtocol* aManager,
   }
 
   
-  if (aManager && aManager->mLinkStatus != LinkStatus::Connected) {
+  if (aManager->mLinkStatus != LinkStatus::Connected) {
     mLinkStatus = LinkStatus::Doomed;
     if (aManager->mLinkStatus != LinkStatus::Doomed) {
       
