@@ -83,10 +83,22 @@ impl InheritFunction {
         name: &CustomPropertyName,
     ) -> (&'b PropertyDescriptors, Option<&'b ComputedRegisteredValue>) {
         let registration = context.stylist.get_custom_property_registration(&name.0);
-        let parent_value = context
-            .computed_context
-            .inherited_custom_properties()
-            .get(registration, &name.0);
+        
+        
+        
+        
+        
+        let parent_value = if context.computed_context.is_root_element() {
+            context
+                .stylist
+                .get_custom_property_initial_values()
+                .get(registration, &name.0)
+        } else {
+            context
+                .computed_context
+                .inherited_custom_properties()
+                .get(registration, &name.0)
+        };
         (registration, parent_value)
     }
 
