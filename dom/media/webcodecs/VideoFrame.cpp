@@ -1190,9 +1190,7 @@ InitializeFrameFromOtherFrame(nsIGlobalObject* aGlobal,
 
 static void CloneConfiguration(RootedDictionary<VideoFrameCopyToOptions>& aDest,
                                const VideoFrameCopyToOptions& aSrc) {
-  if (aSrc.mColorSpace.WasPassed()) {
-    aDest.mColorSpace.Construct(aSrc.mColorSpace.Value());
-  }
+  aDest.mColorSpace = aSrc.mColorSpace;
 
   if (aSrc.mFormat.WasPassed()) {
     aDest.mFormat.Construct(aSrc.mFormat.Value());
@@ -1718,18 +1716,27 @@ already_AddRefed<VideoFrame> VideoFrame::Constructor(
   }
 
   
-  UniquePtr<ImageBitmapCloneData> data = aImageBitmap.ToCloneData();
-  if (!data || !data->mSurface) {
-    aRv.ThrowInvalidStateError(
-        "The ImageBitmap is closed or its surface acquisition failed");
+  if (aImageBitmap.IsClosed()) {
+    aRv.ThrowInvalidStateError("The ImageBitmap is closed");
     return nullptr;
   }
 
+  SurfaceFromElementResult res = nsLayoutUtils::SurfaceFromImageBitmap(
+      &aImageBitmap, nsLayoutUtils::SFE_ALLOW_NON_PREMULT);
+  RefPtr<gfx::SourceSurface> surface = res.GetSourceSurface();
+  RefPtr<gfx::DataSourceSurface> dataSurface =
+      surface ? surface->GetDataSurface() : nullptr;
+
   
   
-  if (data->mWriteOnly) {
+  if (res.mIsWriteOnly) {
     
     aRv.ThrowSecurityError("The ImageBitmap is not same-origin");
+    return nullptr;
+  }
+
+  if (NS_WARN_IF(!dataSurface)) {
+    aRv.ThrowInvalidStateError("The ImageBitmap's surface acquisition failed");
     return nullptr;
   }
 
@@ -1739,7 +1746,7 @@ already_AddRefed<VideoFrame> VideoFrame::Constructor(
   }
 
   RefPtr<layers::SourceSurfaceImage> image =
-      new layers::SourceSurfaceImage(data->mSurface.get());
+      new layers::SourceSurfaceImage(dataSurface.get());
   
   auto r = InitializeFrameWithResourceAndSize(global, aInit, image.forget());
   if (r.isErr()) {
@@ -1952,12 +1959,7 @@ already_AddRefed<Promise> VideoFrame::CopyTo(
        aOptions.mFormat.Value() == VideoPixelFormat::RGBX ||
        aOptions.mFormat.Value() == VideoPixelFormat::BGRA ||
        aOptions.mFormat.Value() == VideoPixelFormat::BGRX)) {
-    
-    
-    
-    PredefinedColorSpace colorSpace = aOptions.mColorSpace.WasPassed()
-                                          ? aOptions.mColorSpace.Value()
-                                          : PredefinedColorSpace::Srgb;
+    const PredefinedColorSpace colorSpace = aOptions.mColorSpace;
 
     if (mResource->mFormat->PixelFormat() != aOptions.mFormat.Value() ||
         mColorSpace != ConvertToColorSpace(colorSpace)) {
