@@ -46,6 +46,7 @@ namespace {
 
 using ::testing::_;
 using ::testing::ElementsAreArray;
+using ::testing::InSequence;
 using ::testing::NiceMock;
 using ::testing::Return;
 using ::testing::SaveArg;
@@ -393,6 +394,37 @@ TEST_F(RtpSenderVideoFrameTransformerDelegateTest,
       1, VideoCodecType::kVideoCodecVP8, 2,
       encoded_image, RTPVideoHeader(),
       TimeDelta::Millis(10), csrcs);
+}
+
+TEST_F(RtpSenderVideoFrameTransformerDelegateTest,
+       StopShortCircuitingResumesTransform) {
+  auto delegate = make_ref_counted<RTPSenderVideoFrameTransformerDelegate>(
+      &test_sender_, frame_transformer_,
+      1111, "rid",
+      time_controller_.CreateTaskQueueFactory().get());
+  EXPECT_CALL(*frame_transformer_,
+              RegisterTransformedFrameSinkCallback(_, 1111));
+  delegate->Init();
+
+  InSequence s;
+  
+  EXPECT_CALL(test_sender_, SendVideoFrame);
+  
+  EXPECT_CALL(*frame_transformer_, Transform);
+
+  EncodedImage encoded_image;
+  encoded_image.SetEncodedData(EncodedImageBuffer::Create(1));
+  delegate->StartShortCircuiting();
+  delegate->TransformFrame(
+      1, VideoCodecType::kVideoCodecVP8, 2,
+      encoded_image, RTPVideoHeader(),
+      TimeDelta::Millis(10));
+
+  delegate->StopShortCircuiting();
+  delegate->TransformFrame(
+      1, VideoCodecType::kVideoCodecVP8, 3,
+      encoded_image, RTPVideoHeader(),
+      TimeDelta::Millis(10));
 }
 
 TEST_F(RtpSenderVideoFrameTransformerDelegateTest, CreateSenderVideoFrame) {

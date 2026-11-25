@@ -98,6 +98,7 @@ class RTPSenderVideoFrameTransformerDelegate : public TransformedFrameCallback {
       std::unique_ptr<TransformableFrameInterface> frame) override;
 
   void StartShortCircuiting() override;
+  void StopShortCircuiting() override;
 
   
   void SendVideo(std::unique_ptr<TransformableFrameInterface> frame) const

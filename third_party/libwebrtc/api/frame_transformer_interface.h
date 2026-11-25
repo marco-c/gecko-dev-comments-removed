@@ -183,6 +183,12 @@ class TransformedFrameCallback : public RefCountInterface {
   
   virtual void StartShortCircuiting() {}
 
+  
+  
+  
+  
+  virtual void StopShortCircuiting() {}
+
  protected:
   ~TransformedFrameCallback() override = default;
 };

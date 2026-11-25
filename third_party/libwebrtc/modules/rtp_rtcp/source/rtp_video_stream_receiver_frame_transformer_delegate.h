@@ -59,6 +59,7 @@ class RtpVideoStreamReceiverFrameTransformerDelegate
       std::unique_ptr<TransformableFrameInterface> frame) override;
 
   void StartShortCircuiting() override;
+  void StopShortCircuiting() override;
 
   
   
@@ -68,7 +69,8 @@ class RtpVideoStreamReceiverFrameTransformerDelegate
   ~RtpVideoStreamReceiverFrameTransformerDelegate() override = default;
 
  private:
-  void StartShortCircuitingOnNetworkSequence();
+  
+  void SetShortCircuiting(bool short_circuit);
 
   RTC_NO_UNIQUE_ADDRESS SequenceChecker network_sequence_checker_;
   RtpVideoFrameReceiver* receiver_ RTC_GUARDED_BY(network_sequence_checker_);
