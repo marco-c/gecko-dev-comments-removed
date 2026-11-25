@@ -31,8 +31,38 @@ add_task(async function test_backgroundtask_shouldprocessupdates() {
   
   
   
+  
+  
   exitCode = await do_backgroundtask("shouldprocessupdates", {
     extraArgs: ["--test-should-not-process-updates"],
+    extraEnv: { MOZ_AGENT_ALLOW_UPDATE_PROCESSING: "1" },
+  });
+  Assert.equal(81, exitCode);
+
+  
+  let printedAgentMessage = false;
+  exitCode = await do_backgroundtask("shouldprocessupdates", {
+    extraArgs: ["--test-should-not-process-updates"],
+    extraEnv: {
+      CODEX_SANDBOX: "seatbelt",
+      MOZ_AGENT_ALLOW_UPDATE_PROCESSING: "",
+    },
+    onStdoutLine: line => {
+      if (line.includes("Pending updates will not be applied")) {
+        printedAgentMessage = true;
+      }
+    },
+  });
+  Assert.equal(76, exitCode);
+  Assert.ok(printedAgentMessage, "Should explain why updates were not applied");
+
+  
+  exitCode = await do_backgroundtask("shouldprocessupdates", {
+    extraArgs: ["--test-should-not-process-updates"],
+    extraEnv: {
+      CODEX_SANDBOX: "seatbelt",
+      MOZ_AGENT_ALLOW_UPDATE_PROCESSING: "1",
+    },
   });
   Assert.equal(81, exitCode);
 
