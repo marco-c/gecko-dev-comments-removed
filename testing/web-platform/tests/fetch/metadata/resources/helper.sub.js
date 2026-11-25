@@ -19,7 +19,11 @@
 
 
 
-function makeRequestURL(key, origins, params) {
+
+
+
+
+function makeRequestURL(key, origins, params, options) {
     const byName = {
         httpOrigin: 'http://{{host}}:{{ports[http][0]}}',
         httpSameSite: 'http://{{hosts[][www]}}:{{ports[http][0]}}',
@@ -29,6 +33,7 @@ function makeRequestURL(key, origins, params) {
         httpsCrossSite: 'https://{{hosts[alt][]}}:{{ports[https][0]}}'
     };
     const redirectPath = '/fetch/api/resources/redirect.py?location=';
+    const stashedRedirectPath = '/fetch/metadata/resources/redirect-stashed.py';
     const path = '/fetch/metadata/resources/record-headers.py?key=' + key;
 
     let requestUrl = path;
@@ -37,11 +42,22 @@ function makeRequestURL(key, origins, params) {
     }
 
     if (origins && origins.length) {
-      requestUrl = byName[origins.pop()] + requestUrl;
+      if (options && options.stashedRedirect && origins.length > 1) {
+        const firstOrigin = byName[origins.shift()];
+        const finalOrigin = byName[origins.pop()];
+        const locations = origins.map(
+          (origin) => byName[origin] + stashedRedirectPath
+        );
+        locations.push(finalOrigin + requestUrl);
+        requestUrl = firstOrigin + stashedRedirectPath + '?location=' +
+          encodeURIComponent(JSON.stringify(locations));
+      } else {
+        requestUrl = byName[origins.pop()] + requestUrl;
 
-      while (origins.length) {
-        requestUrl = byName[origins.pop()] + redirectPath +
-          encodeURIComponent(requestUrl);
+        while (origins.length) {
+          requestUrl = byName[origins.pop()] + redirectPath +
+            encodeURIComponent(requestUrl);
+        }
       }
     } else {
       requestUrl = byName.httpsOrigin + requestUrl;
