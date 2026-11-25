@@ -7,6 +7,7 @@ import os
 import pathlib
 import re
 import sys
+import urllib.parse
 
 from mozlog.commandline import setup_logging
 
@@ -108,7 +109,7 @@ def convert_url(config, url):
         return url
 
     if ".html" in url:
-        url = "http://%s/%s" % (webserver, url)
+        url = f"http://{webserver}/{url}"
 
     return url
 
@@ -137,7 +138,7 @@ def set_webserver(config):
     port = sock.getsockname()[1]
     sock.close()
 
-    config["webserver"] = "127.0.0.1:%d" % port
+    config["webserver"] = f"127.0.0.1:{port}"
 
 
 @validator
@@ -181,7 +182,7 @@ def get_active_tests(config):
     availableTests = test.test_dict()
     if not set(activeTests).issubset(availableTests):
         missing = [i for i in activeTests if i not in availableTests]
-        raise ConfigurationError("No definition found for test(s): %s" % missing)
+        raise ConfigurationError(f"No definition found for test(s): {missing}")
 
     return activeTests
 
@@ -214,10 +215,8 @@ def setup_pdfpaint_test(config, test_instance):
 
     
     chunk_number = config.get("pdfpaint_chunk", None)
-    pdfpaint_test = None
     if config.get("pdfpaint_name") is not None:
         chunk_number = None
-        pdfpaint_test = config["pdfpaint_name"]
 
     
     
@@ -230,8 +229,7 @@ def setup_pdfpaint_test(config, test_instance):
 
     pdf_files = set()
     for pdf_info in test_manifest:
-        if not pdf_info.get("talos", True):
-            
+        if not pdf_info.get("talos", False):
             continue
         if pdf_info.get("password", None) is not None:
             
@@ -254,10 +252,15 @@ def setup_pdfpaint_test(config, test_instance):
             f"{int((len(pdf_files) - 1) / pdfs_per_chunk) + 1}."
         )
 
+    
     with pdfpaint_manifest_path.open("w") as f:
         for pdf_file in sorted(list(pdf_files))[start_ind:end_ind]:
-            print(f"http://localhost/tests/pdfpaint/pdfs/{pdf_file}{os.linesep}")
-            f.write(f"http://localhost/tests/pdfpaint/pdfs/{pdf_file}{os.linesep}")
+            file_param = urllib.parse.quote(
+                f"/tests/pdfpaint/pdfs/{pdf_file}", safe="/"
+            )
+            url = f"http://localhost/tests/pdfpaint/empty.pdf?file={file_param}"
+            print(f"{url}{os.linesep}")
+            f.write(f"{url}{os.linesep}")
 
     
     
@@ -265,12 +268,6 @@ def setup_pdfpaint_test(config, test_instance):
     symlink_dest.unlink(missing_ok=True)
     symlink_dest.symlink_to(pdfs_root, target_is_directory=True)
     test_instance.tpmanifest = str(pdfpaint_manifest_path)
-
-    
-    
-    if chunk_number is not None or pdfpaint_test is not None:
-        print("Setting pdfpaint tppagecycles to 15")
-        test_instance.tppagecycles = 15
 
 
 def get_test_host(manifest_line):
@@ -427,7 +424,7 @@ def get_config(argv=None):
         try:
             suite_conf = suites_conf()[cli_opts.suite]
         except KeyError:
-            raise ConfigurationError("No such suite: %r" % cli_opts.suite)
+            raise ConfigurationError(f"No such suite: {cli_opts.suite!r}")
         argv += ["-a", ":".join(suite_conf["tests"])]
         
         
