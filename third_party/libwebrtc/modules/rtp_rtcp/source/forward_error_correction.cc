@@ -495,7 +495,6 @@ void ForwardErrorCorrection::AssignRecoveredPackets(
     const RecoveredPacketList& recovered_packets,
     ReceivedFecPacket* fec_packet) {
   ProtectedPacketList* protected_packets = &fec_packet->protected_packets;
-  std::vector<RecoveredPacket*> recovered_protected_packets;
 
   
   
