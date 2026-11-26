@@ -35,6 +35,10 @@ PUSH_SCHEDULES_ENV = "GECKO_BUGBUG_PUSH_SCHEDULES"
 RESULT_POLL_INTERVAL = 0.2  
 
 
+
+SUPPORTED_PROJECTS = frozenset({"autoland", "try"})
+
+
 CT_VERY_LOW = 0.3
 CT_LOW = 0.7
 CT_MEDIUM = 0.8
@@ -84,6 +88,11 @@ def get_confidence_threshold(data, kind, confidence_threshold):
 
 class BugbugTimeoutException(Exception):
     pass
+
+
+def is_try_auto(params):
+    """Whether the push was made with `mach try auto`."""
+    return "try_auto" in params.get("filters", [])
 
 
 def _new_session():
