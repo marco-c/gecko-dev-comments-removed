@@ -37136,7 +37136,10 @@ interface WebExtensionPolicy {
     
     readonly version: string;
     
-    canAccessURI(uri: URI, explicit?: boolean, checkRestricted?: boolean, allowFilePermission?: boolean): boolean;
+    canAccessDocument(windowGlobal: WindowGlobalParent, flags?: number): boolean;
+    canAccessDocument(windowGlobal: WindowGlobalChild, flags?: number): boolean;
+    
+    canAccessURI(uri: URI, flags?: number): boolean;
     
     canAccessWindow(window: WindowProxy): boolean;
     
@@ -37161,11 +37164,39 @@ interface WebExtensionPolicy {
     sourceMayAccessPath(sourceURI: URI, pathname: string): boolean;
     
     unregisterContentScript(script: WebExtensionContentScript): void;
+    
+    readonly ACCESS_REQUIRE_EXPLICIT_DOMAIN: 0x01;
+    
+    readonly ACCESS_WITHOUT_HOST_PERMISSIONS: 0x02;
+    
+    readonly ACCESS_IGNORE_RESTRICTIONS: 0x04;
+    
+    readonly ACCESS_FILE_WITH_OPT_IN: 0x08;
+    
+    readonly ACCESS_FILE_ALWAYS: 0x10;
+    
+    readonly ACCESS_OWN_EXTENSION: 0x20;
+    
+    readonly ACCESS_OTHER_EXTENSIONS: 0x40;
 }
 
 declare var WebExtensionPolicy: {
     prototype: WebExtensionPolicy;
     new(options: WebExtensionInit): WebExtensionPolicy;
+    
+    readonly ACCESS_REQUIRE_EXPLICIT_DOMAIN: 0x01;
+    
+    readonly ACCESS_WITHOUT_HOST_PERMISSIONS: 0x02;
+    
+    readonly ACCESS_IGNORE_RESTRICTIONS: 0x04;
+    
+    readonly ACCESS_FILE_WITH_OPT_IN: 0x08;
+    
+    readonly ACCESS_FILE_ALWAYS: 0x10;
+    
+    readonly ACCESS_OWN_EXTENSION: 0x20;
+    
+    readonly ACCESS_OTHER_EXTENSIONS: 0x40;
     
     readonly backgroundServiceWorkerEnabled: boolean;
     
@@ -37184,6 +37215,8 @@ declare var WebExtensionPolicy: {
     getByID(id: string): WebExtensionPolicy | null;
     
     getByURI(uri: URI): WebExtensionPolicy | null;
+    
+    getURLForMatching(principal: Principal, documentURI: URI): URI | null;
     
     isQuarantinedURI(uri: URI): boolean;
     

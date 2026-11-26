@@ -12,6 +12,7 @@
 #include "mozilla/AddonManagerWebAPI.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/dom/WindowGlobalChild.h"
+#include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/Try.h"
@@ -347,26 +348,58 @@ bool WebExtensionPolicyCore::FileSchemeAllowed() const {
   return HasPermission(nsGkAtoms::fileSchemeAllowedPermission);
 }
 
-bool WebExtensionPolicyCore::CanAccessURI(const URLInfo& aURI, bool aExplicit,
-                                          bool aCheckRestricted,
-                                          bool aAllowFilePermission) const {
-  if (aCheckRestricted && WebExtensionPolicy::IsRestrictedURI(aURI)) {
-    return false;
-  }
-  if (aCheckRestricted && QuarantinedFromURI(aURI)) {
-    return false;
-  }
-  if (!aAllowFilePermission && aURI.Scheme() == nsGkAtoms::file) {
+bool WebExtensionPolicyCore::CanAccessURI(const URLInfo& aURI,
+                                          uint32_t aFlags) const {
+  if (aURI.Scheme() == nsGkAtoms::moz_extension) {
     
     
-    return false;
+    
+    
+    
+    
+    return MozExtensionHostname().Equals(aURI.Host())
+               ? !!(aFlags & ACCESS_OWN_EXTENSION)
+               : !!(aFlags & ACCESS_OTHER_EXTENSIONS);
   }
-  if (CheckGuarded(aURI).isSome()) {
+
+  if (!(aFlags & ACCESS_IGNORE_RESTRICTIONS)) {
+    if (WebExtensionPolicy::IsRestrictedURI(aURI)) {
+      return false;
+    }
+    if (QuarantinedFromURI(aURI)) {
+      return false;
+    }
+    if (CheckGuarded(aURI).isSome()) {
+      return false;
+    }
+  }
+
+  if (aURI.Scheme() == nsGkAtoms::file &&
+      
+      !(aFlags & ACCESS_FILE_ALWAYS) &&
+      
+      !((aFlags & ACCESS_FILE_WITH_OPT_IN) && FileSchemeAllowed())) {
     return false;
   }
 
+  if (aFlags & ACCESS_WITHOUT_HOST_PERMISSIONS) {
+    
+    
+    return MatchPatternCore::MatchesAllURLs(aURI);
+    
+    
+    
+    
+    
+    
+    
+    
+  }
+
   AutoReadLock lock(mLock);
-  return mHostPermissions && mHostPermissions->Matches(aURI, aExplicit);
+  return mHostPermissions &&
+         mHostPermissions->Matches(aURI,
+                                   !!(aFlags & ACCESS_REQUIRE_EXPLICIT_DOMAIN));
 }
 
 bool WebExtensionPolicyCore::QuarantinedFromDoc(const DocInfo& aDoc) const {
@@ -647,6 +680,92 @@ bool WebExtensionPolicy::BackgroundServiceWorkerEnabled(GlobalObject& aGlobal) {
 
 bool WebExtensionPolicy::QuarantinedDomainsEnabled(GlobalObject& aGlobal) {
   return EPS().GetQuarantinedDomainsEnabled();
+}
+
+
+already_AddRefed<nsIURI> WebExtensionPolicy::GetURLForMatching(
+    nsIPrincipal* aPrincipal, const URLInfo& aDocumentURI) {
+  if (!aPrincipal) {
+    return nullptr;
+  }
+  nsCOMPtr<nsIURI> uri;
+  if (aPrincipal->GetIsContentPrincipal()) {
+    
+    BasePrincipal::Cast(aPrincipal)->GetURI(getter_AddRefs(uri));
+  } else if (aPrincipal->GetIsNullPrincipal()) {
+    nsCOMPtr<nsIPrincipal> precursor;
+    if (aDocumentURI.IsNonOpaqueURL()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      uri = aDocumentURI.URI();
+    } else if ((precursor = aPrincipal->GetPrecursorPrincipal()) &&
+               precursor->GetIsContentPrincipal()) {
+      BasePrincipal::Cast(precursor)->GetURI(getter_AddRefs(uri));
+    } else {
+      
+      
+      uri = aDocumentURI.URI();
+    }
+  } else {
+    
+    
+    
+  }
+  return uri.forget();
+}
+
+static bool IsCommittedTopLevel(WindowGlobalParent& aWindowGlobal) {
+  return aWindowGlobal.IsTop() && !aWindowGlobal.IsUncommittedInitialDocument();
+}
+
+static bool IsCommittedTopLevel(WindowGlobalChild& aWindowGlobal) {
+  Document* doc = aWindowGlobal.GetWindowGlobal()->GetExtantDoc();
+  return aWindowGlobal.WindowContext()->IsTop() && doc &&
+         !doc->IsUncommittedInitialDocument();
+}
+
+template <typename WindowGlobalT>
+static bool CanAccessDocumentImpl(const WebExtensionPolicy& aPolicy,
+                                  WindowGlobalT& aWindowGlobal,
+                                  uint32_t aFlags) {
+  nsCOMPtr<nsIURI> uri = WebExtensionPolicy::GetURLForMatching(
+      aWindowGlobal.DocumentPrincipal(),
+      URLInfo(aWindowGlobal.GetDocumentURI()));
+  if (!uri) {
+    return false;
+  }
+  URLInfo url(uri);
+  if (aPolicy.CanAccessURI(url, aFlags)) {
+    return true;
+  }
+  
+  
+  return (aFlags & ACCESS_WITHOUT_HOST_PERMISSIONS) &&
+         url.Scheme() == nsGkAtoms::about &&
+         IsCommittedTopLevel(aWindowGlobal) &&
+         url.CSpec().EqualsLiteral("about:blank");
+}
+
+bool WebExtensionPolicy::CanAccessDocument(WindowGlobalParent& aWindowGlobal,
+                                           uint32_t aFlags) const {
+  return CanAccessDocumentImpl(*this, aWindowGlobal, aFlags);
+}
+
+bool WebExtensionPolicy::CanAccessDocument(WindowGlobalChild& aWindowGlobal,
+                                           uint32_t aFlags) const {
+  return CanAccessDocumentImpl(*this, aWindowGlobal, aFlags);
 }
 
 
@@ -1062,21 +1181,24 @@ bool MozDocumentMatcher::MatchesURI(const URLInfo& aURL,
     return false;
   }
 
-  if (mCheckPermissions && !aIgnorePermissions) {
-    
-    if (!mExtension->CanAccessURI(aURL, false, false, true)) {
-      return false;
-    }
-  } else if (mExtension && !mExtension->CheckGuarded(aURL).IsNull()) {
-    
+  
+  if (mExtension && !mExtension->CheckGuarded(aURL).IsNull()) {
     return false;
   }
 
+  if (mCheckPermissions && !aIgnorePermissions) {
+    
+    
+    if (!mExtension->CanAccessURI(aURL, ACCESS_IGNORE_RESTRICTIONS |
+                                            ACCESS_FILE_ALWAYS |
+                                            ACCESS_OWN_EXTENSION)) {
+      return false;
+    }
+  }
+
+  
   if (aURL.Scheme() == nsGkAtoms::file && mExtension &&
       !mExtension->FileSchemeAllowed()) {
-    
-    
-    
     return false;
   }
 
@@ -1438,26 +1560,14 @@ const URLInfo& DocInfo::PrincipalURL() const {
   }
 
   if (mPrincipalURL.isNothing()) {
-    nsIPrincipal* prin = Principal();
-    nsCOMPtr<nsIPrincipal> precursor;
-    if (prin->GetIsContentPrincipal()) {
-      
-      nsCOMPtr<nsIURI> uri;
-      BasePrincipal::Cast(prin)->GetURI(getter_AddRefs(uri));
-      mPrincipalURL.emplace(uri);
-    } else if (prin->GetIsNullPrincipal() && !URL().IsNonOpaqueURL() &&
-               (precursor = prin->GetPrecursorPrincipal()) &&
-               precursor->GetIsContentPrincipal()) {
-      
-      
-      
-      
-      
-      
-      nsCOMPtr<nsIURI> uri;
-      BasePrincipal::Cast(precursor)->GetURI(getter_AddRefs(uri));
-      mPrincipalURL.emplace(uri);
+    nsCOMPtr<nsIURI> uri =
+        WebExtensionPolicy::GetURLForMatching(Principal(), URL());
+    if (uri) {
+      mPrincipalURL.emplace(uri.get());
     } else {
+      
+      
+      
       mPrincipalURL.emplace(URL());
     }
   }

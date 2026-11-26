@@ -658,18 +658,18 @@ bool ChannelWrapper::Matches(
       return false;
     }
 
+    bool isProxyRequest =
+        aOptions.mIsProxy && aExtension->HasPermission(nsGkAtoms::proxy);
+
     
-    
-    
-    
-    if (!aExtension->CanAccessURI(urlInfo, false, false)) {
+    if (!aExtension->CanAccessURI(
+            urlInfo, isProxyRequest ? ACCESS_IGNORE_RESTRICTIONS : 0)) {
       return false;
     }
 
     
     
-    
-    if (!aOptions.mIsProxy || !aExtension->HasPermission(nsGkAtoms::proxy)) {
+    if (!isProxyRequest) {
       if (!CanModify()) {
         return false;
       }
@@ -679,7 +679,8 @@ bool ChannelWrapper::Matches(
       
       
       
-      if (origin && !aExtension->CanAccessURI(*origin, false, false, true)) {
+      if (origin && !aExtension->CanAccessURI(
+                        *origin, ACCESS_FILE_ALWAYS | ACCESS_OWN_EXTENSION)) {
         return false;
       }
     }
@@ -885,10 +886,7 @@ already_AddRefed<nsITraceableChannel> ChannelWrapper::GetTraceableChannel(
     
     
     
-    if (!HaveChannel() ||
-        
-        
-        !aAddon.CanAccessURI(FinalURLInfo())) {
+    if (!HaveChannel() || !aAddon.CanAccessURI(FinalURLInfo())) {
       return nullptr;
     }
 
