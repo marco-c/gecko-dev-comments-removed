@@ -31,7 +31,7 @@ add_task(async function () {
   is(tabState.index, TAB_STATE.index, "correct shistory index");
 
   
-  ok(!tabState.userTypedValue, "tab didn't have a userTypedValue");
+  ok(!tabState.urlbarOverrideValue, "tab didn't have a urlbarOverrideValue");
 
   
   gBrowser.removeTab(tab);
