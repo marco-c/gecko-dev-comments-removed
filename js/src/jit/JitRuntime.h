@@ -45,6 +45,7 @@ enum class ArraySortKind;
 
 namespace jit {
 
+class BaselineCompileTask;
 class FrameSizeClass;
 class Label;
 class MacroAssembler;
@@ -244,6 +245,16 @@ class JitRuntime {
   
   MainThreadData<IonCompileTaskList> ionLazyLinkList_;
   MainThreadData<size_t> ionLazyLinkListSize_{0};
+
+  
+  
+  
+  
+  
+  
+  using BaselineCompileTaskList =
+      mozilla::LinkedList<js::jit::BaselineCompileTask>;
+  MainThreadData<BaselineCompileTaskList> baselineOffThreadList_;
 
   
   
@@ -543,6 +554,7 @@ class JitRuntime {
 
   IonCompileTaskList& ionOffThreadList(JSRuntime* rt);
   IonCompileTaskList& ionLazyLinkList(JSRuntime* rt);
+  BaselineCompileTaskList& baselineOffThreadList(JSRuntime* rt);
 
   size_t ionLazyLinkListSize() const { return ionLazyLinkListSize_; }
 
