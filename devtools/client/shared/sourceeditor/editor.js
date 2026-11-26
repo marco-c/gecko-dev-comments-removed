@@ -2887,7 +2887,12 @@ class Editor extends EventEmitter {
 
 
 
-  async setText(value, { documentId, saveTransactionToHistory = true } = {}) {
+
+
+  async setText(
+    value,
+    { documentId, saveTransactionToHistory = true, mode } = {}
+  ) {
     const cm = editors.get(this);
     const isWasm = typeof value !== "string" && "binary" in value;
 
@@ -2927,7 +2932,10 @@ class Editor extends EventEmitter {
     }
 
     if (this.config.cm6) {
-      if (cm.state.doc.toString() == value) {
+      if (
+        this.#currentDocumentId == documentId &&
+        cm.state.doc.toString() == value
+      ) {
         return;
       }
 
@@ -2942,7 +2950,19 @@ class Editor extends EventEmitter {
         annotations: [Transaction.addToHistory.of(saveTransactionToHistory)],
       });
 
-      const effects = [];
+      
+      
+      
+      const editorEffects = [];
+      if (mode) {
+        
+        const languageMode =
+          this.#languageModes.get(mode) ??
+          this.#languageModes.get(Editor.modes.javascript);
+        editorEffects.push(
+          this.#compartments.languageCompartment.reconfigure([languageMode])
+        );
+      }
       if (this.config?.lineNumbers) {
         const lineNumbersConfig = {
           domEventHandlers: this.#gutterDOMEventHandlers,
@@ -2950,7 +2970,7 @@ class Editor extends EventEmitter {
         if (isWasm) {
           lineNumbersConfig.formatNumber = this.getWasmLineNumberFormatter();
         }
-        effects.push(
+        editorEffects.push(
           this.#compartments.lineNumberCompartment.reconfigure(
             this.config.lineNumbers ? lineNumbers(lineNumbersConfig) : []
           )
@@ -2963,11 +2983,11 @@ class Editor extends EventEmitter {
       
       const scrollSnapshot = this.#scrollSnapshots.get(documentId);
 
-      effects.push(
+      editorEffects.push(
         scrollSnapshot ? scrollSnapshot : EditorView.scrollIntoView(0)
       );
 
-      await cm.dispatch({ effects });
+      await cm.dispatch({ effects: editorEffects });
 
       if (this.currentDocumentId) {
         
