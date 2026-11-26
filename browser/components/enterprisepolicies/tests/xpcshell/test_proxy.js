@@ -2,6 +2,10 @@
 
 "use strict";
 
+const { PolicyFailures } = ChromeUtils.importESModule(
+  "resource://gre/modules/PoliciesHelpers.sys.mjs"
+);
+
 add_task(async function test_proxy_modes_and_autoconfig() {
   
   
@@ -108,6 +112,33 @@ add_task(async function test_proxy_addresses() {
   checkProxyPref("ssl", "http.proxy.example.com", 10);
   
   checkProxyPref("socks", "socks.proxy.example.com", 40);
+
+  await setupPolicyEngineWithJson({
+    policies: {
+      Proxy: {
+        HTTPProxy: "[::1]:443",
+        SSLProxy: "ssl.proxy.example.com:80",
+      },
+    },
+  });
+
+  checkProxyPref("http", "::1", 443);
+  checkProxyPref("ssl", "ssl.proxy.example.com", 80);
+  await setupPolicyEngineWithJson({
+    policies: {
+      Proxy: {
+        SOCKSProxy: "socks.proxy.example.com",
+      },
+    },
+  });
+
+  checkProxyPref("socks", "socks.proxy.example.com", 0);
+  ok(
+    PolicyFailures.getAll().Proxy.some(message =>
+      message.includes("No port specified for socks proxy")
+    ),
+    "Missing port is reported"
+  );
 
   
   Assert.equal(
