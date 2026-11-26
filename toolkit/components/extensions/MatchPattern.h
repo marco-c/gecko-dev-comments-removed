@@ -15,6 +15,7 @@
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/Span.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTArray.h"
@@ -40,6 +41,8 @@ class AtomSet final {
   explicit AtomSet(const nsTArray<nsString>& aElems);
 
   MOZ_IMPLICIT AtomSet(std::initializer_list<nsAtom*> aIL);
+
+  explicit AtomSet(Span<nsStaticAtom* const> aElems);
 
   bool Contains(const nsAString& elem) const {
     RefPtr<nsAtom> atom = NS_Atomize(elem);
@@ -109,8 +112,6 @@ class URLInfo final {
   
   
   
-  
-  
   bool IsNonOpaqueURL() const;
 
  private:
@@ -168,6 +169,10 @@ class MatchPatternCore final {
   bool MatchesAllWebUrls() const;
   
   bool MatchesAllUrlsWithScheme(const nsAtom* aScheme) const;
+
+  
+  
+  static bool MatchesAllURLs(const URLInfo& aURL);
 
   bool ContainsScheme(const nsAtom* aScheme) const;
 
@@ -286,7 +291,9 @@ class MatchPattern final : public nsISupports, public nsWrapperCache {
  public:
   
   
-  static bool MatchesAllURLs(const URLInfo& aURL);
+  static bool MatchesAllURLs(const URLInfo& aURL) {
+    return MatchPatternCore::MatchesAllURLs(aURL);
+  }
 };
 
 class MatchPatternSetCore final {
