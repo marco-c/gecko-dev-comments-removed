@@ -41,6 +41,11 @@ void nsStyleChangeList::AppendChange(nsIFrame* aFrame, nsIContent* aContent,
                  (aHint & nsChangeHint_NeedReflow),
              "Reflow hint bits set without actually asking for a reflow");
 
+  if (!IsEmpty() && aFrame && aFrame == LastElement().mFrame) {
+    LastElement().mHint |= aHint;
+    return;
+  }
+
   if (aHint & nsChangeHint_ReconstructFrame) {
     
     
@@ -59,11 +64,6 @@ void nsStyleChangeList::AppendChange(nsIFrame* aFrame, nsIContent* aContent,
                  content.");
     }
 #endif
-  }
-
-  if (!IsEmpty() && aFrame && aFrame == LastElement().mFrame) {
-    LastElement().mHint |= aHint;
-    return;
   }
 
   AppendElement(nsStyleChangeData{aFrame, aContent, aHint});
