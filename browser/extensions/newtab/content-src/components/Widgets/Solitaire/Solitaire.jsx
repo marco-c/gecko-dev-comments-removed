@@ -3,12 +3,20 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 // eslint-disable-next-line no-unused-vars
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useSelector } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import {
   FRAMED_WIDGET_SANDBOX,
   WIDGET_REGISTRY,
+  isRecordedFrameUserEvent,
+  resolveWidgetEventSource,
   resolveWidgetFrame,
   resolveWidgetSize,
   WIDGET_USER_ACTIONS,
@@ -20,7 +28,10 @@ import { WidgetMenuPoweredBy } from "../WidgetMenuPoweredBy";
 import { SizeSubmenu } from "../SizeSubmenu";
 import { useWidgetTelemetry } from "../useWidgetTelemetry";
 import { useSrcAfterPageShown } from "../usePageVisible";
-import { useFramedWidgetMessages } from "../useFramedWidgetMessages";
+import {
+  useFramedWidgetMessages,
+  useFramedWidgetReady,
+} from "../useFramedWidgetMessages";
 
 const USER_ACTION_TYPES = {
   ...WIDGET_USER_ACTIONS,
@@ -63,28 +74,70 @@ function Solitaire({
   // Show the "New" badge until the user first interacts with the widget.
   const hasInteracted = prefs["widgets.solitaire.interaction"];
 
-  const { impressionRef, recordUserAction } = useWidgetTelemetry({
+  const iframeRef = useRef(null);
+  // Bumped to remount a frame that isn't working (not ready or failed) when the
+  // modal closes.
+  const [frameKey, setFrameKey] = useState(0);
+  // Set below: the telemetry hook needs the variant this hook returns.
+  const recordErrorRef = useRef(null);
+  const [failed, setFailed] = useState(false);
+  const { ready, variant } = useFramedWidgetReady({
+    widget: SOLITAIRE_ENTRY,
+    src,
+    iframeRef,
+    reloadKey: frameKey,
+    onError: (reason, terminal) => {
+      recordErrorRef.current(reason);
+      if (terminal) {
+        setFailed(true);
+      }
+    },
+  });
+  useEffect(() => setFailed(false), [src, frameKey]);
+  // Like Travel, game events wait for widget_ready and stop once the load
+  // fails.
+  const frameWorking = ready && !failed;
+  // A widget_ready that comes after a failure doesn't change the variant.
+  const reportedVariantRef = useRef(variant);
+  if (!failed) {
+    reportedVariantRef.current = variant;
+  }
+  // widget_variant says whether a game is saved, from widget_ready, so the
+  // impression waits for it. A failed frame stays on screen, so it still
+  // counts one, without a variant.
+  const { impressionRef, recordUserAction, recordError } = useWidgetTelemetry({
     dispatch,
     widget: SOLITAIRE_ENTRY,
     widgetSize,
+    widgetVariant: reportedVariantRef.current,
   });
+  recordErrorRef.current = recordError;
 
   const handleInteraction = useCallback(
     () => handleUserInteraction("solitaire"),
     [handleUserInteraction]
   );
 
-  const iframeRef = useRef(null);
   const dialogRef = useRef(null);
   const [playing, setPlaying] = useState(false);
-  // Bumped to remount the iframe so the widget reloads into "Resume game".
-  const [frameKey, setFrameKey] = useState(0);
 
   useFramedWidgetMessages({
     widget: SOLITAIRE_ENTRY,
     src,
     iframeRef,
-    onMessage(type, message) {
+    onMessage(type, message, payload) {
+      if (
+        frameWorking &&
+        type === "telemetry" &&
+        message === "user_event" &&
+        isRecordedFrameUserEvent(SOLITAIRE_ENTRY, payload)
+      ) {
+        recordUserAction(payload.user_action, {
+          source: resolveWidgetEventSource(SOLITAIRE_ENTRY),
+          value: payload.action_value,
+        });
+        handleInteraction();
+      }
       if (type !== "action") {
         return;
       }
@@ -113,10 +166,34 @@ function Solitaire({
     }
   }, [playing]);
 
+  const frameOrigin = useMemo(() => {
+    try {
+      return new URL(src).origin;
+    } catch {
+      return null;
+    }
+  }, [src]);
+
+  // A working frame is told to close the game, so it switches back to the card
+  // with its session state intact and records game_close itself. A frame that
+  // isn't working is reloaded.
   const handleCloseModal = useCallback(() => {
     setPlaying(false);
-    setFrameKey(key => key + 1);
-  }, []);
+    if (!frameWorking || !frameOrigin) {
+      setFrameKey(key => key + 1);
+      return;
+    }
+    iframeRef.current?.contentWindow?.postMessage(
+      {
+        channel: `${SOLITAIRE_ENTRY.telemetryName}_widget`,
+        type: "action",
+        message: "close_game",
+        payload: { game: "solitaire" },
+        sentAt: new Date().toISOString(),
+      },
+      frameOrigin
+    );
+  }, [frameWorking, frameOrigin]);
 
   // Closes from the effect above happen after playing is already false, so
   // only a close by the user (Esc or a backdrop click) gets here while
@@ -162,7 +239,7 @@ function Solitaire({
   return (
     <article
       className={`solitaire widget col-4 ${widgetSize}-widget`}
-      ref={impressionRef}
+      ref={ready || failed ? impressionRef : undefined}
       aria-labelledby="solitaire-widget-label"
     >
       {/* Hidden rather than unmounted, since its title names the dialog. */}
