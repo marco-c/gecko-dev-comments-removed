@@ -191,6 +191,14 @@ void RestoreAlternateStackLocked() {
   stack_installed = false;
 }
 
+void ReissueSignal(int sig) {
+  if (sys_tgkill(getpid(), syscall(__NR_gettid), sig) < 0) {
+    
+    
+    _exit(1);
+  }
+}
+
 void InstallDefaultHandler(int sig) {
 #if defined(__ANDROID__)
   
@@ -385,6 +393,10 @@ void ExceptionHandler::SignalHandler(int sig, siginfo_t* info, void* uc) {
       InstallDefaultHandler(sig);
     }
     pthread_mutex_unlock(&g_handler_stack_mutex_);
+    
+    if ((sig != SIGSEGV) && (sig != SIGBUS) && (sig != SIGILL) && (sig != SIGFPE)) {
+      ReissueSignal(sig);
+    }
     return;
   }
 
@@ -406,18 +418,11 @@ void ExceptionHandler::SignalHandler(int sig, siginfo_t* info, void* uc) {
 
   pthread_mutex_unlock(&g_handler_stack_mutex_);
 
-  
-  if (info->si_code <= 0 || sig == SIGABRT) {
+  if ((info->si_code <= 0) || (sig == SIGABRT) || (sig == SIGTRAP)) {
     
     
     
-    
-    if (sys_tgkill(getpid(), syscall(__NR_gettid), sig) < 0) {
-      
-      
-      
-      _exit(1);
-    }
+    ReissueSignal(sig);
   } else {
     
     
@@ -712,7 +717,7 @@ bool ExceptionHandler::DoDump(pid_t crashing_process, const void* context,
                                           context,
                                           context_size,
                                           mapping_list_,
-                                          app_memory_list_,
+                                          AppMemoryList(),
                                           may_skip_dump,
                                           principal_mapping_address,
                                           sanitize_stacks);
@@ -723,7 +728,7 @@ bool ExceptionHandler::DoDump(pid_t crashing_process, const void* context,
                                         context,
                                         context_size,
                                         mapping_list_,
-                                        app_memory_list_,
+                                        AppMemoryList(),
                                         may_skip_dump,
                                         principal_mapping_address,
                                         sanitize_stacks);
@@ -841,28 +846,6 @@ void ExceptionHandler::AddMappingInfo(const string& name,
   mapping_list_.push_back(mapping);
 }
 
-void ExceptionHandler::RegisterAppMemory(void* ptr, size_t length) {
-  AppMemoryList::iterator iter =
-    std::find(app_memory_list_.begin(), app_memory_list_.end(), ptr);
-  if (iter != app_memory_list_.end()) {
-    
-    return;
-  }
-
-  AppMemory app_memory;
-  app_memory.ptr = ptr;
-  app_memory.length = length;
-  app_memory_list_.push_back(app_memory);
-}
-
-void ExceptionHandler::UnregisterAppMemory(void* ptr) {
-  AppMemoryList::iterator iter =
-    std::find(app_memory_list_.begin(), app_memory_list_.end(), ptr);
-  if (iter != app_memory_list_.end()) {
-    app_memory_list_.erase(iter);
-  }
-}
-
 
 bool ExceptionHandler::WriteMinidumpForChild(pid_t child,
                                              pid_t child_blamed_thread,
@@ -884,7 +867,7 @@ bool ExceptionHandler::WriteMinidumpForChild(pid_t child,
   if (auxv_info) {
     minidump_writer_set_direct_auxv_dump_info(minidump_writer, auxv_info);
   }
-  if (!minidump_writer_dump(minidump_writer, nullptr)) {
+  if (!minidump_writer_dump(minidump_writer,  nullptr)) {
     return false;
   }
 #else
