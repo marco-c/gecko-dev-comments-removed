@@ -78,6 +78,10 @@ addAccessibleTask(
     });
     const reordered = waitForEvent(EVENT_REORDER, "li");
     await invokeContentTask(browser, [], () => {
+      
+      
+      
+      
       content.document.getElementById("dirty").remove();
       content.document.getElementById("marquee").remove();
     });
@@ -88,4 +92,66 @@ addAccessibleTask(
     });
   },
   { chrome: true, topLevel: true, iframe: true, remoteIframe: true }
+);
+
+
+
+
+
+
+
+
+addAccessibleTask(
+  `
+  <style>
+    @counter-style a { system: cyclic; symbols: "a"; speak-as: b; }
+  </style>
+  <style id="b">
+    @counter-style b { system: cyclic; symbols: "b"; }
+  </style>
+  <style id="dirty"></style>
+  <ul id="ul">
+    <li id="li" style="list-style-type: a;">item</li>
+  </ul>
+  `,
+  async function testRecreateWithRenderingSuppressed(browser) {
+    
+    
+    await invokeContentTask(browser, [], () => {
+      content.document.getElementById("b").textContent =
+        `@counter-style b { system: cyclic; symbols: "c"; }`;
+      content.document.body.offsetTop;
+    });
+    const reordered = waitForEvent(EVENT_REORDER, "ul");
+    await invokeContentTask(browser, [], () => {
+      const utils = content.windowUtils;
+      
+      utils.suppressEventHandling(true);
+      
+      
+      
+      
+      content.document.getElementById("dirty").remove();
+      
+      content.document.getElementById("li").setAttribute("role", "listitem");
+      
+      utils.advanceTimeAndRefresh(0);
+      utils.restoreNormalRefresh();
+      utils.suppressEventHandling(false);
+    });
+    const ul = (await reordered).accessible;
+    testAccessibleTree(ul, {
+      role: ROLE_LIST,
+      children: [
+        {
+          role: ROLE_LISTITEM,
+          children: [
+            { role: ROLE_LISTITEM_MARKER, children: [] },
+            { role: ROLE_TEXT_LEAF, children: [] },
+          ],
+        },
+      ],
+    });
+  },
+  { topLevel: true }
 );

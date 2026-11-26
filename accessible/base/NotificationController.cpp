@@ -745,6 +745,22 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mPresShell->DidInitialize() &&
+      mDocument->DocumentNode()->IsRenderingSuppressed() &&
+      (mPresShell->NeedStyleFlush() || mPresShell->NeedLayoutFlush())) {
+    return;
+  }
+
+  
+  
   if (WaitingForParent()) {
     mDocument->ParentDocument()->mNotificationController->WillRefresh(aTime);
     if (!mDocument || AppShutdown::IsShutdownImpending()) {
