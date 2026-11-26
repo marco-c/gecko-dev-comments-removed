@@ -220,7 +220,7 @@ add_task(async function test_save_doorhanger_content() {
     );
     is(
       notification.getAttribute("secondarybuttonlabel"),
-      await formatLabel("credit-card-capture-dismiss-button"),
+      await formatLabel("credit-card-capture-cancel-button"),
       "The secondary button dismisses the doorhanger"
     );
     is(
@@ -355,11 +355,12 @@ add_task(async function test_save_doorhanger_long_cardholder_name() {
   const name = "Cardholder".repeat(20);
   const values = { ...CC_VALUES, "#cc-name": name };
   await withDoorhanger(values, async content => {
-    const lineTwo = content.querySelector(".line-two");
-    await TestUtils.waitForCondition(
-      () => lineTwo.textContent.includes(name),
-      "Wait for the cardholder name to be localized"
-    );
+    
+    let lineTwo;
+    await TestUtils.waitForCondition(() => {
+      lineTwo = content.querySelector(".line-two");
+      return lineTwo?.isConnected && lineTwo.textContent.includes(name);
+    }, "Wait for the cardholder name to be localized");
     const box = content.querySelector(".desc-message-box");
     const button = content.querySelector(".payments-doorhanger-options-button");
     const nameItem = lineTwo.querySelector(".card-name");
@@ -909,7 +910,7 @@ async function checkSecurityCodeUpdateContent(content) {
   );
   is(
     notification.getAttribute("secondarybuttonlabel"),
-    await formatLabel("credit-card-capture-dismiss-button"),
+    await formatLabel("credit-card-capture-cancel-button"),
     "The secondary button dismisses the doorhanger"
   );
   ok(
@@ -1153,7 +1154,7 @@ add_task(
         {
           header: "credit-card-save-security-code-doorhanger-header",
           main: "credit-card-capture-save-button",
-          secondary: "credit-card-capture-dismiss-button",
+          secondary: "credit-card-capture-cancel-button",
           dropdown: true,
         },
         "With the toggle back on"
@@ -1205,6 +1206,8 @@ add_task(async function test_save_doorhanger_toggle_records_telemetry() {
     await toggle.updateComplete;
 
     await clickToggle(toggle);
+    
+    await waitForCvvSavingToggledEvents(1);
     await clickToggle(toggle);
     Assert.deepEqual(
       await waitForCvvSavingToggledEvents(2),
