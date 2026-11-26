@@ -43,15 +43,6 @@ VALID_FORMATTERS = {"ruff-format", "clang-format", "eslint", "rustfmt", "styleli
 VALID_ANDROID_FORMATTERS = {"android-format"}
 
 
-
-
-REPORT_WARNINGS = os.environ.get("GECKO_HEAD_REPOSITORY", "").rstrip("/") in (
-    "https://hg.mozilla.org/mozilla-central",
-    "https://hg.mozilla.org/integration/autoland",
-    "https://hg.mozilla.org/try",
-)
-
-
 def setup_argument_parser():
     from mozlint import cli
 
@@ -111,8 +102,8 @@ def lint(command_context, *runargs, **lintargs):
     lintargs["config_paths"].insert(0, here)
     lintargs["virtualenv_bin_path"] = command_context.virtualenv_manager.bin_path
     lintargs["virtualenv_manager"] = command_context.virtualenv_manager
-    if REPORT_WARNINGS and lintargs.get("show_warnings") is None:
-        lintargs["show_warnings"] = "soft"
+    if lintargs.get("show_warnings") is None and os.environ.get("MOZLINT_WARNINGS"):
+        lintargs["show_warnings"] = os.environ["MOZLINT_WARNINGS"]
     for path in EXCLUSION_FILES:
         parser.GLOBAL_SUPPORT_FILES.append(
             os.path.join(command_context.topsrcdir, path)
