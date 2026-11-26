@@ -371,6 +371,38 @@ pub trait GleanEventListener: Send {
 
 
 
+pub trait ExternalBackup: Send + std::fmt::Debug {
+    
+    fn store(&self, key: String, value: String);
+
+    
+    
+    fn load(&self, key: String) -> Option<String>;
+
+    
+    fn clear(&self, key: String);
+
+    
+    fn clear_all(&self);
+
+    
+    
+    
+    fn should_apply_stored_client_id(&self) -> bool;
+}
+
+impl malloc_size_of::MallocSizeOf for dyn ExternalBackup {
+    fn size_of(&self, _ops: &mut malloc_size_of::MallocSizeOfOps) -> usize {
+        
+        
+        
+        
+        0
+    }
+}
+
+
+
 
 
 
@@ -381,8 +413,9 @@ pub fn glean_initialize(
     cfg: InternalConfiguration,
     client_info: ClientInfoMetrics,
     callbacks: Box<dyn OnGleanEvents>,
+    backup: Option<Box<dyn ExternalBackup>>,
 ) {
-    initialize_inner(cfg, client_info, callbacks);
+    initialize_inner(cfg, client_info, callbacks, backup);
 }
 
 
@@ -413,6 +446,7 @@ fn initialize_inner(
     cfg: InternalConfiguration,
     client_info: ClientInfoMetrics,
     callbacks: Box<dyn OnGleanEvents>,
+    backup: Option<Box<dyn ExternalBackup>>,
 ) {
     if was_initialize_called() {
         log::error!("Glean should not be initialized multiple times");
@@ -437,7 +471,7 @@ fn initialize_inner(
             None
         };
 
-        let glean = match Glean::new(cfg) {
+        let glean = match Glean::new(cfg, backup) {
             Ok(glean) => glean,
             Err(err) => {
                 log::error!("Failed to initialize Glean: {}", err);
