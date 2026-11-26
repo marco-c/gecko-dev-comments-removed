@@ -267,6 +267,14 @@ class MCSInfo final {
   static DecodeSupportSet GetMediaCodecDecodeSupportForSize(
       const MediaCodec& aCodec, const DecodeSupportSet& aSupport,
       const gfx::IntSize& aSize);
+
+  
+  
+  
+  
+  
+  static gfx::IntSize GetMediaCodecAdaptivePlaybackMaxSize(
+      const MediaCodec& aCodec, const gfx::IntSize& aSize);
 #endif
 
   MCSInfo(MCSInfo const&) = delete;
