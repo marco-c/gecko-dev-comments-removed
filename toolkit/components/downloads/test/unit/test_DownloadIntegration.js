@@ -26,7 +26,7 @@ function notifyPromptObservers(aIsPrivate, aExpectedCount, aExpectedPBCount) {
 
   
   DownloadIntegration._testPromptDownloads = -1;
-  Services.obs.notifyObservers(cancelQuit, "quit-application-requested");
+  Services.startup.canQuit();
   Assert.equal(DownloadIntegration._testPromptDownloads, aExpectedCount);
 
   

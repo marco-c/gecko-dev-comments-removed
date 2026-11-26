@@ -21183,6 +21183,8 @@ interface nsIAppStartup extends nsISupports, Enums<typeof nsIAppStartup_IDLShutd
   
   quit(aMode: u32, aExitCode?: i32): void;
   
+  canQuit(aReason?: string): boolean;
+  
   advanceShutdownPhase(aPhase: nsIAppStartup.IDLShutdownPhase): void;
   
   setImpendingShutdown(): void;

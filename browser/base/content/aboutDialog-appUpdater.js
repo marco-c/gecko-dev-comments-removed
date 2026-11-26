@@ -282,17 +282,7 @@ appUpdater.prototype = {
     gAppUpdater.selectPanel("restarting");
 
     
-    let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(
-      Ci.nsISupportsPRBool
-    );
-    Services.obs.notifyObservers(
-      cancelQuit,
-      "quit-application-requested",
-      "restart"
-    );
-
-    
-    if (cancelQuit.data) {
+    if (!Services.startup.canQuit("restart")) {
       gAppUpdater.selectPanel("apply");
       return;
     }
@@ -303,11 +293,10 @@ appUpdater.prototype = {
       return;
     }
 
-    if (
-      !Services.startup.quit(
-        Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestart
-      )
-    ) {
+    Services.startup.quit(
+      Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestart
+    );
+    if (!Services.startup.attemptingQuit) {
       
       gAppUpdater.selectPanel("apply");
     }

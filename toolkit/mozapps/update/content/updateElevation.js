@@ -5,7 +5,6 @@
 
 
 
-
 "use strict";
 
 
@@ -129,17 +128,7 @@ const gUpdateElevationDialog = {
     await um.elevationOptedIn();
 
     
-    let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(
-      Ci.nsISupportsPRBool
-    );
-    Services.obs.notifyObservers(
-      cancelQuit,
-      "quit-application-requested",
-      "restart"
-    );
-
-    
-    if (cancelQuit.data) {
+    if (!Services.startup.canQuit("restart")) {
       return;
     }
 

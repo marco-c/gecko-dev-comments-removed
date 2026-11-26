@@ -45,6 +45,7 @@
 #include "nsStandaloneNativeMenu.h"
 #include "nsCocoaUtils.h"
 #include "nsMenuBarX.h"
+#include "mozilla/Components.h"
 #include "mozilla/NeverDestroyed.h"
 #include "MacAutoreleasePool.h"
 
@@ -76,6 +77,7 @@ enum class LaunchStatus {
 
 static LaunchStatus sLaunchStatus = LaunchStatus::Initial;
 static bool sHasFinishedLaunching = false;
+static bool sShouldActivateAfterLaunch = false;
 
 #ifdef NIGHTLY_BUILD
 static mozilla::TimeStamp sStartupRunLoopStart;
@@ -293,6 +295,12 @@ void InitializeMacApp() {
 
 nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
 
+void ActivateMacAppAfterLaunch() {
+  MOZ_ASSERT(!sHasFinishedLaunching,
+             "Must be requested before AppKit finishes launching");
+  sShouldActivateAfterLaunch = true;
+}
+
 @implementation MacApplicationDelegate
 
 - (IBAction)undo:(id)aSender {
@@ -422,6 +430,13 @@ nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
 
 - (void)applicationDidFinishLaunching:(NSNotification*)notification {
   sHasFinishedLaunching = true;
+  if (sShouldActivateAfterLaunch) {
+    sShouldActivateAfterLaunch = false;
+    ProcessSerialNumber psn;
+    if (::GetCurrentProcess(&psn) == noErr) {
+      ::SetFrontProcess(&psn);
+    }
+  }
   LOG_STARTUP_RUN_LOOP_EVENT("didfinish");
 }
 
@@ -439,30 +454,23 @@ nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
 - (NSApplicationTerminateReply)applicationShouldTerminate:
     (NSApplication*)sender {
   LOG_STARTUP_RUN_LOOP_EVENT("term");
-  nsCOMPtr<nsIObserverService> obsServ =
-      do_GetService("@mozilla.org/observer-service;1");
-  if (!obsServ) return NSTerminateNow;
-
-  nsCOMPtr<nsISupportsPRBool> cancelQuit =
-      do_CreateInstance(NS_SUPPORTS_PRBOOL_CONTRACTID);
-  if (!cancelQuit) return NSTerminateNow;
-
-  cancelQuit->SetData(false);
-  obsServ->NotifyObservers(cancelQuit, "quit-application-requested", nullptr);
-
-  bool abortQuit;
-  cancelQuit->GetData(&abortQuit);
-  if (abortQuit) return NSTerminateCancel;
-
   nsCOMPtr<nsIAppStartup> appService =
-      do_GetService("@mozilla.org/toolkit/app-startup;1");
-  if (appService) {
-    
-    
-    appService->Quit(nsIAppStartup::eForceQuit, 0);
-    if (!appService->GetShuttingDown()) {
-      return NSTerminateCancel;
-    }
+      mozilla::components::AppStartup::Service();
+  if (!appService) {
+    return NSTerminateNow;
+  }
+
+  bool mayQuit = true;
+  appService->CanQuit(u""_ns, &mayQuit);
+  if (!mayQuit) {
+    return NSTerminateCancel;
+  }
+
+  
+  
+  appService->Quit(nsIAppStartup::eForceQuit, 0);
+  if (!appService->GetShuttingDown()) {
+    return NSTerminateCancel;
   }
 
   return NSTerminateNow;

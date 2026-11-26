@@ -30,11 +30,6 @@ function closeWindow(aClose, aPromptFunction, aSource) {
     ) {
       return false;
     }
-
-    
-    if (aClose) {
-      window.SessionStore?.maybeDontRestoreTabs(window);
-    }
   } else if (typeof aPromptFunction == "function" && !aPromptFunction()) {
     return false;
   }
@@ -47,26 +42,20 @@ function closeWindow(aClose, aPromptFunction, aSource) {
   return true;
 }
 
-function canQuitApplication(aData, aSource) {
+function registerQuitSource(aSource) {
   const kCID = "@mozilla.org/browser/browserglue;1";
-  if (kCID in Cc && !(aData || "").includes("restart")) {
+  if (kCID in Cc) {
     let BrowserGlue = Cc[kCID].getService(Ci.nsISupports).wrappedJSObject;
     BrowserGlue._registerQuitSource(aSource);
   }
-  try {
-    var cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(
-      Ci.nsISupportsPRBool
-    );
-    Services.obs.notifyObservers(
-      cancelQuit,
-      "quit-application-requested",
-      aData || null
-    );
+}
 
-    
-    if (cancelQuit.data) {
-      return false;
-    }
+function canQuitApplication(aData = "", aSource) {
+  if (aData != "restart") {
+    registerQuitSource(aSource);
+  }
+  try {
+    return Services.startup.canQuit(aData);
   } catch (ex) {}
   return true;
 }

@@ -98,12 +98,6 @@ async function testConfirmationDialog(testMode) {
     await doPastePromise;
   }
 
-  let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(
-    Ci.nsISupportsPRBool
-  );
-  if (testMode.alreadyCancelledQuit) {
-    cancelQuit.data = true;
-  }
   let quitConfirmationDialogPromise;
   if (testMode.requestActive && !testMode.alreadyCancelledQuit) {
     quitConfirmationDialogPromise = BrowserTestUtils.promiseAlertDialog(
@@ -114,13 +108,23 @@ async function testConfirmationDialog(testMode) {
   
   
   
-  Services.obs.notifyObservers(cancelQuit, "quit-application-requested");
+  
+  
+  let vetoer = subject => {
+    subject.QueryInterface(Ci.nsISupportsPRBool).data = true;
+  };
+  if (testMode.alreadyCancelledQuit) {
+    Services.obs.addObserver(vetoer, "quit-application-requested");
+  }
   is(
-    cancelQuit.data,
+    !Services.startup.canQuit(),
     testMode.alreadyCancelledQuit ||
       (testMode.requestActive && testMode.cancelQuit),
     "checking if CA should abort quit"
   );
+  if (testMode.alreadyCancelledQuit) {
+    Services.obs.removeObserver(vetoer, "quit-application-requested");
+  }
   if (testMode.requestActive) {
     
     
