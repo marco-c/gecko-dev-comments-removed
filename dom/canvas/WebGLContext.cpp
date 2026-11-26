@@ -36,6 +36,7 @@
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Services.h"
+#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_webgl.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/ContentChild.h"
@@ -777,10 +778,9 @@ void WebGLContext::InitUploadableSdTypes() {
   
   
   
-  
-  
   types[layers::SurfaceDescriptor::TSurfaceDescriptorCanvasSurface] =
-      gfx::gfxVars::UseAcceleratedCanvas2D();
+      gfx::gfxVars::UseAcceleratedCanvas2D() &&
+      StaticPrefs::gfx_canvas_remote_use_canvas_translator_event_AtStartup();
   
   
   
