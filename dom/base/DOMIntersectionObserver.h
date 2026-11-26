@@ -19,6 +19,8 @@
 #include "nsTArray.h"
 #include "nsTHashSet.h"
 
+class nsITimer;
+
 namespace mozilla::dom {
 
 class DOMIntersectionObserver;
@@ -119,10 +121,7 @@ class DOMIntersectionObserver final
       public nsWrapperCache,
       public LinkedListElement<DOMIntersectionObserver>,
       public DoublyLinkedListElement<DOMIntersectionObserver> {
-  ~DOMIntersectionObserver() {
-    NodeOwnedObjectList<DOMIntersectionObserver>::Remove(this);
-    Disconnect();
-  }
+  ~DOMIntersectionObserver();
 
   using NativeCallback = void (*)(
       const Sequence<OwningNonNull<DOMIntersectionObserverEntry>>& aEntries);
@@ -157,6 +156,7 @@ class DOMIntersectionObserver final
   bool SetScrollMargin(const nsACString&);
 
   void GetThresholds(nsTArray<double>& aRetVal);
+  int32_t Delay() const { return mDelay; }
   void Observe(Element& aTarget);
   void Unobserve(Element& aTarget);
   [[nodiscard]] bool Observes(Element& aTarget) const;
@@ -201,6 +201,7 @@ class DOMIntersectionObserver final
 
  protected:
   void Connect();
+  void ScheduleDelayedUpdate(DOMHighResTimeStamp aDelayMs);
   void QueueIntersectionObserverEntry(Element* aTarget,
                                       DOMHighResTimeStamp time,
                                       const Maybe<nsRect>& aRootRect,
@@ -216,6 +217,7 @@ class DOMIntersectionObserver final
   StyleRect<LengthPercentage> mRootMargin;
   StyleRect<LengthPercentage> mScrollMargin;
   AutoTArray<double, 1> mThresholds;
+  int32_t mDelay = 0;
 
   
   
@@ -224,9 +226,15 @@ class DOMIntersectionObserver final
   
   enum ObservationState : int32_t { Uninitialized = -2, NotIntersecting = -1 };
   
-  ECMAMap<Element*, int32_t> mObservationTargets;
+  struct Registration {
+    int32_t mPreviousThresholdIndex = Uninitialized;
+    DOMHighResTimeStamp mLastUpdateTime = 0;
+  };
+  
+  ECMAMap<Element*, Registration> mObservationTargets;
 
   nsTArray<RefPtr<DOMIntersectionObserverEntry>> mQueuedEntries;
+  nsCOMPtr<nsITimer> mDelayTimer;
   bool mConnected = false;
 };
 

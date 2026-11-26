@@ -23,6 +23,7 @@
 #include "nsContainerFrame.h"
 #include "nsContentUtils.h"
 #include "nsIFrame.h"
+#include "nsITimer.h"
 #include "nsLayoutUtils.h"
 #include "nsRefreshDriver.h"
 
@@ -88,8 +89,14 @@ DOMIntersectionObserver::DOMIntersectionObserver(
   NodeOwnedObjectList<DOMIntersectionObserver>::Add(this);
 }
 
+DOMIntersectionObserver::~DOMIntersectionObserver() {
+  NodeOwnedObjectList<DOMIntersectionObserver>::Remove(this);
+  Disconnect();
+  MOZ_RELEASE_ASSERT(!mDelayTimer, "Should be cleared in Disconnect()");
+}
+
 bool DOMIntersectionObserver::HasOwnerInCCGenerationDocument() const {
-  for (const auto& [target, thresholdIndex] : mObservationTargets) {
+  for (const auto& [target, registration] : mObservationTargets) {
     if (nsCCUncollectableMarker::IsInCCGenerationDocument(*target)) {
       return true;
     }
@@ -189,13 +196,10 @@ already_AddRefed<DOMIntersectionObserver> DOMIntersectionObserver::Constructor(
 
   
   
-
   
   
   
-
-  
-  
+  observer->mDelay = aOptions.mDelay;
 
   
   
@@ -307,7 +311,7 @@ void DOMIntersectionObserver::Observe(Element& aTarget) {
     static_cast<DOMIntersectionObserver*>(aObserver)->UnlinkTarget(
         *aTarget->AsElement());
   });
-  mObservationTargets.Set(&aTarget, Uninitialized);
+  mObservationTargets.Set(&aTarget, Registration());
 
   Connect();
   if (mDocument) {
@@ -368,7 +372,7 @@ void DOMIntersectionObserver::Disconnect() {
 
   mConnected = false;
   
-  for (const auto& [target, thresholdIndex] : mObservationTargets) {
+  for (const auto& [target, registration] : mObservationTargets) {
     
     
     
@@ -379,6 +383,10 @@ void DOMIntersectionObserver::Disconnect() {
   mObservationTargets.Clear();
   if (mDocument) {
     mDocument->RemoveIntersectionObserver(*this);
+  }
+  if (mDelayTimer) {
+    mDelayTimer->Cancel();
+    mDelayTimer = nullptr;
   }
 }
 
@@ -831,6 +839,7 @@ IntersectionOutput DOMIntersectionObserver::Intersect(
   
   
   
+  
   if (aInput.mRootFrame == aTargetFrame ||
       !nsLayoutUtils::IsAncestorFrameCrossDocInProcessConsideringContinuations(
           aInput.mRootFrame, aTargetFrame)) {
@@ -908,13 +917,29 @@ IntersectionOutput DOMIntersectionObserver::Intersect(
 
 
 void DOMIntersectionObserver::Update(Document& aDocument,
-                                     DOMHighResTimeStamp time) {
+                                     DOMHighResTimeStamp aTime) {
+  
   auto input = ComputeInput(aDocument, mRoot, &mRootMargin, &mScrollMargin);
 
   
   
+  auto nextUpdateTime = std::numeric_limits<DOMHighResTimeStamp>::infinity();
   mObservationTargets.ForEachLiveEntry([&](auto& aObservation) {
-    auto& [target, previousThresholdIndex] = aObservation;
+    
+    
+    
+    auto& [target, registration] = aObservation;
+    
+    
+    if (registration.mPreviousThresholdIndex != Uninitialized &&
+        aTime - registration.mLastUpdateTime < mDelay) {
+      nextUpdateTime =
+          std::min(nextUpdateTime, registration.mLastUpdateTime + mDelay);
+      return;
+    }
+    
+    registration.mLastUpdateTime = aTime;
+
     
     IntersectionOutput output = Intersect(input, *target);
 
@@ -970,20 +995,48 @@ void DOMIntersectionObserver::Update(Document& aDocument,
     }
 
     
-    const bool updated = previousThresholdIndex != thresholdIndex;
-    previousThresholdIndex = thresholdIndex;
+    const bool updated = registration.mPreviousThresholdIndex != thresholdIndex;
+    registration.mPreviousThresholdIndex = thresholdIndex;
 
     if (updated) {
       
       
       
       QueueIntersectionObserverEntry(
-          target, time,
+          target, aTime,
           output.mIsSimilarOrigin ? Some(output.mRootBounds) : Nothing(),
           output.mTargetRect, output.mIntersectionRect, thresholdIndex > 0,
           intersectionRatio);
     }
   });
+
+  if (nextUpdateTime != std::numeric_limits<DOMHighResTimeStamp>::infinity()) {
+    ScheduleDelayedUpdate(nextUpdateTime - aTime);
+  }
+}
+
+
+
+void DOMIntersectionObserver::ScheduleDelayedUpdate(
+    DOMHighResTimeStamp aDelayMs) {
+  if (mDelayTimer) {
+    
+    return;
+  }
+  
+  NS_NewTimerWithCallback(
+      getter_AddRefs(mDelayTimer),
+      [self = MOZ_KnownLive(this)](nsITimer*) {
+        self->mDelayTimer = nullptr;
+        if (!self->mDocument) {
+          return;
+        }
+        if (nsPresContext* pc = self->mDocument->GetPresContext()) {
+          pc->RefreshDriver()->EnsureIntersectionObservationsUpdateHappens();
+        }
+      },
+      uint32_t(std::ceil(aDelayMs)), nsITimer::TYPE_ONE_SHOT,
+      "DOMIntersectionObserver::ScheduleDelayedUpdate"_ns);
 }
 
 void DOMIntersectionObserver::QueueIntersectionObserverEntry(
