@@ -2239,13 +2239,17 @@ Maybe<nsTArray<RefPtr<Element>>> Element::GetUnresolvedAttributeTargetElements(
     
     const nsAttrValue* value = GetParsedAttr(aAttr);
     
-    if (!value || value->GetAtomCount() == 0) {
+    if (!value) {
       return Nothing();
     }
 
+    
+    
     MOZ_ASSERT(value->Type() == nsAttrValue::eAtomArray ||
-                   value->Type() == nsAttrValue::eAtom,
-               "Attribute used for accessible relations must be parsed.");
+                   value->Type() == nsAttrValue::eAtom ||
+                   value->Type() == nsAttrValue::eString,
+               "Attribute used for accessible relations must be parsed or an "
+               "empty/whitespace-only string.");
     
     
     for (uint32_t i = 0; i < value->GetAtomCount(); i++) {
