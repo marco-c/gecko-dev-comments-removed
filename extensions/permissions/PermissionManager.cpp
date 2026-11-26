@@ -166,8 +166,9 @@ bool IsPreloadPermission(const nsACString& aType) {
 
 
 
-static constexpr std::array<nsLiteralCString, 3> kStripOAPermissions = {
-    {"cookie"_ns, "https-only-load-insecure"_ns, "ipp-vpn"_ns}};
+static constexpr std::array<nsLiteralCString, 4> kStripOAPermissions = {
+    {"cookie"_ns, "https-only-load-insecure"_ns, "ipp-vpn"_ns,
+     "translations"_ns}};
 
 bool IsOAForceStripPermission(const nsACString& aType) {
   if (aType.IsEmpty()) {
