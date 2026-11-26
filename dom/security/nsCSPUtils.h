@@ -108,16 +108,17 @@ inline const char* CSP_CSPDirectiveToString(CSPDirective aDir) {
 
 CSPDirective CSP_StringToCSPDirective(const nsAString& aDir);
 
-#define FOR_EACH_CSP_KEYWORD(MACRO)                 \
-  MACRO(CSP_SELF, "'self'")                         \
-  MACRO(CSP_UNSAFE_INLINE, "'unsafe-inline'")       \
-  MACRO(CSP_UNSAFE_EVAL, "'unsafe-eval'")           \
-  MACRO(CSP_UNSAFE_HASHES, "'unsafe-hashes'")       \
-  MACRO(CSP_NONE, "'none'")                         \
-  MACRO(CSP_REPORT_SAMPLE, "'report-sample'")       \
-  MACRO(CSP_STRICT_DYNAMIC, "'strict-dynamic'")     \
-  MACRO(CSP_WASM_UNSAFE_EVAL, "'wasm-unsafe-eval'") \
-  MACRO(CSP_ALLOW_DUPLICATES, "'allow-duplicates'") \
+#define FOR_EACH_CSP_KEYWORD(MACRO)                     \
+  MACRO(CSP_SELF, "'self'")                             \
+  MACRO(CSP_UNSAFE_INLINE, "'unsafe-inline'")           \
+  MACRO(CSP_UNSAFE_EVAL, "'unsafe-eval'")               \
+  MACRO(CSP_UNSAFE_HASHES, "'unsafe-hashes'")           \
+  MACRO(CSP_NONE, "'none'")                             \
+  MACRO(CSP_REPORT_SAMPLE, "'report-sample'")           \
+  MACRO(CSP_STRICT_DYNAMIC, "'strict-dynamic'")         \
+  MACRO(CSP_STRICT_DYNAMIC_URL, "'strict-dynamic-url'") \
+  MACRO(CSP_WASM_UNSAFE_EVAL, "'wasm-unsafe-eval'")     \
+  MACRO(CSP_ALLOW_DUPLICATES, "'allow-duplicates'")     \
   MACRO(CSP_TRUSTED_TYPES_EVAL, "'trusted-types-eval'")
 
 enum CSPKeyword {
@@ -755,7 +756,7 @@ class nsCSPPolicy {
 
   bool permits(CSPDirective aDirective, nsILoadInfo* aLoadInfo, nsIURI* aUri,
                nsIURI* aOriginalURIIfRedirect, bool aSpecific,
-               nsAString& outViolatedDirective,
+               bool aUpgradeInsecure, nsAString& outViolatedDirective,
                nsAString& outViolatedDirectiveString) const;
   bool allows(CSPDirective aDirective, enum CSPKeyword aKeyword) const;
   bool allowsByNonce(CSPDirective aDirective, const nsAString& aNonce) const;
@@ -769,11 +770,6 @@ class nsCSPPolicy {
       mHasRequireTrustedTypesForDirective = true;
     }
     mDirectives.AppendElement(aDir);
-  }
-
-  inline void addUpgradeInsecDir(nsUpgradeInsecureDirective* aDir) {
-    mUpgradeInsecDir = aDir;
-    addDirective(aDir);
   }
 
   bool hasDirective(CSPDirective aDir) const;
@@ -847,7 +843,6 @@ class nsCSPPolicy {
  private:
   nsCSPDirective* matchingOrDefaultDirective(CSPDirective aDirective) const;
 
-  nsUpgradeInsecureDirective* mUpgradeInsecDir;
   nsTArray<nsCSPDirective*> mDirectives;
   bool mHasRequireTrustedTypesForDirective = false;
   bool mReportOnly;

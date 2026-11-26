@@ -1380,6 +1380,7 @@ bool nsCSPDirective::permits(CSPDirective aDirective, nsILoadInfo* aLoadInfo,
       nsTArray<nsCSPHashSrc*> integrityExpressions;
       bool hasUrlHash = false;
       bool hasStrictDynamicKeyword = false;
+      bool hasStrictDynamicUrlKeyword = false;
       for (nsCSPBaseSrc* src : mSrcs) {
         if (src->isHash()) {
           integrityExpressions.AppendElement(static_cast<nsCSPHashSrc*>(src));
@@ -1387,6 +1388,8 @@ bool nsCSPDirective::permits(CSPDirective aDirective, nsILoadInfo* aLoadInfo,
           hasUrlHash = true;
         } else if (src->isKeyword(CSP_STRICT_DYNAMIC)) {
           hasStrictDynamicKeyword = true;
+        } else if (src->isKeyword(CSP_STRICT_DYNAMIC_URL)) {
+          hasStrictDynamicUrlKeyword = true;
         }
       }
 
@@ -1436,6 +1439,25 @@ bool nsCSPDirective::permits(CSPDirective aDirective, nsILoadInfo* aLoadInfo,
 
         CSPUTILSLOG(
             ("  Allowed by 'strict-dynamic' because not-parser-inserted"));
+        return true;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      if (hasStrictDynamicUrlKeyword &&
+          aDirective == CSPDirective::SCRIPT_SRC_ELEM_DIRECTIVE &&
+          
+          aLoadInfo->InternalContentPolicyType() !=
+              nsIContentPolicy::TYPE_XSLT &&
+          !aLoadInfo->GetParserCreatedScript()) {
+        CSPUTILSLOG(
+            ("  Allowed by 'strict-dynamic-url' because not-parser-inserted"));
         return true;
       }
 
@@ -1543,9 +1565,12 @@ bool nsCSPDirective::allowsAllInlineBehavior(CSPDirective aDir) const {
     
     
     
+    
+    
     if ((aDir == nsIContentSecurityPolicy::SCRIPT_SRC_ELEM_DIRECTIVE ||
          aDir == nsIContentSecurityPolicy::SCRIPT_SRC_ATTR_DIRECTIVE) &&
-        src->isKeyword(CSP_STRICT_DYNAMIC)) {
+        (src->isKeyword(CSP_STRICT_DYNAMIC) ||
+         src->isKeyword(CSP_STRICT_DYNAMIC_URL))) {
       return false;
     }
 
@@ -1928,10 +1953,7 @@ void nsUpgradeInsecureDirective::getDirName(nsAString& outStr) const {
 
 
 
-nsCSPPolicy::nsCSPPolicy()
-    : mUpgradeInsecDir(nullptr),
-      mReportOnly(false),
-      mDeliveredViaMetaTag(false) {
+nsCSPPolicy::nsCSPPolicy() : mReportOnly(false), mDeliveredViaMetaTag(false) {
   CSPUTILSLOG(("nsCSPPolicy::nsCSPPolicy"));
 }
 
@@ -1945,7 +1967,8 @@ nsCSPPolicy::~nsCSPPolicy() {
 
 bool nsCSPPolicy::permits(CSPDirective aDir, nsILoadInfo* aLoadInfo,
                           nsIURI* aUri, nsIURI* aOriginalURIIfRedirect,
-                          bool aSpecific, nsAString& outViolatedDirective,
+                          bool aSpecific, bool aUpgradeInsecure,
+                          nsAString& outViolatedDirective,
                           nsAString& outViolatedDirectiveString) const {
   if (CSPUTILSLOGENABLED()) {
     CSPUTILSLOG(("nsCSPPolicy::permits, aUri: %s, aDir: %s, aSpecific: %s",
@@ -1966,7 +1989,7 @@ bool nsCSPPolicy::permits(CSPDirective aDir, nsILoadInfo* aLoadInfo,
     if (mDirectives[i]->equals(aDir)) {
       if (!mDirectives[i]->permits(aDir, aLoadInfo, aUri,
                                    aOriginalURIIfRedirect, mReportOnly,
-                                   mUpgradeInsecDir)) {
+                                   aUpgradeInsecure)) {
         mDirectives[i]->getDirName(outViolatedDirective);
         mDirectives[i]->toString(outViolatedDirectiveString);
         return false;
@@ -1982,7 +2005,7 @@ bool nsCSPPolicy::permits(CSPDirective aDir, nsILoadInfo* aLoadInfo,
   
   if (!aSpecific && defaultDir) {
     if (!defaultDir->permits(aDir, aLoadInfo, aUri, aOriginalURIIfRedirect,
-                             mReportOnly, mUpgradeInsecDir)) {
+                             mReportOnly, aUpgradeInsecure)) {
       defaultDir->getDirName(outViolatedDirective);
       defaultDir->toString(outViolatedDirectiveString);
       return false;

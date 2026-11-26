@@ -431,7 +431,10 @@ nsCSPBaseSrc* nsCSPParser::keywordSource() {
     return new nsCSPKeywordSrc(CSP_UTF16KeywordToEnum(mCurToken));
   }
 
-  if (CSP_IsKeyword(mCurToken, CSP_STRICT_DYNAMIC)) {
+  
+  
+  
+  auto warnIfNotScriptDirective = [this](const nsAString& aKeyword) {
     if (!CSP_IsDirective(mCurDir[0],
                          nsIContentSecurityPolicy::SCRIPT_SRC_DIRECTIVE) &&
         !CSP_IsDirective(mCurDir[0],
@@ -440,12 +443,21 @@ nsCSPBaseSrc* nsCSPParser::keywordSource() {
                          nsIContentSecurityPolicy::SCRIPT_SRC_ATTR_DIRECTIVE) &&
         !CSP_IsDirective(mCurDir[0],
                          nsIContentSecurityPolicy::DEFAULT_SRC_DIRECTIVE)) {
-      AutoTArray<nsString, 1> params = {u"strict-dynamic"_ns};
+      AutoTArray<nsString, 1> params = {nsString(aKeyword)};
       logWarningErrorToConsole(nsIScriptError::warningFlag,
                                "ignoringStrictDynamic", params);
     }
+  };
 
+  if (CSP_IsKeyword(mCurToken, CSP_STRICT_DYNAMIC)) {
+    warnIfNotScriptDirective(u"strict-dynamic"_ns);
     mStrictDynamic = true;
+    return new nsCSPKeywordSrc(CSP_UTF16KeywordToEnum(mCurToken));
+  }
+
+  if (StaticPrefs::security_csp_strict_dynamic_url_enabled() &&
+      CSP_IsKeyword(mCurToken, CSP_STRICT_DYNAMIC_URL)) {
+    warnIfNotScriptDirective(u"strict-dynamic-url"_ns);
     return new nsCSPKeywordSrc(CSP_UTF16KeywordToEnum(mCurToken));
   }
 
@@ -1299,8 +1311,7 @@ void nsCSPParser::directive() {
                                "ignoreSrcForDirective", params);
     }
     
-    mPolicy->addUpgradeInsecDir(
-        static_cast<nsUpgradeInsecureDirective*>(cspDir));
+    mPolicy->addDirective(cspDir);
     return;
   }
 
