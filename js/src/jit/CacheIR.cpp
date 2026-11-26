@@ -2636,7 +2636,7 @@ AttachDecision GetPropIRGenerator::tryAttachModuleNamespace(HandleObject obj,
   }
 
   
-  if (env->getSlot(prop->slot()).isMagic(JS_UNINITIALIZED_LEXICAL)) {
+  if (env->getRawSlot(prop->slot()).isMagic(JS_UNINITIALIZED_LEXICAL)) {
     return AttachDecision::NoAction;
   }
 
@@ -17344,7 +17344,7 @@ AttachDecision GetImportIRGenerator::tryAttachInitialized() {
   MOZ_ALWAYS_TRUE(env->lookupImport(id, &holderEnv, &prop));
 
   
-  if (holderEnv->getSlot(prop->slot()).isMagic(JS_UNINITIALIZED_LEXICAL)) {
+  if (holderEnv->getRawSlot(prop->slot()).isMagic(JS_UNINITIALIZED_LEXICAL)) {
     return AttachDecision::NoAction;
   }
 
