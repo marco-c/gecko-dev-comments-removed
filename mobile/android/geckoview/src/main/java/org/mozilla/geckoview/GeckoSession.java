@@ -420,11 +420,11 @@ public class GeckoSession {
 
     
     
-    
-    
     @WrapForJNI(calledFrom = "ui")
-    private void notifyCompositorScrollUpdate(final ScrollPositionUpdate update) {
-      GeckoSession.this.onCompositorScrollUpdate(update);
+    private void notifyCompositorScrollUpdates(final ScrollPositionUpdate[] updates) {
+      for (final ScrollPositionUpdate update : updates) {
+        GeckoSession.this.onCompositorScrollUpdate(update);
+      }
     }
 
     @WrapForJNI(calledFrom = "ui")
