@@ -197,6 +197,7 @@ export class UrlbarChild extends JSWindowActorChild {
       getReaderOriginalDisplaySpec:
         UrlbarContentUtils.getReaderOriginalDisplaySpec,
       unEscapeURIForUI: UrlbarContentUtils.unEscapeURIForUI,
+      hasKnownPublicSuffix: UrlbarContentUtils.hasKnownPublicSuffix,
       getSupportUrl: UrlbarContentUtils.getSupportUrl,
       getPlatform: UrlbarContentUtils.getPlatform,
       isWindowPrivate: unprivileged
@@ -214,6 +215,9 @@ export class UrlbarChild extends JSWindowActorChild {
           lazy.UrlbarPrefs
         ),
       hasPrefUserValue: lazy.UrlbarPrefs.hasUserValue.bind(lazy.UrlbarPrefs),
+      prefAffectsResults: lazy.UrlbarPrefs.affectsResults.bind(
+        lazy.UrlbarPrefs
+      ),
     };
   }
 

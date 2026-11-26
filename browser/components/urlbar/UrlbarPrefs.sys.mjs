@@ -478,6 +478,10 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // search host.
   ["scotchBonnet.persistSearchMode", false],
 
+  // If true, an email address typed without a protocol, e.g. "user@host.com",
+  // is searched for instead of being visited as a URL with user info.
+  ["searchEmailAddresses", false],
+
   // Whether the search button declines to be the target of the toolbar tab
   // stop in front of the input. The shipping default is set in firefox.js,
   // where it's enabled on Nightly only.
@@ -1297,6 +1301,26 @@ class Preferences {
   hasUserValue(pref) {
     let { hasUserValue } = this._getPrefDescriptor(pref);
     return hasUserValue(pref);
+  }
+
+  /**
+   * Returns whether a change to the given pref changes the results a search
+   * shows.
+   *
+   * @param {string} pref
+   *   The name of the pref, relative to `browser.urlbar.` if the pref is in
+   *   that branch.
+   * @returns {boolean}
+   */
+  affectsResults(pref) {
+    return (
+      pref.startsWith("suggest.") ||
+      pref == "browser.search.suggest.enabled" ||
+      pref == "browser.search.suggest.enabled.private" ||
+      pref == "showSearchSuggestionsFirst" ||
+      pref == "smartbar.showSearchSuggestionsFirst" ||
+      pref == "quicksuggest.online.enabled"
+    );
   }
 
   /**

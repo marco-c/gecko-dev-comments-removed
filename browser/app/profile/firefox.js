@@ -534,9 +534,12 @@ pref("browser.urlbar.trustPanel.breachAlerts", true);
   pref("browser.urlbar.unifiedSearchButton.always", true);
   
   pref("browser.urlbar.unifiedSearchButton.historyInSearchMode", true);
+  
+  pref("browser.urlbar.searchEmailAddresses", true);
 #else
   pref("browser.urlbar.unifiedSearchButton.always", false);
   pref("browser.urlbar.unifiedSearchButton.historyInSearchMode", false);
+  pref("browser.urlbar.searchEmailAddresses", false);
 #endif
 
 
