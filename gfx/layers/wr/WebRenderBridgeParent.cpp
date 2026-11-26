@@ -47,6 +47,7 @@
 #include "mozilla/webrender/RenderTextureHostSWGL.h"
 #include "mozilla/webrender/RenderThread.h"
 #include "mozilla/widget/CompositorWidget.h"
+#include "mozmemory.h"
 #include "nsExceptionHandler.h"
 #include "nsXULAppAPI.h"
 
@@ -183,11 +184,20 @@ static void ScheduleRenderIdleCheck() {
 
 
 
+
+
+
 static void NoteRenderActivity() {
   if (sRenderIdleCheckPending) {
     sRenderIdleCheckExtended = true;
     return;
   }
+
+#ifdef MOZ_MEMORY
+  if (XRE_IsGPUProcess()) {
+    moz_set_max_dirty_page_modifier(3);
+  }
+#endif
 
   sRenderIdleCheckPending = true;
   ScheduleRenderIdleCheck();
@@ -208,6 +218,13 @@ static void NotifyRenderThreadIfIdle() {
   if (renderThread && !renderThread->HasShutdown()) {
     renderThread->NotifyIdle();
   }
+
+#ifdef MOZ_MEMORY
+  if (XRE_IsGPUProcess()) {
+    moz_set_max_dirty_page_modifier(0);
+    jemalloc_free_excess_dirty_pages();
+  }
+#endif
 
   sRenderIdleCheckPending = false;
 }
