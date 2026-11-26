@@ -25,7 +25,6 @@
 #include "gfxImageSurface.h"
 #include "gfxTextRun.h"
 #include "gfxUserFontSet.h"
-#include "gfxWindowsSurface.h"
 #include "imgLoader.h"
 #include "mozilla/Components.h"
 #include "mozilla/Preferences.h"
@@ -64,6 +63,7 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/gfx/DeviceManagerDx.h"
 #include "mozilla/gfx/DisplayConfigWindows.h"
+#include "mozilla/gfx/FontPathSet.h"
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/layers/DeviceAttachmentsD3D11.h"
 
@@ -224,6 +224,13 @@ gfxWindowsPlatform::gfxWindowsPlatform() {
   if (!IsWin32kLockedDown()) {
     RegisterStrongMemoryReporter(MakeAndAddRef<GPUAdapterReporter>());
     RegisterStrongMemoryReporter(MakeAndAddRef<D3DSharedTexturesReporter>());
+  }
+
+  
+  
+  if (XRE_IsParentProcess() &&
+      StaticPrefs::gfx_font_path_set_enabled_AtStartup()) {
+    FontPathSet::Enable();
   }
 }
 
@@ -602,19 +609,7 @@ already_AddRefed<gfxASurface> gfxWindowsPlatform::CreateOffscreenSurface(
     return nullptr;
   }
 
-  RefPtr<gfxASurface> surf = nullptr;
-
-#ifdef CAIRO_HAS_WIN32_SURFACE
-  if (!XRE_IsContentProcess()) {
-    surf = new gfxWindowsSurface(aSize, aFormat);
-  }
-#endif
-
-  if (!surf || surf->CairoStatus()) {
-    surf = new gfxImageSurface(aSize, aFormat);
-  }
-
-  return surf.forget();
+  return MakeAndAddRef<gfxImageSurface>(aSize, aFormat);
 }
 
 void gfxWindowsPlatform::GetCommonFallbackFonts(
@@ -1657,7 +1652,7 @@ class D3DVsyncSource final : public VsyncSource {
     const int microseconds = 1000000;
     int64_t adjust = qpcNow.QuadPart - vblankTime.qpcVBlank;
     int64_t usAdjust = (adjust * microseconds) / frequency.QuadPart;
-    vsync -= TimeDuration::FromMicroseconds((double)usAdjust);
+    vsync -= TimeDuration::FromMicroseconds(usAdjust);
 
     
     
