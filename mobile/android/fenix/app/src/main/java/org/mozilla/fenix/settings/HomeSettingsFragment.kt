@@ -80,8 +80,12 @@ class HomeSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragm
             onPreferenceChangeListener = createMetricPreferenceChangeListener("contile")
         }
 
+        requirePreference<CheckBoxPreference>(R.string.pref_key_show_top_frecent_sites).apply {
+            isChecked = fenixSettings.showTopFrecentSites
+            onPreferenceChangeListener = createMetricPreferenceChangeListener("frecent_sites")
+        }
+
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_privacy_report).apply {
-            if (fenixSettings.longfoxEnabled) title = resources.getString(R.string.help_catch_trackers)
             isChecked = fenixSettings.showPrivacyReportFeature
             onPreferenceChangeListener =
                 createMetricPreferenceChangeListener(
@@ -219,7 +223,16 @@ class HomeSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragm
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_show_homepage_wrexham_widget).apply {
             isVisible = fenixSettings.enableHomepageWrexhamWidget
             isChecked = fenixSettings.showHomepageWrexhamWidget
-            onPreferenceChangeListener = createMetricPreferenceChangeListener("wrexham_widget")
+            val metricListener = createMetricPreferenceChangeListener("wrexham_widget")
+            onPreferenceChangeListener = Preference.OnPreferenceChangeListener { preference, newValue ->
+                val handled = metricListener.onPreferenceChange(preference, newValue)
+                if (handled) {
+                    fenixComponents.appStore.dispatch(
+                        AppAction.SportsWidgetAction.VisibilityChanged(isVisible = newValue as Boolean)
+                    )
+                }
+                handled
+            }
         }
     }
 }

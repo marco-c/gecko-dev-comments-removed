@@ -11,6 +11,7 @@ import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.SearchState
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.concept.storage.FrecencyThresholdOption
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.feature.top.sites.TopSitesConfig
 import org.junit.Assert.assertEquals
@@ -19,14 +20,15 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.mozilla.fenix.home.topsites.TopSitesConfigConstants.AMAZON_SPONSORED_TITLE
 import org.mozilla.fenix.home.topsites.TopSitesConfigConstants.EBAY_SPONSORED_TITLE
 import org.mozilla.fenix.home.topsites.TopSitesConfigConstants.TOP_SITES_PROVIDER_LIMIT
-import org.mozilla.fenix.nimbus.FxNimbus
-import org.mozilla.fenix.nimbus.HomepageHideFrecentTopSites
 import org.mozilla.fenix.utils.Settings
+import org.robolectric.RobolectricTestRunner
 
 /** Tests the top-level function [getTopSitesConfig] we use to create [TopSitesConfig] */
+@RunWith(RobolectricTestRunner::class)
 class TopSitesConfigCreatorTest {
     private lateinit var settings: Settings
 
@@ -37,20 +39,12 @@ class TopSitesConfigCreatorTest {
     fun setUp() {
         settings = mockk(relaxed = true)
         every { settings.topSitesMaxLimit } returns 10
+        every { settings.showTopFrecentSites } returns true
     }
 
     @Test
-    fun `WHEN hide top sites flag is not enabled THEN it returns TopSitesConfig with non-null frequencyConfig`() {
-        FxNimbus.features.homepageHideFrecentTopSites.withCachedValue(HomepageHideFrecentTopSites(enabled = false))
-
-        val topSitesConfig = getTopSitesConfig(settings = settings, store = browserStore).invoke()
-
-        assertNotNull(topSitesConfig.frecencyConfig)
-    }
-
-    @Test
-    fun `WHEN hide top sites flag is enabled THEN it returns TopSitesConfig with null frequencyConfig`() {
-        FxNimbus.features.homepageHideFrecentTopSites.withCachedValue(HomepageHideFrecentTopSites(enabled = true))
+    fun `GIVEN frecent top sites are hidden WHEN creating the TopSitesConfig THEN frecencyConfig is null`() {
+        every { settings.showTopFrecentSites } returns false
 
         val topSitesConfig = getTopSitesConfig(settings = settings, store = browserStore).invoke()
 
@@ -58,13 +52,28 @@ class TopSitesConfigCreatorTest {
     }
 
     @Test
-    fun `GIVEN a topSitesMaxLimit THEN it returns TopSitesConfig with totalSites = topSitesMaxLimit`() {
+    fun `WHEN creating the TopSitesConfig THEN frecencyConfig skips one-time pages and filtered urls`() {
+        every { settings.frecencyFilterQuery } returns "mfadid=adm"
+
+        val frecencyConfig = getTopSitesConfig(settings = settings, store = browserStore).invoke().frecencyConfig
+
+        assertNotNull(frecencyConfig)
+        assertEquals(FrecencyThresholdOption.SKIP_ONE_TIME_PAGES, frecencyConfig.frecencyTresholdOption)
+
+        val frecencyFilter = frecencyConfig.frecencyFilter
+        assertNotNull(frecencyFilter)
+        assertTrue(frecencyFilter(TopSite.Frecent(1L, "Mozilla", "https://mozilla.org", 0L)))
+        assertFalse(frecencyFilter(TopSite.Frecent(2L, "Ad", "https://example.com/?mfadid=adm", 0L)))
+    }
+
+    @Test
+    fun `GIVEN a topSitesMaxLimit THEN it returns TopSitesConfig with targetSitesCount = topSitesMaxLimit`() {
         val topSitesMaxLimit = 15
         every { settings.topSitesMaxLimit } returns topSitesMaxLimit
 
         val topSitesConfig = getTopSitesConfig(settings = settings, store = browserStore).invoke()
 
-        assertEquals(topSitesMaxLimit, topSitesConfig.totalSites)
+        assertEquals(topSitesMaxLimit, topSitesConfig.targetSitesCount)
     }
 
     @Test
