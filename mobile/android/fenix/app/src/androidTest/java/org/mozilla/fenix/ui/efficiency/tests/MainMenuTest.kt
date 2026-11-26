@@ -9,13 +9,10 @@ import mozilla.components.support.ktx.util.PromptAbuserDetector
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import org.mozilla.fenix.R
 import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.Constants
 import org.mozilla.fenix.helpers.Constants.PackageName.PRINT_SPOOLER
-import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
-import org.mozilla.fenix.helpers.FeatureSettingsHelper.Companion.settings
 import org.mozilla.fenix.helpers.TestAssetHelper.articleSummaryAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.firstForeignWebPageAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
@@ -162,8 +159,10 @@ class MainMenuTest : BaseTest() {
         on.bookmarks
             .mozVerifyElementsByGroup(BookmarksSelectors.Group.EDIT_BOOKMARKS_VIEW)
             .mozClick(DELETE_BOOKMARK_BUTTON)
-        on.browserPage.navigateToPage()
-        on.mainMenu.navigateToPage().mozVerify(BOOKMARK_THIS_PAGE_BUTTON)
+        // Deleting the bookmark drops back onto the browser, but PageStateTracker still reads
+        // MainMenuPage, so navigateToPage() would flake on a stale start state. Click the menu directly.
+        on.browserPage.mozClick(HomeSelectors.MAIN_MENU_BUTTON_UIAUTOMATOR)
+        on.mainMenu.mozVerify(BOOKMARK_THIS_PAGE_BUTTON)
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080136
@@ -594,17 +593,6 @@ class MainMenuTest : BaseTest() {
             it.isRecentlyVisitedFeatureEnabled = false
         }
 
-        // The privacy report row's label follows the longfox flag exactly as HomeSettingsFragment sets it, so derive
-        // the
-        // expected text from the same setting to keep this locator valid on every channel (developer/debug shows
-        // "Help catch trackers"; nightly/beta/release show "Privacy report").
-        val privacyReportLabel =
-            if (settings.longfoxEnabled) {
-                getStringResource(R.string.help_catch_trackers)
-            } else {
-                getStringResource(R.string.customize_toggle_privacy_report)
-            }
-
         on.settingsHomepage
             .navigateToPage(
                 navigationOptions =
@@ -613,7 +601,7 @@ class MainMenuTest : BaseTest() {
             .mozVerify(SettingsHomepageSelectors.WALLPAPERS_BUTTON)
             .mozVerifyOptionSwitchIsChecked(SettingsHomepageSelectors.SHORTCUTS_SWITCH)
             .mozVerifyOptionCheckBoxIsChecked(SettingsHomepageSelectors.SPONSORED_SHORTCUTS_CHECKBOX)
-            .mozVerifyOptionSwitchIsChecked(SettingsHomepageSelectors.PRIVACY_REPORT_SWITCH(privacyReportLabel))
+            .mozVerifyOptionSwitchIsChecked(SettingsHomepageSelectors.PRIVACY_REPORT_SWITCH)
             .mozVerifyOptionSwitchIsChecked(SettingsHomepageSelectors.CONTINUE_SWITCH)
             .mozVerifyOptionSwitchIsNotChecked(SettingsHomepageSelectors.BOOKMARKS_SWITCH)
             .mozVerifyOptionSwitchIsNotChecked(SettingsHomepageSelectors.RECENTLY_VISITED_SWITCH)
