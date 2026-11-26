@@ -6632,6 +6632,17 @@ void CodeGenerator::visitCallGetIntrinsicValue(LCallGetIntrinsicValue* lir) {
   callVM<Fn, GetIntrinsicValue>(lir);
 }
 
+void CodeGenerator::visitCallGetWasmMutableGlobal(
+    LCallGetWasmMutableGlobal* lir) {
+  pushArg(ImmGCPtr(lir->mir()->name()));
+  pushArg(Imm32(lir->mir()->slot()));
+  pushArg(ImmGCPtr(lir->mir()->environment()));
+
+  using Fn = bool (*)(JSContext*, HandleObject, uint32_t, Handle<PropertyName*>,
+                      MutableHandleValue);
+  callVM<Fn, GetWasmMutableGlobalValue>(lir);
+}
+
 void CodeGenerator::emitCallInvokeFunction(
     LInstruction* call, Register calleereg, bool constructing,
     bool ignoresReturnValue, uint32_t argc, uint32_t unusedStack) {
@@ -22395,7 +22406,7 @@ void CodeGenerator::visitCanSkipAwait(LCanSkipAwait* lir) {
   pushArg(value);
 
   using Fn = bool (*)(JSContext*, HandleValue, bool* canSkip);
-  callVM<Fn, js::CanSkipAwait>(lir);
+  callVM<Fn, js::CanSkipAwaitFromOp>(lir);
   masm.jump(&done);
 
   masm.bind(&notEntryFrame);
@@ -22415,7 +22426,7 @@ void CodeGenerator::visitMaybeExtractAwaitValue(LMaybeExtractAwaitValue* lir) {
   pushArg(value);
 
   using Fn = bool (*)(JSContext*, HandleValue, MutableHandleValue);
-  callVM<Fn, js::ExtractAwaitValue>(lir);
+  callVM<Fn, js::ExtractAwaitValueFromOp>(lir);
   masm.jump(&finished);
   masm.bind(&cantExtract);
 

@@ -5725,6 +5725,13 @@ void LIRGenerator::visitCallGetIntrinsicValue(MCallGetIntrinsicValue* ins) {
   assignSafepoint(lir, ins);
 }
 
+void LIRGenerator::visitCallGetWasmMutableGlobal(
+    MCallGetWasmMutableGlobal* ins) {
+  LCallGetWasmMutableGlobal* lir = new (alloc()) LCallGetWasmMutableGlobal();
+  defineReturn(lir, ins);
+  assignSafepoint(lir, ins);
+}
+
 void LIRGenerator::visitGetPropSuperCache(MGetPropSuperCache* ins) {
   MDefinition* obj = ins->object();
   MDefinition* receiver = ins->receiver();
@@ -6221,6 +6228,14 @@ void LIRGenerator::visitGuardHasProxyHandler(MGuardHasProxyHandler* ins) {
 
 void LIRGenerator::visitNurseryObject(MNurseryObject* ins) {
   MOZ_ASSERT(ins->type() == MIRType::Object);
+
+  
+  
+  
+  if (!ins->hasLiveDefUses()) {
+    emitAtUses(ins);
+    return;
+  }
 
   auto* lir = new (alloc()) LNurseryObject();
   define(lir, ins);
@@ -7471,6 +7486,8 @@ void LIRGenerator::visitWasmReturnCall(MWasmReturnCall* ins) {
 }
 
 void LIRGenerator::visitWasmCallLandingPrePad(MWasmCallLandingPrePad* ins) {
+  
+  ins->block()->lir()->setIsIndirectJumpTarget();
   add(new (alloc()) LWasmCallLandingPrePad, ins);
 }
 

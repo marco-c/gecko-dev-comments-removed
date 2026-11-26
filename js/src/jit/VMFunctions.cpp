@@ -748,7 +748,6 @@ bool SetArrayLength(JSContext* cx, HandleObject obj, HandleValue value,
                     bool strict) {
   Handle<ArrayObject*> array = obj.as<ArrayObject>();
 
-  RootedId id(cx, NameToId(cx->names().length));
   ObjectOpResult result;
 
   
@@ -758,19 +757,15 @@ bool SetArrayLength(JSContext* cx, HandleObject obj, HandleValue value,
   
   
   
-  
-  
-  
   if (array->lengthIsWritable()) {
-    Rooted<PropertyDescriptor> desc(
-        cx, PropertyDescriptor::Data(value, JS::PropertyAttribute::Writable));
-    if (!ArraySetLength(cx, array, id, desc, result)) {
+    if (!ArrayLengthSetter(cx, array, value, result)) {
       return false;
     }
   } else {
     MOZ_ALWAYS_TRUE(result.fail(JSMSG_READ_ONLY));
   }
 
+  RootedId id(cx, NameToId(cx->names().length));
   return result.checkStrictModeError(cx, obj, id, strict);
 }
 
@@ -940,6 +935,16 @@ bool OperatorIn(JSContext* cx, HandleValue key, HandleObject obj, bool* out) {
 bool GetIntrinsicValue(JSContext* cx, Handle<PropertyName*> name,
                        MutableHandleValue rval) {
   return GlobalObject::getIntrinsicValue(cx, cx->global(), name, rval);
+}
+
+bool GetWasmMutableGlobalValue(JSContext* cx, HandleObject environment,
+                               uint32_t slot, Handle<PropertyName*> name,
+                               MutableHandleValue rval) {
+  if (!environment->as<ModuleEnvironmentObject>().getBindingValue(cx, slot,
+                                                                  rval)) {
+    return false;
+  }
+  return CheckUninitializedLexical(cx, name, rval);
 }
 
 static uint32_t NumTraceableArgsForCreateThis(HandleFunction fun,
@@ -1215,10 +1220,19 @@ JSObject* CreateGenerator(JSContext* cx, HandleFunction callee,
                                          argsObj);
 }
 
+bool ResumeGeneratorFromJit(JSContext* cx, HandleObject obj, HandleValue value,
+                            int32_t resumeKind, MutableHandleValue rval) {
+  Rooted<AbstractGeneratorObject*> genObj(cx,
+                                          &obj->as<AbstractGeneratorObject>());
+  AutoRealm ar(cx, genObj);
+  return js::ResumeGenerator(cx, genObj, value, IntToResumeKind(resumeKind),
+                             rval);
+}
+
 bool NormalSuspend(JSContext* cx, HandleObject obj, BaselineFrame* frame,
                    uint32_t frameSize, const jsbytecode* pc) {
   MOZ_ASSERT(JSOp(*pc) == JSOp::InitialYield || JSOp(*pc) == JSOp::Yield ||
-             JSOp(*pc) == JSOp::Await);
+             JSOp(*pc) == JSOp::AwaitThenYield || JSOp(*pc) == JSOp::Await);
 
   
   uint32_t numSlots = frame->numValueSlots(frameSize) - 1;

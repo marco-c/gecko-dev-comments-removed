@@ -408,6 +408,12 @@ bool OperatorIn(JSContext* cx, HandleValue key, HandleObject obj, bool* out);
 [[nodiscard]] bool GetIntrinsicValue(JSContext* cx, Handle<PropertyName*> name,
                                      MutableHandleValue rval);
 
+[[nodiscard]] bool GetWasmMutableGlobalValue(JSContext* cx,
+                                             HandleObject environment,
+                                             uint32_t slot,
+                                             Handle<PropertyName*> name,
+                                             MutableHandleValue rval);
+
 [[nodiscard]] bool CreateThisFromIC(JSContext* cx, HandleObject callee,
                                     HandleObject newTarget, Value* argv,
                                     uint32_t argc, MutableHandleValue rval);
@@ -444,6 +450,12 @@ void FrameIsDebuggeeCheck(BaselineFrame* frame);
 JSObject* CreateGeneratorFromFrame(JSContext* cx, BaselineFrame* frame);
 JSObject* CreateGenerator(JSContext* cx, HandleFunction, HandleScript,
                           HandleObject, HandleObject);
+
+
+
+[[nodiscard]] bool ResumeGeneratorFromJit(JSContext* cx, HandleObject obj,
+                                          HandleValue value, int32_t resumeKind,
+                                          MutableHandleValue rval);
 
 [[nodiscard]] bool NormalSuspend(JSContext* cx, HandleObject obj,
                                  BaselineFrame* frame, uint32_t frameSize,
