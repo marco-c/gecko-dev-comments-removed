@@ -508,7 +508,8 @@ class PermissionManager final : public nsIPermissionManager,
   void RemoveIdleDailyMaintenanceJob();
   void PerformIdleDailyMaintenance() MOZ_REQUIRES(mMonitor);
 
-  nsresult ImportLatestDefaults() MOZ_REQUIRES(mMonitor);
+  nsresult ImportLatestDefaults(const nsTArray<uint32_t>& aUserContextIds)
+      MOZ_REQUIRES(mMonitor);
   already_AddRefed<nsIInputStream> GetDefaultsInputStream();
   void ConsumeDefaultsInputStream(nsIInputStream* aInputStream,
                                   const MonitorAutoLock& aProofOfLock)
@@ -574,13 +575,17 @@ class PermissionManager final : public nsIPermissionManager,
   
   void EnsureReadCompleted() MOZ_REQUIRES(mMonitor);
 
+  
+  
+  
   nsresult AddInternal(nsIPrincipal* aPrincipal, const nsACString& aType,
                        uint32_t aPermission, int64_t aID, uint32_t aExpireType,
                        int64_t aExpireTime, int64_t aModificationTime,
                        NotifyOperationType aNotifyOperation,
                        DBOperationType aDBOperation,
                        const nsACString* aOriginString = nullptr,
-                       const bool aAllowPersistInPrivateBrowsing = false)
+                       const bool aAllowPersistInPrivateBrowsing = false,
+                       const bool aStoreUnknownAction = false)
       MOZ_REQUIRES(mMonitor);
 
   void MaybeAddReadEntryFromMigration(const nsACString& aOrigin,
@@ -625,6 +630,9 @@ class PermissionManager final : public nsIPermissionManager,
     eClosed,
   };
   Atomic<State> mState;
+
+  
+  bool mUserContextsLoaded = false;
 
   
   struct ReadEntry {
@@ -698,8 +706,42 @@ class PermissionManager final : public nsIPermissionManager,
   
   
   
-  nsresult ImportDefaultEntry(const DefaultEntry& aDefaultEntry)
+  
+  nsresult ImportDefaultEntry(const DefaultEntry& aDefaultEntry,
+                              const nsTArray<uint32_t>& aUserContextIds)
       MOZ_REQUIRES(mMonitor);
+  
+  nsresult ImportDefaultEntryForPrincipal(nsIPrincipal* aPrincipal,
+                                          const DefaultEntry& aDefaultEntry)
+      MOZ_REQUIRES(mMonitor);
+  
+  
+  nsresult ImportDefaultEntryForOriginAttributes(
+      nsIPrincipal* aPrincipal, const DefaultEntry& aDefaultEntry,
+      const OriginAttributes& aOriginAttributes) MOZ_REQUIRES(mMonitor);
+  
+  
+  nsresult ImportDefaultEntryForUserContexts(
+      const DefaultEntry& aDefaultEntry,
+      const nsTArray<uint32_t>& aUserContextIds) MOZ_REQUIRES(mMonitor);
+  
+  nsresult ImportDefaultsForUserContexts(
+      const nsTArray<uint32_t>& aUserContextIds) MOZ_REQUIRES(mMonitor);
+  
+  
+  
+  void RemoveDefaultsForUserContext(uint32_t aUserContextId)
+      MOZ_REQUIRES(mMonitor);
+  
+  
+  
+  
+  
+  
+  nsTArray<uint32_t> GetAllUserContextIds();
+
+  
+  nsTArray<uint32_t> GetUserContextIdsUnlocked() MOZ_REQUIRES(mMonitor);
 
   nsresult Read(const MonitorAutoLock& aProofOfLock) MOZ_REQUIRES(mMonitor);
   void CompleteRead() MOZ_REQUIRES(mMonitor);
