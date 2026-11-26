@@ -26,11 +26,16 @@ SharedSurface_AndroidHardwareBuffer::Create(const SharedSurfaceDesc& desc) {
 
   
   
+  uint64_t usage = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE |
+                   AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT;
+  
+  
+  if (gle->Renderer() == GLRenderer::AndroidEmulator) {
+    usage = layers::AndroidHardwareBuffer::kDefaultUsage;
+  }
   RefPtr<layers::AndroidHardwareBuffer> buffer =
       layers::AndroidHardwareBuffer::Create(
-          desc.size, gfx::SurfaceFormat::R8G8B8A8,
-          AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE |
-              AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT);
+          desc.size, gfx::SurfaceFormat::R8G8B8A8, usage);
   if (!buffer) {
     return nullptr;
   }
@@ -112,12 +117,13 @@ void SharedSurface_AndroidHardwareBuffer::ProducerReleaseImpl() {
 
   mSync = egl->fCreateSyncKHR(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, nullptr);
   MOZ_ASSERT(mSync);
+
+  
+  gl->fFlush();
   int rawFd = egl->fDupNativeFenceFDANDROID(mSync);
   if (rawFd >= 0) {
     mAndroidHardwareBuffer->SetAcquireFence(UniqueFileHandle(rawFd));
   }
-
-  gl->fFlush();
 }
 
 Maybe<layers::SurfaceDescriptor>
