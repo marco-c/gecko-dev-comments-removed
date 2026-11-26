@@ -1718,6 +1718,12 @@ void FetchBody<Derived>::LockStream(JSContext* aCx, ReadableStream* aStream,
   if (aRv.Failed()) {
     return;
   }
+
+  
+  
+  if (aStream->State() == ReadableStream::ReaderState::Readable) {
+    aStream->SetInputStreamIfUnread(nullptr);
+  }
 }
 
 template void FetchBody<Request>::LockStream(JSContext* aCx,
