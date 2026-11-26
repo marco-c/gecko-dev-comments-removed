@@ -67,7 +67,10 @@ typedef struct chunk_allocator_s {
   
   
   
-  void* (*map)(size_t aSize, size_t aAlignment);
+  
+  
+  
+  void* (*map)(size_t aSize, size_t aAlignment, size_t aCommitSize);
 
   
   
