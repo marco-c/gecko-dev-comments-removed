@@ -232,7 +232,16 @@ class JitRuntime {
   NumFinishedOffThreadTasksType numFinishedOffThreadTasks_{0};
 
   
+  
+  
+  
+  
+  
+  
   using IonCompileTaskList = mozilla::LinkedList<js::jit::IonCompileTask>;
+  MainThreadData<IonCompileTaskList> ionOffThreadList_;
+
+  
   MainThreadData<IonCompileTaskList> ionLazyLinkList_;
   MainThreadData<size_t> ionLazyLinkListSize_{0};
 
@@ -308,7 +317,8 @@ class JitRuntime {
   bool generateVMWrappers(JSContext* cx, MacroAssembler& masm,
                           PerfSpewerRangeRecorder& rangeRecorder);
 
-  uint32_t startTrampolineCode(MacroAssembler& masm);
+  uint32_t startTrampolineCode(MacroAssembler& masm,
+                               TargetKind kind = TargetKind::None);
 
   TrampolinePtr trampolineCode(uint32_t offset) const {
     MOZ_ASSERT(offset > 0);
@@ -531,6 +541,7 @@ class JitRuntime {
     return numFinishedOffThreadTasks_;
   }
 
+  IonCompileTaskList& ionOffThreadList(JSRuntime* rt);
   IonCompileTaskList& ionLazyLinkList(JSRuntime* rt);
 
   size_t ionLazyLinkListSize() const { return ionLazyLinkListSize_; }
