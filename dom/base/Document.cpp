@@ -11188,7 +11188,7 @@ void Document::WriteCommon(const nsAString& aText, bool aNewlineTerminate,
       
       nsContentUtils::ReportToConsole(
           nsIScriptError::warningFlag, "DOM Events"_ns, this,
-          PropertiesFile::DOM_PROPERTIES, "DocumentWriteIgnored");
+          FluentResourceFile::DOM, "dom-document-write-ignored"_ns);
       return;
     }
     
@@ -11205,7 +11205,7 @@ void Document::WriteCommon(const nsAString& aText, bool aNewlineTerminate,
       
       nsContentUtils::ReportToConsole(
           nsIScriptError::warningFlag, "DOM Events"_ns, this,
-          PropertiesFile::DOM_PROPERTIES, "DocumentWriteIgnored");
+          FluentResourceFile::DOM, "dom-document-write-ignored"_ns);
       return;
     }
 
