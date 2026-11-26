@@ -140,13 +140,15 @@ IAPZHitTester::HitTestResult WRHitTester::GetAPZCAtPoint(
       if (!node) {
         
         
-        MOZ_ASSERT(!layersIdExists,
-                   "No root node found for hit-test result layers id");
-        chosenResult = Some(result);
-        break;
+        APZCTM_LOG("skipping due to unknown layers id.\n");
+        continue;
       }
     }
     MOZ_ASSERT(node->GetApzc());  
+    if (!node->GetApzc()) {
+      APZCTM_LOG("skipping due to missing APZC.\n");
+      continue;
+    }
     EventRegionsOverride flags = node->GetEventRegionsOverride();
     if (flags & EventRegionsOverride::ForceEmptyHitRegion) {
       
@@ -173,9 +175,11 @@ IAPZHitTester::HitTestResult WRHitTester::GetAPZCAtPoint(
     return hit;
   }
 
-  MOZ_ASSERT(
-      hit.mTargetApzc || !layersIdExists,
-      "A hit-test result with a valid layers id should have a target APZC");
+  MOZ_ASSERT(hit.mTargetApzc);
+  if (!hit.mTargetApzc) {
+    return HitTestResult();
+  }
+
   hit.mLayersId = chosenResult->mLayersId;
   ScrollableLayerGuid::ViewID scrollId = chosenResult->mScrollId;
   gfx::CompositorHitTestInfo hitInfo = chosenResult->mHitInfo;
