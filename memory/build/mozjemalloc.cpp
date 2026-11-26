@@ -1005,29 +1005,11 @@ bool arena_t::SplitAndAllocRun(arena_run_t* aRun, size_t aSize, bool aLarge,
   return true;
 }
 
-void arena_t::InitChunk(arena_chunk_t* aChunk, size_t aMinCommittedPages) {
-  new (aChunk) arena_chunk_t(this);
-
-  mStats.mapped += kChunkSize;
-
+arena_chunk_t* arena_t::InitChunk(size_t aMinCommittedPages) {
   
-  
-  
-
-  
-  size_t i;
-  for (i = 0; i < gChunkHeaderNumPages - gPagesPerRealPage; i++) {
-    aChunk->mPageMap[i].bits = 0;
-  }
-  mStats.committed += gChunkHeaderNumPages - gPagesPerRealPage;
-
-  
-  MOZ_ASSERT(i % gPagesPerRealPage == 0);
-  pages_decommit((void*)(uintptr_t(aChunk) + (i << gPageSize2Pow)),
-                 gRealPageSize);
-  for (; i < gChunkHeaderNumPages; i++) {
-    aChunk->mPageMap[i].bits = CHUNK_MAP_DECOMMITTED;
-  }
+  MOZ_ASSERT(aMinCommittedPages > 0);
+  MOZ_ASSERT(aMinCommittedPages <=
+             gChunkNumPages - gChunkHeaderNumPages - gPagesPerRealPage);
 
   
   
@@ -1049,8 +1031,41 @@ void arena_t::InitChunk(arena_chunk_t* aChunk, size_t aMinCommittedPages) {
 
   
   
+  
+  arena_chunk_t* chunk = (arena_chunk_t*)arena_chunk_alloc(
+      mChunkAllocator, kChunkSize, kChunkSize,
+      (gChunkHeaderNumPages + n_fresh_pages) << gPageSize2Pow);
+  if (!chunk) {
+    return nullptr;
+  }
+
+  new (chunk) arena_chunk_t(this);
+
+  mStats.mapped += kChunkSize;
+
+  
+  
+  
+
+  
+  size_t i;
+  for (i = 0; i < gChunkHeaderNumPages - gPagesPerRealPage; i++) {
+    chunk->mPageMap[i].bits = 0;
+  }
+  mStats.committed += gChunkHeaderNumPages - gPagesPerRealPage;
+
+  
+  MOZ_ASSERT(i % gPagesPerRealPage == 0);
+  pages_decommit((void*)(uintptr_t(chunk) + (i << gPageSize2Pow)),
+                 gRealPageSize);
+  for (; i < gChunkHeaderNumPages; i++) {
+    chunk->mPageMap[i].bits = CHUNK_MAP_DECOMMITTED;
+  }
+
+  
+  
   for (size_t j = 0; j < n_fresh_pages; j++) {
-    aChunk->mPageMap[i + j].bits = CHUNK_MAP_ZEROED | CHUNK_MAP_FRESH;
+    chunk->mPageMap[i + j].bits = CHUNK_MAP_ZEROED | CHUNK_MAP_FRESH;
   }
   i += n_fresh_pages;
   mNumFresh += n_fresh_pages;
@@ -1065,21 +1080,16 @@ void arena_t::InitChunk(arena_chunk_t* aChunk, size_t aMinCommittedPages) {
   
   
   MOZ_ASSERT(i % gPagesPerRealPage == 0);
-  pages_decommit((void*)(uintptr_t(aChunk) + (i << gPageSize2Pow)),
-                 (gChunkNumPages - i) << gPageSize2Pow);
   for (; i < gChunkNumPages; i++) {
-    aChunk->mPageMap[i].bits = CHUNK_MAP_DECOMMITTED;
+    chunk->mPageMap[i].bits = CHUNK_MAP_DECOMMITTED;
   }
 
   
-  MOZ_ASSERT(aMinCommittedPages > 0);
-  MOZ_ASSERT(aMinCommittedPages <=
-             gChunkNumPages - gChunkHeaderNumPages - gPagesPerRealPage);
-
-  
-  aChunk->mPageMap[gChunkHeaderNumPages].bits |= gMaxLargeClass;
-  aChunk->mPageMap[gChunkNumPages - gPagesPerRealPage - 1].bits |=
+  chunk->mPageMap[gChunkHeaderNumPages].bits |= gMaxLargeClass;
+  chunk->mPageMap[gChunkNumPages - gPagesPerRealPage - 1].bits |=
       gMaxLargeClass;
+
+  return chunk;
 }
 
 void arena_t::RemoveChunk(arena_chunk_t* aChunk) {
@@ -1192,16 +1202,11 @@ arena_run_t* arena_t::AllocRun(size_t aSize, bool aLarge, bool aZero) {
   } else {
     
     
-    
-    
-    
-    arena_chunk_t* chunk = (arena_chunk_t*)arena_chunk_alloc(
-        mChunkAllocator, kChunkSize, kChunkSize, kChunkSize - gRealPageSize);
+    arena_chunk_t* chunk = InitChunk(aSize >> gPageSize2Pow);
     if (!chunk) {
       return nullptr;
     }
 
-    InitChunk(chunk, aSize >> gPageSize2Pow);
     arena_run_t* run = (arena_run_t*)(uintptr_t(chunk) +
                                       (gChunkHeaderNumPages << gPageSize2Pow));
 

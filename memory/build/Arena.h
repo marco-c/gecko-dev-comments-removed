@@ -233,7 +233,15 @@ static_assert(sizeof(arena_bin_t) == 48);
 static_assert(sizeof(arena_bin_t) == 32);
 #endif
 
-enum PurgeCondition { PurgeIfThreshold, PurgeUnconditional };
+enum PurgeCondition {
+  
+  PurgeIfThreshold,
+  
+  PurgeUnconditional,
+  
+  
+  PurgeToTarget
+};
 
 struct arena_t : public BaseAllocClass {
 #if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
@@ -362,6 +370,22 @@ struct arena_t : public BaseAllocClass {
   
   mozilla::Atomic<uint64_t> mLastPageReuseNS;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  size_t mMinimumNumDirty MOZ_GUARDED_BY(mLock);
+  
+  
+  
+  
+  
+  mozilla::Atomic<uint64_t> mLastPurgeNS;
+
  public:
   
   
@@ -430,8 +454,7 @@ struct arena_t : public BaseAllocClass {
   void InitPRNG() MOZ_REQUIRES(mLock);
 
  private:
-  void InitChunk(arena_chunk_t* aChunk, size_t aMinCommittedPages)
-      MOZ_REQUIRES(mLock);
+  arena_chunk_t* InitChunk(size_t aMinCommittedPages) MOZ_REQUIRES(mLock);
 
   
   
@@ -555,19 +578,6 @@ struct arena_t : public BaseAllocClass {
   
   
   
-  ArenaPurgeResult Purge(PurgeCondition aCond, mozilla::PurgeStats& aStats,
-                         purge_keep_going_t aKeepGoing = nullptr,
-                         void* aClosure = nullptr) MOZ_EXCLUDES(mLock);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   
@@ -650,10 +660,12 @@ struct arena_t : public BaseAllocClass {
 
  private:
   arena_chunk_t* PurgeGetSpareChunk(mozilla::PurgeStats& aStats);
-  arena_chunk_t* PurgeGetDirtyChunk(PurgeCondition aCond,
-                                    mozilla::PurgeStats& aStats);
+  arena_chunk_t* PurgeGetDirtyChunk(mozilla::PurgeStats& aStats);
 
-  ArenaPurgeResult PurgeDirtyPages(arena_chunk_t* aChunk, PurgeCondition aCond,
+  
+  
+  ArenaPurgeResult PurgeDirtyPages(arena_chunk_t* aChunk,
+                                   size_t aTargetDirtyPages,
                                    mozilla::PurgeStats& aStats,
                                    purge_keep_going_t aKeepGoing,
                                    void* aClosure);
@@ -683,9 +695,11 @@ struct arena_t : public BaseAllocClass {
 
   
   
-  bool ShouldContinuePurge(PurgeCondition aCond) MOZ_REQUIRES(mLock) {
-    return (mNumDirty > ((aCond == PurgeUnconditional) ? 0 : mMaxDirty >> 1));
-  }
+  
+  void EndPurge() MOZ_REQUIRES(mLock);
+
+  
+  void RestartMaxPurgeDelay() MOZ_REQUIRES(mLock);
 
   
   void NotifyPageReuse() MOZ_EXCLUDES(mLock);
