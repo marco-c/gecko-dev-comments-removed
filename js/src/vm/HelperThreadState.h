@@ -434,8 +434,6 @@ class GlobalHelperThreadState {
 
   void runPendingSourceCompressions(JSRuntime* runtime);
 
-  void trace(JSTracer* trc);
-
   void waitForAllTasks();
   void waitForAllTasksLocked(AutoLockHelperThreadState&);
 
@@ -444,7 +442,8 @@ class GlobalHelperThreadState {
 #endif
 
   void cancelOffThreadBaselineCompile(const CompilationSelector& selector);
-  void cancelOffThreadIonCompile(const CompilationSelector& selector);
+  void cancelOffThreadIonCompile(const CompilationSelector& selector,
+                                 WaitForRunningCompiles waitForRunning);
   void cancelOffThreadWasmCompleteTier2Generator(
       AutoLockHelperThreadState& lock);
   void cancelOffThreadWasmPartialTier2Compile(AutoLockHelperThreadState& lock);

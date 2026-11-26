@@ -583,10 +583,6 @@ class GCMarker {
   void abortLinearWeakMarking();
 
 #ifdef DEBUG
-  
-  
-  void setCheckAtomMarking(bool check);
-
   bool shouldCheckCompartments() { return strictCompartmentChecking; }
 
   void markOneObjectForTest(JSObject* obj);
@@ -751,12 +747,6 @@ class GCMarker {
  private:
   
   MainThreadOrGCTaskData<bool> started;
-
-  
-
-
-
-  MainThreadOrGCTaskData<bool> checkAtomMarking;
 
   
 

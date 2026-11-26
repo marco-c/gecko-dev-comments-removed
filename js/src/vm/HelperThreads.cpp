@@ -510,23 +510,6 @@ size_t GlobalHelperThreadState::maxWasmPartialTier2CompileThreads() const {
   return MaxPartialTier2CompileTasks;
 }
 
-void GlobalHelperThreadState::trace(JSTracer* trc) {
-  
-  JSRuntime* rt = trc->runtime();
-  if (auto* jitRuntime = rt->jitRuntime()) {
-    for (jit::BaselineCompileTask* task :
-         jitRuntime->baselineOffThreadList(rt)) {
-      task->trace(trc);
-    }
-    for (jit::IonCompileTask* task : jitRuntime->ionOffThreadList(rt)) {
-      task->trace(trc);
-    }
-    for (jit::IonCompileTask* task : jitRuntime->ionLazyLinkList(rt)) {
-      task->trace(trc);
-    }
-  }
-}
-
 
 
 
