@@ -630,7 +630,9 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
 
             if (shouldNavigateToBrowserOnColdStart(savedInstanceState)) {
                 if (shouldStartOnHome() && components.settings.enableHomepageAsNewTab) {
-                    components.useCases.fenixBrowserUseCases.addNewHomepageTab()
+                    lifecycleScope.launch {
+                        components.useCases.fenixBrowserUseCases.selectOrAddHomepageTabAfterRestore()
+                    }
                 } else if (!shouldStartOnHome()) {
                     navigateToBrowserOnColdStart()
                 }
@@ -926,13 +928,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         breadcrumb(message = "onStart()")
 
         ProfilerMarkers.homeActivityOnStart(binding.rootContainer, components.core.engine.profiler)
-
-        if (components.settings.longfoxPeekAnimationShownCount < Settings.LONGFOX_PEEK_ANIMATION_MAX_SHOWS) {
-            components.settings.appLaunchCount++
-            components.appStore.dispatch(
-                AppAction.UpdateShowFoxPeekAnimation(components.settings.shouldShowLongfoxPeekAnimationThisTime())
-            )
-        }
 
         components.core.engine.profiler?.addMarker(
             MarkersActivityLifecycleCallbacks.MARKER_NAME,
