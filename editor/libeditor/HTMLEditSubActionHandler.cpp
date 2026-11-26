@@ -1223,6 +1223,8 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
       }
       InsertTextResult insertEmptyTextResult =
           insertEmptyTextResultOrError.unwrap();
+      EditorDOMPoint endOfInsertedText =
+          insertEmptyTextResult.EndOfInsertedTextRef();
       
       
       
@@ -1230,21 +1232,27 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
       
       
       if (preservingUnnecessaryLineBreak.isNothing()) [[likely]] {
-        nsresult rv = EnsureNoFollowingUnnecessaryLineBreak(
-            insertEmptyTextResult.EndOfInsertedTextRef(),
-            
-            
-            
-            PreservePreformattedLineBreak::Yes,
-            PaddingForEmptyBlock::Unnecessary, *editingHost);
-        if (NS_FAILED(rv)) {
-          NS_WARNING(
-              "HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
-          return Err(rv);
+        {
+          AutoTrackDOMPoint trackEndOfInsertedText(RangeUpdaterRef(),
+                                                   &endOfInsertedText);
+          nsresult rv = EnsureNoFollowingUnnecessaryLineBreak(
+              endOfInsertedText,
+              
+              
+              
+              PreservePreformattedLineBreak::Yes,
+              PaddingForEmptyBlock::Unnecessary, *editingHost);
+          if (NS_FAILED(rv)) {
+            NS_WARNING(
+                "HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
+            return Err(rv);
+          }
+        }
+        if (NS_WARN_IF(
+                !endOfInsertedText.IsInContentNodeAndValidInComposedDoc())) {
+          return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
         }
       }
-      const EditorDOMPoint& endOfInsertedText =
-          insertEmptyTextResult.EndOfInsertedTextRef();
       if (endOfInsertedText.IsInTextNode() &&
           !endOfInsertedText.IsStartOfContainer()) {
         nsresult rv = WhiteSpaceVisibilityKeeper::
