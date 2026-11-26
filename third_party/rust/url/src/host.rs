@@ -16,7 +16,7 @@ use core::fmt::{self, Formatter};
 
 use percent_encoding::{percent_decode, utf8_percent_encode, CONTROLS};
 #[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+use serde_derive::{Deserialize, Serialize};
 
 use crate::parser::{ParseError, ParseResult};
 
@@ -151,16 +151,27 @@ impl<'a> Host<Cow<'a, str>> {
         };
 
         if input.find(is_invalid_host_char).is_some() {
-            Err(ParseError::InvalidDomainCharacter)
-        } else {
-            Ok(Host::Domain(
-                match utf8_percent_encode(&input, CONTROLS).into() {
-                    Cow::Owned(v) => Cow::Owned(v),
-                    
-                    Cow::Borrowed(_) => input,
-                },
-            ))
+            return Err(ParseError::InvalidDomainCharacter);
         }
+
+        
+        
+        
+        
+        
+        Ok(Host::Domain(
+            match utf8_percent_encode(&input, CONTROLS).into() {
+                Cow::Owned(v) => Cow::Owned(v),
+                
+                Cow::Borrowed(v) => {
+                    if v == &*input {
+                        input 
+                    } else {
+                        Cow::Owned(v.to_owned()) 
+                    }
+                }
+            },
+        ))
     }
 
     pub(crate) fn into_owned(self) -> Host<String> {
