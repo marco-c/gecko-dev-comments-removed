@@ -1502,8 +1502,12 @@ class nsIFrame : public nsQueryFrame {
   
   
   
+  
+  
   bool ShouldBreakBefore(const BreakType aBreakType) const;
 
+  
+  
   
   
   

@@ -5741,7 +5741,8 @@ std::tuple<nscoord, nsReflowStatus> nsFlexContainerFrame::ReflowChildren(
       
       Maybe<nscoord> frameBPosBeforePerItemShift;
 
-      if (item.Frame()->GetPrevInFlow()) {
+      const bool itemIsFirstInFlow = !item.Frame()->GetPrevInFlow();
+      if (!itemIsFirstInFlow) {
         
         
         framePos.B(flexWM) = 0;
@@ -5823,7 +5824,7 @@ std::tuple<nscoord, nsReflowStatus> nsFlexContainerFrame::ReflowChildren(
       
       
       bool itemInPushedItems = false;
-      if (shouldPushRemainingItems) {
+      if (shouldPushRemainingItems && itemIsFirstInFlow) {
         FLEX_ITEM_LOG(
             item.Frame(),
             "[frag] Item needed to be pushed to container's next-in-flow due "
@@ -5892,7 +5893,7 @@ std::tuple<nscoord, nsReflowStatus> nsFlexContainerFrame::ReflowChildren(
         }
 
         const bool shouldPushItem = [&]() {
-          if (shouldPushRemainingItems) {
+          if (shouldPushRemainingItems && itemIsFirstInFlow) {
             return true;
           }
           if (availableBSizeForItem == NS_UNCONSTRAINEDSIZE) {
@@ -5931,7 +5932,8 @@ std::tuple<nscoord, nsReflowStatus> nsFlexContainerFrame::ReflowChildren(
 
         if (shouldHonorForcedBreaks) {
           const bool itemHasBreakAfter =
-              item.Frame()->ShouldBreakAfter(aReflowInput.mBreakType) ||
+              (!childStatus.IsIncomplete() &&
+               item.Frame()->ShouldBreakAfter(aReflowInput.mBreakType)) ||
               childStatus.IsInlineBreakAfter();
           if (itemHasBreakAfter) {
             if (aAxisTracker.IsRowOriented()) {
@@ -6054,6 +6056,9 @@ std::tuple<nscoord, nsReflowStatus> nsFlexContainerFrame::ReflowChildren(
           
           
           for (const FlexItem& item : line.Items()) {
+            if (item.Frame()->GetPrevInFlow()) {
+              continue;
+            }
             pushedItems.Insert(item.Frame());
             incompleteItems.Remove(item.Frame());
             overflowIncompleteItems.Remove(item.Frame());
