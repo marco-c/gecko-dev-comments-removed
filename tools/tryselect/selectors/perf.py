@@ -98,6 +98,7 @@ class PerfParser(CompareParser):
         "path",
         "pushdate",
         "rebuild",
+        "worker-overrides",
     ]
 
     provider = ClassificationProvider()
@@ -175,6 +176,17 @@ class PerfParser(CompareParser):
                 "action": "store_true",
                 "default": False,
                 "help": "Run tasks without a comparison",
+            },
+        ],
+        [
+            ["--worker-override-new-only"],
+            {
+                "action": "append",
+                "default": [],
+                "metavar": "WORKER_OVERRIDE",
+                "help": "Like --worker-override, but only for the new revision. The "
+                "base revision runs on the default worker pool. The argument should "
+                "be `<alias>=<worker-pool>`. Can be specified multiple times.",
             },
         ],
         [
@@ -310,6 +322,12 @@ class PerfParser(CompareParser):
             },
         ],
     ]
+
+    def validate(self, args):
+        super().validate(args)
+        args.worker_overrides = (
+            args.worker_overrides or []
+        ) + args.worker_override_new_only
 
     def get_tasks(base_cmd, queries, query_arg=None, candidate_tasks=None):
         query_args = query_arg if isinstance(query_arg, list) else [query_arg]
@@ -948,6 +966,17 @@ class PerfParser(CompareParser):
 
         return max(set.intersection(*map(__substrings, tasks)), key=len)
 
+    def filter_tasks_by_worker_type(full_task_set_path, tasks, worker_types):
+        """Returns the tasks whose worker type is in worker_types."""
+        with full_task_set_path.open() as f:
+            full_task_set = json.load(f)
+        return [
+            task
+            for task in tasks
+            if full_task_set.get(task, {}).get("task", {}).get("workerType")
+            in worker_types
+        ]
+
     def set_categories_for_test(full_task_set_path, tests):
         """Parses the full task set to find all tasks that run this test.
 
@@ -1145,6 +1174,31 @@ class PerfParser(CompareParser):
                 or PerfParser.push_info.base_revision
             )
 
+    def get_base_push_info(push_to_vcs):
+        """
+        Get the base push info to add to the commit message so we can link to
+        perfcompare from treeherder.
+
+        :param push_to_vcs bool: True if the pushes bypass Lando.
+        :return str: The lines to add, empty if we can't find a base push.
+        """
+        push_info = PerfParser.push_info
+        if push_to_vcs:
+            if not push_info.base_revision:
+                return ""
+            base = f"Perf base revision={push_info.base_revision}"
+        else:
+            if not push_info.base_lando_commit_id:
+                return ""
+            lando_instance = (
+                push_info.lando_instance
+                or PerfParser.determine_lando_instance(push_to_vcs)
+            )
+            base = (
+                f"Perf base lando job={lando_instance}/{push_info.base_lando_commit_id}"
+            )
+        return f"\n\n{base}\nPerf framework={push_info.framework}"
+
     def get_majority_framework(selected_tasks):
         suite_counts = {suite: 0 for suite in PerfParser.suites.keys()}
 
@@ -1174,6 +1228,7 @@ class PerfParser(CompareParser):
         alert_summary_id,
         push_to_vcs,
         metrics,
+        worker_override_new_only=None,
     ):
         """Perf-specific push to try method.
 
@@ -1208,6 +1263,12 @@ class PerfParser(CompareParser):
         if comparator_klass.__name__ != "BasePerfComparator":
             base_comparator = False
 
+        worker_overrides = (
+            (try_config_params or {}).get("try_task_config", {}).get("worker-overrides")
+        )
+        use_cache = base_comparator and not worker_overrides
+        base_run_flag = None
+
         try:
             
             
@@ -1217,9 +1278,9 @@ class PerfParser(CompareParser):
             
             
             
-            if base_comparator:
-                
-                
+            
+            
+            if use_cache:
                 if not push_to_vcs:
                     PerfParser.push_info.base_lando_commit_id = (
                         PerfParser.check_cached_revision(
@@ -1242,6 +1303,12 @@ class PerfParser(CompareParser):
                 
                 base_extra_args = list(extra_args)
                 base_try_config_params = copy.deepcopy(try_config_params)
+                if worker_override_new_only:
+                    base_task_config = base_try_config_params["try_task_config"]
+                    for override in worker_override_new_only:
+                        base_task_config["worker-overrides"].pop(override.split("=")[0])
+                    if not base_task_config["worker-overrides"]:
+                        del base_task_config["worker-overrides"]
                 comparator_obj.setup_base_revision(base_extra_args)
                 PerfParser.setup_try_config(base_try_config_params, base_extra_args)
 
@@ -1295,7 +1362,7 @@ class PerfParser(CompareParser):
 
                     PerfParser.push_info.base_revision = log_processor.revision
 
-                if base_comparator:
+                if use_cache:
                     PerfParser.save_revision_treeherder(
                         selected_tasks, compare_commit, push_to_vcs
                     )
@@ -1305,6 +1372,8 @@ class PerfParser(CompareParser):
             new_extra_args = list(extra_args)
             comparator_obj.setup_new_revision(new_extra_args)
             PerfParser.setup_try_config(try_config_params, new_extra_args)
+            if not single_run:
+                new_commit_message += PerfParser.get_base_push_info(push_to_vcs)
 
             if not push_to_vcs:
                 push_data = push_to_try(
@@ -1460,6 +1529,17 @@ class PerfParser(CompareParser):
                 print("Could not find any tasks for the requested tests")
                 return
 
+        worker_types = (
+            (try_config_params or {}).get("try_task_config", {}).get("worker-types")
+        )
+        if worker_types:
+            all_tasks = PerfParser.filter_tasks_by_worker_type(
+                full_task_set, all_tasks, worker_types
+            )
+            if not all_tasks:
+                print(f"Could not find any tasks running on workers: {worker_types}")
+                return
+
         
         queries = []
         selected_categories = []
@@ -1534,6 +1614,7 @@ class PerfParser(CompareParser):
             alert_summary_id,
             push_to_vcs,
             kwargs.get("metrics"),
+            kwargs.get("worker_override_new_only"),
         )
 
     def run_category_checks():
