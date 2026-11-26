@@ -18,8 +18,10 @@ namespace mozilla::widget {
 
 
 
+
+
 HBITMAP CreateTopDownDIBSection(HDC aDC, const gfx::IntSize& aSize,
-                                uint8_t** aBits);
+                                uint8_t** aBits, HANDLE aSection = nullptr);
 
 
 
@@ -31,7 +33,9 @@ class GdiBackBuffer final {
   ~GdiBackBuffer() { Release(); }
 
   
-  bool Ensure(HDC aCompatibleDC, const gfx::IntSize& aSize);
+  
+  bool Ensure(HDC aCompatibleDC, const gfx::IntSize& aSize,
+              HANDLE aSection = nullptr);
   void Release();
 
   HDC DC() const { return mDC; }
@@ -39,9 +43,18 @@ class GdiBackBuffer final {
 
   already_AddRefed<gfx::DrawTarget> CreateDrawTarget();
 
-  void BlitTo(HDC aDC, const gfx::IntRect& aRect) const;
+  bool BlitTo(HDC aDC, const gfx::IntRect& aRect) const;
+
+  
+  void CopyPixelsFrom(const GdiBackBuffer& aOther);
+
+  static size_t BufferSize(const gfx::IntSize& aSize) {
+    return size_t(aSize.width) * aSize.height * 4;
+  }
 
  private:
+  int32_t Stride() const { return mSize.width * 4; }
+
   HDC mDC = nullptr;
   HBITMAP mBitmap = nullptr;
   uint8_t* mData = nullptr;
