@@ -148,6 +148,9 @@ class SharedSurface {
   virtual void WaitForBufferOwnership() {}
 
   
+  virtual void WaitForBufferOwnershipForWrite() { WaitForBufferOwnership(); }
+
+  
   
   virtual bool IsBufferAvailable() const { return true; }
 
@@ -160,7 +163,7 @@ class SharedSurface {
   virtual Maybe<layers::SurfaceDescriptor> ToSurfaceDescriptor() = 0;
 
   void BeginWrite() {
-    WaitForBufferOwnership();
+    WaitForBufferOwnershipForWrite();
     ProducerAcquire();
     LockProd();
   }

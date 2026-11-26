@@ -133,6 +133,19 @@ SharedSurface_AndroidHardwareBuffer::ToSurfaceDescriptor() {
       mAndroidHardwareBuffer->mFormat));
 }
 
+void SharedSurface_AndroidHardwareBuffer::WaitForBufferOwnershipForWrite() {
+  
+  
+  
+  
+  
+  {
+    UniqueFileHandle acquireFence =
+        mAndroidHardwareBuffer->GetAndResetAcquireFence();
+  }
+  WaitForBufferOwnership();
+}
+
 void SharedSurface_AndroidHardwareBuffer::WaitForBufferOwnership() {
   UniqueFileHandle fenceFd =
       mAndroidHardwareBuffer->GetAndResetAllFencesMerged();
