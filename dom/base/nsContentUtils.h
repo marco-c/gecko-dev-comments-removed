@@ -284,7 +284,7 @@ namespace mozilla::dom {
 enum JSONBehavior { UndefinedIsNullStringLiteral, UndefinedIsVoidString };
 
 
-enum class FluentResourceFile : uint8_t { DOM, _COUNT };
+enum class FluentResourceFile : uint8_t { DOM, DOM_DEPRECATIONS, _COUNT };
 
 }  
 
@@ -1453,8 +1453,9 @@ class nsContentUtils {
 
 
 
+
   static void ReportDeprecation(
-      nsIGlobalObject* aGlobal, const Document* aDoc, nsIURI* aURI,
+      nsIGlobalObject* aGlobal, nsIURI* aURI,
       mozilla::dom::DeprecatedOperations aOperation,
       const mozilla::JSCallingLocation& aLocation,
       const nsTArray<nsString>& aParams = nsTArray<nsString>());
@@ -1597,6 +1598,29 @@ class nsContentUtils {
   static nsresult FormatFluentString(
       mozilla::dom::FluentResourceFile aFile, const nsACString& aL10nId,
       const nsTArray<mozilla::intl::FluentArg>& aArgs, nsAString& aResult);
+
+  
+
+
+
+
+  static nsresult FormatMaybeLocalizedFluentString(
+      mozilla::dom::FluentResourceFile aFile, const nsACString& aL10nId,
+      const nsTArray<mozilla::intl::FluentArg>& aArgs, nsIGlobalObject* aGlobal,
+      nsAString& aResult);
+
+  
+
+
+
+
+
+
+
+  static bool GetDeprecationFluentMessage(
+      mozilla::dom::DeprecatedOperations aOperation,
+      const nsTArray<nsString>& aParams, nsACString& aL10nId,
+      nsTArray<mozilla::intl::FluentArg>& aArgs);
 
   
 
