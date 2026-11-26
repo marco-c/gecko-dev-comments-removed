@@ -3226,7 +3226,11 @@ NS_IMETHODIMP PermissionManager::Observe(nsISupports* aSubject,
       nsCOMPtr<nsILoadContext> loadContext = do_QueryInterface(aSubject);
       if (loadContext) {
         auto* bc = static_cast<BrowsingContext*>(loadContext.get());
-        discardedBrowserId = bc->BrowserId();
+        
+        
+        if (bc->IsTop()) {
+          discardedBrowserId = bc->BrowserId();
+        }
       }
     }
   }
@@ -4335,7 +4339,8 @@ PermissionManager::CommonPrepareToTestPermission(
     (void)mDefaultPrefBranch->GetIntPref(PromiseFlatCString(aType).get(),
                                          &defaultPermission);
     if (defaultPermission < 0 ||
-        defaultPermission > nsIPermissionManager::MAX_VALID_ACTION) {
+        defaultPermission >
+            static_cast<int32_t>(nsIPermissionManager::MAX_VALID_ACTION)) {
       defaultPermission = nsIPermissionManager::UNKNOWN_ACTION;
     }
   }
