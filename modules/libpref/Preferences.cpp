@@ -3705,7 +3705,7 @@ size_t nsPrefBranch::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
 
   n += mObservers.ShallowSizeOfExcludingThis(aMallocSizeOf);
   for (const auto& entry : mObservers) {
-    const PrefCallback* data = entry.GetWeak();
+    const PrefCallback* data = entry.GetRawPtr();
     n += data->SizeOfIncludingThis(aMallocSizeOf);
   }
 
@@ -4507,7 +4507,7 @@ PreferenceServiceReporter::CollectReports(
   nsTHashMap<nsCStringHashKey, uint32_t> prefCounter;
 
   for (const auto& entry : rootBranch->mObservers) {
-    auto* callback = entry.GetWeak();
+    auto* callback = entry.GetRawPtr();
 
     if (callback->IsWeak()) {
       nsCOMPtr<nsIObserver> callbackRef = do_QueryReferent(callback->mWeakRef);
@@ -7379,6 +7379,7 @@ static const PrefListEntry sDynamicPrefOverrideList[]{
     PREF_LIST_ENTRY("media.cubeb.backend"),
     PREF_LIST_ENTRY("media.cubeb.output_device"),
     PREF_LIST_ENTRY("media.getusermedia.fake-camera-name"),
+    PREF_LIST_ENTRY("media.getusermedia.fake-microphone-name"),
     PREF_LIST_ENTRY("media.hls.server.url"),
     PREF_LIST_ENTRY("media.peerconnection.nat_simulator.filtering_type"),
     PREF_LIST_ENTRY("media.peerconnection.nat_simulator.mapping_type"),

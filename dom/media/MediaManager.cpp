@@ -2385,6 +2385,10 @@ MediaManager::EnumerateRawDevices(EnumerationParams aParams) {
   Maybe<MediaDeviceSet> speakers;
   RefPtr devices = new MediaDeviceSetRefCnt();
 
+  if (aParams.mVideo) {
+    videoBackend = aParams.HasFakeCams() ? fakeBackend : realBackend;
+  }
+
   
   
   if (const auto& audio = aParams.mAudio; audio.isSome()) {
@@ -2395,6 +2399,7 @@ MediaManager::EnumerateRawDevices(EnumerationParams aParams) {
     GetMediaDevices(audioBackend, audio->mInputType, audios,
                     audio->mForcedDeviceName.get());
     if (audio->mInputType == MediaSourceEnum::Microphone &&
+        aParams.VideoInputType() == MediaSourceEnum::Camera &&
         audioBackend == videoBackend) {
       micsOfVideoBackend.emplace();
       micsOfVideoBackend->AppendElements(audios);
@@ -2402,7 +2407,6 @@ MediaManager::EnumerateRawDevices(EnumerationParams aParams) {
     devices->AppendElements(std::move(audios));
   }
   if (const auto& video = aParams.mVideo; video.isSome()) {
-    videoBackend = aParams.HasFakeCams() ? fakeBackend : realBackend;
     MediaDeviceSet videos;
     LOG("EnumerateRawDevices: Getting video sources with {} backend",
         videoBackend == fakeBackend ? "fake" : "real");
@@ -2550,6 +2554,7 @@ static void ForeachObservedPref(const Function& aFunction) {
   aFunction("media.audio_loopback_dev"_ns);
   aFunction("media.video_loopback_dev"_ns);
   aFunction("media.getusermedia.fake-camera-name"_ns);
+  aFunction("media.getusermedia.fake-microphone-name"_ns);
 #ifdef MOZ_WEBRTC
   aFunction("media.navigator.video.resize_mode.enabled"_ns);
   aFunction("media.navigator.video.default_resize_mode"_ns);
