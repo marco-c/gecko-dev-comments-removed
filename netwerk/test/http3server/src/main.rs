@@ -1332,7 +1332,9 @@ impl HttpServer for Http3ReverseProxyServer {
 
 struct Http3ConnectProxyServer {
     server: Http3Server,
-    tcp_streams: HashMap<StreamId, TcpStream>,
+    
+    
+    tcp_streams: HashMap<Http3OrWebTransportStream, TcpStream>,
     udp_sockets: HashMap<StreamId, UdpSocket>,
     
     require_auth: bool,
@@ -1445,7 +1447,7 @@ impl HttpServer for Http3ConnectProxyServer {
                         ])
                         .unwrap();
                     self.tcp_streams.insert(
-                        stream.stream_id(),
+                        stream.clone(),
                         TcpStream {
                             send_buffer: VecDeque::new(),
                             recv_buffer: VecDeque::new(),
@@ -1458,7 +1460,7 @@ impl HttpServer for Http3ConnectProxyServer {
                 }
                 Http3ServerEvent::Data { stream, data, fin } => {
                     trace!("tcp_stream send to server len={}", data.len());
-                    let tcp_stream = self.tcp_streams.get_mut(&stream.stream_id()).unwrap();
+                    let tcp_stream = self.tcp_streams.get_mut(&stream).unwrap();
                     
                     tcp_stream.send_buffer.extend(data);
                     tcp_stream.send_fin |= fin;
@@ -1468,7 +1470,7 @@ impl HttpServer for Http3ConnectProxyServer {
                         "Http3ServerEvent::DataWritable streamid={}",
                         stream.stream_id()
                     );
-                    let tcp_stream = self.tcp_streams.get_mut(&stream.stream_id()).unwrap();
+                    let tcp_stream = self.tcp_streams.get_mut(&stream).unwrap();
                     while !tcp_stream.recv_buffer.is_empty() {
                         match stream.send_data(&tcp_stream.recv_buffer.make_contiguous(), now) {
                             Ok(sent) => {

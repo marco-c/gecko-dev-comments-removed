@@ -625,9 +625,19 @@ void ConnectionEntry::RemoveExtendedCONNECTConns(HttpConnectionBase* conn) {
 }
 
 void ConnectionEntry::MakeAllDontReuseExcept(HttpConnectionBase* conn) {
+  RefPtr<HttpConnectionUDP> connUDP = do_QueryObject(conn);
   for (uint32_t index = 0; index < mActiveConns.Length(); ++index) {
     HttpConnectionBase* otherConn = mActiveConns[index];
     if (otherConn != conn) {
+      
+      
+      
+      if (IsHttp3ProxyConnection()) {
+        RefPtr<HttpConnectionUDP> otherUDP = do_QueryObject(otherConn);
+        if (!connUDP != !otherUDP) {
+          continue;
+        }
+      }
       LOG(
           ("ConnectionEntry::MakeAllDontReuseExcept shutting down old "
            "connection (%p) "
