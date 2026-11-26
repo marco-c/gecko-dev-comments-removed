@@ -254,27 +254,41 @@ impl StateManager {
     }
 
     pub fn get_initial_state(&self) -> FxaState {
-        match &self.persisted_state.refresh_token {
-            Some(refresh_token) => {
-                
-                
-                
-                if refresh_token.scopes.contains(scopes::OLD_SYNC)
-                    && self.get_scoped_key(scopes::OLD_SYNC).is_none()
-                {
-                    FxaState::AuthIssues
-                } else {
-                    FxaState::Connected
-                }
+        if self.persisted_state.refresh_token.is_some() {
+            if self.stored_auth_state().is_valid() {
+                FxaState::Connected
+            } else {
+                FxaState::AuthIssues
             }
-            None => {
-                if self.persisted_state.logged_out_from_auth_issues {
-                    FxaState::AuthIssues
-                } else {
-                    FxaState::Disconnected
-                }
-            }
+        } else if self.persisted_state.logged_out_from_auth_issues {
+            FxaState::AuthIssues
+        } else {
+            FxaState::Disconnected
         }
+    }
+
+    
+    
+    
+    
+    pub fn stored_auth_state(&self) -> StoredAuthState<'_> {
+        if self.session_token().is_none() {
+            
+            
+            
+            return StoredAuthState::Invalid;
+        }
+        let Some(refresh_token) = self.refresh_token() else {
+            
+            return StoredAuthState::Invalid;
+        };
+        if refresh_token.scopes.contains(scopes::OLD_SYNC)
+            && self.get_scoped_key(scopes::OLD_SYNC).is_none()
+        {
+            
+            return StoredAuthState::Invalid;
+        }
+        StoredAuthState::Valid { refresh_token }
     }
 
     
@@ -319,6 +333,17 @@ impl StateManager {
     }
 }
 
+pub enum StoredAuthState<'a> {
+    Valid { refresh_token: &'a RefreshToken },
+    Invalid,
+}
+
+impl StoredAuthState<'_> {
+    pub fn is_valid(&self) -> bool {
+        matches!(self, Self::Valid { .. })
+    }
+}
+
 #[cfg(test)]
 impl StateManager {
     pub fn is_access_token_cache_empty(&self) -> bool {
@@ -327,6 +352,10 @@ impl StateManager {
 
     pub fn force_refresh_token(&mut self, token: RefreshToken) {
         self.persisted_state.refresh_token = Some(token)
+    }
+
+    pub fn force_session_token(&mut self, token: impl Into<String>) {
+        self.persisted_state.session_token = Some(token.into())
     }
 
     pub fn force_current_device_id(&mut self, device_id: impl Into<String>) {

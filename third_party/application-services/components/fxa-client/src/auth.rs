@@ -72,10 +72,8 @@ impl FirefoxAccount {
     
     
     
-    
-    #[handle_error(Error)]
-    pub fn check_authorization_status(&self) -> ApiResult<AuthorizationInfo> {
-        Ok(self.internal.lock().check_authorization_status()?.into())
+    pub fn check_authorization_status(&self) -> AuthorizationStatus {
+        self.internal.lock().check_authorization_status()
     }
 
     
@@ -115,13 +113,13 @@ impl FirefoxAccount {
     }
 }
 
-#[derive(uniffi::Record)]
+#[derive(uniffi::Enum, PartialEq, Eq, Debug)]
 
-
-
-
-pub struct AuthorizationInfo {
-    pub active: bool,
+pub enum AuthorizationStatus {
+    Valid,
+    Invalid,
+    
+    Unknown,
 }
 
 #[derive(uniffi::Enum, Clone, Debug, PartialEq, Eq)]

@@ -9,7 +9,7 @@
 
 use crate::internal::FirefoxAccount;
 use crate::state_machine::helpers::{ResultExt, StateMachineErr};
-use crate::{Error, FxaEvent, FxaState};
+use crate::{AuthorizationStatus, Error, FxaEvent, FxaState};
 
 
 pub fn transition(
@@ -155,34 +155,14 @@ pub fn transition(
             Ok(S::Disconnected)
         }
         (S::Connected, E::CheckAuthorizationStatus) => {
-            let active = match account.check_authorization_status() {
-                Ok(introspection_info) => introspection_info.active,
+            Ok(match account.check_authorization_status() {
+                AuthorizationStatus::Valid => S::Connected,
+                AuthorizationStatus::Invalid => S::AuthIssues,
                 
                 
                 
-                
-                
-                
-                
-                Err(Error::NoRefreshToken)
-                | Err(Error::NoSessionToken)
-                | Err(Error::NoScopedKey(_)) => false,
-                
-                
-                
-                Err(e) => {
-                    return Err(StateMachineErr::Handled {
-                        cause: Box::new(e),
-                        target: S::Connected,
-                    })
-                }
-            };
-
-            if active {
-                Ok(S::Connected)
-            } else {
-                Ok(S::AuthIssues)
-            }
+                AuthorizationStatus::Unknown => S::Connected,
+            })
         }
         (S::Connected, E::CallGetProfile) => {
             account.get_profile(true).to_state_machine_err(|| {
