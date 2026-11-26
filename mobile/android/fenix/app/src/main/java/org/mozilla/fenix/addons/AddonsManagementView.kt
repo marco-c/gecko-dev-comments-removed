@@ -16,6 +16,8 @@ class AddonsManagementView(
     private val onInstallButtonClicked: (Addon) -> Unit,
     private val onMoreAddonsButtonClicked: () -> Unit,
     private val onLearnMoreClicked: (link: AddonsManagerAdapterDelegate.LearnMoreLinks, addon: Addon) -> Unit,
+    private val onReviewUpdateClicked: (Addon) -> Unit,
+    private val onCancelUpdateClicked: (Addon) -> Unit,
 ) : AddonsManagerAdapterDelegate {
 
     override fun onAddonItemClicked(addon: Addon) {
@@ -30,10 +32,6 @@ class AddonsManagementView(
         onInstallButtonClicked(addon)
     }
 
-    override fun onNotYetSupportedSectionClicked(unsupportedAddons: List<Addon>) {
-        showNotYetSupportedAddonFragment(unsupportedAddons)
-    }
-
     override fun shouldShowFindMoreAddonsButton(): Boolean = true
 
     override fun onFindMoreAddonsButtonClicked() {
@@ -44,6 +42,14 @@ class AddonsManagementView(
         onLearnMoreClicked(link, addon)
     }
 
+    override fun onReviewExtensionUpdateClicked(addon: Addon) {
+        onReviewUpdateClicked(addon)
+    }
+
+    override fun onCancelExtensionUpdateClicked(addon: Addon) {
+        onCancelUpdateClicked(addon)
+    }
+
     private fun showInstalledAddonDetailsFragment(addon: Addon) {
         val directions = AddonsManagementFragmentDirections.actionAddonsManagementFragmentToInstalledAddonDetails(addon)
         navController.navigateSafe(R.id.addonsManagementFragment, directions)
@@ -52,13 +58,5 @@ class AddonsManagementView(
     private fun showDetailsFragment(addon: Addon) {
         val directions = AddonsManagementFragmentDirections.actionAddonsManagementFragmentToAddonDetailsFragment(addon)
         navController.navigateSafe(R.id.addonsManagementFragment, directions)
-    }
-
-    private fun showNotYetSupportedAddonFragment(unsupportedAddons: List<Addon>) {
-        val directions =
-            AddonsManagementFragmentDirections.actionAddonsManagementFragmentToNotYetSupportedAddonFragment(
-                unsupportedAddons.toTypedArray()
-            )
-        navController.navigate(directions)
     }
 }

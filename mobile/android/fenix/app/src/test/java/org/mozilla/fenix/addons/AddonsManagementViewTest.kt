@@ -13,6 +13,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.addons.ui.AddonsManagerAdapterDelegate
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -41,6 +42,12 @@ class AddonsManagementViewTest {
 
     private var learnMoreLinkClicked = false
 
+    private var reviewUpdateAddon: Addon? = null
+    private var onReviewUpdateClicked: (Addon) -> Unit = { reviewUpdateAddon = it }
+
+    private var cancelUpdateAddon: Addon? = null
+    private var onCancelUpdateClicked: (Addon) -> Unit = { cancelUpdateAddon = it }
+
     @Before
     fun setup() {
         MockKAnnotations.init(this)
@@ -50,7 +57,27 @@ class AddonsManagementViewTest {
                 showPermissionDialog,
                 onMoreAddonsButtonClicked,
                 onLearnMoreLinkClicked,
+                onReviewUpdateClicked,
+                onCancelUpdateClicked,
             )
+    }
+
+    @Test
+    fun `onReviewExtensionUpdateClicked forwards to the callback`() {
+        val addon: Addon = mockk()
+
+        managementView.onReviewExtensionUpdateClicked(addon)
+
+        assertEquals(addon, reviewUpdateAddon)
+    }
+
+    @Test
+    fun `onCancelExtensionUpdateClicked forwards to the callback`() {
+        val addon: Addon = mockk()
+
+        managementView.onCancelExtensionUpdateClicked(addon)
+
+        assertEquals(addon, cancelUpdateAddon)
     }
 
     @Test
@@ -138,20 +165,6 @@ class AddonsManagementViewTest {
         val addon = mockk<Addon>()
         managementView.onInstallAddonButtonClicked(addon)
         assertTrue(permissionDialogDisplayed)
-    }
-
-    @Test
-    fun `onNotYetSupportedSectionClicked shows not yet supported fragment`() {
-        val addons = listOf<Addon>(mockk(), mockk())
-        managementView.onNotYetSupportedSectionClicked(addons)
-
-        val expected =
-            AddonsManagementFragmentDirections.actionAddonsManagementFragmentToNotYetSupportedAddonFragment(
-                addons.toTypedArray()
-            )
-        verify {
-            navController.navigate(directionsEq(expected))
-        }
     }
 
     @Test
