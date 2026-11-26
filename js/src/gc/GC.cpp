@@ -246,6 +246,7 @@
 #include "jit/ExecutableAllocator.h"
 #include "jit/JitCode.h"
 #include "jit/JitRuntime.h"
+#include "jit/JSJitFrameIter.h"
 #include "jit/ProcessExecutableMemory.h"
 #include "js/HeapAPI.h"  
 #include "js/Printer.h"
@@ -1264,7 +1265,7 @@ bool GCRuntime::setParameter(JSContext* cx, JSGCParamKey key, uint32_t value) {
   return setParameter(key, value, lock);
 }
 
-static bool IsGCThreadParameter(JSGCParamKey key) {
+bool js::IsGCThreadParameter(JSGCParamKey key) {
   return key == JSGC_HELPER_THREAD_RATIO || key == JSGC_MAX_HELPER_THREADS ||
          key == JSGC_MAX_MARKING_THREADS;
 }
@@ -2556,9 +2557,13 @@ void GCRuntime::queueBuffersForFreeAfterMinorGC(
 
 void Realm::destroy(JS::GCContext* gcx) {
   GCRuntime* gc = gcx->gcRuntime();
+  JSContext* cx = gc->rt->mainContextFromOwnThread();
+
+  MOZ_RELEASE_ASSERT(cx->realm() != this);
+
   gc->callDestroyRealmCallback(gcx, this);
   if (principals()) {
-    JS_DropPrincipals(gc->rt->mainContextFromOwnThread(), principals());
+    JS_DropPrincipals(cx, principals());
   }
   
   
@@ -4258,6 +4263,10 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
       abortSweepAfterCurrentGroup = true;
       isCompacting = false;
 
+      
+      
+      setGrayBitsInvalid();
+
       break;
     }
 
@@ -5349,6 +5358,8 @@ void GCRuntime::collect(bool nonincrementalByAPI, const SliceBudget& budget,
     return;
   }
 
+  jit::AssertCurrentRealmIsOnStack(rt->mainContextFromOwnThread());
+
   JS_LOG(gc, Info, "begin slice for reason %s in state %s",
          ExplainGCReason(reason), StateName(incrementalState));
 
@@ -5585,6 +5596,8 @@ void GCRuntime::minorGC(JS::GCReason reason, gcstats::PhaseKind phase) {
   if (rt->mainContextFromOwnThread()->suppressGC) {
     return;
   }
+
+  jit::AssertCurrentRealmIsOnStack(rt->mainContextFromOwnThread());
 
   incGcNumber();
 
