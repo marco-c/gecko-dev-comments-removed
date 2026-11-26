@@ -13,6 +13,7 @@
 #include "mozilla/dom/DocumentFragmentBinding.h"
 #include "mozilla/dom/Element.h"  
 #include "mozilla/dom/NodeInfo.h"
+#include "mozilla/dom/ShadowRoot.h"
 #include "nsContentUtils.h"  
 #include "nsDOMString.h"
 #include "nsError.h"
@@ -25,6 +26,13 @@ namespace mozilla::dom {
 JSObject* DocumentFragment::WrapNode(JSContext* aCx,
                                      JS::Handle<JSObject*> aGivenProto) {
   return DocumentFragment_Binding::Wrap(aCx, this, aGivenProto);
+}
+
+Element* DocumentFragment::GetElementById(const nsAString& aId) {
+  if (auto* shadowRoot = ShadowRoot::FromNode(this)) {
+    return shadowRoot->GetElementById(aId);
+  }
+  return nsINode::GetElementById(aId);
 }
 
 #ifdef MOZ_DOM_LIST

@@ -34,7 +34,7 @@ class DocumentFragment : public FragmentOrElement {
   using nsINode::QuerySelector;
   using nsINode::QuerySelectorAll;
   
-  using nsINode::GetElementById;
+  Element* GetElementById(const nsAString& aId);
 
   
   NS_DECL_ISUPPORTS_INHERITED
