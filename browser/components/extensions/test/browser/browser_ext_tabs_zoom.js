@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 const SITE_SPECIFIC_PREF = "browser.zoom.siteSpecific";
@@ -82,9 +80,10 @@ add_task(async function test_zoom_api() {
     };
 
     let checkZoom = async (tabId, newValue, oldValue = null) => {
-      let awaitEvent;
+      
+      
       if (oldValue != null && !lastZoomEvent[tabId]) {
-        awaitEvent = new Promise(resolve => {
+        await new Promise(resolve => {
           promiseZoomEvents[tabId] = resolve;
         });
       }
@@ -92,7 +91,6 @@ add_task(async function test_zoom_api() {
       let [apiZoom, realZoom] = await Promise.all([
         browser.tabs.getZoom(tabId),
         msg("get-zoom", tabId),
-        awaitEvent,
       ]);
 
       browser.test.assertEq(
