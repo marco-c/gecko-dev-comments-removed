@@ -4,6 +4,7 @@
 
 #include "jit/LIR.h"
 
+#include "mozilla/ConstantStringTable.h"
 #include "mozilla/ScopeExit.h"
 
 #include <type_traits>
@@ -18,11 +19,15 @@
 using namespace js;
 using namespace js::jit;
 
-const char* const js::jit::LIROpNames[] = {
+constexpr mozilla::ConstantStringTable LIROpNames = mozilla::StringLiterals<
 #define OPNAME(op, ...) #op,
     LIR_OPCODE_LIST(OPNAME)
 #undef OPNAME
-};
+        "">{};
+
+const char* js::jit::LIRCodeName(LNode::Opcode op) {
+  return LIROpNames[static_cast<size_t>(op)];
+}
 
 LIRGraph::LIRGraph(MIRGraph* mir)
     : constantPool_(mir->alloc()),
@@ -58,6 +63,21 @@ void LIRGraph::dump() {
   out.finish();
 }
 #endif
+
+bool jit::PropagateIndirectJumpTargets(MIRGenerator* mir, LIRGraph& graph) {
+  for (size_t i = 0; i < graph.numBlocks(); i++) {
+    if (mir->shouldCancel("Propagate Indirect Jump Targets")) {
+      return false;
+    }
+
+    LBlock* block = graph.getBlock(i);
+    if (block->isIndirectJumpTarget()) {
+      block->skipTrivialBlocks()->setIsIndirectJumpTarget();
+    }
+  }
+
+  return true;
+}
 
 LBlock::LBlock(MBasicBlock* from)
     : block_(from),
@@ -179,6 +199,16 @@ LBlock* LBlock::isMoveGroupsThenGoto() {
   LGoto* ins = rbegin()->toGoto();
   MOZ_ASSERT(ins->numSuccessors() == 1);
   return ins->getSuccessor(0)->lir();
+}
+
+LBlock* LBlock::skipTrivialBlocks() {
+  LBlock* block = this;
+  while (block->isTrivial()) {
+    LGoto* ins = block->rbegin()->toGoto();
+    MOZ_ASSERT(ins->numSuccessors() == 1);
+    block = ins->getSuccessor(0)->lir();
+  }
+  return block;
 }
 
 #ifdef JS_JITSPEW
@@ -807,7 +837,7 @@ bool LMoveGroup::add(LAllocation from, LAllocation to, LDefinition::Type type) {
   
 
 #endif
-  return moves_.append(LMove(from, to, type));
+  return moves_.emplaceBack(from, to, type);
 }
 
 bool LMoveGroup::addAfter(LAllocation from, LAllocation to,
