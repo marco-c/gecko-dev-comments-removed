@@ -83,6 +83,24 @@ bool MakeCredentialRequestIncludesPrfExtension(
   return false;
 }
 
+bool IsSameOriginWithAncestors(WindowGlobalParent* aParent) {
+  nsIPrincipal* principal = aParent->DocumentPrincipal();
+
+  if (!principal) {
+    return false;
+  }
+
+  for (WindowGlobalParent* parent = aParent->GetParentWindowContext(); parent;
+       parent = parent->GetParentWindowContext()) {
+    nsIPrincipal* parentPrincipal = parent->DocumentPrincipal();
+    if (!principal->Equals(parentPrincipal)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 class RelatedOriginCheckHandler final
     : public nsIWebAuthnRelatedOriginCheckCallback {
  public:
@@ -303,7 +321,7 @@ void WebAuthnTransactionParent::ContinueWithRegister(
 
   nsIPrincipal* topPrincipal = manager->TopWindowContext()->DocumentPrincipal();
 
-  bool isCrossOrigin = !principal->Equals(topPrincipal);
+  bool isCrossOrigin = !IsSameOriginWithAncestors(manager);
 
   nsCString topOrigin;
   nsresult rv = topPrincipal->GetWebExposedOriginSerialization(topOrigin);
@@ -578,7 +596,7 @@ void WebAuthnTransactionParent::ContinueWithSign(
 
   nsIPrincipal* topPrincipal = manager->TopWindowContext()->DocumentPrincipal();
 
-  bool isCrossOrigin = !principal->Equals(topPrincipal);
+  bool isCrossOrigin = !IsSameOriginWithAncestors(manager);
 
   nsCString topOrigin;
   nsresult rv = topPrincipal->GetWebExposedOriginSerialization(topOrigin);
@@ -766,75 +784,84 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestCancel() {
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestIsUVPAA(
-    RequestIsUVPAAResolver&& aResolver) {
+#ifdef MOZ_WIDGET_ANDROID
+
+
+
+
+static RefPtr<BoolPromise> IsUVPAAOnAndroid() {
   MOZ_ASSERT(NS_IsMainThread());
 
-#ifdef MOZ_WIDGET_ANDROID
   
   
   nsCOMPtr<nsIWebAuthnService> service(
       do_GetService("@mozilla.org/webauthn/service;1"));
-  bool available;
-  nsresult rv = service->GetIsUVPAA(&available);
-  if (NS_SUCCEEDED(rv)) {
-    aResolver(available);
-    return IPC_OK();
+  bool available = false;
+  if (service && NS_SUCCEEDED(service->GetIsUVPAA(&available))) {
+    return BoolPromise::CreateAndResolve(available, __func__);
   }
 
   
   if (!StaticPrefs::
           security_webauthn_webauthn_enable_android_fido2_residentkey()) {
-    aResolver(false);
-    return IPC_OK();
+    return BoolPromise::CreateAndResolve(false, __func__);
   }
 
   
   
   
-  
-  nsCOMPtr<nsISerialEventTarget> target = GetCurrentSerialEventTarget();
   auto result = java::WebAuthnTokenManager::
       WebAuthnIsUserVerifyingPlatformAuthenticatorAvailable();
   auto geckoResult = java::GeckoResult::LocalRef(std::move(result));
-  MozPromise<bool, bool, false>::FromGeckoResult(geckoResult)
-      ->Then(target, __func__,
-             [resolver = std::move(aResolver)](
-                 const MozPromise<bool, bool, false>::ResolveOrRejectValue&
-                     aValue) {
-               if (aValue.IsResolve()) {
-                 resolver(aValue.ResolveValue());
-               } else {
-                 resolver(false);
-               }
+  return MozPromise<bool, bool, false>::FromGeckoResult(geckoResult)
+      ->Then(GetCurrentSerialEventTarget(), __func__,
+             [](const MozPromise<bool, bool, false>::ResolveOrRejectValue&
+                    aValue) {
+               return BoolPromise::CreateAndResolve(
+                   aValue.IsResolve() && aValue.ResolveValue(), __func__);
              });
-  return IPC_OK();
+}
+#endif
 
-#else
+mozilla::ipc::IPCResult
+WebAuthnTransactionParent::RecvRequestClientCapabilities(
+    RequestClientCapabilitiesResolver&& aResolver) {
+  MOZ_ASSERT(NS_IsMainThread());
 
   nsCOMPtr<nsISerialEventTarget> target = GetCurrentSerialEventTarget();
   nsCOMPtr<nsIRunnable> runnable(NS_NewRunnableFunction(
-      __func__, [target, resolver = std::move(aResolver)]() {
-        bool available;
+      __func__, [target, resolver = std::move(aResolver)]() mutable {
+        nsTArray<nsCString> capabilities;
         nsCOMPtr<nsIWebAuthnService> service(
             do_GetService("@mozilla.org/webauthn/service;1"));
-        nsresult rv = service->GetIsUVPAA(&available);
-        if (NS_FAILED(rv)) {
-          available = false;
+        if (!service ||
+            NS_FAILED(service->GetClientCapabilities(capabilities))) {
+          capabilities.Clear();
         }
-        BoolPromise::CreateAndResolve(available, __func__)
-            ->Then(target, __func__,
-                   [resolver](const BoolPromise::ResolveOrRejectValue& value) {
-                     if (value.IsResolve()) {
-                       resolver(value.ResolveValue());
-                     } else {
-                       resolver(false);
-                     }
-                   });
+        target->Dispatch(NS_NewRunnableFunction(
+            __func__, [resolver = std::move(resolver),
+                       capabilities = std::move(capabilities)]() mutable {
+#ifdef MOZ_WIDGET_ANDROID
+              IsUVPAAOnAndroid()->Then(
+                  GetCurrentSerialEventTarget(), __func__,
+                  [resolver = std::move(resolver),
+                   capabilities = std::move(capabilities)](
+                      const BoolPromise::ResolveOrRejectValue& aValue) mutable {
+                    constexpr auto kUVPAA =
+                        "userVerifyingPlatformAuthenticator"_ns;
+                    if (aValue.IsResolve() && aValue.ResolveValue() &&
+                        !capabilities.Contains(kUVPAA)) {
+                      capabilities.AppendElement(kUVPAA);
+                    }
+                    resolver(capabilities);
+                  });
+#else
+              resolver(capabilities);
+#endif
+            }));
       }));
   NS_DispatchBackgroundTask(runnable.forget(), NS_DISPATCH_EVENT_MAY_BLOCK);
   return IPC_OK();
-#endif
 }
 
 void WebAuthnTransactionParent::ActorDestroy(ActorDestroyReason aWhy) {

@@ -6,7 +6,6 @@
 
 #include "mozilla/Base64.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/StaticPrefs_security.h"
 #include "mozilla/dom/AuthenticatorResponse.h"
 #include "mozilla/dom/ChromeUtils.h"
 #include "mozilla/dom/CredentialsContainer.h"
@@ -99,9 +98,11 @@ void PublicKeyCredential::SetAssertionResponse(
 }
 
 
-already_AddRefed<Promise>
-PublicKeyCredential::IsUserVerifyingPlatformAuthenticatorAvailable(
-    GlobalObject& aGlobal, ErrorResult& aError) {
+
+template <typename F>
+static already_AddRefed<Promise> CallWebAuthnHandler(GlobalObject& aGlobal,
+                                                     ErrorResult& aError,
+                                                     F&& aCall) {
   nsCOMPtr<nsPIDOMWindowInner> window =
       do_QueryInterface(aGlobal.GetAsSupports());
   if (!window) {
@@ -117,163 +118,40 @@ PublicKeyCredential::IsUserVerifyingPlatformAuthenticatorAvailable(
 
   RefPtr<WebAuthnHandler> handler =
       window->Navigator()->Credentials()->GetWebAuthnHandler();
-  handler->IsUVPAA(promise);
+  aCall(handler, promise);
 
   return promise.forget();
+}
+
+
+already_AddRefed<Promise>
+PublicKeyCredential::IsUserVerifyingPlatformAuthenticatorAvailable(
+    GlobalObject& aGlobal, ErrorResult& aError) {
+  return CallWebAuthnHandler(
+      aGlobal, aError,
+      [](WebAuthnHandler* aHandler, const RefPtr<Promise>& aPromise) {
+        aHandler->IsUVPAA(aPromise);
+      });
 }
 
 
 already_AddRefed<Promise> PublicKeyCredential::GetClientCapabilities(
     GlobalObject& aGlobal, ErrorResult& aError) {
-  RefPtr<Promise> promise =
-      Promise::Create(xpc::CurrentNativeGlobal(aGlobal.Context()), aError);
-  if (aError.Failed()) {
-    return nullptr;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  Record<nsString, bool> capabilities;
-
-  auto entry = capabilities.Entries().AppendElement();
-  entry->mKey = u"conditionalCreate"_ns;
-  entry->mValue = false;
-
-  entry = capabilities.Entries().AppendElement();
-  entry->mKey = u"conditionalGet"_ns;
-#if defined(MOZ_WIDGET_ANDROID)
-  entry->mValue = false;
-#else
-  entry->mValue = StaticPrefs::security_webauthn_enable_conditional_mediation();
-#endif
-
-  entry = capabilities.Entries().AppendElement();
-  entry->mKey = u"extension:appid"_ns;
-  entry->mValue = true;
-
-  
-  
-  
-  
-
-  
-  
-  
-  
-
-  entry = capabilities.Entries().AppendElement();
-  entry->mKey = u"extension:credProps"_ns;
-  entry->mValue = true;
-
-  entry = capabilities.Entries().AppendElement();
-  entry->mKey = u"extension:credentialProtectionPolicy"_ns;
-#if defined(XP_MACOSX) || defined(MOZ_WIDGET_ANDROID)
-  entry->mValue = false;
-#else
-  entry->mValue = true;
-#endif
-
-  entry = capabilities.Entries().AppendElement();
-  entry->mKey = u"extension:enforceCredentialProtectionPolicy"_ns;
-#if defined(XP_MACOSX) || defined(MOZ_WIDGET_ANDROID)
-  entry->mValue = false;
-#else
-  entry->mValue = true;
-#endif
-
-  
-  
-  
-  
-
-  entry = capabilities.Entries().AppendElement();
-  entry->mKey = u"extension:hmacCreateSecret"_ns;
-  entry->mValue = true;
-
-  entry = capabilities.Entries().AppendElement();
-  entry->mKey = u"extension:largeBlob"_ns;
-#if defined(XP_MACOSX) || defined(XP_WIN) || defined(MOZ_WIDGET_ANDROID)
-  entry->mValue = true;
-#else
-  entry->mValue = false;
-#endif
-
-  entry = capabilities.Entries().AppendElement();
-  entry->mKey = u"extension:minPinLength"_ns;
-  entry->mValue = true;
-
-  entry = capabilities.Entries().AppendElement();
-  entry->mKey = u"extension:prf"_ns;
-  entry->mValue = true;
-
-  entry = capabilities.Entries().AppendElement();
-  entry->mKey = u"hybridTransport"_ns;
-#if defined(XP_MACOSX) || defined(XP_WIN) || defined(MOZ_WIDGET_ANDROID)
-  entry->mValue = true;
-#else
-  entry->mValue = false;
-#endif
-
-  entry = capabilities.Entries().AppendElement();
-  entry->mKey = u"passkeyPlatformAuthenticator"_ns;
-#if defined(XP_MACOSX) || defined(XP_WIN) || defined(MOZ_WIDGET_ANDROID)
-  entry->mValue = true;
-#else
-  entry->mValue = false;
-#endif
-
-  entry = capabilities.Entries().AppendElement();
-  entry->mKey = u"relatedOrigins"_ns;
-  entry->mValue = true;
-
-  entry = capabilities.Entries().AppendElement();
-  entry->mKey = u"signalAllAcceptedCredentials"_ns;
-  entry->mValue = false;
-
-  entry = capabilities.Entries().AppendElement();
-  entry->mKey = u"signalCurrentUserDetails"_ns;
-  entry->mValue = false;
-
-  entry = capabilities.Entries().AppendElement();
-  entry->mKey = u"signalUnknownCredential"_ns;
-  entry->mValue = false;
-
-  entry = capabilities.Entries().AppendElement();
-  entry->mKey = u"userVerifyingPlatformAuthenticator"_ns;
-#if defined(XP_MACOSX) || defined(XP_WIN) || defined(MOZ_WIDGET_ANDROID)
-  entry->mValue = true;
-#else
-  entry->mValue = false;
-#endif
-
-  promise->MaybeResolve(capabilities);
-  return promise.forget();
+  return CallWebAuthnHandler(
+      aGlobal, aError,
+      [](WebAuthnHandler* aHandler, const RefPtr<Promise>& aPromise) {
+        aHandler->GetClientCapabilities(aPromise);
+      });
 }
 
 
 already_AddRefed<Promise> PublicKeyCredential::IsConditionalMediationAvailable(
     GlobalObject& aGlobal, ErrorResult& aError) {
-  RefPtr<Promise> promise =
-      Promise::Create(xpc::CurrentNativeGlobal(aGlobal.Context()), aError);
-  if (aError.Failed()) {
-    return nullptr;
-  }
-#if defined(MOZ_WIDGET_ANDROID)
-  promise->MaybeResolve(false);
-#else
-  promise->MaybeResolve(
-      StaticPrefs::security_webauthn_enable_conditional_mediation());
-#endif
-  return promise.forget();
+  return CallWebAuthnHandler(
+      aGlobal, aError,
+      [](WebAuthnHandler* aHandler, const RefPtr<Promise>& aPromise) {
+        aHandler->IsConditionalMediationAvailable(aPromise);
+      });
 }
 
 void PublicKeyCredential::GetClientExtensionResults(
