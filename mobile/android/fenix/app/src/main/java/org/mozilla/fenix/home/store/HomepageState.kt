@@ -66,10 +66,7 @@ internal sealed class HomepageState {
      * @property recentlyVisited List of [RecentlyVisitedItem] to display, or null when the recent history section is
      *   hidden.
      * @property collectionsState State of the collections section to display.
-     * @property showTopSitesHeader Whether to show the shortcuts section header and "show all" button.
      * @property showPrivacyReport Whether to show the privacy report section.
-     * @property longfoxEnabled Whether the longfox game is enabled.
-     * @property showLongfoxAnimation Whether to play the fox peek animation on the privacy report card.
      * @property trackersBlockedCount The number of trackers blocked for the privacy report.
      * @property headerState State related to the header of the homepage.
      * @property middleSearchState State of the middle search bar on the homepage.
@@ -88,10 +85,7 @@ internal sealed class HomepageState {
         val bookmarks: List<Bookmark>? = null,
         val recentlyVisited: List<RecentlyVisitedItem>? = null,
         val collectionsState: CollectionsState,
-        val showTopSitesHeader: Boolean,
         val showPrivacyReport: Boolean,
-        val longfoxEnabled: Boolean,
-        val showLongfoxAnimation: Boolean,
         val trackersBlockedCount: Int,
         override val headerState: HeaderState,
         override val middleSearchState: MiddleSearchState = MiddleSearchState(),
@@ -198,10 +192,7 @@ internal sealed class HomepageState {
                             showCollections = settings.collections,
                             shouldShowCollectionsMigrationCard = collectionsMigrationCardState.visible,
                         ),
-                    showTopSitesHeader = !settings.showMoreShortcuts,
                     showPrivacyReport = settings.showPrivacyReportFeature,
-                    longfoxEnabled = settings.longfoxEnabled,
-                    showLongfoxAnimation = settings.longfoxEnabled && longfoxEntryPointReady,
                     trackersBlockedCount = blockedTrackersState.trackersBlockedCount,
                     headerState = buildHeaderState(settings = settings),
                     middleSearchState = buildMiddleSearchState(appState = appState, settings = settings),
