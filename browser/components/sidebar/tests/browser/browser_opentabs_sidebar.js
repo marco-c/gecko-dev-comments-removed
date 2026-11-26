@@ -58,6 +58,28 @@ add_task(async function test_opentabs_lists_current_window_tabs() {
   SidebarTestUtils.closePanel(window);
 });
 
+add_task(async function test_opentabs_row_tooltip() {
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "data:text/html,<title>Tooltip Test</title>"
+  );
+  const url = tab.linkedBrowser.currentURI.spec;
+
+  const component = await showOpenTabsPanel();
+  const tabList = getTabList(component);
+  await waitForRowCount(tabList, getVisibleTabCount());
+
+  const row = [...tabList.rowEls].find(rowEl => rowEl.tabElement === tab);
+  await assertRowTooltip(
+    row,
+    `Tooltip Test\n${url}`,
+    "Tooltip shows the tab title and URL."
+  );
+
+  BrowserTestUtils.removeTab(tab);
+  SidebarTestUtils.closePanel(window);
+});
+
 add_task(async function test_clicking_row_selects_tab() {
   const tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
@@ -317,11 +339,7 @@ add_task(async function test_multiple_windows_render_separate_cards() {
   SidebarTestUtils.closePanel(window);
 });
 
-add_task(async function test_nova_current_tab_marker() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.nova.enabled", true]],
-  });
-
+add_task(async function test_current_tab_marker() {
   const tabA = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     "about:blank"
@@ -366,7 +384,6 @@ add_task(async function test_nova_current_tab_marker() {
   BrowserTestUtils.removeTab(tabA);
   BrowserTestUtils.removeTab(tabB);
   SidebarTestUtils.closePanel(window);
-  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_window_card_collapse_state_persists() {
@@ -654,10 +671,6 @@ add_task(async function test_medium_view_shows_domain_and_time() {
 });
 
 add_task(async function test_pinned_tab_selected_marker() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.nova.enabled", true]],
-  });
-
   const nonPinnedTab = gBrowser.selectedTab;
   const tabA = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
@@ -719,14 +732,9 @@ add_task(async function test_pinned_tab_selected_marker() {
   BrowserTestUtils.removeTab(tabA);
   BrowserTestUtils.removeTab(tabB);
   SidebarTestUtils.closePanel(window);
-  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_inactive_window_deemphasizes_selected_border() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.nova.enabled", true]],
-  });
-
   const component = await showOpenTabsPanel();
   await BrowserTestUtils.waitForMutationCondition(
     component.shadowRoot,
@@ -784,7 +792,6 @@ add_task(async function test_inactive_window_deemphasizes_selected_border() {
 
   await BrowserTestUtils.closeWindow(secondWindow);
   SidebarTestUtils.closePanel(window);
-  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_context_menu_close_tab() {

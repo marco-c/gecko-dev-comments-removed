@@ -7,8 +7,6 @@
  * error states for synced tabs.
  */
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
-
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -19,13 +17,6 @@ ChromeUtils.defineLazyGetter(lazy, "syncUtils", () => {
   return ChromeUtils.importESModule("resource://services-sync/util.sys.mjs")
     .Utils;
 });
-
-XPCOMUtils.defineLazyServiceGetter(
-  lazy,
-  "gNetworkLinkService",
-  "@mozilla.org/network/network-link-service;1",
-  Ci.nsINetworkLinkService
-);
 
 const FXA_ENABLED = "identity.fxaccounts.enabled";
 const NETWORK_STATUS_CHANGED = "network:offline-status-changed";
@@ -44,9 +35,7 @@ const ErrorType = Object.freeze({
 
 export const SyncedTabsErrorHandler = {
   init() {
-    this.networkIsOnline =
-      lazy.gNetworkLinkService.linkStatusKnown &&
-      lazy.gNetworkLinkService.isLinkUp;
+    this.networkIsOnline = Services.io.connectivity && !Services.io.offline;
     this.syncIsConnected = lazy.UIState.get().syncEnabled;
     this.syncIsWorking = true;
 
@@ -91,10 +80,7 @@ export const SyncedTabsErrorHandler = {
   },
 
   getFluentStringsForErrorType(type) {
-    const mappings = Services.prefs.getBoolPref("browser.nova.enabled", false)
-      ? this._novaErrorStateStringMappings
-      : this._errorStateStringMappings;
-    return Object.freeze(mappings[type]);
+    return Object.freeze(this._errorStateStringMappings[type]);
   },
 
   get isPrimaryPasswordLocked() {
@@ -149,52 +135,6 @@ export const SyncedTabsErrorHandler = {
   // to change strings in the future without having to update all of the
   // error state strings.
   _errorStateStringMappings: {
-    [ErrorType.SYNC_ERROR]: {
-      asset: "chrome://browser/content/firefoxview/synced-tabs-error.svg",
-      header: "firefoxview-tabpickup-sync-error-header",
-      description: "firefoxview-tabpickup-generic-sync-error-description",
-      buttonLabel: "firefoxview-tabpickup-sync-error-primarybutton",
-    },
-    [ErrorType.FXA_ADMIN_DISABLED]: {
-      asset: "chrome://browser/content/firefoxview/synced-tabs-error.svg",
-      header: "firefoxview-tabpickup-fxa-admin-disabled-header",
-      description: "firefoxview-tabpickup-fxa-disabled-by-policy-description",
-      // The button is hidden for this errorState, so we don't include the
-      // buttonLabel property.
-    },
-    [ErrorType.NETWORK_OFFLINE]: {
-      asset: "chrome://browser/content/firefoxview/synced-tabs-error.svg",
-      header: "firefoxview-tabpickup-network-offline-header",
-      description: "firefoxview-tabpickup-network-offline-description",
-      buttonLabel: "firefoxview-tabpickup-network-offline-primarybutton",
-    },
-    [ErrorType.SYNC_DISCONNECTED]: {
-      asset: "chrome://browser/content/firefoxview/synced-tabs-error.svg",
-      header: "firefoxview-tabpickup-sync-disconnected-header",
-      description: "firefoxview-tabpickup-sync-disconnected-description",
-      buttonLabel: "firefoxview-tabpickup-sync-disconnected-primarybutton",
-    },
-    [ErrorType.PASSWORD_LOCKED]: {
-      asset: "chrome://browser/content/firefoxview/synced-tabs-error.svg",
-      header: "firefoxview-tabpickup-password-locked-header",
-      description: "firefoxview-tabpickup-password-locked-description",
-      buttonLabel: "firefoxview-tabpickup-password-locked-primarybutton",
-      link: {
-        label: "firefoxview-tabpickup-password-locked-link",
-        href:
-          Services.urlFormatter.formatURLPref("app.support.baseURL") +
-          "primary-password-stored-logins",
-      },
-    },
-    [ErrorType.SIGNED_OUT]: {
-      asset: "chrome://browser/content/firefoxview/synced-tabs-error.svg",
-      header: "firefoxview-tabpickup-signed-out-header",
-      description: "firefoxview-tabpickup-signed-out-description2",
-      buttonLabel: "firefoxview-tabpickup-signed-out-primarybutton",
-    },
-  },
-
-  _novaErrorStateStringMappings: {
     [ErrorType.SYNC_ERROR]: {
       asset: "chrome://browser/skin/sidebar/kit-tabs-devices-error.svg",
       header: "firefoxview-tabpickup-sync-error-header-2",
