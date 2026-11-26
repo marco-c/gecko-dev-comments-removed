@@ -176,17 +176,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 #include "js/UniquePtr.h"
 #include "util/Memory.h"
 #include "util/Poison.h"
@@ -416,10 +405,6 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk> {
   static constexpr uintptr_t magicNumber = uintptr_t(0x4c6966);
 #endif
 
-#if defined(DEBUG)
-#  define LIFO_CHUNK_PROTECT 1
-#endif
-
   
   
   
@@ -643,14 +628,6 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk> {
     setBump(newBump);
     return aligned;
   }
-
-#ifdef LIFO_CHUNK_PROTECT
-  void setReadOnly();
-  void setReadWrite();
-#else
-  void setReadOnly() const {}
-  void setReadWrite() const {}
-#endif
 };
 
 
@@ -993,15 +970,6 @@ class LifoAlloc {
       decrementCurSize(bc->computedSizeOfIncludingThis());
     }
   }
-
-  
-#ifdef LIFO_CHUNK_PROTECT
-  void setReadOnly();
-  void setReadWrite();
-#else
-  void setReadOnly() const {}
-  void setReadWrite() const {}
-#endif
 
   
   size_t used() const {

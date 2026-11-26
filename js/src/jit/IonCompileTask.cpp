@@ -19,10 +19,6 @@ using namespace js;
 using namespace js::jit;
 
 void IonCompileTask::runHelperThreadTask(AutoLockHelperThreadState& locked) {
-  
-  
-  alloc().lifoAlloc()->setReadWrite();
-
   {
     AutoUnlockHelperThreadState unlock(locked);
     runTask();
