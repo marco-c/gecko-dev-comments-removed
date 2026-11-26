@@ -951,8 +951,14 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
   
   
   
+  
+  
+  Document* doc = win->GetExtantDoc();
   if (!StaticPrefs::media_webspeech_recognition_install_on_start() ||
-      effectiveLang.IsEmpty()) {
+      effectiveLang.IsEmpty() || !doc ||
+      !PermissionsPolicyUtils::IsFeatureAllowed(
+          doc, u"on-device-speech-recognition"_ns) ||
+      !doc->ConsumeTransientUserGestureActivation()) {
     BeginSession(std::move(session));
     return;
   }
