@@ -2743,10 +2743,6 @@ void FFmpegVideoDecoder<LIBAV_VER>::ProcessShutdown() {
 #ifdef MOZ_WIDGET_ANDROID
   mShouldResumeDrain = false;
   ReleaseFramesMediaCodec();
-  if (mAndroidImageReaderClient) {
-    mAndroidImageReaderClient->Shutdown();
-    mAndroidImageReaderClient = nullptr;
-  }
   if (mMediaCodecDeviceContext) {
     mLib->av_buffer_unref(&mMediaCodecDeviceContext);
   }
@@ -2765,6 +2761,13 @@ void FFmpegVideoDecoder<LIBAV_VER>::ProcessShutdown() {
   
   
   FFmpegDataDecoder<LIBAV_VER>::ProcessShutdown();
+#ifdef MOZ_WIDGET_ANDROID
+  
+  if (mAndroidImageReaderClient) {
+    mAndroidImageReaderClient->Shutdown();
+    mAndroidImageReaderClient = nullptr;
+  }
+#endif
 #if defined(MOZ_USE_HWDECODE) && defined(MOZ_WIDGET_GTK)
   if (IsHardwareAccelerated()) {
 #  ifdef MOZ_USE_HWDECODE_VULKAN
