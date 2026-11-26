@@ -2477,7 +2477,13 @@ void DocAccessible::MaybeFireEventsForChangedPopover(LocalAccessible* aAcc) {
   while (Accessible* invoker = invokers.LocalNext()) {
     auto expandedChangeEvent =
         MakeRefPtr<AccStateChangeEvent>(invoker->AsLocal(), states::EXPANDED);
-    FireDelayedEvent(expandedChangeEvent);
+    
+    
+    
+    
+    
+    
+    nsEventShell::FireEvent(expandedChangeEvent);
   }
 
   
