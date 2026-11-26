@@ -292,7 +292,6 @@ enum class FluentResourceFile : uint8_t {
   _COUNT
 };
 
-enum class AltText : bool { Exclude, Include };
 }  
 
 
@@ -2283,14 +2282,6 @@ class nsContentUtils {
   static bool AppendNodeTextContent(const nsINode* aNode, bool aDeep,
                                     nsACString& aResult,
                                     const mozilla::fallible_t&);
-
-  
-
-
-
-  static void GetHTMLAwareTextContent(const mozilla::dom::Element& aElement,
-                                      mozilla::dom::AltText aAltText,
-                                      nsAString& aResult);
 
   
 

@@ -131,18 +131,6 @@ HTMLSelectElement* HTMLOptGroupElement::GetSelect() const {
   return HTMLSelectElement::FromNodeOrNull(GetParentNode());
 }
 
-void HTMLOptGroupElement::GetRenderedLabel(nsAString& aLabel) const {
-  
-  
-  if (const Element* first = GetFirstElementChild();
-      first && first->IsHTMLElement(nsGkAtoms::legend)) {
-    nsContentUtils::GetHTMLAwareTextContent(*first, AltText::Include, aLabel);
-    return;
-  }
-  
-  GetHTMLAttr(nsGkAtoms::label, aLabel);
-}
-
 void HTMLOptGroupElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                                        const nsAttrValue* aValue,
                                        const nsAttrValue* aOldValue,
