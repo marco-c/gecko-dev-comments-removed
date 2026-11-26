@@ -1070,18 +1070,23 @@ class MigrationUtils {
    *                             `AMBrowserExtensionsImport` as the "browser
    *                             identifier" used to match add-ons
    * @param {string[]} extensionIDs a list of extension IDs from another browser
+   * @param {object} [mappedAddons] an already fetched
+   *                                `AddonRepository.getMappedAddons` result
+   *                                for `extensionIDs`, to avoid fetching it
+   *                                again
    * @returns {(lazy.MigrationWizardConstants.PROGRESS_VALUE|string[])[]}
    *   An array whose first element is a `MigrationWizardConstants.PROGRESS_VALUE`
    *   and second element is an array of imported add-on ids.
    */
-  async installExtensionsWrapper(migratorKey, extensionIDs) {
+  async installExtensionsWrapper(migratorKey, extensionIDs, mappedAddons) {
     const totalExtensions = extensionIDs.length;
 
     let importedAddonIDs = [];
     try {
       const result = await lazy.AMBrowserExtensionsImport.stageInstalls(
         migratorKey,
-        extensionIDs
+        extensionIDs,
+        { mappedAddons }
       );
       importedAddonIDs = result.importedAddonIDs;
     } catch (e) {
@@ -1301,6 +1306,25 @@ class MigrationUtils {
 
   get HISTORY_MAX_AGE_IN_MILLISECONDS() {
     return this.HISTORY_MAX_AGE_IN_DAYS * 24 * 60 * 60 * 1000;
+  }
+
+  /**
+   * Returns the number of visits to import per history URL, read from the
+   * given pref. Places only samples the most recent
+   * places.frecency.pages.numSampledVisits visits for frecency, so importing
+   * more wouldn't change it.
+   *
+   * @param {string} prefName
+   * @returns {number} A value between 1 and numSampledVisits.
+   */
+  getHistoryVisitLimit(prefName) {
+    return Math.max(
+      1,
+      Math.min(
+        Services.prefs.getIntPref(prefName),
+        Services.prefs.getIntPref("places.frecency.pages.numSampledVisits")
+      )
+    );
   }
 
   /**

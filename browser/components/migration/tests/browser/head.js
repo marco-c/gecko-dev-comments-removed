@@ -19,6 +19,9 @@ const { InternalTestingProfileMigrator } = ChromeUtils.importESModule(
 const { TelemetryTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/TelemetryTestUtils.sys.mjs"
 );
+const { ChromeMigrationUtils } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/migration/ChromeMigrationUtils.sys.mjs"
+);
 
 const DIALOG_URL =
   "chrome://browser/content/migration/migration-dialog-window.html";
@@ -562,3 +565,28 @@ function getEntrypointHistogramIndex(entrypoint) {
     }
   }
 }
+
+const migrationMockAddonRepository = () => {
+  return {
+    async getMappedAddons() {
+      return Promise.resolve({
+        addons: [],
+        matchedIDs: [],
+        unmatchedIDs: [],
+      });
+    },
+  };
+};
+
+
+
+
+
+add_setup(function setup() {
+  ChromeMigrationUtils._addonRepository = migrationMockAddonRepository();
+
+  registerCleanupFunction(() => {
+    
+    ChromeMigrationUtils._addonRepository = null;
+  });
+});
