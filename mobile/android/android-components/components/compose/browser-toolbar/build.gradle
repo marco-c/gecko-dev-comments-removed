@@ -23,7 +23,6 @@ dependencies {
     implementation project(":components:browser-menu2")
     implementation project(":components:browser-state")
     implementation project(":components:compose-base")
-    implementation project(":components:compose-cfr")
     implementation project(":components:concept-engine")
     implementation project(":components:concept-menu")
     implementation project(":components:feature-session")
@@ -40,6 +39,7 @@ dependencies {
     implementation libs.androidx.compose.material3.adaptive
     implementation libs.androidx.compose.ui
     implementation libs.androidx.compose.ui.tooling.preview
+    implementation libs.androidx.lifecycle.compose
     implementation libs.androidx.window.core
 
     debugImplementation libs.androidx.compose.ui.tooling
