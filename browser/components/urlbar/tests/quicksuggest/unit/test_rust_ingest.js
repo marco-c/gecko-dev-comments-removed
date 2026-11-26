@@ -74,9 +74,7 @@ add_task(async function disableEnable() {
 
     checkIngestCounts({
       stub,
-      expected: Object.fromEntries(
-        enabledTypes.map(({ provider }) => [provider, 1])
-      ),
+      expected: expectedIngestCounts(enabledTypes),
     });
   });
 });
@@ -169,9 +167,7 @@ add_task(async function interval() {
 
       checkIngestCounts({
         stub,
-        expected: Object.fromEntries(
-          enabledTypes.map(({ provider }) => [provider, 1])
-        ),
+        expected: expectedIngestCounts(enabledTypes),
       });
     }
   });
@@ -308,6 +304,19 @@ function getIngestCounts(stub, providersFilter = null) {
 
   stub.resetHistory();
   return countsByProvider;
+}
+
+
+
+
+
+
+function expectedIngestCounts(enabledTypes) {
+  let counts = {};
+  for (let { provider } of enabledTypes) {
+    counts[provider] = (counts[provider] ?? 0) + 1;
+  }
+  return counts;
 }
 
 function checkIngestCounts({ stub, providersFilter, expected }) {
