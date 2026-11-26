@@ -2357,7 +2357,12 @@ class Editor extends EventEmitter {
     }
     const cm = editors.get(this);
     if (this.config.cm6) {
-      if (!this.#currentDocument) {
+      if (
+        !this.#currentDocument ||
+        this.#currentDocument.id !== this.#currentDocumentId
+      ) {
+        
+        
         
         this.#currentDocument = { id: this.#currentDocumentId };
       }
@@ -2374,8 +2379,17 @@ class Editor extends EventEmitter {
     return wasm.getWasmLineNumberFormatter(this.getDoc());
   }
 
-  wasmOffsetToLine(offset) {
-    return wasm.wasmOffsetToLine(this.getDoc(), offset);
+  
+
+
+
+
+
+
+
+
+  wasmOffsetToLine(offset, content = this.getDoc()) {
+    return wasm.wasmOffsetToLine(content, offset);
   }
 
   lineToWasmOffset(number) {
@@ -2390,7 +2404,7 @@ class Editor extends EventEmitter {
   }
 
   renderWasmText(content) {
-    return wasm.renderWasmText(this.getDoc(), content);
+    return wasm.renderWasmText(content);
   }
 
   
@@ -2873,7 +2887,12 @@ class Editor extends EventEmitter {
 
 
 
-  async setText(value, { documentId, saveTransactionToHistory = true } = {}) {
+
+
+  async setText(
+    value,
+    { documentId, saveTransactionToHistory = true, mode } = {}
+  ) {
     const cm = editors.get(this);
     const isWasm = typeof value !== "string" && "binary" in value;
 
@@ -2929,6 +2948,14 @@ class Editor extends EventEmitter {
       });
 
       const effects = [];
+      if (mode) {
+        effects.push(
+          this.#compartments.languageCompartment.reconfigure([
+            this.#languageModes.get(mode),
+          ])
+        );
+      }
+
       if (this.config?.lineNumbers) {
         const lineNumbersConfig = {
           domEventHandlers: this.#gutterDOMEventHandlers,
