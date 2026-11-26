@@ -774,24 +774,6 @@ class ModuleEnvironmentObject : public DisposableEnvironmentObject {
 
   
   
-  inline bool hasWasmMutableGlobalBinding(uint32_t slot) const;
-
-  
-  
-  
-  
-  const Value& getSlot(uint32_t slot) const = delete;
-  const Value& getRawSlot(uint32_t slot) const {
-    return NativeObject::getSlot(slot);
-  }
-
-  
-  inline bool getBindingValue(JSContext* cx, uint32_t slot,
-                              MutableHandleValue value) const;
-  inline bool isBindingUninitialized(uint32_t slot) const;
-
-  
-  
   
   
   static ModuleEnvironmentObject* find(JSObject* env);

@@ -320,12 +320,6 @@ GetPropIRGenerator::GetPropIRGenerator(JSContext* cx, HandleScript script,
 
 static void EmitLoadSlotResult(CacheIRWriter& writer, ObjOperandId holderId,
                                NativeObject* holder, PropertyInfo prop) {
-  
-  
-  const Value& slotValue = holder->getSlot(prop.slot());
-  MOZ_RELEASE_ASSERT(
-      !slotValue.isObject() ||
-      !slotValue.toObject().is<WasmMutableGlobalBindingObject>());
   if (holder->isFixedSlot(prop.slot())) {
     writer.loadFixedSlotResult(holderId,
                                NativeObject::getFixedSlotOffset(prop.slot()));
@@ -2642,9 +2636,7 @@ AttachDecision GetPropIRGenerator::tryAttachModuleNamespace(HandleObject obj,
   }
 
   
-  
-  if (env->getRawSlot(prop->slot()).isMagic(JS_UNINITIALIZED_LEXICAL) ||
-      env->hasWasmMutableGlobalBinding(prop->slot())) {
+  if (env->getSlot(prop->slot()).isMagic(JS_UNINITIALIZED_LEXICAL)) {
     return AttachDecision::NoAction;
   }
 
@@ -3665,11 +3657,6 @@ AttachDecision GetNameIRGenerator::tryAttachEnvironmentName(ObjOperandId objId,
   if (!IsCacheableGetPropSlot(holder, holder, *prop)) {
     return AttachDecision::NoAction;
   }
-  
-  MOZ_RELEASE_ASSERT(
-      !holder->is<ModuleEnvironmentObject>() ||
-      !holder->as<ModuleEnvironmentObject>().hasWasmMutableGlobalBinding(
-          prop->slot()));
   if (holder->getSlot(prop->slot()).isMagic()) {
     MOZ_ASSERT(holder->is<EnvironmentObject>());
     return AttachDecision::NoAction;
@@ -17357,9 +17344,7 @@ AttachDecision GetImportIRGenerator::tryAttachInitialized() {
   MOZ_ALWAYS_TRUE(env->lookupImport(id, &holderEnv, &prop));
 
   
-  
-  if (holderEnv->getRawSlot(prop->slot()).isMagic(JS_UNINITIALIZED_LEXICAL) ||
-      holderEnv->hasWasmMutableGlobalBinding(prop->slot())) {
+  if (holderEnv->getSlot(prop->slot()).isMagic(JS_UNINITIALIZED_LEXICAL)) {
     return AttachDecision::NoAction;
   }
 
