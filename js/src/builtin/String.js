@@ -9,6 +9,24 @@ function ThrowIncompatibleMethod(name, thisv) {
 
 function String_match(regexp) {
   
+  
+  if (typeof this === "string" && IsObject(regexp) &&
+      IsOptimizableRegExpObject(regexp)) {
+    var flags = UnsafeGetInt32FromReservedSlot(regexp, REGEXP_FLAGS_SLOT);
+    if (flags & REGEXP_GLOBAL_FLAG) {
+      var fullUnicode = !!(flags & REGEXP_ANY_UNICODE_MASK);
+      return RegExpGlobalMatchOpt(regexp, this, fullUnicode);
+    }
+    return RegExpBuiltinExec(regexp, this);
+  }
+
+  return callFunction(StringMatchSlowPath, this, regexp);
+}
+SetIsInlinableLargeFunction(String_match);
+
+
+function StringMatchSlowPath(regexp) {
+  
   if (IsNullOrUndefined(this)) {
     ThrowIncompatibleMethod("match", this);
   }

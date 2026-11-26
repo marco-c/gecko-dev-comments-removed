@@ -120,6 +120,7 @@ function RegExpMatch(string) {
   var S = ToString(string);
 
   
+  
   if (IsOptimizableRegExpObject(rx)) {
     
     var flags = UnsafeGetInt32FromReservedSlot(rx, REGEXP_FLAGS_SLOT);
@@ -1254,7 +1255,7 @@ function RegExpMatchAll(string) {
       (callFunction(std_String_includes, flags, "g") ? REGEXP_GLOBAL_FLAG : 0) |
       (callFunction(std_String_includes, flags, "u") ? REGEXP_UNICODE_FLAG : 0) |
       (callFunction(std_String_includes, flags, "v") ? REGEXP_UNICODESETS_FLAG : 0);
-    
+
     
     lastIndex = REGEXP_STRING_ITERATOR_LASTINDEX_SLOW;
   }
