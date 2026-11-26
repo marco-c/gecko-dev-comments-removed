@@ -1277,18 +1277,23 @@ bool js::WasmModuleExecute(JSContext* cx, Handle<ModuleObject*> record) {
         
         
         
-        if (!globalValue.get().toJSValue(cx, &value)) {
-          MOZ_ASSERT(cx->isThrowingOutOfMemory());
-          return false;
+        if (!globalObject->isMutable()) {
+          if (!globalValue.get().toJSValue(cx, &value)) {
+            MOZ_ASSERT(cx->isThrowingOutOfMemory());
+            return false;
+          }
+        } else {
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          value.setObject(*globalObject);
         }
-
-        
-        
-        
-        
-        
-        
-        
       }
     } else {
       
