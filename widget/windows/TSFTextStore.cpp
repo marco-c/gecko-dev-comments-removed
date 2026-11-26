@@ -950,9 +950,10 @@ bool TSFTextStore::GetCurrentText(
 
   WidgetQueryContentEvent queryTextContentEvent(true, eQueryTextContent,
                                                 mWidget);
-  queryTextContentEvent.InitForQueryTextContent(0, UINT32_MAX);
-  queryTextContentEvent.mNeedsToFlushLayout =
+  QueryContentOptions options;
+  options.mNeedsToFlushLayout =
       aAllowToFlushLayoutIfNoCache == AllowToFlushLayoutIfNoCache::Yes;
+  queryTextContentEvent.InitForQueryTextContent(0, UINT32_MAX, options);
   mWidget->InitEvent(queryTextContentEvent);
   DispatchEvent(queryTextContentEvent);
   if (NS_WARN_IF(queryTextContentEvent.Failed())) {
@@ -996,7 +997,10 @@ Maybe<TSFTextStore::Selection>& TSFTextStore::SelectionForTSF() {
 
     WidgetQueryContentEvent querySelectedTextEvent(true, eQuerySelectedText,
                                                    mWidget);
-    querySelectedTextEvent.mNeedsToFlushLayout = allowToFlushPendingLayout;
+    QueryContentOptions options;
+    options.mNeedsToFlushLayout = allowToFlushPendingLayout;
+    querySelectedTextEvent.InitForQuerySelectedText(SelectionType::eNormal,
+                                                    options);
     mWidget->InitEvent(querySelectedTextEvent);
     DispatchEvent(querySelectedTextEvent);
     if (NS_WARN_IF(querySelectedTextEvent.Failed())) {
@@ -3830,10 +3834,10 @@ void TSFTextStore::CreateNativeCaret() {
   WidgetQueryContentEvent queryCaretRectEvent(true, eQueryCaretRect, mWidget);
   
   
-  queryCaretRectEvent.mNeedsToFlushLayout = false;
+  QueryContentOptions options;
+  options.mNeedsToFlushLayout = false;
   mWidget->InitEvent(queryCaretRectEvent);
 
-  QueryContentOptions options;
   
   
   int64_t caretOffset = selectionForTSF->HasRange()
