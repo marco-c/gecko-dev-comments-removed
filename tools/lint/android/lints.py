@@ -507,15 +507,8 @@ def lint(_paths, config, **lintargs):
             }
             results.append(result.from_config(config, **err))
 
-    collect(
-        os.path.join(
-            gradle_build,
-            "geckoview/reports",
-            "lint-results-{}.xml".format(
-                lintargs["substs"]["GRADLE_ANDROID_GECKOVIEW_VARIANT_NAME"]
-            ),
-        )
-    )
+    for report in lintargs["substs"]["GRADLE_ANDROID_LINT_REPORTS"]:
+        collect(os.path.join(topobjdir, report))
 
     
     
