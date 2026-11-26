@@ -8,10 +8,14 @@
 #include "JavaCallbacksSupport.h"
 #include "MediaData.h"
 #include "PlatformEncoderModule.h"
+#include "gtest/MozGtestFriend.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
 
 namespace mozilla {
+
+
+const char* AndroidEncoderMimeType(CodecType aCodec);
 
 class AndroidDataEncoder final : public MediaDataEncoder {
  public:
@@ -26,6 +30,7 @@ class AndroidDataEncoder final : public MediaDataEncoder {
 
   RefPtr<InitPromise> Init() override;
   RefPtr<EncodePromise> Encode(const MediaData* aSample) override;
+  RefPtr<EncodePromise> Encode(nsTArray<RefPtr<MediaData>>&& aSamples) override;
   RefPtr<EncodePromise> Drain() override;
   RefPtr<ShutdownPromise> Shutdown() override;
   RefPtr<GenericPromise> SetBitrate(uint32_t aBitsPerSec) override;
@@ -66,11 +71,13 @@ class AndroidDataEncoder final : public MediaDataEncoder {
   };
   friend class CallbacksSupport;
 
+  FRIEND_TEST(MediaDataEncoderTest, AndroidDoesNotWriteBeyondConfiguredFrame);
+
   ~AndroidDataEncoder() override { MOZ_ASSERT(!mJavaEncoder); }
 
   
   RefPtr<InitPromise> ProcessInit();
-  RefPtr<EncodePromise> ProcessEncode(const RefPtr<const MediaData>& aSample);
+  RefPtr<EncodePromise> ProcessEncode(nsTArray<RefPtr<MediaData>>&& aSamples);
   RefPtr<EncodePromise> ProcessDrain();
   RefPtr<ShutdownPromise> ProcessShutdown();
   void ProcessInput();
