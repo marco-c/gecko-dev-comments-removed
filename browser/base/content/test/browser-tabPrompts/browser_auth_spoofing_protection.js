@@ -100,7 +100,7 @@ async function waitForDialog(doConfirmPrompt, crossDomain, prefEnabled) {
         "Tab title is manipulated"
       );
       
-      gBrowser.selectedBrowser.urlbarOverrideValue = "user value";
+      gBrowser.selectedBrowser.userTypedValue = "user value";
       gURLBar.setURI();
       Assert.equal(
         window.gURLBar.value,
@@ -108,7 +108,7 @@ async function waitForDialog(doConfirmPrompt, crossDomain, prefEnabled) {
         "User typed value is shown"
       );
       
-      gBrowser.selectedBrowser.urlbarOverrideValue = "";
+      gBrowser.selectedBrowser.userTypedValue = "";
       gURLBar.setURI({ dueToTabSwitch: true });
       Assert.equal(
         window.gURLBar.value,

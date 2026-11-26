@@ -105,8 +105,8 @@ add_task(async function () {
   );
 
   ok(
-    !tab.linkedBrowser.urlbarOverrideValue,
-    "No urlbarOverrideValue should be on the browser."
+    !tab.linkedBrowser.userTypedValue,
+    "No userTypedValue should be on the browser."
   );
 
   BrowserTestUtils.removeTab(tab);

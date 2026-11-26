@@ -2192,7 +2192,7 @@ var XULBrowserWindow = {
 
           
           if (location.scheme == "keyword" && aWebProgress.isTopLevel) {
-            gBrowser.urlbarOverrideValue = null;
+            gBrowser.userTypedValue = null;
           }
 
           canViewSource = location.scheme != "view-source";

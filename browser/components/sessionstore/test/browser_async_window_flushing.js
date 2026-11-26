@@ -42,7 +42,7 @@ add_task(async function test_add_interesting_window() {
 
   
   
-  browser.urlbarOverrideValue = null;
+  browser.userTypedValue = null;
 
   
   
