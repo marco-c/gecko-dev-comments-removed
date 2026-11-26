@@ -230,3 +230,12 @@ addAccessibleTask(
   },
   { chrome: true, topLevel: true }
 );
+
+
+
+
+
+addAccessibleTask(
+  `<script> document.ariaNotify(""); </script>`,
+  async function testBeforeDocLoad() {}
+);

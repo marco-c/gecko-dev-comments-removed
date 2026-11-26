@@ -3398,11 +3398,16 @@ bool LocalAccessible::IsActiveDescendant(LocalAccessible** aWidget) const {
 
 void LocalAccessible::Announce(const nsAString& aAnnouncement,
                                uint16_t aPriority) {
-  
-  
   if (!mDoc) {
     return;
   }
+  if (!mDoc->HasLoadState(DocAccessible::eTreeConstructed)) {
+    
+    
+    return;
+  }
+  
+  
   dom::Document* docNode = mDoc->DocumentNode();
   if (!docNode) {
     return;
