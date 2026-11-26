@@ -2,17 +2,22 @@
 
 
 
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <resolv.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "GetAddrInfo.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/net/DNSPacket.h"
 #include "nsIDNSService.h"
+#include "nsReadableUtils.h"
 
 namespace mozilla::net {
 
@@ -65,6 +70,95 @@ struct __res_state* GetThreadResState() {
 }
 #endif
 
+
+
+
+static bool IsLocalStubResolver(const NetAddr& aAddr) {
+  if (aAddr.raw.family == AF_INET) {
+    return (ntohl(aAddr.inet.ip) & 0xFF000000) == 0x7F000000;
+  }
+  return aAddr.IsLoopbackAddr();
+}
+
+
+
+
+
+static void AppendSystemdUpstreamResolvers(nsTArray<NetAddr>& aOut) {
+  FILE* f = fopen("/run/systemd/resolve/resolv.conf", "r");
+  if (!f) {
+    return;
+  }
+  auto closeFile = MakeScopeExit([f] { fclose(f); });
+
+  char buf[512];
+  while (fgets(buf, sizeof(buf), f)) {
+    nsAutoCString line(buf);
+    line.CompressWhitespace(true, true);
+    if (!StringBeginsWith(line, "nameserver "_ns)) {
+      continue;
+    }
+
+    nsAutoCString ip(Substring(line, sizeof("nameserver ") - 1));
+    
+    int32_t space = ip.FindChar(' ');
+    if (space != kNotFound) {
+      ip.Truncate(space);
+    }
+    
+    int32_t percent = ip.FindChar('%');
+    if (percent != kNotFound) {
+      ip.Truncate(percent);
+    }
+
+    NetAddr addr;
+    if (NS_SUCCEEDED(addr.InitFromString(ip)) && !IsLocalStubResolver(addr)) {
+      AppendResolverAddr(aOut, addr);
+    }
+  }
+}
+
+
+
+
+
+static void CaptureResolverAddrs(struct __res_state* statp,
+                                 nsTArray<NetAddr>& aOut) {
+  if (!statp) {
+    return;
+  }
+  size_t start = aOut.Length();
+  for (int i = 0; i < statp->nscount && i < MAXNS; i++) {
+    const auto* sa =
+        reinterpret_cast<const struct sockaddr*>(&statp->nsaddr_list[i]);
+#if defined(__GLIBC__)
+    
+    
+    if (sa->sa_family != AF_INET && statp->_u._ext.nsaddrs[i]) {
+      sa = reinterpret_cast<const struct sockaddr*>(statp->_u._ext.nsaddrs[i]);
+    }
+#endif
+    NetAddr addr;
+    if (SockaddrToNetAddr(sa, addr)) {
+      AppendResolverAddr(aOut, addr);
+    }
+  }
+
+  
+  
+  
+  bool allStubs = aOut.Length() > start;
+  for (size_t i = start; i < aOut.Length(); i++) {
+    if (!IsLocalStubResolver(aOut[i])) {
+      allStubs = false;
+      break;
+    }
+  }
+  if (allStubs) {
+    AppendSystemdUpstreamResolvers(aOut);
+  }
+}
+
 nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
                                 const Maybe<nsCString>& aOriginHost,
                                 nsIDNSService::DNSFlags aFlags,
@@ -113,6 +207,14 @@ nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
       });
   if (NS_FAILED(rv)) {
     return NS_ERROR_UNKNOWN_HOST;
+  }
+
+  if (aResolverAddrs) {
+#if defined(HAVE_RES_NINIT)
+    CaptureResolverAddrs(res, *aResolverAddrs);
+#else
+    CaptureResolverAddrs(&_res, *aResolverAddrs);
+#endif
   }
 
   packet.SetOriginHost(aOriginHost);

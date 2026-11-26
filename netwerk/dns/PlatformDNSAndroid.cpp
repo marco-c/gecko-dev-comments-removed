@@ -11,6 +11,8 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/glean/NetwerkMetrics.h"
+#include "mozilla/java/GeckoAppShellWrappers.h"
+#include "mozilla/jni/Utils.h"
 #include "mozilla/net/DNSPacket.h"
 #include "nsIDNSService.h"
 
@@ -19,6 +21,32 @@ namespace mozilla::net {
 
 
 static Atomic<bool> sLibLoading{false};
+
+
+
+
+
+static void CaptureResolverAddrs(nsTArray<NetAddr>& aOut) {
+  if (!jni::IsAvailable()) {
+    return;
+  }
+
+  jni::ObjectArray::LocalRef servers;
+  if (NS_FAILED(java::GeckoAppShell::GetDNSServers(&servers)) || !servers) {
+    return;
+  }
+
+  for (size_t i = 0; i < servers->Length(); i++) {
+    jni::String::LocalRef server = servers->GetElement(i);
+    if (!server) {
+      continue;
+    }
+    NetAddr addr;
+    if (NS_SUCCEEDED(addr.InitFromString(server->ToCString()))) {
+      AppendResolverAddr(aOut, addr);
+    }
+  }
+}
 
 
 
@@ -121,6 +149,10 @@ nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
   if (NS_FAILED(rv)) {
     LOG("failed rv");
     return rv;
+  }
+
+  if (aResolverAddrs) {
+    CaptureResolverAddrs(*aResolverAddrs);
   }
 
   packet.SetOriginHost(aOriginHost);
