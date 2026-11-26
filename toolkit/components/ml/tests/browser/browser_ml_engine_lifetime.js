@@ -797,6 +797,104 @@ add_task(async function test_ml_engine_terminated_does_not_reopen() {
 
 
 
+add_task(async function test_ml_engine_terminated_before_idle_port_message() {
+  const { cleanup, remoteClients } = await setup();
+  const engineInstance = await createEngine({
+    taskName: "moz-echo",
+    timeoutMS: 100,
+  });
+  const firstRun = engineInstance.run({ data: "Before terminating" });
+  await remoteClients["ml-onnx-runtime"].resolvePendingDownloads(1);
+  await firstRun;
+
+  
+  
+  let deliverTerminated;
+  const stub = sinon
+    .stub(engineInstance, "handlePortMessage")
+    .callsFake((event, ...args) => {
+      if (event.data.type == "EnginePort:EngineTerminated") {
+        deliverTerminated = () => stub.wrappedMethod(event, ...args);
+        return;
+      }
+      stub.wrappedMethod(event, ...args);
+    });
+  try {
+    await TestUtils.waitForCondition(
+      () => engineInstance.engineStatus == "suspended",
+      "The idle shutdown suspends the engine"
+    );
+
+    await engineInstance.terminate();
+    await Assert.rejects(
+      engineInstance.run({ data: "After terminating" }),
+      /Port does not exist/,
+      "A terminated engine rejects runs at once"
+    );
+    deliverTerminated?.();
+  } finally {
+    stub.restore();
+    await EngineProcess.destroyMLEngine();
+    await cleanup();
+  }
+});
+
+
+
+
+add_task(async function test_ml_engine_terminate_crossing_idle_shutdown() {
+  const { cleanup, remoteClients } = await setup();
+  
+  
+  const engineInstance = await createEngine({
+    taskName: "moz-echo",
+    timeoutMS: 1000,
+  });
+  const firstRun = engineInstance.run({ data: "Before terminating" });
+  await remoteClients["ml-onnx-runtime"].resolvePendingDownloads(1);
+  await firstRun;
+
+  
+  
+  const { MessagePort: ModuleMessagePort } =
+    Cu.getGlobalForObject(MLEngineParent);
+  const postMessage = ModuleMessagePort.prototype.postMessage;
+  let sendTerminate;
+  const stub = sinon
+    .stub(ModuleMessagePort.prototype, "postMessage")
+    .callsFake(function (message, ...args) {
+      if (message.type == "EnginePort:Terminate") {
+        sendTerminate = () => postMessage.call(this, message, ...args);
+        return;
+      }
+      postMessage.call(this, message, ...args);
+    });
+  try {
+    const terminated = engineInstance.terminate();
+    Assert.ok(sendTerminate, "terminate() sends EnginePort:Terminate");
+    await TestUtils.waitForCondition(
+      () => engineInstance.engineStatus != "ready",
+      "The idle shutdown reaches the engine"
+    );
+    sendTerminate();
+
+    await terminated;
+    Assert.equal(
+      engineInstance.engineStatus,
+      "closed",
+      "The terminated engine is closed rather than suspended"
+    );
+  } finally {
+    stub.restore();
+    await EngineProcess.destroyMLEngine();
+    await cleanup();
+  }
+});
+
+
+
+
+
 add_task(async function test_ml_engine_reopen_reuses_live_engine() {
   const { cleanup, remoteClients } = await setup();
 
@@ -1209,9 +1307,7 @@ add_task(async function test_ml_engine_get_status_by_engine_id() {
         numThreads: "NOT_COMPARED",
         executionPriority: null,
         kvCacheDtype: null,
-        numContext: 1024,
-        numBatch: 2048,
-        numUbatch: 512,
+        numBatch: 512,
         flashAttn: false,
         useMmap: false,
         useMlock: true,
