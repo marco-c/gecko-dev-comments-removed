@@ -8,6 +8,7 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.RatingBar
 import android.widget.TextView
+import androidx.compose.ui.platform.ComposeView
 import androidx.recyclerview.widget.RecyclerView
 
 /** A base view holder. */
@@ -17,13 +18,6 @@ sealed class CustomViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         view: View,
         val titleView: TextView,
         val divider: View,
-    ) : CustomViewHolder(view)
-
-    /** A view holder for displaying Not yet supported section items. */
-    class UnsupportedSectionViewHolder(
-        view: View,
-        val titleView: TextView,
-        val descriptionView: TextView,
     ) : CustomViewHolder(view)
 
     /** A view holder for displaying add-on items. */
@@ -41,6 +35,7 @@ sealed class CustomViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val allowedInPrivateBrowsingLabel: ImageView,
         val messageBarWarningView: View,
         val messageBarErrorView: View,
+        val messageBarUpdateView: ComposeView,
     ) : CustomViewHolder(view)
 
     /** A view holder for displaying a section above the list of add-ons. */
