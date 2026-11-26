@@ -506,7 +506,6 @@ release-promotion:
             rebuild-kinds:
                 - release-partner-repack
                 - release-partner-repack-chunking-dummy
-                - release-partner-repack-signing
                 - release-partner-repack-mac-signing
                 - release-partner-repack-mac-notarization
                 - release-partner-repack-repackage
@@ -975,7 +974,6 @@ mac-signing:
                   entitlements: public/build/security/security-module-helper.xml
                   globs:
                       - "/Contents/MacOS/security-module-helper.app"
-                  only-if-milestone-is-nightly: true
 
                 - deep: false
                   runtime: true
@@ -1033,7 +1031,6 @@ mac-signing:
                   entitlements: public/build/security/security-module-helper.xml
                   globs:
                       - "/Contents/MacOS/security-module-helper.app"
-                  only-if-milestone-is-nightly: true
 
                 - deep: false
                   runtime: true
