@@ -24,6 +24,13 @@ const PRINCIPAL_C_PBM = Services.scriptSecurityManager.createContentPrincipal(
   OA_PBM
 );
 
+const OA_CONTAINER = { userContextId: 2 };
+const PRINCIPAL_B_CONTAINER =
+  Services.scriptSecurityManager.createContentPrincipal(
+    Services.io.newURI(ORIGIN_B),
+    OA_CONTAINER
+  );
+
 let btp;
 let userActivationLifetimeSec = Services.prefs.getIntPref(
   "privacy.bounceTrackingProtection.bounceTrackingActivationLifetimeSec"
@@ -52,7 +59,14 @@ add_setup(function () {
   cleanup();
 });
 
-add_task(async function test_user_activation_perm_migration() {
+
+
+
+
+
+
+
+async function testUserActivationPermMigration(isolateByUserContext) {
   
   Assert.deepEqual(
     btp.testGetUserActivationHosts({}),
@@ -108,10 +122,18 @@ add_task(async function test_user_activation_perm_migration() {
   );
 
   
+  PermissionTestUtils.addWithModificationTime(
+    PRINCIPAL_C_PBM,
+    "storageAccessAPI",
+    Services.perms.ALLOW_ACTION,
+    now
+  );
+
+  
   
   
   PermissionTestUtils.addWithModificationTime(
-    PRINCIPAL_C_PBM,
+    PRINCIPAL_B_CONTAINER,
     "storageAccessAPI",
     Services.perms.ALLOW_ACTION,
     now
@@ -133,6 +155,11 @@ add_task(async function test_user_activation_perm_migration() {
     [DOMAIN_C],
     "Should have imported the correct user activation flags for PBM."
   );
+  Assert.deepEqual(
+    btp.testGetUserActivationHosts(OA_CONTAINER).map(entry => entry.siteHost),
+    isolateByUserContext ? [DOMAIN_B] : [],
+    "Should have imported the correct user activation flags for the container."
+  );
 
   info("Reset the BTP user activation store");
   btp.clearAll();
@@ -150,6 +177,25 @@ add_task(async function test_user_activation_perm_migration() {
     [],
     "Should not have imported the user activation flags again for PBM."
   );
+  Assert.deepEqual(
+    btp.testGetUserActivationHosts(OA_CONTAINER),
+    [],
+    "Should not have imported the user activation flags again for the container."
+  );
 
   cleanup();
-});
+}
+
+add_task(
+  { pref_set: [["permissions.isolateBy.userContext", true]] },
+  async function test_user_activation_perm_migration_isolated() {
+    await testUserActivationPermMigration(true);
+  }
+);
+
+add_task(
+  { pref_set: [["permissions.isolateBy.userContext", false]] },
+  async function test_user_activation_perm_migration_not_isolated() {
+    await testUserActivationPermMigration(false);
+  }
+);
