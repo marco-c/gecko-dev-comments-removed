@@ -122,15 +122,6 @@ MIDIPermissionRequest::Run() {
 
   
   
-  if (StaticPrefs::dom_sitepermsaddon_provider_enabled() &&
-      nsContentUtils::IsSitePermDeny(mPrincipal, "install"_ns) &&
-      !mPrincipal->GetIsLoopbackHost()) {
-    CancelWithRandomizedDelay();
-    return NS_OK;
-  }
-
-  
-  
   MOZ_ASSERT(NS_IsMainThread());
   mozilla::ipc::PBackgroundChild* actor =
       mozilla::ipc::BackgroundChild::GetOrCreateForCurrentThread();

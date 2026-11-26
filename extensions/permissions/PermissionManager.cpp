@@ -166,8 +166,8 @@ bool IsPreloadPermission(const nsACString& aType) {
 
 
 
-static constexpr std::array<nsLiteralCString, 4> kStripOAPermissions = {
-    {"cookie"_ns, "https-only-load-insecure"_ns, "ipp-vpn"_ns,
+static constexpr std::array<nsLiteralCString, 5> kStripOAPermissions = {
+    {"cookie"_ns, "https-only-load-insecure"_ns, "ipp-vpn"_ns, "install"_ns,
      "translations"_ns}};
 
 bool IsOAForceStripPermission(const nsACString& aType) {
@@ -4529,6 +4529,11 @@ void PermissionManager::MaybeStripOriginAttributes(
   if (flags != 0) {
     aOriginAttributes.StripAttributes(flags);
   }
+}
+
+
+bool PermissionManager::IsOAForceStripPermission(const nsACString& aType) {
+  return mozilla::IsOAForceStripPermission(aType);
 }
 
 

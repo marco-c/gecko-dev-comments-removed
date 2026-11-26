@@ -483,7 +483,7 @@ add_task(async function testSort() {
   );
 });
 
-add_task(async function testPrivateBrowsingSessionPermissionsAreHidden() {
+add_task(async function testPrivateBrowsingSessionPermissionsAreShown() {
   await runTest(
     async params => {
       assertListContents(params, []);
@@ -495,6 +495,8 @@ add_task(async function testPrivateBrowsingSessionPermissionsAreHidden() {
         });
 
       
+      
+      
       PermissionTestUtils.add(
         privateBrowsingPrincipal,
         "cookie",
@@ -502,7 +504,7 @@ add_task(async function testPrivateBrowsingSessionPermissionsAreHidden() {
         Services.perms.EXPIRE_SESSION
       );
 
-      assertListContents(params, []);
+      assertListContents(params, [["http://test.com", params.allowL10nId]]);
 
       PermissionTestUtils.remove(uri, "cookie");
     },
