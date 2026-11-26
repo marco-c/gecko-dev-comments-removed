@@ -14,6 +14,12 @@ from typing import Dict, List, Optional
 from . import util
 
 
+INTERNAL_RESERVED_PING_NAMES = [
+    "all-pings",
+    "glean_client_info",
+    "glean_internal_info",
+]
+
 RESERVED_PING_NAMES = [
     "baseline",
     "metrics",
