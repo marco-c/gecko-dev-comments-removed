@@ -137,6 +137,22 @@ void SyncDBAction::RunWithDBOnTarget(
   MOZ_DIAGNOSTIC_ASSERT(aConn);
 
   nsresult rv = RunSyncWithDBOnTarget(aDirectoryMetadata, aDBDir, aConn);
+
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  
+  
+  
+  {
+    bool transactionInProgress = false;
+    if (NS_SUCCEEDED(aConn->GetTransactionInProgress(&transactionInProgress)) &&
+        transactionInProgress) {
+      MOZ_CRASH_UNSAFE_PRINTF(
+          "Transaction left open after SyncDBAction: rv=0x%08x",
+          static_cast<uint32_t>(rv));
+    }
+  }
+#endif
+
   aResolver->Resolve(rv);
 }
 

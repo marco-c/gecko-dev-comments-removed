@@ -1200,6 +1200,22 @@ class Manager::CachePutAllAction final : public DBAction {
     }
 #endif
 
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+    
+    
+    
+    if (mConn) {
+      bool transactionInProgress = false;
+      if (NS_SUCCEEDED(
+              mConn->GetTransactionInProgress(&transactionInProgress)) &&
+          transactionInProgress) {
+        MOZ_CRASH_UNSAFE_PRINTF(
+            "Transaction left open after CachePutAllAction: rv=0x%08x",
+            static_cast<uint32_t>(aRv));
+      }
+    }
+#endif
+
     
     if (NS_FAILED(aRv)) {
       
@@ -1604,6 +1620,14 @@ class Manager::StorageDeleteAction final : public Manager::BaseAction {
     QM_TRY(
         MOZ_TO_RESULT(db::StorageForgetCache(*aConn, mNamespace, mArgs.key())));
 
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+    (void)aConn->GetAffectedRows(&mForgottenRows);
+    {
+      mozilla::storage::SQLiteMutexAutoLock lock(aConn->GetSharedDBMutex());
+      mNestingLevelBeforeCommit = aConn->GetTransactionNestingLevel(lock);
+    }
+#endif
+
     QM_TRY(MOZ_TO_RESULT(trans.Commit()));
 
     mCacheDeleted = true;
@@ -1612,6 +1636,21 @@ class Manager::StorageDeleteAction final : public Manager::BaseAction {
 
   virtual void Complete(Listener* aListener, ErrorResult&& aRv) override {
     if (mCacheDeleted) {
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+      
+      
+      
+      
+      if (mManager->IsCacheIdOrphaned(mCacheId)) {
+        MOZ_CRASH_UNSAFE_PRINTF(
+            "Cache id orphaned twice: namespace=%d emptyKey=%d "
+            "forgottenRows=%d nestingLevelBeforeCommit=%u",
+            static_cast<int>(mNamespace),
+            static_cast<int>(mArgs.key().IsEmpty()),
+            static_cast<int>(mForgottenRows), mNestingLevelBeforeCommit);
+      }
+#endif
+
       
       
       if (!mManager->SetCacheIdOrphanedIfRefed(mCacheId)) {
@@ -1635,6 +1674,10 @@ class Manager::StorageDeleteAction final : public Manager::BaseAction {
   const StorageDeleteArgs mArgs;
   bool mCacheDeleted;
   CacheId mCacheId;
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  int32_t mForgottenRows = -1;
+  uint32_t mNestingLevelBeforeCommit = 0;
+#endif
 };
 
 
@@ -2228,6 +2271,17 @@ bool Manager::SetCacheIdOrphanedIfRefed(CacheId aCacheId) {
 
   return false;
 }
+
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+bool Manager::IsCacheIdOrphaned(CacheId aCacheId) const {
+  NS_ASSERT_OWNINGTHREAD(Manager);
+
+  const auto end = mCacheIdRefs.end();
+  const auto foundIt =
+      std::find_if(mCacheIdRefs.begin(), end, MatchByCacheId(aCacheId));
+  return foundIt != end && foundIt->mOrphaned;
+}
+#endif
 
 
 
