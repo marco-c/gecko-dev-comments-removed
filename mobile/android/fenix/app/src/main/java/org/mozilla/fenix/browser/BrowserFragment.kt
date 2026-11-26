@@ -246,7 +246,7 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun setupShakeDetection() {
         val shouldSetupShake =
-            requireComponents.core.summarizeFeatureSettings.canShowFeature &&
+            requireComponents.core.summarizeFeatureSettings.shouldShowFeature &&
                 requireComponents.core.summarizationSettingsBinding.isGestureEnabled.value
         if (!shouldSetupShake) {
             return
@@ -418,12 +418,6 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
 
     override fun onStart() {
         super.onStart()
-        val context = requireContext()
-
-        if (context.components.appStore.state.longfoxEntryPointReady) {
-            context.components.appStore.dispatch(AppAction.UpdateShowFoxPeekAnimation(false))
-        }
-
         subscribeToTabCollections()
         updateLastBrowseActivity()
 

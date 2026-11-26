@@ -80,9 +80,6 @@ interface FeatureSettingsHelper {
     /** Indicates if the shake to summarize toolbar CFR was displayed to the user. */
     var hasSeenShakeToSummarizeToolbarCfr: Boolean
 
-    /** Enable or disable the shake to summarize feature flag. */
-    var shakeToSummarizeFeatureFlagEnabled: Boolean
-
     /** Enable or disable expanded toolbar layout. */
     var shouldUseExpandedToolbar: Boolean
 
@@ -97,6 +94,9 @@ interface FeatureSettingsHelper {
 
     /** Whether trending and recent searches are shown on the Homepage search. */
     var isHomepageTrendingRecentSearchEnabled: Boolean
+
+    /** Whether Homepage Customization, e.g. the homepage search position setting, is enabled. */
+    var isHomepageCustomizationEnabled: Boolean
 
     /** Whether the Collections to Tab Groups migration runs. */
     var isCollectionsToTabGroupsMigrationEnabled: Boolean

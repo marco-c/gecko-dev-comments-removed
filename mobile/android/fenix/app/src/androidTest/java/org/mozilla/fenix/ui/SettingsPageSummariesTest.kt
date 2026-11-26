@@ -31,7 +31,6 @@ class SettingsPageSummariesTest {
         AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule(
                 skipOnboarding = true,
-                shakeToSummarizeFeatureFlagEnabled = true,
                 hasSeenShakeToSummarizeToolbarCfr = false,
             )
         ) {
@@ -116,8 +115,15 @@ class SettingsPageSummariesTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4035976
+    @Converted(
+        replacedBy =
+            ["org.mozilla.fenix.ui.efficiency.tests.SettingsPageSummariesTest#verifyTheShakeToSummarizeDismissCFRTest"],
+        bug = 2080832,
+        since = "2026-10",
+    )
+    @Critical
     @Test
-    fun verifyTheShakeToSummarizeCFRTest() {
+    fun verifyTheShakeToSummarizeDismissCFRTest() {
         val articlePage = mockWebServer.articleSummaryAsset
         navigationToolbar(composeTestRule) {}
             .enterURLAndEnterToBrowser(articlePage.url) {
