@@ -1750,6 +1750,14 @@ void nsGlobalWindowInner::ReportToConsole(
                                   aMessageName.get(), aParams, aLocation);
 }
 
+void nsGlobalWindowInner::ReportToConsole(
+    uint32_t aErrorFlags, const nsCString& aCategory, FluentResourceFile aFile,
+    const nsCString& aL10nId, const nsTArray<intl::FluentArg>& aArgs,
+    const mozilla::SourceLocation& aLocation) {
+  nsContentUtils::ReportToConsole(aErrorFlags, aCategory, mDoc, aFile, aL10nId,
+                                  aArgs, aLocation);
+}
+
 nsresult nsGlobalWindowInner::EnsureScriptEnvironment() {
   
   
