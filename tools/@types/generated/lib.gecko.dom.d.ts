@@ -37176,8 +37176,6 @@ interface WebExtensionPolicy {
     readonly ACCESS_FILE_ALWAYS: 0x10;
     
     readonly ACCESS_OWN_EXTENSION: 0x20;
-    
-    readonly ACCESS_OTHER_EXTENSIONS: 0x40;
 }
 
 declare var WebExtensionPolicy: {
@@ -37195,8 +37193,6 @@ declare var WebExtensionPolicy: {
     readonly ACCESS_FILE_ALWAYS: 0x10;
     
     readonly ACCESS_OWN_EXTENSION: 0x20;
-    
-    readonly ACCESS_OTHER_EXTENSIONS: 0x40;
     
     readonly backgroundServiceWorkerEnabled: boolean;
     

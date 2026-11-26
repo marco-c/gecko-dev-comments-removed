@@ -357,9 +357,8 @@ bool WebExtensionPolicyCore::CanAccessURI(const URLInfo& aURI,
     
     
     
-    return MozExtensionHostname().Equals(aURI.Host())
-               ? !!(aFlags & ACCESS_OWN_EXTENSION)
-               : !!(aFlags & ACCESS_OTHER_EXTENSIONS);
+    return MozExtensionHostname().Equals(aURI.Host()) &&
+           !!(aFlags & ACCESS_OWN_EXTENSION);
   }
 
   if (!(aFlags & ACCESS_IGNORE_RESTRICTIONS)) {
