@@ -21,6 +21,7 @@
 #include <shellapi.h>
 #include <windows.h>
 
+#include "GdiBackBuffer.h"
 #include "ImageRegion.h"
 #include "InProcessWinCompositorWidget.h"
 #include "WinUtils.h"
@@ -30,10 +31,8 @@
 #include "gfxContext.h"
 #include "gfxDWriteFonts.h"
 #include "gfxEnv.h"
-#include "gfxImageSurface.h"
 #include "gfxUtils.h"
 #include "gfxWindowsPlatform.h"
-#include "gfxWindowsSurface.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/SVGImageContext.h"
 #include "mozilla/dom/ContentParent.h"
@@ -121,18 +120,25 @@ void nsWindow::ForcePresent() {
 
 bool nsWindow::OnPaint() {
   struct FallbackPaintContext {
-    RefPtr<gfxASurface> mTargetSurface;
+    const GdiBackBuffer& mBackBuffer;
     RefPtr<DrawTarget> mDt;
     gfxContext mGfxContext;
     AutoLayerManagerSetup mSetup;
 
     explicit FallbackPaintContext(nsWindow* aWindow,
-                                  RefPtr<gfxASurface> aTargetSurface,
+                                  const GdiBackBuffer& aBackBuffer,
                                   RefPtr<DrawTarget> aDt)
-        : mTargetSurface(std::move(aTargetSurface)),
+        : mBackBuffer(aBackBuffer),
           mDt(std::move(aDt)),
           mGfxContext(mDt),
           mSetup(aWindow, &mGfxContext) {}
+
+    void Present(HDC aTargetDC, const LayoutDeviceIntRegion& aRegion) {
+      mDt->Flush();
+      for (auto it = aRegion.RectIter(); !it.Done(); it.Next()) {
+        mBackBuffer.BlitTo(aTargetDC, it.Get().ToUnknownRect());
+      }
+    }
   };
 
   gfx::DeviceResetReason resetReason = gfx::DeviceResetReason::OK;
@@ -191,21 +197,24 @@ bool nsWindow::OnPaint() {
     mLastPaintEndTime = TimeStamp::Now();
   });
 
+  GdiBackBuffer backBuffer;
   Maybe<FallbackPaintContext> fallback;
   if (isFallback) {
-    uint32_t flags = isTransparent ? gfxWindowsSurface::FLAG_IS_TRANSPARENT : 0;
-    auto targetSurface = MakeRefPtr<gfxWindowsSurface>(hDC, flags);
     RECT paintRect;
     ::GetClientRect(mWnd, &paintRect);
-    RefPtr<DrawTarget> dt = gfxPlatform::CreateDrawTargetForSurface(
-        targetSurface, IntSize(paintRect.right - paintRect.left,
-                               paintRect.bottom - paintRect.top));
-    if (!dt || !dt->IsValid()) {
-      gfxWarning() << "nsWindow::OnPaint failed in CreateDrawTargetForSurface";
+    const IntSize size(paintRect.right - paintRect.left,
+                       paintRect.bottom - paintRect.top);
+    if (!backBuffer.Ensure(hDC, size)) {
+      gfxWarning() << "nsWindow::OnPaint failed to create a back buffer";
+      return false;
+    }
+    RefPtr<DrawTarget> dt = backBuffer.CreateDrawTarget();
+    if (!dt) {
+      gfxWarning() << "nsWindow::OnPaint failed to create a draw target";
       return false;
     }
 
-    fallback.emplace(this, std::move(targetSurface), std::move(dt));
+    fallback.emplace(this, backBuffer, std::move(dt));
   }
 
   LayoutDeviceIntRegion region = GetRegionToPaint(ps, hDC);
@@ -225,44 +234,31 @@ bool nsWindow::OnPaint() {
       regionToClear.SubOut(mClearedRegion);
     }
     mClearedRegion = std::move(translucentRegion);
+    region.OrWith(regionToClear);
+    if (fallback) {
+      
+      
+      return;
+    }
     auto black = reinterpret_cast<HBRUSH>(::GetStockObject(BLACK_BRUSH));
     
     
     
     for (auto it = regionToClear.RectIter(); !it.Done(); it.Next()) {
-      if (fallback) {
-        
-        
-        
-        
-        fallback->mDt->ClearRect(Rect(it.Get().ToUnknownRect()));
-      } else {
-        auto rect = WinUtils::ToWinRect(it.Get());
-        ::FillRect(hDC, &rect, black);
-      }
+      auto rect = WinUtils::ToWinRect(it.Get());
+      ::FillRect(hDC, &rect, black);
     }
-    region.OrWith(regionToClear);
   };
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (fallback) {
-    ComputeAndClearTranslucentRegion();
-  }
 
   if (auto* listener = GetPaintListener()) {
     listener->PaintWindow(this);
   }
 
-  if (!fallback) {
-    ComputeAndClearTranslucentRegion();
+  
+  
+  ComputeAndClearTranslucentRegion();
+  if (fallback) {
+    fallback->Present(hDC, region);
   }
 
   if (knowsCompositor && layerManager && !region.IsEmpty()) {
