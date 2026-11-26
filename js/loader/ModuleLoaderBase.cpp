@@ -141,6 +141,25 @@ static bool CreateBadModuleTypeError(JSContext* aCx,
                      NothingHandleValue, aErrorOut);
 }
 
+static bool HandleFinishLoadingFailure(JSContext* aCx, bool aOk) {
+  if (aOk) {
+    return true;
+  }
+
+  if (JS_IsThrowingOutOfMemory(aCx)) {
+    mozalloc_handle_oom(0);
+  }
+
+  if (JS_IsExceptionPending(aCx)) {
+    
+    
+    JS_ClearPendingException(aCx);
+    return true;
+  }
+
+  return false;
+}
+
 
 
 bool ModuleLoaderBase::HostLoadImportedModule(
@@ -337,16 +356,29 @@ bool ModuleLoaderBase::FinishLoadingImportedModule(
   
   
   
-  if (!ok && JS_IsThrowingOutOfMemory(aCx)) {
-    mozalloc_handle_oom(0);
-  }
+  ok = HandleFinishLoadingFailure(aCx, ok);
 
   
   
-  MOZ_ASSERT(!JS_IsExceptionPending(aCx));
   aRequest->ClearImport();
 
   return ok;
+}
+
+
+bool ModuleLoaderBase::FinishLoadingImportedModuleFailed(JSContext* aCx,
+                                                         Handle<Value> aPayload,
+                                                         Handle<Value> aError) {
+  return HandleFinishLoadingFailure(
+      aCx, JS::FinishLoadingImportedModuleFailed(aCx, aPayload, aError));
+}
+
+
+bool ModuleLoaderBase::FinishLoadingImportedModuleFailedWithPendingException(
+    JSContext* aCx, Handle<Value> aPayload) {
+  return HandleFinishLoadingFailure(
+      aCx,
+      JS::FinishLoadingImportedModuleFailedWithPendingException(aCx, aPayload));
 }
 
 
@@ -1512,6 +1544,8 @@ bool ModuleLoaderBase::OnLoadRequestedModulesRejected(
     return true;
   }
 
+  bool ok = true;
+
   
   if (aRequest->IsDynamicImport()) {
     LOG(
@@ -1523,13 +1557,13 @@ bool ModuleLoaderBase::OnLoadRequestedModulesRejected(
     
     Rooted<Value> payload(aCx, aRequest->mPayload);
     if (!error.isUndefined()) {
-      FinishLoadingImportedModuleFailed(aCx, payload, error);
+      ok = FinishLoadingImportedModuleFailed(aCx, payload, error);
     } else {
       nsAutoCString url;
       aRequest->URI()->GetSpec(url);
       JS_ReportErrorNumberASCII(aCx, js::GetErrorMessage, nullptr,
                                 JSMSG_DYNAMIC_IMPORT_FAILED, url.get());
-      FinishLoadingImportedModuleFailedWithPendingException(aCx, payload);
+      ok = FinishLoadingImportedModuleFailedWithPendingException(aCx, payload);
     }
     aRequest->SetErroredLoadingImports();
 
@@ -1561,7 +1595,7 @@ bool ModuleLoaderBase::OnLoadRequestedModulesRejected(
 
   
   aRequest->Release();
-  return true;
+  return ok;
 }
 
 bool ModuleLoaderBase::GetImportMapSRI(
