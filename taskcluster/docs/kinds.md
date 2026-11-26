@@ -442,25 +442,13 @@ Publishes signed langpacks to archive.mozilla.org
 
 Publishes signed langpacks to archive.mozilla.org
 
-## release-update-verify
-
-Verifies the contents and package of release update MARs.
-
 ## test-update-integrity
 
 Verifies that update MARs match installers. See `tools/update-verify/marannon` for more details.
 
-## release-update-verify-next
-
-Verifies the contents and package of release and updare MARs from the previous ESR release.
-
 ## release-update-verify-config
 
-Creates configs for release-update-verify tasks
-
-## release-update-verify-config-next
-
-Creates configs for release-update-verify-next tasks
+Creates update verify configs for release-final-verify tasks
 
 ## release-updates-builder
 
@@ -489,10 +477,6 @@ Generates attributed versions of releases for partners.
 ## release-partner-repack-chunking-dummy
 
 Chunks the partner repacks by locale.
-
-## release-partner-repack-signing
-
-Internal signing of partner repacks.
 
 ## release-partner-repack-mac-signing
 
@@ -539,10 +523,6 @@ Utilises landoscript to perform tagging that should happen near the start of a r
 ## release-eme-free-repack
 
 Generates customized versions of releases for eme-free repacks.
-
-## release-eme-free-repack-signing
-
-Internal signing of eme-free repacks
 
 ## release-eme-free-repack-repackage
 
@@ -735,10 +715,6 @@ Dummy tasks to consolidate beetmover-components dependencies to avoid taskcluste
 
 Dummy tasks to consolidate language pack beetmover dependencies to avoid taskcluster limits on number of dependencies per task.
 
-## post-update-verify-dummy
-
-Dummy tasks to consolidate update verify dependencies to avoid taskcluster limits on number of dependencies per task.
-
 ## fetch
 
 Tasks that obtain something from a remote service and re-expose it as a
@@ -791,6 +767,13 @@ final PGO build. This is the 1st stage of the full 3-step PGO process.
 Tasks that take a build configured for PGO and run the binary against a sample
 set to generate profile data. This is the 2nd stage of the full 3-step PGO
 process.
+
+## pgo-coverage
+
+Tasks that report which source directories the training run of a
+generate-profile task executes code from, as a `pgo-coverage.txt` artifact and
+in Perfherder, to find what the PGO training corpus misses. They run apart from
+the 3-step PGO process so that they don't delay the PGO build.
 
 ## geckodriver-signing
 
