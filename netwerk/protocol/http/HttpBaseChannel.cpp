@@ -2923,15 +2923,16 @@ nsresult HttpBaseChannel::ComputeCrossOriginOpenerPolicyMismatch() {
   }
 
   
+  
+  
   RefPtr<mozilla::dom::WindowGlobalParent> currentWindowGlobal =
       ctx->Canonical()->GetCurrentWindowGlobal();
-  if (!currentWindowGlobal) {
-    return NS_OK;
-  }
 
   
   nsCOMPtr<nsIPrincipal> documentOrigin =
-      currentWindowGlobal->DocumentPrincipal();
+      currentWindowGlobal
+          ? nsCOMPtr<nsIPrincipal>(currentWindowGlobal->DocumentPrincipal())
+          : NullPrincipal::Create(ctx->OriginAttributesRef());
 
   bool compareResult = CompareCrossOriginOpenerPolicies(
       documentPolicy, documentOrigin, resultPolicy, resultOrigin);
@@ -2974,7 +2975,7 @@ nsresult HttpBaseChannel::ComputeCrossOriginOpenerPolicyMismatch() {
     return NS_OK;
   }
 
-  if (!currentWindowGlobal->IsInitialDocument()) {
+  if (!currentWindowGlobal || !currentWindowGlobal->IsInitialDocument()) {
     StoreHasCrossOriginOpenerPolicyMismatch(true);
     return NS_OK;
   }
