@@ -9,6 +9,11 @@ const { EngineSynchronizer } = ChromeUtils.importESModule(
   "resource://services-sync/stages/enginesync.sys.mjs"
 );
 
+
+Services.prefs
+  .getDefaultBranch("services.sync.")
+  .setBoolPref("perDeviceEngineChoices", false);
+
 function QuietStore() {
   Store.call("Quiet");
 }

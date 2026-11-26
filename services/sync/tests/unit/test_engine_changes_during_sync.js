@@ -26,6 +26,13 @@ const LoginInfo = Components.Constructor(
   "init"
 );
 
+add_task(async function setup() {
+  
+  
+  await Service.engineManager.unregister("addons");
+  await Service.engineManager.unregister("extension-storage");
+});
+
 
 
 

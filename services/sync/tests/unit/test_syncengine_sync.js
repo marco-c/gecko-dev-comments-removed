@@ -14,6 +14,11 @@ const { RotaryEngine } = ChromeUtils.importESModule(
   "resource://testing-common/services/sync/rotaryengine.sys.mjs"
 );
 
+
+Services.prefs
+  .getDefaultBranch("services.sync.")
+  .setBoolPref("perDeviceEngineChoices", false);
+
 function makeRotaryEngine() {
   return new RotaryEngine(Service);
 }

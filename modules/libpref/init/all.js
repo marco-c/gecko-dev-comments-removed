@@ -3799,7 +3799,7 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
   pref("services.sync.engine.addresses.available", false);
   pref("services.sync.engine.creditcards.available", false);
 
-  pref("services.sync.perDeviceEngineChoices", false);
+  pref("services.sync.perDeviceEngineChoices", true);
 
   
   

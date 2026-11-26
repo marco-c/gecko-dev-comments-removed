@@ -4,6 +4,9 @@
 const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
+const { WeaveService } = ChromeUtils.importESModule(
+  "moz-src:///services/sync/Weave.sys.mjs"
+);
 
 
 Svc.PrefBranch.setStringPref("registerEngines", "Tab,Bookmarks,Form,History");
@@ -16,8 +19,8 @@ add_task(function test_perDeviceEngineChoices() {
   const serviceModule = "resource://services-sync/service.sys.mjs";
 
   Assert.ok(!Cu.isESModuleLoaded(serviceModule));
-  Assert.ok(!Services.prefs.getBoolPref(pref), "Disabled by default.");
-  Assert.ok(!Weave.perDeviceEngineChoices);
+  Assert.ok(Services.prefs.getBoolPref(pref), "Enabled by default.");
+  Assert.ok(Weave.perDeviceEngineChoices);
   try {
     Services.prefs.setBoolPref(pref, true);
     Assert.ok(Weave.perDeviceEngineChoices);
@@ -36,29 +39,26 @@ add_task(async function run_test() {
   validate_all_future_pings();
   _("When imported, Service.onStartup is called");
 
-  let xps = Cc["@mozilla.org/weave/service;1"].getService(
-    Ci.nsISupports
-  ).wrappedJSObject;
-  Assert.ok(!xps.enabled);
+  Assert.ok(!WeaveService.enabled);
 
   
   let { Service } = ChromeUtils.importESModule(
     "resource://services-sync/service.sys.mjs"
   );
   Services.prefs.setStringPref("services.sync.username", "johndoe");
-  Assert.ok(xps.enabled);
+  Assert.ok(WeaveService.enabled);
 
   _("Service is enabled.");
   Assert.equal(Service.enabled, true);
 
   _("Observers are notified of startup");
   Assert.ok(!Service.status.ready);
-  Assert.ok(!xps.ready);
+  Assert.ok(!WeaveService.ready);
 
   await promiseOneObserver("weave:service:ready");
 
   Assert.ok(Service.status.ready);
-  Assert.ok(xps.ready);
+  Assert.ok(WeaveService.ready);
 
   _("Engines are registered.");
   let engines = Service.engineManager.getAll();

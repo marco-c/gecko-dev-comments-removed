@@ -6,6 +6,12 @@ const { Service } = ChromeUtils.importESModule(
 );
 
 
+
+Services.prefs
+  .getDefaultBranch("services.sync.")
+  .setBoolPref("perDeviceEngineChoices", false);
+
+
 var hmacErrorCount = 0;
 (function () {
   let hHE = Service.handleHMACEvent;

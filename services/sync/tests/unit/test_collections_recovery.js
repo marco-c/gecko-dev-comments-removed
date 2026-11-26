@@ -6,6 +6,12 @@ const { Service } = ChromeUtils.importESModule(
   "resource://services-sync/service.sys.mjs"
 );
 
+
+
+Services.prefs
+  .getDefaultBranch("services.sync.")
+  .setBoolPref("perDeviceEngineChoices", false);
+
 add_task(async function test_missing_crypto_collection() {
   enableValidationPrefs();
 
