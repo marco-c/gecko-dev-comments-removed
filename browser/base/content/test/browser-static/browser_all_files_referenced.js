@@ -77,6 +77,11 @@ var gExceptionPaths = [
 
   
   
+  
+  "moz-src:///browser/components/ai/driver/",
+
+  
+  
   "chrome://global/content/neterror/supportpages/",
 
   
