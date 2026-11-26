@@ -147,6 +147,31 @@ extern "C" uint32_t FOG_MaxPingLimit(void) {
   return Preferences::GetInt("telemetry.glean.internal.maxPingsPerMinute", 15);
 }
 
+
+
+
+
+
+extern "C" void FOG_SetPrefOnMainThread(const nsCString* aPrefName,
+                                        const nsCString* aPrefValue) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(aPrefName);
+  MOZ_ASSERT(aPrefValue);
+
+  if (NS_IsMainThread()) {
+    
+    Preferences::SetCString((*aPrefName).get(), *aPrefValue);
+    return;
+  }
+  
+  
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "FOG_SetPrefOnMainThread",
+      [name = nsCString(*aPrefName), value = nsCString(*aPrefValue)]() {
+        Preferences::SetCString(name.get(), value);
+      }));
+}
+
 NS_IMETHODIMP
 FOG::InitializeFOG(const nsACString& aDataPathOverride,
                    const nsACString& aAppIdOverride,

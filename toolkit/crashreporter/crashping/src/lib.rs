@@ -78,14 +78,16 @@ impl InitGlean {
     
     
     pub fn test_reset_glean(self, clear_stores: bool) {
-        self.init_with_no_lock(move |c, m| glean::test_reset_glean(c, m, clear_stores))
+        self.init_with_no_lock(move |c, m, _| glean::test_reset_glean(c, m, clear_stores))
     }
 
     
     
     
     
-    pub fn init_with<F: FnOnce(Configuration, ClientInfoMetrics)>(
+    pub fn init_with<
+        F: FnOnce(Configuration, ClientInfoMetrics, Option<Box<dyn glean::ExternalBackup>>),
+    >(
         self,
         f: F,
     ) -> std::io::Result<GleanHandle> {
@@ -99,7 +101,12 @@ impl InitGlean {
         Ok(handle)
     }
 
-    pub fn init_with_no_lock<F: FnOnce(Configuration, ClientInfoMetrics)>(mut self, f: F) {
+    pub fn init_with_no_lock<
+        F: FnOnce(Configuration, ClientInfoMetrics, Option<Box<dyn glean::ExternalBackup>>),
+    >(
+        mut self,
+        f: F,
+    ) {
         
         
         
@@ -111,7 +118,7 @@ impl InitGlean {
             self.configuration.server_endpoint = None;
         }
         init();
-        f(self.configuration, self.client_info_metrics);
+        f(self.configuration, self.client_info_metrics, None);
     }
 }
 
