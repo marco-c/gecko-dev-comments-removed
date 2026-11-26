@@ -284,7 +284,12 @@ namespace mozilla::dom {
 enum JSONBehavior { UndefinedIsNullStringLiteral, UndefinedIsVoidString };
 
 
-enum class FluentResourceFile : uint8_t { DOM, DOM_DEPRECATIONS, _COUNT };
+enum class FluentResourceFile : uint8_t {
+  DOM,
+  DOM_DEPRECATIONS,
+  DOM_DIALOGS,
+  _COUNT
+};
 
 }  
 
