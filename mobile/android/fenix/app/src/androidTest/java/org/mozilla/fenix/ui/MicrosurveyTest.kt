@@ -4,9 +4,11 @@
 package org.mozilla.fenix.ui
 
 import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
+import org.junit.Assume
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.fenix.Config
 import org.mozilla.fenix.R
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
@@ -41,6 +43,9 @@ class MicrosurveyTest {
     @SmokeTest
     @Test
     fun activationOfThePrintMicrosurveyTest() {
+        // The print microsurvey is a dev/nightly-only example message; it never renders on beta/release, so skip there.
+        Assume.assumeTrue(Config.channel.isNightlyOrDebug)
+
         val testPage = mockWebServer.getGenericAsset(1)
 
         navigationToolbar(composeTestRule) {}
@@ -60,6 +65,9 @@ class MicrosurveyTest {
     @SmokeTest
     @Test
     fun verifyTheSurveyRemainsActivatedWhileChangingTabsTest() {
+        // The print microsurvey is a dev/nightly-only example message; it never renders on beta/release, so skip there.
+        Assume.assumeTrue(Config.channel.isNightlyOrDebug)
+
         val testPage1 = mockWebServer.getGenericAsset(1)
         val testPage2 = mockWebServer.getGenericAsset(2)
 
