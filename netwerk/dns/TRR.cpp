@@ -220,7 +220,7 @@ nsresult TRR::SendHTTPRequest() {
 
   if ((mType != TRRTYPE_A) && (mType != TRRTYPE_AAAA) &&
       (mType != TRRTYPE_NS) && (mType != TRRTYPE_TXT) &&
-      (mType != TRRTYPE_SVCB) && (mType != TRRTYPE_HTTPSSVC)) {
+      (mType != TRRTYPE_HTTPSSVC)) {
     
     
     return NS_ERROR_FAILURE;
@@ -607,8 +607,7 @@ nsresult TRR::ReturnData(nsIChannel* aChannel) {
     }
   }
 
-  if (mType != TRRTYPE_TXT && mType != TRRTYPE_SVCB &&
-      mType != TRRTYPE_HTTPSSVC) {
+  if (mType != TRRTYPE_TXT && mType != TRRTYPE_HTTPSSVC) {
     
     RefPtr<AddrInfo> ai(new AddrInfo(mHost, ResolverType(), mType,
                                      nsTArray<NetAddr>(), mDNS.mTtl));
@@ -649,8 +648,7 @@ nsresult TRR::FailData(nsresult error) {
   
   RecordReason(TRRSkippedReason::TRR_FAILED);
 
-  if (mType == TRRTYPE_TXT || mType == TRRTYPE_SVCB ||
-      mType == TRRTYPE_HTTPSSVC) {
+  if (mType == TRRTYPE_TXT || mType == TRRTYPE_HTTPSSVC) {
     TypeRecordResultType empty(Nothing{});
     (void)mHostResolver->CompleteLookupByType(mRec, error, empty,
                                               mTRRSkippedReason, 0, mPB);
@@ -693,7 +691,7 @@ bool TRR::HasUsableResponse() {
   if (mType == TRRTYPE_TXT) {
     return mResult.is<TypeRecordTxt>();
   }
-  if (mType == TRRTYPE_SVCB || mType == TRRTYPE_HTTPSSVC) {
+  if (mType == TRRTYPE_HTTPSSVC) {
     return mResult.is<TypeRecordHTTPSSVC>();
   }
   return false;

@@ -394,11 +394,6 @@ class TypeHostRecord final : public nsHostRecord,
 
   mozilla::Maybe<nsCString> mOriginHost MOZ_GUARDED_BY(mResultsLock);
   bool mAllRecordsExcluded = false;
-
-  
-  
-  
-  nsTArray<mozilla::net::NetAddr> mResolverAddrs MOZ_GUARDED_BY(mResultsLock);
 };
 
 static inline bool IsHighPriority(nsIDNSService::DNSFlags flags) {

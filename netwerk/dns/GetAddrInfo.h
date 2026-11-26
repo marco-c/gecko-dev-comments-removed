@@ -29,7 +29,6 @@ struct _DnsRecordA;
 #ifdef HAVE_RES_NINIT
 struct __res_state;
 #endif
-struct sockaddr;
 
 namespace mozilla {
 namespace net {
@@ -95,12 +94,10 @@ struct __res_state* GetThreadResState();
 
 
 
-nsresult ResolveHTTPSRecord(
-    const nsACString& aHost, nsIDNSService::DNSFlags aFlags,
-    TypeRecordResultType& aResult, uint32_t& aTTL,
-    const Maybe<nsCString>& aOriginHost = Nothing(),
-    uint16_t aType = nsIDNSService::RESOLVE_TYPE_HTTPSSVC,
-    nsTArray<NetAddr>* aResolverAddrs = nullptr);
+nsresult ResolveHTTPSRecord(const nsACString& aHost,
+                            nsIDNSService::DNSFlags aFlags,
+                            TypeRecordResultType& aResult, uint32_t& aTTL,
+                            const Maybe<nsCString>& aOriginHost = Nothing());
 
 
 
@@ -120,30 +117,26 @@ struct HTTPSAliasTarget {
 
 
 
+nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
+                                const Maybe<nsCString>& aOriginHost,
+                                nsIDNSService::DNSFlags aFlags,
+                                TypeRecordResultType& aResult, uint32_t& aTTL,
+                                HTTPSAliasTarget& aAlias);
 
-
-nsresult ResolveHTTPSRecordImpl(
-    const nsACString& aHost, const Maybe<nsCString>& aOriginHost,
-    nsIDNSService::DNSFlags aFlags, TypeRecordResultType& aResult,
-    uint32_t& aTTL, HTTPSAliasTarget& aAlias,
-    uint16_t aType = nsIDNSService::RESOLVE_TYPE_HTTPSSVC,
-    nsTArray<NetAddr>* aResolverAddrs = nullptr);
-
-nsresult ParseHTTPSRecord(
-    nsCString& aHost, DNSPacket& aDNSPacket, TypeRecordResultType& aResult,
-    uint32_t& aTTL, HTTPSAliasTarget& aAlias,
-    uint16_t aType = nsIDNSService::RESOLVE_TYPE_HTTPSSVC);
+nsresult ParseHTTPSRecord(nsCString& aHost, DNSPacket& aDNSPacket,
+                          TypeRecordResultType& aResult, uint32_t& aTTL,
+                          HTTPSAliasTarget& aAlias);
 
 #ifdef DNSQUERY_AVAILABLE
 
 
 
 
-nsresult ParseHTTPSRecordList(
-    const _DnsRecordA* aRecords, const nsACString& aHost,
-    const Maybe<nsCString>& aOriginHost, TypeRecordResultType& aResult,
-    uint32_t& aTTL, HTTPSAliasTarget& aAlias,
-    uint16_t aType = nsIDNSService::RESOLVE_TYPE_HTTPSSVC);
+nsresult ParseHTTPSRecordList(const _DnsRecordA* aRecords,
+                              const nsACString& aHost,
+                              const Maybe<nsCString>& aOriginHost,
+                              TypeRecordResultType& aResult, uint32_t& aTTL,
+                              HTTPSAliasTarget& aAlias);
 #endif
 
 
@@ -151,13 +144,6 @@ nsresult CreateAndResolveMockHTTPSRecord(const nsACString& aHost,
                                          nsIDNSService::DNSFlags aFlags,
                                          TypeRecordResultType& aResult,
                                          uint32_t& aTTL);
-
-
-
-bool SockaddrToNetAddr(const struct sockaddr* aSockAddr, NetAddr& aOut);
-
-
-void AppendResolverAddr(nsTArray<NetAddr>& aOut, const NetAddr& aAddr);
 
 class NativeDNSResolverOverride : public nsINativeDNSResolverOverride {
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -183,7 +169,7 @@ class NativeDNSResolverOverride : public nsINativeDNSResolverOverride {
   friend bool FindHTTPSRecordOverride(const nsACString& aHost,
                                       const Maybe<nsCString>& aOriginHost,
                                       TypeRecordResultType& aResult,
-                                      HTTPSAliasTarget& aAlias, uint16_t aType);
+                                      HTTPSAliasTarget& aAlias);
 };
 
 }  
