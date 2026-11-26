@@ -5,6 +5,8 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
+  GeneratedWidgetExtension:
+    "moz-src:///toolkit/components/widgets/GeneratedWidgetExtension.sys.mjs",
   WidgetManager: "moz-src:///toolkit/components/widgets/WidgetManager.sys.mjs",
 });
 
@@ -29,6 +31,12 @@ this.builtinWidget = class extends ExtensionAPI {
     
     if (entryName == "generated_widget" && extension.manifest.builtin_widget) {
       return;
+    }
+    if (
+      entryName == "generated_widget" &&
+      !(extension instanceof GeneratedWidgetExtension)
+    ) {
+      throw new Error("Only generated widgets can use 'generated_widget'");
     }
     const options = extension.manifest[entryName];
     this.readyListener = () => this.onReady(entryName, options);

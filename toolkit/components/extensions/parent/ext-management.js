@@ -4,11 +4,11 @@
 
 "use strict";
 
-ChromeUtils.defineLazyGetter(this, "strBundle", function () {
-  return Services.strings.createBundle(
-    "chrome://global/locale/extensions.properties"
-  );
-});
+ChromeUtils.defineLazyGetter(
+  this,
+  "extensionsL10n",
+  () => new Localization(["toolkit/global/extensions.ftl"])
+);
 ChromeUtils.defineESModuleGetters(this, {
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
 });
@@ -25,13 +25,6 @@ XPCOMUtils.defineLazyServiceGetter(
 );
 
 var { ExtensionError } = ExtensionUtils;
-
-const _ = (key, ...args) => {
-  if (args.length) {
-    return strBundle.formatStringFromName(key, args);
-  }
-  return strBundle.GetStringFromName(key);
-};
 
 const installType = addon => {
   if (addon.temporarilyInstalled) {
@@ -56,7 +49,9 @@ const getExtensionInfoForAddon = (extension, addon) => {
     enabled: addon.isActive,
     optionsUrl: addon.optionsURL || "",
     installType: installType(addon),
-    type: addon.type,
+    
+    
+    type: addon.type == "generatedwidget" ? "extension" : addon.type,
   };
 
   if (extension) {
@@ -209,7 +204,8 @@ this.management = class extends ExtensionAPIPersistent {
       management: {
         async get(id) {
           let addon = await AddonManager.getAddonByID(id);
-          if (!addon) {
+          
+          if (!addon || addon.type == "generatedwidget") {
             throw new ExtensionError(`No such addon ${id}`);
           }
           if (!checkAllowedAddon(addon)) {
@@ -267,16 +263,20 @@ this.management = class extends ExtensionAPIPersistent {
 
         async uninstallSelf(options) {
           if (options && options.showConfirmDialog) {
-            let message = _("uninstall.confirmation.message", extension.name);
+            let args = { extension: extension.name };
+            let [title, message, button0Title, button1Title] =
+              await extensionsL10n.formatValues([
+                { id: "webext-uninstall-confirmation-title", args },
+                { id: "webext-uninstall-confirmation-message", args },
+                { id: "webext-uninstall-confirmation-button-uninstall" },
+                { id: "webext-uninstall-confirmation-button-keep" },
+              ]);
             if (options.dialogMessage) {
               message = `${options.dialogMessage}\n${message}`;
             }
-            let title = _("uninstall.confirmation.title", extension.name);
             let buttonFlags =
               Ci.nsIPrompt.BUTTON_POS_0 * Ci.nsIPrompt.BUTTON_TITLE_IS_STRING +
               Ci.nsIPrompt.BUTTON_POS_1 * Ci.nsIPrompt.BUTTON_TITLE_IS_STRING;
-            let button0Title = _("uninstall.confirmation.button-0.label");
-            let button1Title = _("uninstall.confirmation.button-1.label");
             let response = promptService.confirmEx(
               null,
               title,
@@ -304,7 +304,8 @@ this.management = class extends ExtensionAPIPersistent {
 
         async setEnabled(id, enabled) {
           let addon = await AddonManager.getAddonByID(id);
-          if (!addon) {
+          
+          if (!addon || addon.type == "generatedwidget") {
             throw new ExtensionError(`No such addon ${id}`);
           }
 
