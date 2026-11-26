@@ -239,6 +239,10 @@
 #  include <sched.h>
 
 #  include "APKOpen.h"
+#  ifdef MOZ_PROFILE_GENERATE
+#    include <android/log.h>
+extern "C" int __llvm_profile_dump(void);
+#  endif
 #endif
 
 #ifdef XP_WIN
@@ -3222,6 +3226,17 @@ void ContentChild::ShutdownInternal() {
     auto s = PerfStats::CollectLocalPerfStatsJSON();
     SendShutdownPerfStats(nsCString(s.c_str(), s.length()));
   }
+
+#if defined(MOZ_WIDGET_ANDROID) && defined(MOZ_PROFILE_GENERATE)
+  
+  
+  
+  
+  
+  __android_log_print(ANDROID_LOG_INFO, "GeckoContentChild",
+                      "Calling __llvm_profile_dump() during shutdown");
+  __llvm_profile_dump();
+#endif
 
   
   
