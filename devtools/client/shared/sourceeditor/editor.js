@@ -2887,12 +2887,7 @@ class Editor extends EventEmitter {
 
 
 
-
-
-  async setText(
-    value,
-    { documentId, saveTransactionToHistory = true, mode } = {}
-  ) {
+  async setText(value, { documentId, saveTransactionToHistory = true } = {}) {
     const cm = editors.get(this);
     const isWasm = typeof value !== "string" && "binary" in value;
 
@@ -2948,14 +2943,6 @@ class Editor extends EventEmitter {
       });
 
       const effects = [];
-      if (mode) {
-        effects.push(
-          this.#compartments.languageCompartment.reconfigure([
-            this.#languageModes.get(mode),
-          ])
-        );
-      }
-
       if (this.config?.lineNumbers) {
         const lineNumbersConfig = {
           domEventHandlers: this.#gutterDOMEventHandlers,
