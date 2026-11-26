@@ -162,7 +162,7 @@ add_task(async function clear_search_mode_refresh() {
 
   
   UrlbarTestUtils.assertSearchStringIsInUrlbar(window, SEARCH_STRING, {
-    userTypedValue: SEARCH_STRING,
+    urlbarOverrideValue: SEARCH_STRING,
   });
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: "MochiSearch",
@@ -187,7 +187,7 @@ add_task(async function clear_search_mode_switch_tab() {
   });
   await UrlbarTestUtils.promisePopupClose(window);
   UrlbarTestUtils.assertSearchStringIsInUrlbar(window, SEARCH_STRING, {
-    userTypedValue: SEARCH_STRING,
+    urlbarOverrideValue: SEARCH_STRING,
     persistSearchTerms: false,
   });
   await UrlbarTestUtils.assertSearchMode(window, null);
@@ -197,7 +197,7 @@ add_task(async function clear_search_mode_switch_tab() {
 
   
   UrlbarTestUtils.assertSearchStringIsInUrlbar(window, SEARCH_STRING, {
-    userTypedValue: SEARCH_STRING,
+    urlbarOverrideValue: SEARCH_STRING,
     persistSearchTerms: false,
   });
   await UrlbarTestUtils.assertSearchMode(window, null);
@@ -236,7 +236,7 @@ add_task(async function tabhistory_searchmode_non_default() {
 
   
   UrlbarTestUtils.assertSearchStringIsInUrlbar(window, SEARCH_STRING, {
-    userTypedValue: SEARCH_STRING,
+    urlbarOverrideValue: SEARCH_STRING,
   });
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: "MochiSearch",
@@ -284,7 +284,7 @@ add_task(async function tabhistory_searchmode_default_engine() {
   );
   
   UrlbarTestUtils.assertSearchStringIsInUrlbar(window, SEARCH_STRING, {
-    userTypedValue: SEARCH_STRING,
+    urlbarOverrideValue: SEARCH_STRING,
   });
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: "MochiSearch",
@@ -316,7 +316,7 @@ add_task(async function search_mode_switch_tab_to_default() {
   info("Check default SERP is not in a search mode.");
   await UrlbarTestUtils.assertSearchMode(window, null);
   UrlbarTestUtils.assertSearchStringIsInUrlbar(window, SEARCH_STRING, {
-    userTypedValue: SEARCH_STRING,
+    urlbarOverrideValue: SEARCH_STRING,
   });
 
   BrowserTestUtils.removeTab(tab1);
@@ -349,7 +349,7 @@ add_task(async function search_mode_switch_tab_to_non_default() {
     entry: "oneoff",
   });
   UrlbarTestUtils.assertSearchStringIsInUrlbar(window, SEARCH_STRING, {
-    userTypedValue: SEARCH_STRING,
+    urlbarOverrideValue: SEARCH_STRING,
   });
 
   BrowserTestUtils.removeTab(tab1);

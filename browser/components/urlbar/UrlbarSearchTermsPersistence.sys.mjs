@@ -47,14 +47,16 @@ class _UrlbarSearchTermsPersistence {
   #originalProviderInfo = [];
 
   /**
+   * The current search provider info.
+   *
    * @type {PersistedTermsProviderInfo[]}
-   *  The current search provider info.
    */
   #searchProviderInfo = [];
 
   /**
-   * @type {RemoteSettingsClient}
    * An instance of remote settings that is used to access the provider info.
+   *
+   * @type {RemoteSettingsClient}
    */
   #urlbarSearchTermsPersistenceSettings;
 
@@ -210,7 +212,10 @@ class _UrlbarSearchTermsPersistence {
     return "";
   }
 
-  shouldPersist(state, { uri, isSameDocument, userTypedValue, firstView }) {
+  shouldPersist(
+    state,
+    { uri, isSameDocument, urlbarOverrideValue, firstView }
+  ) {
     let persist = state.persist;
     if (!persist) {
       return false;
@@ -221,9 +226,9 @@ class _UrlbarSearchTermsPersistence {
       return false;
     }
 
-    // If there is a userTypedValue and it differs from the search terms, the
+    // If there is a urlbarOverrideValue and it differs from the search terms, the
     // user must've modified the text.
-    if (userTypedValue && userTypedValue !== persist.searchTerms) {
+    if (urlbarOverrideValue && urlbarOverrideValue !== persist.searchTerms) {
       return false;
     }
 

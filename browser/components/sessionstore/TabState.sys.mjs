@@ -80,11 +80,13 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
  *   URL of the tab's icon.
  * @property {number} pos
  *   Position the tab had in the tab strip.
- * @property {WindowID} sourceWindowId
- *   Window the tab closed in.
+ * @property {WindowID|number} sourceWindowId
+ *   Window the tab closed in, or the `closedId` of that window when it was
+ *   restored as a closed window from an earlier session.
  * @property {number} [sourceClosedId]
- *   `closedId` of the window the tab closed in, set once that window itself
- *   has closed.
+ *   `closedId` of the closed window the tab closed in. Set only on the copies
+ *   `SessionStore.getClosedTabDataFromClosedWindows` and
+ *   `SessionStore.getClosedTabGroups` return, never on stored state.
  * @property {boolean} [closedInGroup]
  *   Whether the tab closed along with the other selected tabs.
  * @property {TabGroupId} [closedInTabGroupId]
@@ -234,11 +236,11 @@ class _TabState {
       tabData.image = tabbrowser.getIcon(tab);
     }
 
-    // If there is a userTypedValue set, then either the user has typed something
+    // If there is a urlbarOverrideValue set, then either the user has typed something
     // in the URL bar, or a new tab was opened with a URI to load.
     // If so, we also track whether we were still in the process of loading something.
-    if (!("userTypedValue" in tabData) && browser.userTypedValue) {
-      tabData.userTypedValue = browser.userTypedValue;
+    if (!("userTypedValue" in tabData) && browser.urlbarOverrideValue) {
+      tabData.userTypedValue = browser.urlbarOverrideValue;
       // We always used to keep track of the loading state as an integer, where
       // '0' indicated the user had typed since the last load (or no load was
       // ongoing), and any positive value indicated we had started a load since
