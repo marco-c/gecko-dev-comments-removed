@@ -253,11 +253,25 @@ class InspectorCommand {
     
     
     
-    const onTimeout = new Promise(res =>
-      setTimeout(res, timeoutInMs * getSystemInfo().timeoutMultiplier)
-    ).then(() => null);
+    let timeoutId;
+    const onTimeout = new Promise(res => {
+      timeoutId = setTimeout(
+        res,
+        timeoutInMs * getSystemInfo().timeoutMultiplier
+      );
+    }).then(() => null);
+    const offTargetDestroyed = this.commands.targetCommand.targetFront.on(
+      "target-destroyed",
+      () => clearTimeout(timeoutId)
+    );
     const onQuerySelectors = querySelectors(rootNodeFront);
-    return Promise.race([onTimeout, onQuerySelectors]);
+    const result = await Promise.race([onTimeout, onQuerySelectors]);
+
+    
+    clearTimeout(timeoutId);
+    offTargetDestroyed();
+
+    return result;
   }
 
   
