@@ -122,6 +122,16 @@ add_task(async function testAutocompletePopup() {
     `moz-extension://${extension.uuid}/page.html`,
     "options_ui document from extension is loaded in about:addons"
   );
+  
+  
+  
+  
+  let moreOptionsButton = aboutaddonsWin.document.querySelector(
+    "addon-card .more-options-button"
+  );
+  if (aboutaddonsWin.document.activeElement != moreOptionsButton) {
+    await BrowserTestUtils.waitForEvent(moreOptionsButton, "focus");
+  }
   await testDatalist(optionsBrowser, browserWindow.document);
 
   await BrowserTestUtils.closeWindow(browserWindow);
