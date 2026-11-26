@@ -31,98 +31,102 @@ add_setup(async () => {
   sinon.resetHistory();
 });
 
-add_task(async function test_commandline_handling() {
-  let exe = Services.dirsvc.get("XREExeF", Ci.nsIFile).path;
-  let profile = Services.dirsvc.get("ProfD", Ci.nsIFile).path;
 
-  
+add_task(
+  { skip_if: () => Services.env.exists("MOZ_HEADLESS") },
+  async function test_commandline_handling() {
+    let exe = Services.dirsvc.get("XREExeF", Ci.nsIFile).path;
+    let profile = Services.dirsvc.get("ProfD", Ci.nsIFile).path;
 
-  let args = [
-    "-taskbar-tab",
-    taskbarTab1.id,
-    "-new-window",
-    taskbarTab1.startUrl,
-    "-profile",
-    profile,
-    "-container",
-    taskbarTab1.userContextId,
-  ];
+    
 
-  let winPromise = BrowserTestUtils.waitForNewWindow();
-  await Subprocess.call({
-    command: exe,
-    arguments: args,
-  });
-  let winExisting = await winPromise;
+    let args = [
+      "-taskbar-tab",
+      taskbarTab1.id,
+      "-new-window",
+      taskbarTab1.startUrl,
+      "-profile",
+      profile,
+      "-container",
+      taskbarTab1.userContextId,
+    ];
 
-  ok(
-    TaskbarTabsUtils.isTaskbarTabWindow(winExisting),
-    "The window opened via command line should be a Taskbar Tabs window."
-  );
-  is(
-    TaskbarTabsUtils.getTaskbarTabIdFromWindow(winExisting),
-    taskbarTab1.id,
-    "The existing Taskbar Tab ID should be used."
-  );
-  ok(
-    !TaskbarTabsPin.pinTaskbarTab.called,
-    "Pinning should not be attempted when launching an existing Taskbar Tab."
-  );
+    let winPromise = BrowserTestUtils.waitForNewWindow();
+    await Subprocess.call({
+      command: exe,
+      arguments: args,
+    });
+    let winExisting = await winPromise;
 
-  
+    ok(
+      TaskbarTabsUtils.isTaskbarTabWindow(winExisting),
+      "The window opened via command line should be a Taskbar Tabs window."
+    );
+    is(
+      TaskbarTabsUtils.getTaskbarTabIdFromWindow(winExisting),
+      taskbarTab1.id,
+      "The existing Taskbar Tab ID should be used."
+    );
+    ok(
+      !TaskbarTabsPin.pinTaskbarTab.called,
+      "Pinning should not be attempted when launching an existing Taskbar Tab."
+    );
 
-  const startUrl = "https://www.subdomain.example.com";
-  const userContextId = 1;
-  const id = Services.uuid.generateUUID().toString().slice(1, -1);
+    
 
-  args = [
-    "-taskbar-tab",
-    id,
-    "-new-window",
-    startUrl,
-    "-profile",
-    profile,
-    "-container",
-    userContextId,
-  ];
+    const startUrl = "https://www.subdomain.example.com";
+    const userContextId = 1;
+    const id = Services.uuid.generateUUID().toString().slice(1, -1);
 
-  winPromise = BrowserTestUtils.waitForNewWindow();
-  await Subprocess.call({
-    command: exe,
-    arguments: args,
-  });
-  let winReconstruct = await winPromise;
+    args = [
+      "-taskbar-tab",
+      id,
+      "-new-window",
+      startUrl,
+      "-profile",
+      profile,
+      "-container",
+      userContextId,
+    ];
 
-  ok(
-    TaskbarTabsUtils.isTaskbarTabWindow(winReconstruct),
-    "The window opened via command line should be a Taskbar Tabs window."
-  );
+    winPromise = BrowserTestUtils.waitForNewWindow();
+    await Subprocess.call({
+      command: exe,
+      arguments: args,
+    });
+    let winReconstruct = await winPromise;
 
-  let windowId = TaskbarTabsUtils.getTaskbarTabIdFromWindow(winReconstruct);
-  isnot(windowId, taskbarTab1.id, "A new Taskbar Tab ID should be used.");
+    ok(
+      TaskbarTabsUtils.isTaskbarTabWindow(winReconstruct),
+      "The window opened via command line should be a Taskbar Tabs window."
+    );
 
-  let registered = await TaskbarTabs.getTaskbarTab(windowId);
-  ok(registered, "A new Taskbar Tab should have been registered.");
+    let windowId = TaskbarTabsUtils.getTaskbarTabIdFromWindow(winReconstruct);
+    isnot(windowId, taskbarTab1.id, "A new Taskbar Tab ID should be used.");
 
-  ok(
-    TaskbarTabsPin.pinTaskbarTab.called,
-    "Pinning should be attempted when reconstructing a Taskbar Tab."
-  );
+    let registered = await TaskbarTabs.getTaskbarTab(windowId);
+    ok(registered, "A new Taskbar Tab should have been registered.");
 
-  is(
-    registered.startUrl,
-    "https://www.subdomain.example.com",
-    "The start URL should be correct."
-  );
-  Assert.deepEqual(
-    registered.scopes,
-    [{ hostname: "www.subdomain.example.com" }],
-    "The scope should match the URL."
-  );
-  is(registered.userContextId, 1, "The container ID should be correct.");
+    ok(
+      TaskbarTabsPin.pinTaskbarTab.called,
+      "Pinning should be attempted when reconstructing a Taskbar Tab."
+    );
 
-  await Promise.all([
-    BrowserTestUtils.closeWindow(winExisting),
-    BrowserTestUtils.closeWindow(winReconstruct),
-  ]);
-});
+    is(
+      registered.startUrl,
+      "https://www.subdomain.example.com",
+      "The start URL should be correct."
+    );
+    Assert.deepEqual(
+      registered.scopes,
+      [{ hostname: "www.subdomain.example.com" }],
+      "The scope should match the URL."
+    );
+    is(registered.userContextId, 1, "The container ID should be correct.");
+
+    await Promise.all([
+      BrowserTestUtils.closeWindow(winExisting),
+      BrowserTestUtils.closeWindow(winReconstruct),
+    ]);
+  }
+);
