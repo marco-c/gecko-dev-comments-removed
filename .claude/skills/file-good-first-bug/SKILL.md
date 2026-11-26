@@ -3,6 +3,8 @@ name: file-good-first-bug
 description: Use this skill when the user wants to file good-first-bugs in Bugzilla for Firefox. A good-first-bug is a narrow, self-contained, low-risk task scoped so a first-time contributor can land it without deep context. Sources include lint warnings, small typos, dead-code removal, mechanical refactors, docs conversions, or any other small task the user points at. Opens a prefilled `enter_bug.cgi` form per bug in the user's browser for them to submit. Trigger on phrases like "file a good first bug", "open good first bugs for X", "create a good-first-bug from this".
 ---
 
+# Filing good first bugs
+
 ## What is a good first bug
 
 A bug a newcomer can pick up cold and finish in one short patch. The hallmarks:
@@ -108,7 +110,15 @@ https://firefox-source-docs.mozilla.org/contributing/stack_quickref.html
 Please don't ask for the bug to be assigned. It will be automatically assigned to the first patch.
 ```
 
+If it is a more complex bug, please use the `good-next-bug` keyword instead (`--keywords good-next-bug`), and in the message, request the contributor to ask for the bug to be assigned.
+
 The last paragraph (about auto-assignment) is canonical - keep it verbatim.
+
+For a `good-next-bug`, replace that last paragraph with:
+
+```
+Please ask for the bug to be assigned to you before starting work on it, and wait until it is assigned before submitting a patch.
+```
 
 ## URL builder
 
@@ -160,6 +170,7 @@ awk '/^\// { f=$0; next } /warning/ { c[f]++; lines[f]=lines[f] "\n" $0 }
 - **One bug per atomic task** unless the user opts into a combined bug.
 - **Always set a mentor, and never hand-write the address** - let the builder resolve it, or ask the filer. Without a mentor the bug is invisible in some dashboards and a newcomer's questions go unanswered.
 - **Don't auto-assign** - the template explicitly tells contributors not to ask.
+- **More complex bugs get `good-next-bug`** - and their body asks the contributor to request assignment instead.
 - **Never paste a prefilled URL into your reply** - it is long enough to defeat terminal linkification. Let the script open the form, and don't trim the bug body to shorten it.
 - **Push back on scope** that's too big, too vague, or requires design decisions - those are not good-first-bugs.
 - **Match the component to the work** - don't dump everything under Lint and Formatting if the bug isn't a lint bug.
