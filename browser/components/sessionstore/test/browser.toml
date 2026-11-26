@@ -300,6 +300,8 @@ skip-if = [
 
 ["browser_speculative_connect.js"]
 
+["browser_splitview_incomplete_restore.js"]
+
 ["browser_splitview_integer_ids.js"]
 
 ["browser_splitview_restore_in_closed_window.js"]
@@ -347,6 +349,9 @@ skip-if = [
 ["browser_tab_groups_state.js"]
 
 ["browser_tab_groups_undo.js"]
+skip-if = [
+  "macos_vm", # Bug 2088997 - fails only on the macOS tart VMs
+]
 
 ["browser_tab_label_during_restore.js"]
 https_first_disabled = true
@@ -371,6 +376,8 @@ run-if = [
 ]
 
 ["browser_upgrade_backup.js"]
+
+["browser_urlbarOverride_legacy_keys.js"]
 
 ["browser_urlbarSearchMode.js"]
 
