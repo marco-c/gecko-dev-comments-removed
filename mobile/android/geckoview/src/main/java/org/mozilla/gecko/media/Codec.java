@@ -87,7 +87,11 @@ import org.mozilla.gecko.gfx.GeckoSurface;
       }
 
       if (sample.isEOS()) {
-        queueSample(sample);
+        
+        
+        if (sample.session >= mSession) {
+          queueSample(sample);
+        }
         return;
       }
 
@@ -244,7 +248,12 @@ import org.mozilla.gecko.gfx.GeckoSurface;
 
   private class OutputProcessor {
     private final boolean mRenderToSurface;
-    private boolean mHasOutputCapacitySet;
+    
+    
+    
+    
+    
+    private int mMaxObservedOutputSize;
     private Queue<Output> mSentOutputs = new LinkedList<>();
     private boolean mStopped;
 
@@ -285,6 +294,14 @@ import org.mozilla.gecko.gfx.GeckoSurface;
     }
 
     private Sample obtainOutputSample(final int index, final MediaCodec.BufferInfo info) {
+      
+      
+      
+      if (!mRenderToSurface && info.size > mMaxObservedOutputSize) {
+        mMaxObservedOutputSize = info.size;
+        mSamplePool.setOutputBufferSize(mMaxObservedOutputSize);
+      }
+
       final Sample sample = mSamplePool.obtainOutput(info);
 
       if (mRenderToSurface) {
@@ -292,14 +309,6 @@ import org.mozilla.gecko.gfx.GeckoSurface;
       }
 
       final ByteBuffer output = mCodec.getOutputBuffer(index);
-      if (!mHasOutputCapacitySet) {
-        final int capacity = output.capacity();
-        if (capacity > 0) {
-          mSamplePool.setOutputBufferSize(capacity);
-          mHasOutputCapacitySet = true;
-        }
-      }
-
       if (info.size > 0) {
         try {
           mSamplePool
@@ -488,8 +497,6 @@ import org.mozilla.gecko.gfx.GeckoSurface;
           continue;
         }
         final String name = info.getName();
-        
-        
         if (isEncoder && width > 0 && height > 0) {
           final VideoCapabilities c = info.getCapabilitiesForType(mimeType).getVideoCapabilities();
           if (c != null && !c.isSizeSupported(width, height)) {
