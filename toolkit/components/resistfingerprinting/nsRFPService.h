@@ -410,6 +410,11 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   enum TimeScale { Seconds = 1, MilliSeconds = 1000, MicroSeconds = 1000000 };
 
   
+  
+  
+  static void InitTimePrecisionReduction();
+
+  
   static double ReduceTimePrecisionAsUSecs(double aTime, int64_t aContextMixin,
                                            RTPCallerType aRTPCallerType);
   static double ReduceTimePrecisionAsMSecs(double aTime, int64_t aContextMixin,
