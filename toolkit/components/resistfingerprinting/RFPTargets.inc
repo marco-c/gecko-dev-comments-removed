@@ -116,9 +116,6 @@ ITEM_VALUE(WebGLRendererConstant,       80)
 ITEM_VALUE(IMEStyle,                    81)
 
 
-ITEM_VALUE(WebAuthnClientCapabilities,  82)
-
-
 
 
 
