@@ -886,6 +886,19 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
   
   
   
+  Document* doc = win->GetExtantDoc();
+  if (!doc || !PermissionsPolicyUtils::IsFeatureAllowed(
+                  doc, u"on-device-speech-recognition"_ns)) {
+    LOGE("on-device-speech-recognition is not allowed in this document");
+    DispatchErrorAndEnd(SpeechRecognitionErrorCode::Service_not_allowed,
+                        "Local speech recognition is not available"_ns);
+    return;
+  }
+
+  
+  
+  
+  
   
   
   SpeechModelMatch model;
@@ -953,11 +966,8 @@ void SpeechRecognition::StartImpl(MediaStreamTrack* aAudioTrack,
   
   
   
-  Document* doc = win->GetExtantDoc();
   if (!StaticPrefs::media_webspeech_recognition_install_on_start() ||
-      effectiveLang.IsEmpty() || !doc ||
-      !PermissionsPolicyUtils::IsFeatureAllowed(
-          doc, u"on-device-speech-recognition"_ns) ||
+      effectiveLang.IsEmpty() ||
       !doc->ConsumeTransientUserGestureActivation()) {
     BeginSession(std::move(session));
     return;
