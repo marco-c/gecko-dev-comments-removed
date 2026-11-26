@@ -481,13 +481,6 @@ class RecursiveMakeBackend(MakeBackend):
         if not isinstance(obj, Defines):
             self.consume_object(obj.defines)
 
-        
-        
-        if isinstance(obj, SimpleProgram) and self.environment.substs.get(
-            "MOZ_PROFILE_GENERATE"
-        ):
-            return True
-
         if isinstance(obj, Linkable):
             self._process_test_support_file(obj)
             self._process_relrhack(obj)
