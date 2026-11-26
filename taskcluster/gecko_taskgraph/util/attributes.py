@@ -47,6 +47,8 @@ PROJECT_RELEASE_BRANCHES: dict[str, Union[list[str], Literal[True]]] = {
     "maple": True,
     
     "cypress": True,
+    
+    "enterprise-firefox": True,
 }
 RELEASE_PROJECTS = set(PROJECT_RELEASE_BRANCHES)
 RELEASE_PROMOTION_PROJECTS = {
@@ -119,12 +121,6 @@ def match_run_on_hg_branches(hg_branch, run_on_hg_branches):
 
 
 match_run_on_repo_type = _match_run_on
-
-
-def sorted_unique_list(*args):
-    """Join one or more lists, and return a sorted list of unique members"""
-    combined = set().union(*args)
-    return sorted(combined)
 
 
 def task_name(task):
