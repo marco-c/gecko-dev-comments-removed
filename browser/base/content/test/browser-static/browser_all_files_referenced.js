@@ -358,6 +358,10 @@ var allowlist = [
   {
     file: "chrome://browser/content/aiwindow/components/smartwindow-digest-modal.mjs",
   },
+  
+  {
+    file: "chrome://browser/content/aiwindow/components/smartwindow-digest-toast.mjs",
+  },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {
