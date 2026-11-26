@@ -105,6 +105,10 @@ void Http2StreamTunnel::CloseStream(nsresult aReason) {
     mInput->OnSocketReady(aReason);
   }
   mClosed = true;
+  
+  
+  
+  mTransaction = nullptr;
 }
 
 NS_IMETHODIMP
