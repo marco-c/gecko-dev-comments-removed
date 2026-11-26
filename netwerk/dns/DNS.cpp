@@ -182,6 +182,10 @@ void NetAddr::ToAddrPortString(nsACString& aOutput) const {
   aOutput.AppendPrintf(":%d", port);
 }
 
+static bool isLoopbackIPv4(uint32_t networkEndianIP) {
+  return (ntohl(networkEndianIP) >> 24) == 127;
+}
+
 bool NetAddr::IsLoopbackAddr() const {
   if (IsLoopBackAddressWithoutIPv6Mapping()) {
     return true;
@@ -192,8 +196,7 @@ bool NetAddr::IsLoopbackAddr() const {
   }
 
   if (IPv6ADDR_IS_V4MAPPED(&addr->inet6.ip)) {
-    return IPv6ADDR_V4MAPPED_TO_IPADDR(&addr->inet6.ip) ==
-           htonl(INADDR_LOOPBACK);
+    return isLoopbackIPv4(IPv6ADDR_V4MAPPED_TO_IPADDR(&addr->inet6.ip));
   }
 
   
@@ -221,8 +224,7 @@ bool NetAddr::IsLoopBackAddressWithoutIPv6Mapping() const {
   const NetAddr* addr = this;
   if (addr->raw.family == AF_INET) {
     
-    uint32_t ipv4Addr = ntohl(addr->inet.ip);
-    return (ipv4Addr >> 24) == 127;
+    return isLoopbackIPv4(addr->inet.ip);
   }
 
   return addr->raw.family == AF_INET6 && IPv6ADDR_IS_LOOPBACK(&addr->inet6.ip);
@@ -366,16 +368,19 @@ bool NetAddr::IsIPAddrLocal() const {
 bool NetAddr::IsIPAddrShared() const {
   const NetAddr* addr = this;
 
-  
+  uint32_t networkEndianIP;
   if (addr->raw.family == AF_INET) {
-    uint32_t addr32 = ntohl(addr->inet.ip);
-    if (addr32 >> 22 == 0x644 >> 2) {  
-      return true;
-    }
+    networkEndianIP = addr->inet.ip;
+  } else if (addr->raw.family == AF_INET6 &&
+             IPv6ADDR_IS_V4MAPPED(&addr->inet6.ip)) {
+    networkEndianIP = IPv6ADDR_V4MAPPED_TO_IPADDR(&addr->inet6.ip);
+  } else {
+    return false;
   }
 
   
-  return false;
+  uint32_t addr32 = ntohl(networkEndianIP);
+  return addr32 >> 22 == 0x644 >> 2;  
 }
 
 nsresult NetAddr::GetPort(uint16_t* aResult) const {
