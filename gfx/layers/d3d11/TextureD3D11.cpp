@@ -882,7 +882,7 @@ already_AddRefed<TextureHost> CreateTextureHostD3D11(
 }
 
 already_AddRefed<DrawTarget> D3D11TextureData::BorrowDrawTarget() {
-  MOZ_ASSERT(NS_IsMainThread() || NS_IsInCanvasThreadOrWorker());
+  MOZ_ASSERT(NS_IsMainThread() || NS_IsInCanvasThread());
   gfxCriticalNote << "Could not borrow DrawTarget (D3D11) " << (int)mFormat;
   return nullptr;
 }
@@ -1172,6 +1172,7 @@ void DXGITextureHostD3D11::PushResourceUpdates(
                                  wr::ImageBufferKind::TextureRect)
                            : wr::ExternalImageType::TextureHandle(
                                  wr::ImageBufferKind::TextureExternal);
+      descriptor.is_drm_source = bool(mFlags & TextureFlags::DRM_SOURCE);
       (aResources.*method)(aImageKeys[0], descriptor, aExtID, imageType, 0,
                             false);
       break;
@@ -1203,6 +1204,8 @@ void DXGITextureHostD3D11::PushResourceUpdates(
                                  wr::ImageBufferKind::TextureRect)
                            : wr::ExternalImageType::TextureHandle(
                                  wr::ImageBufferKind::TextureExternal);
+      descriptor0.is_drm_source = bool(mFlags & TextureFlags::DRM_SOURCE);
+      descriptor1.is_drm_source = bool(mFlags & TextureFlags::DRM_SOURCE);
       (aResources.*method)(aImageKeys[0], descriptor0, aExtID, imageType, 0,
                             false);
       (aResources.*method)(aImageKeys[1], descriptor1, aExtID, imageType, 1,
@@ -1220,7 +1223,8 @@ void DXGITextureHostD3D11::PushDisplayItems(
     const wr::LayoutRect& aClip, wr::ImageRendering aFilter,
     const Range<wr::ImageKey>& aImageKeys, PushDisplayItemFlagSet aFlags) {
   bool preferCompositorSurface =
-      aFlags.contains(PushDisplayItemFlag::PREFER_COMPOSITOR_SURFACE);
+      aFlags.contains(PushDisplayItemFlag::PREFER_COMPOSITOR_SURFACE) ||
+      bool(mFlags & TextureFlags::DRM_SOURCE);
   if (!gfx::gfxVars::UseWebRenderANGLE()) {
     MOZ_ASSERT_UNREACHABLE("unexpected to be called without ANGLE");
     return;
@@ -1468,6 +1472,8 @@ void DXGIYCbCrTextureHostD3D11::PushResourceUpdates(
   
   wr::ImageDescriptor descriptor1(mDescriptor.sizeCbCr(), wr::ImageFormat::R8,
                                   wr::OpacityType::HasAlphaChannel);
+  descriptor0.is_drm_source = bool(mFlags & TextureFlags::DRM_SOURCE);
+  descriptor1.is_drm_source = bool(mFlags & TextureFlags::DRM_SOURCE);
   (aResources.*method)(aImageKeys[0], descriptor0, aExtID, imageType, 0,
                         false);
   (aResources.*method)(aImageKeys[1], descriptor1, aExtID, imageType, 1,
@@ -1495,7 +1501,8 @@ void DXGIYCbCrTextureHostD3D11::PushDisplayItems(
       wr::ToWrColorDepth(mDescriptor.colorDepth()),
       wr::ToWrYuvColorSpace(mDescriptor.yUVColorSpace()),
       wr::ToWrColorRange(mDescriptor.colorRange()), aFilter,
-      aFlags.contains(PushDisplayItemFlag::PREFER_COMPOSITOR_SURFACE),
+      aFlags.contains(PushDisplayItemFlag::PREFER_COMPOSITOR_SURFACE) ||
+          bool(mFlags & TextureFlags::DRM_SOURCE),
       SupportsExternalCompositing(aBuilder.GetBackendType()));
 }
 
@@ -1909,6 +1916,11 @@ bool SyncObjectD3D11Client::Init(ID3D11Device* aDevice, bool aFallible) {
 }
 
 void SyncObjectD3D11Client::RegisterTexture(ID3D11Texture2D* aTexture) {
+  
+  
+  MutexAutoLock syncLock(mSyncLock);
+
+  
   mSyncedTextures.push_back(aTexture);
 }
 
@@ -1929,7 +1941,7 @@ bool SyncObjectD3D11Client::Synchronize(bool aFallible) {
   
   MutexAutoLock syncLock(mSyncLock);
 
-  if (!mSyncedTextures.size()) {
+  if (mSyncedTextures.empty()) {
     return true;
   }
   if (!Init(mDevice, aFallible)) {
@@ -1947,6 +1959,10 @@ bool SyncObjectD3D11Client::SynchronizeInternal(ID3D11Device* aDevice,
   AutoTextureLock lock(mKeyedMutex, hr, 20000);
 
   if (hr == WAIT_TIMEOUT) {
+    
+    
+    mSyncedTextures.clear();
+
     if (DeviceManagerDx::Get()->HasDeviceReset()) {
       gfxWarning() << "AcquireSync timed out because of device reset.";
       return false;
@@ -1967,11 +1983,12 @@ bool SyncObjectD3D11Client::SynchronizeInternal(ID3D11Device* aDevice,
   RefPtr<ID3D11DeviceContext> ctx;
   aDevice->GetImmediateContext(getter_AddRefs(ctx));
 
-  for (auto iter = mSyncedTextures.begin(); iter != mSyncedTextures.end();
-       iter++) {
-    ctx->CopySubresourceRegion(mSyncTexture, 0, 0, 0, 0, *iter, 0, &box);
+  for (auto sourceTexture : mSyncedTextures) {
+    ctx->CopySubresourceRegion(mSyncTexture, 0, 0, 0, 0, sourceTexture, 0,
+                               &box);
   }
 
+  
   mSyncedTextures.clear();
 
   return true;
@@ -2018,7 +2035,7 @@ bool SyncObjectD3D11ClientContentDevice::Synchronize(bool aFallible) {
 
   MOZ_ASSERT(mContentDevice);
 
-  if (!mSyncedTextures.size()) {
+  if (mSyncedTextures.empty()) {
     return true;
   }
 
