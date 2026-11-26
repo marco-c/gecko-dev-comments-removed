@@ -94,10 +94,12 @@ struct __res_state* GetThreadResState();
 
 
 
-nsresult ResolveHTTPSRecord(const nsACString& aHost,
-                            nsIDNSService::DNSFlags aFlags,
-                            TypeRecordResultType& aResult, uint32_t& aTTL,
-                            const Maybe<nsCString>& aOriginHost = Nothing());
+nsresult ResolveHTTPSRecord(
+    const nsACString& aHost, nsIDNSService::DNSFlags aFlags,
+    TypeRecordResultType& aResult, uint32_t& aTTL,
+    const Maybe<nsCString>& aOriginHost = Nothing(),
+    uint16_t aType = nsIDNSService::RESOLVE_TYPE_HTTPSSVC,
+    nsTArray<NetAddr>* aResolverAddrs = nullptr);
 
 
 
@@ -117,26 +119,30 @@ struct HTTPSAliasTarget {
 
 
 
-nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
-                                const Maybe<nsCString>& aOriginHost,
-                                nsIDNSService::DNSFlags aFlags,
-                                TypeRecordResultType& aResult, uint32_t& aTTL,
-                                HTTPSAliasTarget& aAlias);
 
-nsresult ParseHTTPSRecord(nsCString& aHost, DNSPacket& aDNSPacket,
-                          TypeRecordResultType& aResult, uint32_t& aTTL,
-                          HTTPSAliasTarget& aAlias);
+
+nsresult ResolveHTTPSRecordImpl(
+    const nsACString& aHost, const Maybe<nsCString>& aOriginHost,
+    nsIDNSService::DNSFlags aFlags, TypeRecordResultType& aResult,
+    uint32_t& aTTL, HTTPSAliasTarget& aAlias,
+    uint16_t aType = nsIDNSService::RESOLVE_TYPE_HTTPSSVC,
+    nsTArray<NetAddr>* aResolverAddrs = nullptr);
+
+nsresult ParseHTTPSRecord(
+    nsCString& aHost, DNSPacket& aDNSPacket, TypeRecordResultType& aResult,
+    uint32_t& aTTL, HTTPSAliasTarget& aAlias,
+    uint16_t aType = nsIDNSService::RESOLVE_TYPE_HTTPSSVC);
 
 #ifdef DNSQUERY_AVAILABLE
 
 
 
 
-nsresult ParseHTTPSRecordList(const _DnsRecordA* aRecords,
-                              const nsACString& aHost,
-                              const Maybe<nsCString>& aOriginHost,
-                              TypeRecordResultType& aResult, uint32_t& aTTL,
-                              HTTPSAliasTarget& aAlias);
+nsresult ParseHTTPSRecordList(
+    const _DnsRecordA* aRecords, const nsACString& aHost,
+    const Maybe<nsCString>& aOriginHost, TypeRecordResultType& aResult,
+    uint32_t& aTTL, HTTPSAliasTarget& aAlias,
+    uint16_t aType = nsIDNSService::RESOLVE_TYPE_HTTPSSVC);
 #endif
 
 
@@ -169,7 +175,7 @@ class NativeDNSResolverOverride : public nsINativeDNSResolverOverride {
   friend bool FindHTTPSRecordOverride(const nsACString& aHost,
                                       const Maybe<nsCString>& aOriginHost,
                                       TypeRecordResultType& aResult,
-                                      HTTPSAliasTarget& aAlias);
+                                      HTTPSAliasTarget& aAlias, uint16_t aType);
 };
 
 }  

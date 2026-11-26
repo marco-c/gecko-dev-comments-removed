@@ -43,7 +43,7 @@ void QueryCallback(DNSServiceRef aSDRef, DNSServiceFlags aFlags,
 
   
   
-  if (aRRType != TRRTYPE_HTTPSSVC) {
+  if (aRRType != context->mType) {
     return;
   }
 
@@ -106,7 +106,8 @@ nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
                                 const Maybe<nsCString>& aOriginHost,
                                 nsIDNSService::DNSFlags aFlags,
                                 TypeRecordResultType& aResult, uint32_t& aTTL,
-                                HTTPSAliasTarget& aAlias) {
+                                HTTPSAliasTarget& aAlias, uint16_t aType,
+                                nsTArray<NetAddr>* aResolverAddrs) {
   nsAutoCString host(aHost);
   nsAutoCString cname;
 
@@ -123,6 +124,7 @@ nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
       .mHost = host,
       .mOriginHost = aOriginHost,
       .mTTL = &aTTL,
+      .mType = aType,
   };
 
   DNSServiceRef sdRef;
@@ -130,7 +132,7 @@ nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
 
   err = DNSServiceQueryRecord(&sdRef, kDNSServiceFlagsReturnIntermediates,
                               0,  
-                              host.get(), TRRTYPE_HTTPSSVC, kDNSServiceClass_IN,
+                              host.get(), aType, kDNSServiceClass_IN,
                               QueryCallback, &context);
 
   if (err != kDNSServiceErr_NoError) {
@@ -184,8 +186,10 @@ nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
 
   
   DNSServiceRefDeallocate(sdRef);
-  mozilla::glean::networking::dns_native_https_call_time.AccumulateRawDuration(
-      TimeStamp::Now() - startTime);
+  if (aType == nsIDNSService::RESOLVE_TYPE_HTTPSSVC) {
+    mozilla::glean::networking::dns_native_https_call_time
+        .AccumulateRawDuration(TimeStamp::Now() - startTime);
+  }
 
   LOG("resolving %s done %x ttl=%u", host.get(), context.mRv, aTTL);
   if (NS_FAILED(context.mRv)) {

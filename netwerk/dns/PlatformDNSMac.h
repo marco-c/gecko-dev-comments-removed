@@ -9,6 +9,7 @@
 
 #include "mozilla/Maybe.h"
 #include "mozilla/net/DNSByTypeRecord.h"
+#include "nsIDNSService.h"
 #include "nsString.h"
 
 namespace mozilla::net {
@@ -20,6 +21,9 @@ struct DNSContext {
   nsCString mHost;
   Maybe<nsCString> mOriginHost;
   uint32_t* mTTL;
+  
+  
+  uint16_t mType = nsIDNSService::RESOLVE_TYPE_HTTPSSVC;
   
   nsCString mAliasName;
   

@@ -24,11 +24,12 @@ enum SvcParamKey : uint16_t {
   SvcParamKeyIpv4Hint = 4,
   SvcParamKeyEchConfig = 5,
   SvcParamKeyIpv6Hint = 6,
+  SvcParamKeyDohPath = 7,
   SvcParamKeyODoHConfig = 32769,
 };
 
 inline bool IsValidSvcParamKey(uint16_t aKey) {
-  return aKey <= SvcParamKeyIpv6Hint || aKey == SvcParamKeyODoHConfig;
+  return aKey <= SvcParamKeyDohPath || aKey == SvcParamKeyODoHConfig;
 }
 
 struct SvcParamAlpn {
@@ -75,10 +76,19 @@ struct SvcParamODoHConfig {
   nsCString mValue;
 };
 
+
+
+struct SvcParamDohPath {
+  bool operator==(const SvcParamDohPath& aOther) const {
+    return mValue == aOther.mValue;
+  }
+  nsCString mValue;
+};
+
 using SvcParamType =
     mozilla::Variant<Nothing, SvcParamAlpn, SvcParamNoDefaultAlpn, SvcParamPort,
                      SvcParamIpv4Hint, SvcParamEchConfig, SvcParamIpv6Hint,
-                     SvcParamODoHConfig>;
+                     SvcParamODoHConfig, SvcParamDohPath>;
 
 struct SvcFieldValue {
   bool operator==(const SvcFieldValue& aOther) const {
@@ -104,6 +114,8 @@ struct SVCB {
   nsCString mSvcDomainName;
   nsCString mEchConfig;
   nsCString mODoHConfig;
+  
+  nsCString mDohPath;
   bool mHasIPHints = false;
   bool mHasEchConfig = false;
   CopyableTArray<SvcFieldValue> mSvcFieldValue;
