@@ -7,6 +7,7 @@
 #include "BufferEdgePad.h"
 #include "BufferUnrotate.h"
 #include "FilterSupport.h"
+#include "Filters.h"
 #include "Logging.h"
 #include "PathHelpers.h"
 #include "SourceSurfaceRawData.h"
@@ -162,6 +163,54 @@ RefPtr<DrawTarget> DrawTarget::CreateClippedDrawTargetForRect(
     return nullptr;
   }
   return Factory::CreateOffsetDrawTarget(similar, aRect.TopLeft());
+}
+
+already_AddRefed<DrawTarget> DrawTarget::CreateSimilarDrawTargetForFilter(
+    const IntSize& aSize, SurfaceFormat aFormat, FilterNode* aFilter,
+    FilterNode* aSource, const Rect& aSourceRect, const Point& aDestPoint) {
+  IntRect baseRect = GetRect();
+
+  auto maxRect = IntRect(IntPoint(0, 0), aSize);
+
+  auto clone = GetTransform();
+  bool invertible = clone.Invert();
+  
+  
+  Rect userSpaceSource = Rect(aDestPoint, aSourceRect.Size());
+  if (invertible) {
+    
+    
+    
+    auto destRect = IntRectToRect(baseRect);
+    Rect userSpaceBounds = clone.TransformBounds(destRect);
+    userSpaceSource = userSpaceSource.Intersect(userSpaceBounds);
+  }
+
+  
+  
+  
+  Point shift = userSpaceSource.TopLeft() - aDestPoint;
+  Rect filterSpaceSource =
+      Rect(aSourceRect.TopLeft() + shift, userSpaceSource.Size());
+
+  baseRect = RoundedOut(filterSpaceSource);
+  IntRect transformedRect =
+      aFilter->MapRectToSource(baseRect, maxRect, aSource);
+
+  
+  transformedRect = transformedRect.Intersect(maxRect);
+
+  
+  if (transformedRect.IsEmpty()) {
+    transformedRect = IntRect(0, 0, 1, 1);
+  }
+
+  RefPtr<DrawTarget> similar =
+      CreateSimilarDrawTarget(transformedRect.Size(), aFormat);
+  if (!similar) {
+    return nullptr;
+  }
+  return Factory::CreateOffsetDrawTarget(similar, transformedRect.TopLeft());
 }
 
 void DrawTarget::PushDeviceSpaceClipRects(const IntRect* aRects,
