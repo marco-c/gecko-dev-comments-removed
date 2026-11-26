@@ -61,6 +61,9 @@ static bool EnsureSurfaceStoredRecording(DrawEventRecorderPrivate* aRecorder,
     
     return false;
   }
+  MOZ_ASSERT(aSurface->GetType() == SurfaceType::RECORDING ||
+                 aSurface->GetUnderlyingType() != SurfaceType::RECORDING,
+             "Wrappers of recording surfaces are not supported");
   aRecorder->StoreSourceSurfaceRecording(aSurface, reason);
   aRecorder->AddSourceSurface(aSurface);
 
@@ -218,13 +221,13 @@ class FilterNodeRecording : public FilterNode {
 DrawTargetRecording::DrawTargetRecording(
     layers::CanvasDrawEventRecorder* aRecorder,
     const layers::RemoteTextureOwnerId& aTextureOwnerId, DrawTarget* aDT,
-    const IntSize& aSize)
+    const IntSize& aSize, bool aPreferAcceleration)
     : mRecorder(static_cast<DrawEventRecorderPrivate*>(aRecorder)),
       mFinalDT(aDT),
       mRect(IntPoint(0, 0), aSize) {
   RecordEventSkipFlushTransform(layers::RecordedCanvasDrawTargetCreation(
       this, aTextureOwnerId, mFinalDT->GetBackendType(), aSize,
-      mFinalDT->GetFormat()));
+      mFinalDT->GetFormat(), aPreferAcceleration));
   mFormat = mFinalDT->GetFormat();
   DrawTarget::SetPermitSubpixelAA(IsOpaque(mFormat));
 }
