@@ -1,6 +1,7 @@
 [DEFAULT]
 support-files = [
   "head.js",
+  "delayed-reload-page.sjs",
   "first-iframe.html",
   "iframe-test-page.html",
   "large-test-page.html",
@@ -49,6 +50,8 @@ skip-if = [
 
 ["browser_screenshots_focus_test.js"]
 
+["browser_screenshots_overlay_during_reload.js"]
+
 ["browser_screenshots_overlay_panel_sync.js"]
 
 ["browser_screenshots_page_unload.js"]
@@ -89,5 +92,7 @@ run-if = [
 ["browser_test_resize.js"]
 
 ["browser_test_selection_size_text.js"]
+
+["browser_test_touch.js"]
 
 ["browser_text_selectionAPI_test.js"]
