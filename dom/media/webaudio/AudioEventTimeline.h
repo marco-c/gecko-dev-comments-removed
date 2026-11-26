@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef AudioEventTimeline_h_
 #define AudioEventTimeline_h_
 
@@ -310,14 +308,19 @@ class AudioEventTimeline {
   }
 
   template <typename TimeType>
-  void CancelScheduledValues(TimeType aStartTime) {
+  void CancelScheduledValues(TimeType aCancelStartTime) {
     for (unsigned i = 0; i < mEvents.Length(); ++i) {
-      if (mEvents[i].Time<TimeType>() >= aStartTime) {
+      if (mEvents[i].Time<TimeType>() >= aCancelStartTime ||
+          (mEvents[i].mType == AudioTimelineEvent::SetValueCurve &&
+           
+           
+           
+           mEvents[i].EndTime<TimeType>() > aCancelStartTime)) {
 #ifdef DEBUG
         
         
         for (unsigned j = i + 1; j < mEvents.Length(); ++j) {
-          MOZ_ASSERT(mEvents[j].Time<TimeType>() >= aStartTime);
+          MOZ_ASSERT(mEvents[j].Time<TimeType>() >= aCancelStartTime);
         }
 #endif
         mEvents.TruncateLength(i);
