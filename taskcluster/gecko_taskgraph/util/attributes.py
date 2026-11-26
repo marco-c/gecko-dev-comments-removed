@@ -47,8 +47,6 @@ PROJECT_RELEASE_BRANCHES: dict[str, Union[list[str], Literal[True]]] = {
     "maple": True,
     
     "cypress": True,
-    
-    "enterprise-firefox": True,
 }
 RELEASE_PROJECTS = set(PROJECT_RELEASE_BRANCHES)
 RELEASE_PROMOTION_PROJECTS = {
