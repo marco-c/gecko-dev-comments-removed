@@ -161,6 +161,12 @@ this.declarativeNetRequest = class extends ExtensionAPI {
               
               req.initiatorURI = null;
             }
+            
+            
+            
+            if (req.type !== "main_frame") {
+              req.documentURI = req.initiatorURI;
+            }
           }
           const matchedRules = ExtensionDNR.getMatchedRulesForRequest(
             req,

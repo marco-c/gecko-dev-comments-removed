@@ -82,16 +82,14 @@ async function test_dnr_with_file_initiator(hasFilePermissions) {
       
       
       
-      
-      
       await testMatchesRequest(
         { url: "file:///", initiator: "file:///tmp", type: "sub_frame" },
-        [1], 
+        [],
         "Cannot match file:-requests from file."
       );
       await testMatchesRequest(
         { url: "file:///", type: "sub_frame" },
-        [1], 
+        [],
         "Cannot match file:-requests from file."
       );
       browser.test.notifyPass();
