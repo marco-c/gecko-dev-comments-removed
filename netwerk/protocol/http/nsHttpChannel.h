@@ -668,6 +668,12 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   
   AutoClose<nsIInputStream> mCacheInputStream;
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIInputStream> mAltDataInputStream;
   RefPtr<nsInputStreamPump> mCachePump;
   UniquePtr<nsHttpResponseHead> mCachedResponseHead;
   nsCOMPtr<nsITransportSecurityInfo> mCachedSecurityInfo;
