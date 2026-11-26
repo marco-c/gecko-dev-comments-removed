@@ -12,7 +12,6 @@ COPY topsrcdir/taskcluster/docker/recipes/setup_packages.sh /usr/local/sbin/
 # %include taskcluster/docker/recipes/clean_packages.sh
 COPY topsrcdir/taskcluster/docker/recipes/clean_packages.sh /usr/local/sbin/
 
-COPY taskcluster-hack.sh /usr/local/sbin
 COPY snapshot-hack.py /usr/local/sbin
 COPY gpgvnoexpkeysig /usr/local/sbin
 
@@ -49,9 +48,6 @@ RUN if [ -n "$DIST" ]; then for s in debian_$DIST debian_$DIST-updates debian_$D
       echo 'APT::Install-Recommends "false";'; \
       echo 'Acquire::Check-Valid-Until "false";'; \
       echo 'Acquire::Retries "5";'; \
-      if dpkg --compare-versions $(apt --version | awk '{print $2}') ge 2.1.15; then \
-        echo 'dir::bin::methods::https "/usr/local/sbin/taskcluster-hack.sh";'; \
-      fi; \
       if [ "$DIST" = "jessie" ]; then \
         echo 'Dir::Bin::gpg "/usr/local/sbin/gpgvnoexpkeysig";'; \
       fi; \
@@ -68,23 +64,29 @@ RUN if [ -f /etc/apt/ubuntu.sources ]; then mv /etc/apt/ubuntu.sources /etc/apt/
 RUN case "$(grep VERSION_CODENAME= /etc/os-release)" in \
   VERSION_CODENAME=noble) \
     apt-get update && apt-get install -f curl openssl; \
-    curl --insecure -L -o /tmp/ca-certificates.deb https://launchpad.net/ubuntu/+archive/primary/+files/ca-certificates_20260816ubuntu0.24.04.1_all.deb; \
-    echo 8a0a754aaafed72cc8efb8c1731808133284a84fbfc76a4fcc73fce9e01b4187 /tmp/ca-certificates.deb | sha256sum -c ; \
+    curl -f --insecure -L -o /tmp/ca-certificates.deb https://launchpad.net/ubuntu/+archive/primary/+files/ca-certificates_20260816ubuntu0.24.04.1_all.deb; \
+    echo 8a0a754aaafed72cc8efb8c1731808133284a84fbfc76a4fcc73fce9e01b4187 /tmp/ca-certificates.deb | sha256sum -c || exit 1; \
     ;; \
-  VERSION_CODENAME=jammy|VERSION_CODENAME=focal|VERSION_CODENAME=bionic) \
+  VERSION_CODENAME=focal|VERSION_CODENAME=bionic) \
     apt-get update && apt-get install -f curl openssl; \
-    curl --insecure -L -o /tmp/ca-certificates.deb https://launchpad.net/ubuntu/+archive/primary/+files/ca-certificates_20260816ubuntu0.22.04.1_all.deb; \
-    echo 29ca037f49f7a4b41d67ad72946c2e541f3ae52d8f6ab1495d2af09aa391144b /tmp/ca-certificates.deb | sha256sum -c ; \
+    curl -f --insecure -L -o /tmp/ca-certificates.deb https://launchpad.net/ubuntu/+archive/primary/+files/ca-certificates_20260816ubuntu0.22.04.1_all.deb; \
+    echo 29ca037f49f7a4b41d67ad72946c2e541f3ae52d8f6ab1495d2af09aa391144b /tmp/ca-certificates.deb | sha256sum -c || exit 1; \
     ;; \
   VERSION_CODENAME=buster|VERSION_CODENAME=bullseye) \
     apt-get update && apt-get install -f curl openssl; \
-    curl --insecure -L -o /tmp/ca-certificates.deb https://snapshot.debian.org/archive/debian-security/20261020T213255Z/pool/updates/main/c/ca-certificates/ca-certificates_20250419~deb12u2_all.deb; \
-    echo b9f76b5271a7ac373fd5e7e1b5b826a71ddd702b42a0d104955ecb1acfffc94b /tmp/ca-certificates.deb | sha256sum -c ; \
+    curl -f --insecure -L -o /tmp/ca-certificates.deb https://snapshot.debian.org/archive/debian-security/20261020T213255Z/pool/updates/main/c/ca-certificates/ca-certificates_20250419~deb12u2_all.deb; \
+    echo b9f76b5271a7ac373fd5e7e1b5b826a71ddd702b42a0d104955ecb1acfffc94b /tmp/ca-certificates.deb | sha256sum -c || exit 1; \
     ;; \
   *) \
     ;; \
   esac; \
-  if [ -f /tmp/ca-certificates.deb ]; then dpkg -i /tmp/ca-certificates.deb; apt-mark hold ca-certificates; fi
+  if [ -f /tmp/ca-certificates.deb ]; then \
+    dpkg -i /tmp/ca-certificates.deb && \
+    ( echo 'Package: ca-certificates'; \
+      echo "Pin: version $(dpkg-query -W -f='${Version}' ca-certificates)"; \
+      echo 'Pin-Priority: 1002'; \
+    ) > /etc/apt/preferences.d/99ca-certificates; \
+  fi
 
 RUN apt-get update && \
     if grep -q snapshot.debian.org /etc/apt/sources.list; then \
@@ -101,6 +103,6 @@ RUN apt-get update && \
         echo 'Pin-Priority: 1001'; \
       ) > /etc/apt/preferences.d/90snapshot && \
       downgrades=--allow-downgrades && \
-      apt-get update; fi && \
+      apt-get update || exit 1; fi && \
     apt-get dist-upgrade ${downgrades} && \
     rm -f /etc/apt/preferences.d/90snapshot
