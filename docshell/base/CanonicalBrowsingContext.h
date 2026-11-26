@@ -141,6 +141,13 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   UniquePtr<LoadingSessionHistoryInfo> ReplaceLoadingSessionHistoryEntryForLoad(
       LoadingSessionHistoryInfo* aInfo, nsIChannel* aNewChannel);
 
+  
+  
+  
+  UniquePtr<LoadingSessionHistoryInfo> RetargetLoadingSessionHistoryEntry(
+      CanonicalBrowsingContext* aSource, const LoadingSessionHistoryInfo& aInfo,
+      nsIChannel* aChannel);
+
   using PrintPromise =
       MozPromise<MaybeDiscardedBrowsingContext, nsresult, false>;
   MOZ_CAN_RUN_SCRIPT RefPtr<PrintPromise> Print(nsIPrintSettings*);
