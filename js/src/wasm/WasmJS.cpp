@@ -4689,6 +4689,42 @@ bool WasmGlobalObject::type(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+const JSClass WasmMutableGlobalBindingObject::class_ = {
+    "WasmMutableGlobalBinding", JSCLASS_HAS_RESERVED_SLOTS(RESERVED_SLOTS)};
+
+
+WasmMutableGlobalBindingObject* WasmMutableGlobalBindingObject::create(
+    JSContext* cx) {
+  return NewObjectWithGivenProto<WasmMutableGlobalBindingObject>(cx, nullptr);
+}
+
+bool WasmMutableGlobalBindingObject::isInitialized() const {
+  return getReservedSlotTyped(GLOBAL_SLOT).isObject();
+}
+
+void WasmMutableGlobalBindingObject::initGlobal(WasmGlobalObject* global) {
+  MOZ_ASSERT(!isInitialized());
+  MOZ_ASSERT(global->isMutable() && global->type().isExposable());
+  initReservedSlotTyped(GLOBAL_SLOT, ObjectValue(*global));
+}
+
+WasmGlobalObject& WasmMutableGlobalBindingObject::global() const {
+  return getReservedSlotTyped(GLOBAL_SLOT).toObject().as<WasmGlobalObject>();
+}
+
+bool WasmMutableGlobalBindingObject::getValue(JSContext* cx,
+                                              MutableHandleValue value) const {
+  if (!isInitialized()) {
+    value.setMagic(JS_UNINITIALIZED_LEXICAL);
+    return true;
+  }
+  RootedVal globalValue(cx, global().val().get());
+  return globalValue.get().toJSValue(cx, value);
+}
+
+
+
+
 const JSClassOps WasmTagObject::classOps_ = {
     .finalize = WasmTagObject::finalize,
 };

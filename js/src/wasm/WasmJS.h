@@ -21,6 +21,7 @@
 #include "mozilla/Maybe.h"      
 
 #include <stdint.h>  
+#include <utility>   
 
 #include "gc/Barrier.h"         
 #include "gc/ZoneAllocator.h"   
@@ -84,6 +85,16 @@ struct ImportValues;
 
 [[nodiscard]] bool GetImports(JSContext* cx, const Module& module,
                               HandleObject importObj, ImportValues* imports);
+
+[[nodiscard]] bool GetModuleExportNames(
+    JSContext* cx, HandleObject wasmModuleObject,
+    MutableHandle<JS::StackGCVector<JSString*>> exportNames);
+
+
+
+[[nodiscard]] bool GetModuleImports(
+    JSContext* cx, HandleObject wasmModuleObject,
+    MutableHandle<JS::StackGCVector<std::pair<JSString*, JSString*>>> imports);
 
 
 
@@ -199,6 +210,21 @@ class WasmGlobalObject : public NativeObject {
   const wasm::HeapPtrVal& val() const;
   void setVal(wasm::HandleVal value);
   void* addressOfCell() const;
+};
+
+
+class WasmMutableGlobalBindingObject : public NativeObject {
+  JS_DEFINE_TYPED_SLOT(0, GLOBAL_SLOT, Object, Undefined);
+
+ public:
+  static constexpr uint32_t RESERVED_SLOTS = 1;
+  static const JSClass class_;
+
+  static WasmMutableGlobalBindingObject* create(JSContext* cx);
+  bool isInitialized() const;
+  void initGlobal(WasmGlobalObject* global);
+  WasmGlobalObject& global() const;
+  bool getValue(JSContext* cx, MutableHandleValue value) const;
 };
 
 
@@ -587,6 +613,10 @@ class WasmComponentInstanceObject : public NativeObject {
   wasm::ComponentInstance& instance() const;
 };
 #endif  
+
+#ifdef NIGHTLY_BUILD
+bool WasmModuleExecute(JSContext* cx, Handle<ModuleObject*> record);
+#endif
 
 }  
 
