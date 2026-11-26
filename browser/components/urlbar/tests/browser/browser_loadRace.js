@@ -45,7 +45,7 @@ async function checkShortcutLoading(modifierKeys) {
   
   gURLBar.focus();
   gURLBar.value = "example.com";
-  gURLBar.userTypedValue = true;
+  gURLBar.overrideValue = true;
   EventUtils.synthesizeKey("KEY_Enter", modifierKeys);
 
   
